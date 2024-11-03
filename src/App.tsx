@@ -115,7 +115,7 @@ export const ChartComponent = props => {
                     textColor: color
                 },
                 width: chartContainerRef.current.clientWidth,
-                height: 400
+                height: 700
             });
 
             const newSeries = chart.addCandlestickSeries({
@@ -684,6 +684,9 @@ const App: React.FC = () => {
             label: "История сделок",
             children:
                 <Table size="small" dataSource={history} columns={historyColumns as any}
+                       pagination={{
+                           pageSize: 15
+                       }}
                        onRow={(record) => {
                            return {
                                style: record.PnL < 0 ? {
@@ -766,10 +769,12 @@ const App: React.FC = () => {
                             </Card>
                         </Col>
                     </Row>
-                    <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf} markers={markers}
-                                    orderBlock={orderBlock}
-                                    position={position}></ChartComponent>
-                    <Tabs defaultActiveKey="1" items={items} onChange={onChange}/>
+                    <div style={{display: 'grid', gridTemplateColumns: 'auto 1000px'}}>
+                        <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf} markers={markers}
+                                        orderBlock={orderBlock}
+                                        position={position}/>
+                        <Tabs defaultActiveKey="1" items={items} onChange={onChange}/>
+                    </div>
                 </Space>
             </Content>
         </Layout>
