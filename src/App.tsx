@@ -1,11 +1,27 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Card, Checkbox, CheckboxProps, Col, Layout, Row, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
+import {
+    Card,
+    Checkbox,
+    CheckboxProps,
+    Col,
+    Layout,
+    Radio,
+    RadioChangeEvent,
+    Row,
+    Space,
+    Statistic,
+    Table,
+    Tabs,
+    TabsProps,
+    theme
+} from "antd";
 import {useCandlesQuery, usePortfolioQuery} from "./api";
 import {ColorType, createChart, CrosshairMode, LineStyle, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
 import moment from "moment";
 import {useSearchParams} from "react-router-dom";
 import dayjs from "dayjs";
 import {VertLine} from "./lwc-plugins/vertical-line";
+import {Point, RectangleDrawingTool} from "./lwc-plugins/rectangle-drawing-tool.ts";
 
 function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);
@@ -13,8 +29,8 @@ function timeToLocal(originalTime: number) {
 }
 
 const roundTime = (date: string, tf: string) => {
-    const time = new Date(date).getTime();
-    const diff = time % (Number(tf) * 1000);
+    const time = new Date(date).getTime() / 1000;
+    const diff = time % (Number(tf));
     const roundedTime = time - diff;
     return timeToLocal(roundedTime) as UTCTimestamp;
 };
@@ -147,25 +163,27 @@ export const ChartComponent = props => {
                     lineWidth: 1
                 });
 
-                // const verticalSeries = chart.addHistogramSeries({
-                //   priceScaleId: "vertical",
-                //   color: "rgb(166, 189, 213)",
-                //   priceLineStyle: LineStyle.Dashed,
-                //   // scaleMargins: { top: 0, bottom: 0 }
-                // });
-                // verticalSeries.setData([{ time: new Date(position.date).getTime() as UTCTimestamp, value: 1 }]);
-
-                // const unix = moment(position.date).unix() * 1000 as UTCTimestamp;
                 if (orderBlock) {
-                    const vertLine = new VertLine(chart, newSeries, orderBlock.time, {
-                        showLabel: true,
-                        labelText: "OB",
-                        width: 1,
-                        color: "rgb(166, 189, 213)",
-                        labelTextColor: "rgb(166, 189, 213)",
-                        labelBackgroundColor: "rgb(23, 35, 46)"
-                    });
-                    newSeries.attachPrimitive(vertLine);
+                    // const vertLine = new VertLine(chart, newSeries, orderBlock.time, {
+                    //     showLabel: true,
+                    //     labelText: "OB",
+                    //     width: 1,
+                    //     color: "rgb(166, 189, 213)",
+                    //     labelTextColor: "rgb(166, 189, 213)",
+                    //     labelBackgroundColor: "rgb(23, 35, 46)"
+                    // });
+                    // newSeries.attachPrimitive(vertLine);
+
+                    new RectangleDrawingTool(
+                        chart,
+                        newSeries,
+                        {
+                            previewFillColor: 'rgba(179, 199, 219, .2)',
+                            fillColor: 'rgba(179, 199, 219, .2)',
+                            showLabels: false,
+                        },
+                        orderBlock
+                    );
                 }
             }
 
@@ -295,6 +313,8 @@ const App: React.FC = () => {
     const limitTradeId = searchParams.get("limitTradeId") || "";
     const takeTradeId = searchParams.get("takeTradeId") || "";
 
+    const orderblockLow = searchParams.get("orderblockLow") || "";
+    const orderblockHigh= searchParams.get("orderblockHigh") || "";
     const orderblockTime = searchParams.get("orderblockTime") || "";
     const orderblockOpen = searchParams.get("orderblockOpen") || "";
 
@@ -359,7 +379,7 @@ const App: React.FC = () => {
         stopLossTrade: tradesMap[p.stopTradeId],
         takeProfit: stopordersMap[p.takeOrderNumber],
         takeProfitTrade: tradesMap[p.takeTradeId]
-    })), [portfolio.patterns, stopordersMap, ordersMap, tradesMap]);
+    })).filter((r, i) => !data?.[selectedEma] || (r.side === 'buy' ? data?.[selectedEma][i] < Number(r.limitTrade.price) : data?.[selectedEma][i] > Number(r.limitTrade.price))), [portfolio.patterns, stopordersMap, ordersMap, tradesMap, selectedEma, data]);
 
     const props = {
         colors: {
@@ -565,6 +585,8 @@ const App: React.FC = () => {
         searchParams.set("takeOrderNumber", record.takeOrderNumber);
 
         searchParams.set("orderblockOpen", record.orderblockOpen);
+        searchParams.set("orderblockHigh", record.orderblockHigh);
+        searchParams.set("orderblockLow", record.orderblockLow);
         searchParams.set("orderblockTime", new Date(record.orderblockTime).getTime().toString());
 
         searchParams.set("stopTradeId", record.stopTradeId);
@@ -608,7 +630,7 @@ const App: React.FC = () => {
     })), [patterns]);
 
     const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[limitOrderNumber], tradesMap[stopTradeId], tradesMap[takeTradeId]].filter(Boolean).map(t => ({
-            time: roundTime(t.date, tf),
+            time: roundTime(t.date, tf) * 1000,
             position: t.side === "buy" ? "belowBar" : "aboveBar",
             color: t.side === "buy" ? "rgb(19,193,123)" : "rgb(255,117,132)",
             shape: t.side === "buy" ? "arrowUp" : "arrowDown",
@@ -621,12 +643,16 @@ const App: React.FC = () => {
         , [tradesOrdernoMap, limitOrderNumber, stopTradeId, takeTradeId, tradesMap]);
 
     const orderBlock = useMemo(() => {
-        if (orderblockOpen && orderblockTime) {
-            return {price: orderblockOpen, time: Number(orderblockTime)};
+        if (orderblockHigh && orderblockLow && orderblockTime && position) {
+
+            const leftTop = {price: Number(orderblockHigh), time: Number(orderblockTime) as Time} as Point
+            const rightBottom = {time: roundTime(position.date, tf) * 1000, price: Number(orderblockLow)} as Point
+
+            return {leftTop, rightBottom}
         }
 
         return undefined;
-    }, [orderblockOpen, orderblockTime]);
+    }, [orderblockHigh, orderblockLow, orderblockTime, position]);
 
     const items: TabsProps["items"] = [
         {
@@ -689,6 +715,10 @@ const App: React.FC = () => {
         array: data.ema200, color: 'rgba(0, 0, 255, 0.65)', title: 'ema200'
     }];
 
+    const onChangeCheckbox = (key: RadioChangeEvent) => {
+        setSelectedEma(key.target.value);
+    };
+
     return (
         <Layout>
             <Content
@@ -700,6 +730,9 @@ const App: React.FC = () => {
                     borderRadius: borderRadiusLG
                 }}
             >
+                <Radio.Group onChange={onChangeCheckbox} value={selectedEma}>
+                    {emas.map(ema => <Radio value={ema.title}>{ema.title}</Radio>)}
+                </Radio.Group>
                 <Space direction="vertical" style={{width: '100%'}}>
                     <Row gutter={16}>
                         <Col span={8}>
@@ -718,6 +751,7 @@ const App: React.FC = () => {
                                     title="Прибыльных сделок"
                                     value={profits}
                                     valueStyle={{color: "rgb(44, 232, 156)"}}
+                                    suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
                                 />
                             </Card>
                         </Col>
@@ -727,6 +761,7 @@ const App: React.FC = () => {
                                     title="Убыточных сделок"
                                     value={losses}
                                     valueStyle={{color: "rgb(255, 117, 132)"}}
+                                    suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
                                 />
                             </Card>
                         </Col>
