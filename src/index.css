@@ -1,0 +1,16 @@
+body {
+    margin: 0;
+}
+
+.ant-layout-content{
+    height: 100vh;
+    padding: 24px;
+    overflow: auto;
+}
+
+.hoverable{
+    cursor: pointer;
+    &:hover td{
+        background-color: rgba(179, 199, 219, .2) !important;
+    }
+}
