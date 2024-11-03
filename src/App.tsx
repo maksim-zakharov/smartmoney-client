@@ -656,7 +656,10 @@ const App: React.FC = () => {
   ];
 
   const totalPnL = useMemo(() => history.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0), [history]);
-
+  const losses =
+      useMemo(() => history.filter(p => p.PnL < 0).length, [history]);
+  const profits =
+      useMemo(() => history.filter(p => p.PnL > 0).length, [history]);
   return (
     <Layout>
       <Content
@@ -670,13 +673,31 @@ const App: React.FC = () => {
       >
         <Space direction="vertical" style={{width: '100%'}}>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <Card bordered={false}>
                 <Statistic
                     title="Общий финрез"
                     value={moneyFormat(totalPnL, 'RUB', 2, 2)}
                     precision={2}
                     valueStyle={{ color: totalPnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)" }}
+                />
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card bordered={false}>
+                <Statistic
+                    title="Прибыльных сделок"
+                    value={profits}
+                    valueStyle={{ color: "rgb(44, 232, 156)" }}
+                />
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card bordered={false}>
+                <Statistic
+                    title="Убыточных сделок"
+                    value={losses}
+                    valueStyle={{ color: "rgb(255, 117, 132)" }}
                 />
               </Card>
             </Col>
