@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { Layout, Table, Tabs, TabsProps, theme } from "antd";
+import {Card, Col, Layout, Row, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
 import { useCandlesQuery, usePortfolioQuery } from "./api";
 import { ColorType, createChart, CrosshairMode, LineStyle, SeriesMarker, Time, UTCTimestamp } from "lightweight-charts";
 import moment from "moment";
@@ -112,6 +112,27 @@ export const ChartComponent = props => {
         lastValueVisible: false,
         priceLineVisible: false
       });
+      newSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: 0.1, // highest point of the series will be 10% away from the top
+          bottom: 0.4, // lowest point will be 40% away from the bottom
+        },
+      });
+
+      const volumeSeries = chart.addHistogramSeries({
+        priceFormat: {
+          type: 'volume',
+        },
+        priceScaleId: '', // set as an overlay by setting a blank priceScaleId
+      });
+      volumeSeries.priceScale().applyOptions({
+        // set the positioning of the volume series
+        scaleMargins: {
+          top: 0.7, // highest point of the series will be 70% away from the top
+          bottom: 0,
+        },
+      });
+      volumeSeries?.setData(data.map((d: any) => ({ ...d, time: d.time * 1000 , value: d.volume, color: d.open < d.close ? 'rgb(20, 131, 92)' : 'rgb(157, 43, 56)' })));
 
       if (position) {
         newSeries.createPriceLine({
@@ -634,6 +655,8 @@ const App: React.FC = () => {
     }
   ];
 
+  const totalPnL = useMemo(() => history.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0), [history]);
+
   return (
     <Layout>
       <Content
@@ -645,10 +668,24 @@ const App: React.FC = () => {
           borderRadius: borderRadiusLG
         }}
       >
-        <ChartComponent {...props} data={candles} ema={data.ema} stop={stop} take={take} tf={tf} markers={markers}
-                        orderBlock={orderBlock}
-                        position={position}></ChartComponent>
-        <Tabs defaultActiveKey="1" items={items} onChange={onChange} />
+        <Space direction="vertical" style={{width: '100%'}}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Card bordered={false}>
+                <Statistic
+                    title="Общий финрез"
+                    value={moneyFormat(totalPnL, 'RUB', 2, 2)}
+                    precision={2}
+                    valueStyle={{ color: totalPnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)" }}
+                />
+              </Card>
+            </Col>
+          </Row>
+          <ChartComponent {...props} data={candles} ema={data.ema} stop={stop} take={take} tf={tf} markers={markers}
+                          orderBlock={orderBlock}
+                          position={position}></ChartComponent>
+          <Tabs defaultActiveKey="1" items={items} onChange={onChange} />
+        </Space>
       </Content>
     </Layout>
   );
