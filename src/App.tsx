@@ -1,26 +1,10 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {
-    Card,
-    Checkbox,
-    CheckboxProps,
-    Col,
-    Layout,
-    Radio,
-    RadioChangeEvent,
-    Row,
-    Space,
-    Statistic,
-    Table,
-    Tabs,
-    TabsProps,
-    theme
-} from "antd";
+import {Card, Col, Layout, Radio, RadioChangeEvent, Row, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
 import {useCandlesQuery, usePortfolioQuery} from "./api";
 import {ColorType, createChart, CrosshairMode, LineStyle, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
 import moment from "moment";
 import {useSearchParams} from "react-router-dom";
 import dayjs from "dayjs";
-import {VertLine} from "./lwc-plugins/vertical-line";
 import {Point, RectangleDrawingTool} from "./lwc-plugins/rectangle-drawing-tool.ts";
 
 function timeToLocal(originalTime: number) {
@@ -314,7 +298,7 @@ const App: React.FC = () => {
     const takeTradeId = searchParams.get("takeTradeId") || "";
 
     const orderblockLow = searchParams.get("orderblockLow") || "";
-    const orderblockHigh= searchParams.get("orderblockHigh") || "";
+    const orderblockHigh = searchParams.get("orderblockHigh") || "";
     const orderblockTime = searchParams.get("orderblockTime") || "";
     const orderblockOpen = searchParams.get("orderblockOpen") || "";
 
@@ -332,21 +316,8 @@ const App: React.FC = () => {
     }, {
         skip: !symbol
     });
-    const {
-        data: newData = {
-            candles: {
-                history: []
-            }
-        }
-    } = useCandlesQuery({
-        symbol,
-        tf,
-        emaPeriod: 100,
-        from: data.candles.history[data.candles.history.length - 1]?.time
-    }, {
-        skip: true, // !symbol || !data?.candles?.history?.length,
-        pollingInterval: 5000
-    });
+
+    const candles = data.candles.history;
 
     const {data: portfolio = {}} = usePortfolioQuery();
 
@@ -371,6 +342,12 @@ const App: React.FC = () => {
     }, {}) || {}, [portfolio?.trades]);
 
 
+    const getCandleIndex = (time: number) => {
+        const index = candles.findIndex(c => c.time === roundTime(time, tf));
+        index === -1 && console.log(index);
+        return index
+    }
+    // Получить индекс свечки на которой была
     const patterns = useMemo(() => (portfolio.patterns || []).map(p => ({
         ...p,
         limit: ordersMap[p.limitOrderNumber],
@@ -379,7 +356,7 @@ const App: React.FC = () => {
         stopLossTrade: tradesMap[p.stopTradeId],
         takeProfit: stopordersMap[p.takeOrderNumber],
         takeProfitTrade: tradesMap[p.takeTradeId]
-    })).filter((r, i) => !data?.[selectedEma] || (r.side === 'buy' ? data?.[selectedEma][i] < Number(r.limitTrade.price) : data?.[selectedEma][i] > Number(r.limitTrade.price))), [portfolio.patterns, stopordersMap, ordersMap, tradesMap, selectedEma, data]);
+    })).filter((r) => !data?.[selectedEma] || (r.side === 'buy' ? data?.[selectedEma][getCandleIndex(new Date(r.limitTrade.date).getTime())] < Number(r.limitTrade.price) : data?.[selectedEma][getCandleIndex(new Date(r.limitTrade.date).getTime())] > Number(r.limitTrade.price))), [portfolio.patterns, stopordersMap, ordersMap, tradesMap, selectedEma, data]);
 
     const props = {
         colors: {
@@ -595,18 +572,6 @@ const App: React.FC = () => {
         setSearchParams(searchParams);
     }
 
-    const candles = useMemo(() => {
-        if (!data?.candles?.history?.length) {
-            return [];
-        }
-        if (newData?.candles?.history?.length) {
-            const d = data?.candles?.history.slice(0, -1);
-            d.push(...newData?.candles?.history);
-            return d;
-        }
-        return data?.candles?.history;
-    }, [data?.candles?.history, newData?.candles?.history]);
-
     // const position = useMemo(() => portfolio?.positions?.find(p => p.symbol === symbol), [symbol, portfolio?.positions]);
     const position = useMemo(() => tradesOrdernoMap[limitOrderNumber], [limitOrderNumber, tradesOrdernoMap]);
 
@@ -770,7 +735,8 @@ const App: React.FC = () => {
                         </Col>
                     </Row>
                     <div style={{display: 'grid', gridTemplateColumns: 'auto 1000px'}}>
-                        <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf} markers={markers}
+                        <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
+                                        markers={markers}
                                         orderBlock={orderBlock}
                                         position={position}/>
                         <Tabs defaultActiveKey="1" items={items} onChange={onChange}/>
