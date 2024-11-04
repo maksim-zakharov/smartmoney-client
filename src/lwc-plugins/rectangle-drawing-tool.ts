@@ -19,12 +19,12 @@ import { positionsBox } from './helpers/dimensions/positions';
 class RectanglePaneRenderer implements ISeriesPrimitivePaneRenderer {
     _p1: ViewPoint;
     _p2: ViewPoint;
-    _fillColor: string;
+    _options: RectangleDrawingToolOptions;
 
-    constructor(p1: ViewPoint, p2: ViewPoint, fillColor: string) {
+    constructor(p1: ViewPoint, p2: ViewPoint, options: RectangleDrawingToolOptions) {
         this._p1 = p1;
         this._p2 = p2;
-        this._fillColor = fillColor;
+        this._options = options;
     }
 
     draw(target: CanvasRenderingTarget2D) {
@@ -47,12 +47,34 @@ class RectanglePaneRenderer implements ISeriesPrimitivePaneRenderer {
                 this._p2.y,
                 scope.verticalPixelRatio
             );
-            ctx.fillStyle = this._fillColor;
+
+            const borderWidth = this._options.borderWidth ?? 1;
+
+            const borderLeftWidth = this._options.borderLeftWidth ?? borderWidth;
+            const borderRightWidth = this._options.borderRightWidth ?? borderWidth;
+            const borderTopWidth = this._options.borderTopWidth ?? borderWidth;
+            const borderBottomWidth = this._options.borderBottomWidth ?? borderWidth;
+            // Сначала бордер
+            ctx.fillStyle = this._options.borderColor || 'rgba(255, 100, 219, .2)'; // this._options.fillColor;
             ctx.fillRect(
                 horizontalPositions.position,
                 verticalPositions.position,
                 horizontalPositions.length,
                 verticalPositions.length
+            )
+            ctx.clearRect(
+                horizontalPositions.position + borderLeftWidth,
+                verticalPositions.position + borderTopWidth,
+                horizontalPositions.length - (borderLeftWidth + borderRightWidth),
+                verticalPositions.length - (borderTopWidth + borderBottomWidth)
+            );
+            // Потом внутри
+            ctx.fillStyle = this._options.fillColor;
+            ctx.fillRect(
+                horizontalPositions.position + borderLeftWidth,
+                verticalPositions.position + borderTopWidth,
+                horizontalPositions.length - (borderLeftWidth + borderRightWidth),
+                verticalPositions.length - (borderTopWidth + borderBottomWidth)
             );
         });
     }
@@ -87,7 +109,7 @@ class RectanglePaneView implements ISeriesPrimitivePaneView {
         return new RectanglePaneRenderer(
             this._p1,
             this._p2,
-            this._source._options.fillColor
+            this._source._options
         );
     }
 }
@@ -246,6 +268,12 @@ export interface RectangleDrawingToolOptions {
     showLabels: boolean;
     priceLabelFormatter: (price: number) => string;
     timeLabelFormatter: (time: Time) => string;
+    borderWidth?: number;
+    borderLeftWidth?: number;
+    borderRightWidth?: number;
+    borderTopWidth?: number;
+    borderBottomWidth?: number;
+    borderColor?: string;
 }
 
 const defaultOptions: RectangleDrawingToolOptions = {

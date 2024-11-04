@@ -1,39 +1,21 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {
-    Card,
-    Col,
-    Layout,
-    Radio,
-    RadioChangeEvent,
-    Row,
-    Space,
-    Statistic,
-    Switch,
-    Table,
-    Tabs,
-    TabsProps,
-    theme
-} from "antd";
+import React, {useCallback, useEffect, useMemo, useRef} from "react";
+import {Card, Col, Layout, Row, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
 import {useCandlesQuery, usePortfolioQuery} from "./api";
 import {
     ColorType,
     createChart,
     CrosshairMode,
-    IChartApi, ISeriesApi,
+    ISeriesApi,
     LineStyle,
-    SeriesMarker, SeriesType,
+    SeriesMarker,
+    SeriesType,
     Time,
     UTCTimestamp
 } from "lightweight-charts";
 import moment from "moment";
 import {useSearchParams} from "react-router-dom";
 import dayjs from "dayjs";
-import {
-    Point,
-    Rectangle,
-    RectangleDrawingTool,
-    RectangleDrawingToolOptions
-} from "./lwc-plugins/rectangle-drawing-tool.ts";
+import {Point, Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool.ts";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions.ts";
 
 function timeToLocal(originalTime: number) {
@@ -41,11 +23,21 @@ function timeToLocal(originalTime: number) {
     return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()) / 1000;
 }
 
-const roundTime = (date: string, tf: string) => {
-    const time = new Date(date).getTime() / 1000;
-    const diff = time % (Number(tf));
-    const roundedTime = time - diff;
-    return timeToLocal(roundedTime) as UTCTimestamp;
+const roundTime = (date: string, tf: string, utc: boolean = true) => {
+    // const time = new Date(date).getTime() / 1000;
+    // const diff = time % (Number(tf));
+    // const roundedTime = time - diff;
+
+    const timestamp = new Date(date).getTime() / 1000;
+
+    // Конвертируем таймфрейм из минут в миллисекунды
+    const timeframeMs = Number(tf);
+
+    // Рассчитываем ближайшую "свечу", округляя до ближайшего целого
+    const roundedTimestamp = Math.floor(timestamp / timeframeMs) * timeframeMs;
+
+    return (utc ? timeToLocal(roundedTimestamp) : roundedTimestamp) as UTCTimestamp;
+    // return timeToLocal(roundedTime) as UTCTimestamp;
 };
 
 export const moneyFormat = (
@@ -67,7 +59,7 @@ export const moneyFormat = (
 
 const {Content} = Layout;
 
-export const createRectangle = (_series: ISeriesApi<SeriesType>, options: Partial<RectangleDrawingToolOptions>, orderBlock) => {
+export const createRectangle = (_series: ISeriesApi<SeriesType>, orderBlock, options: Partial<RectangleDrawingToolOptions>) => {
     const rectangle = new Rectangle(orderBlock.leftTop, orderBlock.rightBottom, {...options});
     ensureDefined(_series).attachPrimitive(rectangle);
 }
@@ -80,6 +72,7 @@ export const ChartComponent = props => {
         markers,
         position, take, stop,
         orderBlock,
+        imbalance,
         colors: {
             backgroundColor = "rgb(30,44,57)",
             color = "rgb(166,189,213)",
@@ -144,7 +137,7 @@ export const ChartComponent = props => {
                 wickUpColor: "rgb(11, 176, 109)",
                 wickDownColor: "rgb(213, 54, 69)",
                 lastValueVisible: false,
-                priceLineVisible: false
+                priceLineVisible: false,
             });
             newSeries.priceScale().applyOptions({
                 scaleMargins: {
@@ -180,24 +173,25 @@ export const ChartComponent = props => {
                     lineStyle: LineStyle.Solid,
                     lineWidth: 1
                 });
+            }
 
-                if (orderBlock) {
-                    // const vertLine = new VertLine(chart, newSeries, orderBlock.time, {
-                    //     showLabel: true,
-                    //     labelText: "OB",
-                    //     width: 1,
-                    //     color: "rgb(166, 189, 213)",
-                    //     labelTextColor: "rgb(166, 189, 213)",
-                    //     labelBackgroundColor: "rgb(23, 35, 46)"
-                    // });
-                    // newSeries.attachPrimitive(vertLine);
+            if (imbalance) {
+                createRectangle(newSeries, imbalance, {
+                    fillColor: 'rgba(179, 199, 219, .2)',
+                    showLabels: false,
+                    borderLeftWidth: 0,
+                    borderRightWidth: 0,
+                    borderWidth: 2,
+                    borderColor: '#222'
+                })
+            }
 
-                    createRectangle(newSeries, {
-                        previewFillColor: 'rgba(179, 199, 219, .2)',
-                        fillColor: 'rgba(179, 199, 219, .2)',
-                        showLabels: false,
-                    }, orderBlock)
-                }
+            if (orderBlock) {
+                createRectangle(newSeries, orderBlock, {
+                    fillColor: 'rgba(255, 100, 219, 0.2)',
+                    showLabels: false,
+                    borderWidth: 0,
+                })
             }
 
             if (take) {
@@ -333,6 +327,10 @@ const App: React.FC = () => {
     const orderblockHigh = searchParams.get("orderblockHigh") || "";
     const orderblockTime = searchParams.get("orderblockTime") || "";
     const orderblockOpen = searchParams.get("orderblockOpen") || "";
+
+    const imbalanceHigh = searchParams.get("imbalanceHigh") || "";
+    const imbalanceLow = searchParams.get("imbalanceLow") || "";
+    const imbalanceTime = searchParams.get("imbalanceTime") || "";
 
     const {
         data = {
@@ -581,11 +579,15 @@ const App: React.FC = () => {
     function onSelect(record: any): void {
         searchParams.set("symbol", record.ticker);
         searchParams.set("tf", record.timeframe);
-        const diff = Number(record.timeframe) / 900;
+        const diff = Number(record.timeframe) / 1800;
         searchParams.set("from", moment(record.liquidSweepTime).add(-diff, "days").unix().toString());
         searchParams.set("stopOrderNumber", record.stopOrderNumber);
         searchParams.set("limitOrderNumber", record.limitOrderNumber);
         searchParams.set("takeOrderNumber", record.takeOrderNumber);
+
+        searchParams.set("imbalanceHigh", record.imbalanceHigh);
+        searchParams.set("imbalanceLow", record.imbalanceLow);
+        searchParams.set("imbalanceTime", new Date(record.imbalanceTime).getTime().toString());
 
         searchParams.set("orderblockOpen", record.orderblockOpen);
         searchParams.set("orderblockHigh", record.orderblockHigh);
@@ -621,7 +623,7 @@ const App: React.FC = () => {
     })), [patterns]);
 
     const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[limitOrderNumber], tradesMap[stopTradeId], tradesMap[takeTradeId]].filter(Boolean).map(t => ({
-            time: roundTime(t.date, tf) * 1000,
+            time: roundTime(t.date, tf, false) * 1000,
             position: t.side === "buy" ? "belowBar" : "aboveBar",
             color: t.side === "buy" ? "rgb(19,193,123)" : "rgb(255,117,132)",
             shape: t.side === "buy" ? "arrowUp" : "arrowDown",
@@ -637,13 +639,27 @@ const App: React.FC = () => {
         if (orderblockHigh && orderblockLow && orderblockTime && position) {
 
             const leftTop = {price: Number(orderblockHigh), time: Number(orderblockTime) as Time} as Point
-            const rightBottom = {time: roundTime(position.date, tf) * 1000, price: Number(orderblockLow)} as Point
+            const rightBottom = {time: (roundTime(position.date, tf, false) + Number(tf) * 4) * 1000, price: Number(orderblockLow)} as Point
 
             return {leftTop, rightBottom}
         }
 
         return undefined;
     }, [orderblockHigh, orderblockLow, orderblockTime, position]);
+
+    const imbalance = useMemo(() => {
+        if (imbalanceHigh && imbalanceLow && imbalanceTime && orderblockHigh && orderblockLow && orderblockTime) {
+
+            const orderBlockPrice = orderblockLow >= imbalanceHigh ? orderblockLow : orderblockHigh;
+            const imbalancePrice = orderblockLow >= imbalanceHigh ? imbalanceHigh : imbalanceLow;
+            const leftTop = {price: Number(orderBlockPrice), time: Number(orderblockTime) as Time} as Point
+            const rightBottom = {time: Number(imbalanceTime), price: Number(imbalancePrice)} as Point
+
+            return {leftTop, rightBottom}
+        }
+
+        return undefined;
+    }, [imbalanceHigh, imbalanceLow, imbalanceTime, orderblockHigh, orderblockLow, orderblockTime]);
 
     const items: TabsProps["items"] = [
         {
@@ -695,9 +711,9 @@ const App: React.FC = () => {
 
     const totalPnL = history.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0); // useMemo(() => history.filter(p => p.PnL && !blacklist[getPatternKey(p)]).reduce((acc, curr) => acc + curr.PnL, 0), [history, blacklist]);
     const losses = history.filter(p => p.PnL < 0).length
-        // useMemo(() => history.filter(p => p.PnL < 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
+    // useMemo(() => history.filter(p => p.PnL < 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
     const profits = history.filter(p => p.PnL > 0).length
-        // useMemo(() => history.filter(p => p.PnL > 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
+    // useMemo(() => history.filter(p => p.PnL > 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
 
     const emas = [{
         array: data.ema20, color: 'rgba(255, 0, 0, 0.65)', title: 'ema20'
@@ -757,6 +773,7 @@ const App: React.FC = () => {
                         <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
                                         markers={markers}
                                         orderBlock={orderBlock}
+                                        imbalance={imbalance}
                                         position={position}/>
                         <Tabs defaultActiveKey="1" items={items} onChange={onChange}/>
                     </div>
