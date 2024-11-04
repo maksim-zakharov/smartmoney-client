@@ -217,7 +217,9 @@ export const ChartComponent = props => {
             emas.forEach(({array, color, title}) => {
                 const emaSeries = chart.addLineSeries({
                     priceLineColor: color,
-                    baseLineColor: color,
+                    // baseLineColor: color,
+                    // baseLineVisible: false,
+                    priceLineVisible: false,
                     color,
                     title,
                     lineWidth: 1
@@ -351,7 +353,9 @@ const App: React.FC = () => {
 
     const candles = data.candles.history;
 
-    const {data: portfolio = {}} = usePortfolioQuery();
+    const {data: portfolio = {}} = usePortfolioQuery(undefined, {
+        pollingInterval: 10000
+    });
 
     const ordersMap = useMemo(() => portfolio?.orders?.reduce((acc, curr) => {
         acc[curr.id] = curr;
@@ -433,7 +437,14 @@ const App: React.FC = () => {
             title: "Стоп-лосс",
             dataIndex: "stopLoss",
             key: "stopLoss",
-            render: (value) => value?.stopPrice || "-"
+            render: (value, row) => {
+                if (!value?.stopPrice) {
+                    return "-";
+                }
+                const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
+
+                return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+            }
         },
         // {
         //   title: "stopLossTime",
@@ -445,7 +456,14 @@ const App: React.FC = () => {
             title: "Тейк-профит",
             dataIndex: "takeProfit",
             key: "takeProfit",
-            render: (value) => value?.stopPrice || "-"
+            render: (value, row) => {
+                if (!value?.stopPrice) {
+                    return "-";
+                }
+                const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
+
+                return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+            }
         }
         // {
         //   title: "takeProfitTime",
@@ -561,13 +579,27 @@ const App: React.FC = () => {
             title: "Стоп-лосс",
             dataIndex: "stopLossTrade",
             key: "stopLossTrade",
-            render: (value) => value?.price || "-"
+            render: (value, row) => {
+                if (!value?.price) {
+                    return "-";
+                }
+                const percent = row.limitTrade?.price > value?.price ? row.limitTrade?.price / value?.price : value?.price / row.limitTrade?.price
+
+                return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+            }
         },
         {
             title: "Тейк-профит",
             dataIndex: "takeProfitTrade",
             key: "takeProfitTrade",
-            render: (value) => value?.price || "-"
+            render: (value, row) => {
+                if (!value?.price) {
+                    return "-";
+                }
+                const percent = row.limitTrade?.price > value?.price ? row.limitTrade?.price / value?.price : value?.price / row.limitTrade?.price
+
+                return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+            }
         },
         {
             title: "Финрез",
@@ -623,7 +655,7 @@ const App: React.FC = () => {
     const history = useMemo(() => patterns.filter(p => p.takeTradeId || p.stopTradeId).map(row => ({
         ...row,
         PnL: row.limitTrade?.side === "buy" ? row.limitTrade?.qtyUnits * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price) : row.limitTrade?.side === "sell" ? row.limitTrade?.qtyUnits * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
-    })), [patterns]);
+    })).sort((a, b) => b.limitTrade.date.localeCompare(a.limitTrade.date)), [patterns]);
 
     const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[limitOrderNumber], tradesMap[stopTradeId], tradesMap[takeTradeId]].filter(Boolean).map(t => ({
             time: roundTime(t.date, tf, false) * 1000,
@@ -642,7 +674,10 @@ const App: React.FC = () => {
         if (orderblockHigh && orderblockLow && orderblockTime && position) {
 
             const leftTop = {price: Number(orderblockHigh), time: Number(orderblockTime) as Time} as Point
-            const rightBottom = {time: (roundTime(position.date, tf, false) + Number(tf) * 4) * 1000, price: Number(orderblockLow)} as Point
+            const rightBottom = {
+                time: (roundTime(position.date, tf, false) + Number(tf) * 4) * 1000,
+                price: Number(orderblockLow)
+            } as Point
 
             return {leftTop, rightBottom}
         }
@@ -787,6 +822,7 @@ const App: React.FC = () => {
             </Content>
         </Layout>
     );
-};
+}
+    ;
 
-export default App;
+    export default App;
