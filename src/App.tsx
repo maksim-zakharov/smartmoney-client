@@ -332,6 +332,8 @@ const App: React.FC = () => {
     const imbalanceLow = searchParams.get("imbalanceLow") || "";
     const imbalanceTime = searchParams.get("imbalanceTime") || "";
 
+    const tab = searchParams.get('tab') || 'positions';
+
     const {
         data = {
             candles: {
@@ -612,7 +614,8 @@ const App: React.FC = () => {
     const take = useMemo(() => stopordersMap[takeOrderNumber], [takeOrderNumber, stopordersMap]);
 
     const onChange = (key: string) => {
-        console.log(key);
+        searchParams.set('tab', key);
+        setSearchParams(searchParams);
     };
 
     const positions = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && p.limitTradeId && p.stopLoss?.status === "working"), [patterns]);
@@ -663,7 +666,7 @@ const App: React.FC = () => {
 
     const items: TabsProps["items"] = [
         {
-            key: "1",
+            key: "positions",
             label: "Позиции",
             children:
                 <Table size="small" dataSource={positions} columns={positionsColumns}
@@ -676,18 +679,20 @@ const App: React.FC = () => {
                        }}/>
         },
         {
-            key: "2",
+            key: "orders",
             label: "Заявки",
             children:
                 <Table size="small" dataSource={orders} columns={columns}
-                       onRow={(record) => {
+                       onRow={(record: any) => {
                            return {
-                               onClick: () => onSelect(record)
+                               onClick: () => onSelect(record),
+                               className: "hoverable",
+                               style: symbol === record.ticker ? {backgroundColor: "rgba(179, 199, 219, .2)"} : undefined
                            };
                        }}/>
         },
         {
-            key: "3",
+            key: "history",
             label: "История сделок",
             children:
                 <Table size="small" dataSource={history} columns={historyColumns as any} rowKey={getPatternKey}
@@ -696,14 +701,15 @@ const App: React.FC = () => {
                        }}
                        onRow={(record) => {
                            return {
-                               style: record.PnL < 0 ? {
+                               style: symbol === record.ticker ? {backgroundColor: "rgba(179, 199, 219, .2)"} : record.PnL < 0 ? {
                                    backgroundColor: "#d1261b66",
                                    color: "rgb(255, 117, 132)"
                                } : record.PnL > 0 ? {
                                    backgroundColor: "#15785566",
                                    color: "rgb(44, 232, 156)"
                                } : undefined,
-                               onClick: () => onSelect(record)
+                               onClick: () => onSelect(record),
+                               className: "hoverable",
                            };
                        }}/>
         }
@@ -775,7 +781,7 @@ const App: React.FC = () => {
                                         orderBlock={orderBlock}
                                         imbalance={imbalance}
                                         position={position}/>
-                        <Tabs defaultActiveKey="1" items={items} onChange={onChange}/>
+                        <Tabs defaultActiveKey="positions" activeKey={tab} items={items} onChange={onChange}/>
                     </div>
                 </Space>
             </Content>
