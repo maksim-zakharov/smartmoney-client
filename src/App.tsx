@@ -1,11 +1,40 @@
-import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Card, Col, Layout, Radio, RadioChangeEvent, Row, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {
+    Card,
+    Col,
+    Layout,
+    Radio,
+    RadioChangeEvent,
+    Row,
+    Space,
+    Statistic,
+    Switch,
+    Table,
+    Tabs,
+    TabsProps,
+    theme
+} from "antd";
 import {useCandlesQuery, usePortfolioQuery} from "./api";
-import {ColorType, createChart, CrosshairMode, LineStyle, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
+import {
+    ColorType,
+    createChart,
+    CrosshairMode,
+    IChartApi, ISeriesApi,
+    LineStyle,
+    SeriesMarker, SeriesType,
+    Time,
+    UTCTimestamp
+} from "lightweight-charts";
 import moment from "moment";
 import {useSearchParams} from "react-router-dom";
 import dayjs from "dayjs";
-import {Point, RectangleDrawingTool} from "./lwc-plugins/rectangle-drawing-tool.ts";
+import {
+    Point,
+    Rectangle,
+    RectangleDrawingTool,
+    RectangleDrawingToolOptions
+} from "./lwc-plugins/rectangle-drawing-tool.ts";
+import {ensureDefined} from "./lwc-plugins/helpers/assertions.ts";
 
 function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);
@@ -37,6 +66,11 @@ export const moneyFormat = (
 };
 
 const {Content} = Layout;
+
+export const createRectangle = (_series: ISeriesApi<SeriesType>, options: Partial<RectangleDrawingToolOptions>, orderBlock) => {
+    const rectangle = new Rectangle(orderBlock.leftTop, orderBlock.rightBottom, {...options});
+    ensureDefined(_series).attachPrimitive(rectangle);
+}
 
 export const ChartComponent = props => {
     const {
@@ -158,16 +192,11 @@ export const ChartComponent = props => {
                     // });
                     // newSeries.attachPrimitive(vertLine);
 
-                    new RectangleDrawingTool(
-                        chart,
-                        newSeries,
-                        {
-                            previewFillColor: 'rgba(179, 199, 219, .2)',
-                            fillColor: 'rgba(179, 199, 219, .2)',
-                            showLabels: false,
-                        },
-                        orderBlock
-                    );
+                    createRectangle(newSeries, {
+                        previewFillColor: 'rgba(179, 199, 219, .2)',
+                        fillColor: 'rgba(179, 199, 219, .2)',
+                        showLabels: false,
+                    }, orderBlock)
                 }
             }
 
@@ -235,12 +264,12 @@ export const ChartComponent = props => {
                     priceLineVisible: false
                 });
 
-                const buyMarkers = markers.filter(p => p.position === "belowBar");
+                const buyMarkers = markers.filter(p => p.position === "belowBar").sort((a: any, b: any) => a.time - b.time);
 
-                buySeries.setData(Object.values(buyMarkers.reduce((acc, curr) => ({
+                buySeries.setData(Object.values<any>(buyMarkers.reduce((acc, curr) => ({
                     ...acc,
                     [curr.time as any]: curr
-                }), {})));
+                }), {})).sort((a: any, b: any) => a.time - b.time));
 
                 buySeries.setMarkers(buyMarkers);
 
@@ -251,12 +280,14 @@ export const ChartComponent = props => {
                     priceLineVisible: false
                 });
 
-                const sellMarkers = markers.filter(p => p.position === "aboveBar");
+                const sellMarkers = markers.filter(p => p.position === "aboveBar").sort((a: any, b: any) => a.time - b.time);
 
-                sellSeries.setData(Object.values(sellMarkers.reduce((acc, curr) => ({
+                const values = Object.values<any>(sellMarkers.reduce((acc, curr) => ({
                     ...acc,
                     [curr.time as any]: curr
-                }), {})));
+                }), {})).sort((a: any, b: any) => a.time - b.time)
+
+                sellSeries.setData(values);
 
                 sellSeries.setMarkers(sellMarkers);
             }
@@ -284,7 +315,8 @@ const App: React.FC = () => {
         token: {colorBgContainer, borderRadiusLG}
     } = theme.useToken();
 
-    const [selectedEma, setSelectedEma] = useState(undefined);
+    const getPatternKey = useCallback(pattern => `${pattern.ticker}_${pattern.timeframe}_${pattern.pattern}_${pattern.liquidSweepTime}`, []);
+
     const [searchParams, setSearchParams] = useSearchParams();
     const symbol = searchParams.get("symbol") || "SBER";
     const tf = searchParams.get("tf") || "1800";
@@ -341,12 +373,6 @@ const App: React.FC = () => {
         return acc;
     }, {}) || {}, [portfolio?.trades]);
 
-
-    const getCandleIndex = (time: number) => {
-        const index = candles.findIndex(c => c.time === roundTime(time, tf));
-        index === -1 && console.log(index);
-        return index
-    }
     // Получить индекс свечки на которой была
     const patterns = useMemo(() => (portfolio.patterns || []).map(p => ({
         ...p,
@@ -356,7 +382,7 @@ const App: React.FC = () => {
         stopLossTrade: tradesMap[p.stopTradeId],
         takeProfit: stopordersMap[p.takeOrderNumber],
         takeProfitTrade: tradesMap[p.takeTradeId]
-    })).filter((r) => !data?.[selectedEma] || (r.side === 'buy' ? data?.[selectedEma][getCandleIndex(new Date(r.limitTrade.date).getTime())] < Number(r.limitTrade.price) : data?.[selectedEma][getCandleIndex(new Date(r.limitTrade.date).getTime())] > Number(r.limitTrade.price))), [portfolio.patterns, stopordersMap, ordersMap, tradesMap, selectedEma, data]);
+    })), [portfolio.patterns, stopordersMap, ordersMap, tradesMap]);
 
     const props = {
         colors: {
@@ -549,7 +575,7 @@ const App: React.FC = () => {
             key: "PnL",
             align: "right",
             render: (value, row) => row.PnL ? moneyFormat(row.PnL, "RUB", 2, 2) : "-"
-        }
+        },
     ];
 
     function onSelect(record: any): void {
@@ -648,9 +674,9 @@ const App: React.FC = () => {
             key: "3",
             label: "История сделок",
             children:
-                <Table size="small" dataSource={history} columns={historyColumns as any}
+                <Table size="small" dataSource={history} columns={historyColumns as any} rowKey={getPatternKey}
                        pagination={{
-                           pageSize: 15
+                           pageSize: 14,
                        }}
                        onRow={(record) => {
                            return {
@@ -667,11 +693,11 @@ const App: React.FC = () => {
         }
     ];
 
-    const totalPnL = useMemo(() => history.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0), [history]);
-    const losses =
-        useMemo(() => history.filter(p => p.PnL < 0).length, [history]);
-    const profits =
-        useMemo(() => history.filter(p => p.PnL > 0).length, [history]);
+    const totalPnL = history.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0); // useMemo(() => history.filter(p => p.PnL && !blacklist[getPatternKey(p)]).reduce((acc, curr) => acc + curr.PnL, 0), [history, blacklist]);
+    const losses = history.filter(p => p.PnL < 0).length
+        // useMemo(() => history.filter(p => p.PnL < 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
+    const profits = history.filter(p => p.PnL > 0).length
+        // useMemo(() => history.filter(p => p.PnL > 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
 
     const emas = [{
         array: data.ema20, color: 'rgba(255, 0, 0, 0.65)', title: 'ema20'
@@ -682,10 +708,6 @@ const App: React.FC = () => {
     }, {
         array: data.ema200, color: 'rgba(0, 0, 255, 0.65)', title: 'ema200'
     }];
-
-    const onChangeCheckbox = (key: RadioChangeEvent) => {
-        setSelectedEma(key.target.value);
-    };
 
     return (
         <Layout>
@@ -698,11 +720,8 @@ const App: React.FC = () => {
                     borderRadius: borderRadiusLG
                 }}
             >
-                <Radio.Group onChange={onChangeCheckbox} value={selectedEma}>
-                    {emas.map(ema => <Radio value={ema.title}>{ema.title}</Radio>)}
-                </Radio.Group>
                 <Space direction="vertical" style={{width: '100%'}}>
-                    <Row gutter={16}>
+                    <Row gutter={8}>
                         <Col span={8}>
                             <Card bordered={false}>
                                 <Statistic
@@ -734,7 +753,7 @@ const App: React.FC = () => {
                             </Card>
                         </Col>
                     </Row>
-                    <div style={{display: 'grid', gridTemplateColumns: 'auto 1000px'}}>
+                    <div style={{display: 'grid', gridTemplateColumns: 'auto 1000px', gap: '8px'}}>
                         <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
                                         markers={markers}
                                         orderBlock={orderBlock}

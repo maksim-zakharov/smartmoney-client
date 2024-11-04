@@ -264,7 +264,7 @@ const defaultOptions: RectangleDrawingToolOptions = {
     },
 };
 
-class Rectangle extends PluginBase {
+export class Rectangle extends PluginBase {
     _options: RectangleDrawingToolOptions;
     _p1: Point;
     _p2: Point;
@@ -384,29 +384,6 @@ export class RectangleDrawingTool {
     private _clickHandler = (param: MouseEventParams) => this._onClick(param);
     private _moveHandler = (param: MouseEventParams) => this._onMouseMove(param);
 
-    remove() {
-        this.stopDrawing();
-        if (this._chart) {
-            this._chart.unsubscribeClick(this._clickHandler);
-            this._chart.unsubscribeCrosshairMove(this._moveHandler);
-        }
-        this._rectangles.forEach(rectangle => {
-            this._removeRectangle(rectangle);
-        });
-        this._rectangles = [];
-        this._removePreviewRectangle();
-        this._chart = undefined;
-        this._series = undefined;
-    }
-
-    stopDrawing(): void {
-        this._drawing = false;
-        this._points = [];
-        if (this._toolbarButton) {
-            this._toolbarButton.style.fill = 'rgb(0, 0, 0)';
-        }
-    }
-
     private _onClick(param: MouseEventParams) {
         if (!this._drawing || !param.point || !param.time || !this._series) return;
         const price = this._series.coordinateToPrice(param.point.y);
@@ -437,7 +414,6 @@ export class RectangleDrawingTool {
         this._points.push(p);
         if (this._points.length >= 2) {
             this._addNewRectangle(this._points[0], this._points[1]);
-            this.stopDrawing();
             this._removePreviewRectangle();
         }
         if (this._points.length === 1) {
@@ -449,10 +425,6 @@ export class RectangleDrawingTool {
         const rectangle = new Rectangle(p1, p2, { ...this._defaultOptions });
         this._rectangles.push(rectangle);
         ensureDefined(this._series).attachPrimitive(rectangle);
-    }
-
-    private _removeRectangle(rectangle: Rectangle) {
-        ensureDefined(this._series).detachPrimitive(rectangle);
     }
 
     private _addPreviewRectangle(p: Point) {
