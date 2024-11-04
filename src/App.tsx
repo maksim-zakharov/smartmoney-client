@@ -443,7 +443,7 @@ const App: React.FC = () => {
                 }
                 const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
 
-                return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+                return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%)`;
             }
         },
         // {
@@ -462,7 +462,7 @@ const App: React.FC = () => {
                 }
                 const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
 
-                return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+                return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%)`;
             }
         }
         // {
