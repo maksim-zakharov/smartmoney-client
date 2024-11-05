@@ -108,8 +108,15 @@ export const ChartComponent = props => {
                         //     return 'Format for business day';
                         // }
 
-                        return dayjs(businessDayOrTimestamp).format("MMM D, YYYY HH:mm");
+                        return moment.unix(businessDayOrTimestamp / 1000).format('MMM D, YYYY HH:mm');
                     }
+                },
+                timeScale: {
+                    rightOffset: 10,  // это создаст отступ на 10 временных единиц вправо
+                    tickMarkFormatter: (time, tickMarkType, locale) => {
+                        // Преобразуем время в формат, используя moment.js
+                        return moment.unix(time / 1000).format('HH:mm'); // Измените формат, если нужно
+                    },
                 },
                 grid: {
                     vertLines: {

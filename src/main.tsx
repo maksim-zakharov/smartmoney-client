@@ -6,7 +6,7 @@ import {Provider} from "react-redux";
 import {store} from "./store";
 import {BrowserRouter} from "react-router-dom";
 import 'moment/locale/ru'
-import moment from "moment/moment"; // without this line it didn't work
+import moment from "moment"; // without this line it didn't work
 import ru_RU from 'antd/es/locale/ru_RU';
 import updateLocale from "dayjs/plugin/updateLocale";
 import {ConfigProvider} from "antd";
