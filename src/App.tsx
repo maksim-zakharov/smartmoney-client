@@ -670,12 +670,18 @@ const App: React.FC = () => {
         }))
         , [tradesOrdernoMap, limitOrderNumber, stopTradeId, takeTradeId, tradesMap]);
 
+    const lastCandle = candles?.[candles?.length - 1];
+
     const orderBlock = useMemo(() => {
-        if (orderblockHigh && orderblockLow && orderblockTime && position) {
+        if (orderblockHigh && orderblockLow && orderblockTime) {
+            const rightTime = position?.date || lastCandle?.time;
+            if(!rightTime){
+                return undefined;
+            }
 
             const leftTop = {price: Number(orderblockHigh), time: Number(orderblockTime) as Time} as Point
             const rightBottom = {
-                time: (roundTime(position.date, tf, false) + Number(tf) * 4) * 1000,
+                time: (roundTime(rightTime, tf, false) + Number(tf) * 4) * 1000,
                 price: Number(orderblockLow)
             } as Point
 
@@ -683,7 +689,7 @@ const App: React.FC = () => {
         }
 
         return undefined;
-    }, [orderblockHigh, orderblockLow, orderblockTime, position]);
+    }, [orderblockHigh, orderblockLow, orderblockTime, position, lastCandle]);
 
     const imbalance = useMemo(() => {
         if (imbalanceHigh && imbalanceLow && imbalanceTime && orderblockHigh && orderblockLow && orderblockTime) {
