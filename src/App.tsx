@@ -674,11 +674,15 @@ const App: React.FC = () => {
 
                 const orderBlockPrice = selectedPattern?.orderblockLow >= selectedPattern?.imbalanceHigh ? selectedPattern?.orderblockLow : selectedPattern?.orderblockHigh;
                 const imbalancePrice = selectedPattern?.orderblockLow >= selectedPattern?.imbalanceHigh ? selectedPattern?.imbalanceHigh : selectedPattern?.imbalanceLow;
+
+                const orderblockTime = new Date(selectedPattern?.orderblockTime).getTime();
+                const imbalanceTime = new Date(selectedPattern?.imbalanceTime).getTime();
+
                 const leftTop = {
                     price: Number(orderBlockPrice),
-                    time: Number(selectedPattern?.orderblockTime) as Time
+                    time: Number(orderblockTime) as Time
                 } as Point
-                const rightBottom = {time: Number(selectedPattern?.imbalanceTime), price: Number(imbalancePrice)} as Point
+                const rightBottom = {time: Number(imbalanceTime), price: Number(imbalancePrice)} as Point
 
                 return {leftTop, rightBottom}
             }
