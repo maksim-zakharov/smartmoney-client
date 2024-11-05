@@ -369,6 +369,14 @@ const App: React.FC = () => {
             return acc;
         }, {}) || {}, [portfolio?.trades]);
 
+        const accTradesOrdernoQtyMap = useMemo(() => portfolio?.trades?.reduce((acc, curr) => {
+            if(!acc[curr.orderno] ){
+                acc[curr.orderno] = 0;
+            }
+            acc[curr.orderno] += curr.qtyUnits;
+            return acc;
+        }, {}) || {}, [portfolio?.trades]);
+
         const tradesOrdernoMap = useMemo(() => portfolio?.trades?.reduce((acc, curr) => {
             acc[curr.orderno] = curr;
             return acc;
@@ -421,13 +429,13 @@ const App: React.FC = () => {
                 render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
             },
             {
-                title: "Цена входа",
+                title: "Вход",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
                 render: (value) => value?.price || "-"
             },
             {
-                title: "Время входа",
+                title: "Время",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
                 render: (value, row) => row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-"
@@ -440,17 +448,17 @@ const App: React.FC = () => {
                     if (!value?.stopPrice) {
                         return "-";
                     }
-                    const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
+                    const openPrice = row.limitTrade?.price;
+                    const stopLoss = value?.stopPrice
 
-                    return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%)`;
+                    const side = openPrice > stopLoss ? 'buy' : 'sell';
+                    const percent = side === 'buy' ? openPrice / stopLoss : stopLoss / openPrice
+
+                    const PnL = side === 'buy' ? openPrice - stopLoss : stopLoss - openPrice;
+
+                    return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%) (${moneyFormat(PnL * (accTradesOrdernoQtyMap[row.limitTrade?.orderno] || row.limitTrade?.qtyUnits), 'RUB', 2, 2)})`;
                 }
             },
-            // {
-            //   title: "stopLossTime",
-            //   dataIndex: "stopLoss",
-            //   key: "stopLoss",
-            //   render: (value) =>  value?.transTime ? moment(value?.transTime).format("YYYY-MM-DD HH:mm") : '-'
-            // },
             {
                 title: "Тейк-профит",
                 dataIndex: "takeProfit",
@@ -459,9 +467,15 @@ const App: React.FC = () => {
                     if (!value?.stopPrice) {
                         return "-";
                     }
-                    const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
+                    const openPrice = row.limitTrade?.price;
+                    const takeProfit = value?.stopPrice
 
-                    return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%)`;
+                    const side = openPrice > takeProfit ? 'buy' : 'sell';
+                    const percent = side === 'buy' ? openPrice / takeProfit : takeProfit / openPrice
+
+                    const PnL = side === 'buy' ? openPrice - takeProfit : takeProfit - openPrice;
+
+                    return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%) (${moneyFormat(PnL * (accTradesOrdernoQtyMap[row.limitTrade?.orderno] || row.limitTrade?.qtyUnits), 'RUB', 2, 2)})`;
                 }
             }
             // {
@@ -631,8 +645,8 @@ const App: React.FC = () => {
         const orders = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && !p.limitTradeId), [patterns]);
         const history = useMemo(() => patterns.filter(p => p.takeTradeId || p.stopTradeId).map(row => ({
             ...row,
-            PnL: row.limitTrade?.side === "buy" ? row.limitTrade?.qtyUnits * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price) : row.limitTrade?.side === "sell" ? row.limitTrade?.qtyUnits * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
-        })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [patterns]);
+            PnL: row.limitTrade?.side === "buy" ? accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price) : row.limitTrade?.side === "sell" ? accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
+        })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [accTradesOrdernoQtyMap, patterns]);
 
         const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[selectedPattern?.limitOrderNumber], tradesMap[selectedPattern?.stopTradeId], tradesMap[selectedPattern?.takeTradeId]].filter(Boolean).map(t => ({
                 time: roundTime(t.date, tf, false) * 1000,
