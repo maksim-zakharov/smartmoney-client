@@ -23,7 +23,7 @@ function timeToLocal(originalTime: number) {
     return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()) / 1000;
 }
 
-const roundTime = (date: string, tf: string, utc: boolean = true) => {
+const roundTime = (date: any, tf: string, utc: boolean = true) => {
     // const time = new Date(date).getTime() / 1000;
     // const diff = time % (Number(tf));
     // const roundedTime = time - diff;
@@ -674,14 +674,18 @@ const App: React.FC = () => {
 
     const orderBlock = useMemo(() => {
         if (orderblockHigh && orderblockLow && orderblockTime) {
-            const rightTime = position?.date || lastCandle?.time;
+            let rightTime;
+            if(position)
+                rightTime = (roundTime(position.date, tf, false) + Number(tf) * 4) * 1000;
+            if(lastCandle)
+                rightTime = (roundTime((lastCandle?.time * 1000), tf, false)) * 1000;
             if(!rightTime){
                 return undefined;
             }
 
             const leftTop = {price: Number(orderblockHigh), time: Number(orderblockTime) as Time} as Point
             const rightBottom = {
-                time: (roundTime(rightTime, tf, false) + Number(tf) * 4) * 1000,
+                time: rightTime,
                 price: Number(orderblockLow)
             } as Point
 
