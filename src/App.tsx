@@ -655,7 +655,7 @@ const App: React.FC = () => {
     const history = useMemo(() => patterns.filter(p => p.takeTradeId || p.stopTradeId).map(row => ({
         ...row,
         PnL: row.limitTrade?.side === "buy" ? row.limitTrade?.qtyUnits * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price) : row.limitTrade?.side === "sell" ? row.limitTrade?.qtyUnits * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
-    })).sort((a, b) => b.limitTrade.date.localeCompare(a.limitTrade.date)), [patterns]);
+    })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [patterns]);
 
     const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[limitOrderNumber], tradesMap[stopTradeId], tradesMap[takeTradeId]].filter(Boolean).map(t => ({
             time: roundTime(t.date, tf, false) * 1000,
