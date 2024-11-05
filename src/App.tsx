@@ -337,7 +337,8 @@ const App: React.FC = () => {
             emaPeriod: 100,
             from: moment(searchParams.get("liquidSweepTime")).add(-(Number(searchParams.get("tf")) / 1800), "days").unix().toString()
         }, {
-            skip: !symbol || !searchParams.get("liquidSweepTime") || !searchParams.get("tf")
+            skip: !symbol || !searchParams.get("liquidSweepTime") || !searchParams.get("tf"),
+            pollingInterval: 10000,
         });
 
         const candles = data.candles.history;
