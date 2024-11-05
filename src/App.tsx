@@ -307,532 +307,509 @@ export const ChartComponent = props => {
 };
 
 const App: React.FC = () => {
-    const {
-        token: {colorBgContainer, borderRadiusLG}
-    } = theme.useToken();
+        const {
+            token: {colorBgContainer, borderRadiusLG}
+        } = theme.useToken();
 
-    const getPatternKey = useCallback(pattern => `${pattern.ticker}_${pattern.timeframe}_${pattern.pattern}_${pattern.liquidSweepTime}`, []);
+        const getPatternKey = useCallback(pattern => `${pattern.ticker}_${pattern.timeframe}_${pattern.liquidSweepTime}`, []);
 
-    const [searchParams, setSearchParams] = useSearchParams();
-    const symbol = searchParams.get("symbol") || "SBER";
-    const tf = searchParams.get("tf") || "1800";
-    const from = searchParams.get("from") || moment().add(-7, "days").unix();
-    const takeOrderNumber = searchParams.get("takeOrderNumber") || "";
-    const stopOrderNumber = searchParams.get("stopOrderNumber") || "";
-    const limitOrderNumber = searchParams.get("limitOrderNumber") || "";
+        const [searchParams, setSearchParams] = useSearchParams();
+        const symbol = searchParams.get("ticker") || "SBER";
+        const tf = searchParams.get("tf") || "1800";
 
-    const stopTradeId = searchParams.get("stopTradeId") || "";
-    const limitTradeId = searchParams.get("limitTradeId") || "";
-    const takeTradeId = searchParams.get("takeTradeId") || "";
+        const tab = searchParams.get('tab') || 'positions';
 
-    const orderblockLow = searchParams.get("orderblockLow") || "";
-    const orderblockHigh = searchParams.get("orderblockHigh") || "";
-    const orderblockTime = searchParams.get("orderblockTime") || "";
-    const orderblockOpen = searchParams.get("orderblockOpen") || "";
+        const selectedKey = getPatternKey({
+            ticker: searchParams.get("ticker"),
+            timeframe: searchParams.get("tf"),
+            liquidSweepTime: searchParams.get("liquidSweepTime")
+        })
 
-    const imbalanceHigh = searchParams.get("imbalanceHigh") || "";
-    const imbalanceLow = searchParams.get("imbalanceLow") || "";
-    const imbalanceTime = searchParams.get("imbalanceTime") || "";
-
-    const tab = searchParams.get('tab') || 'positions';
-
-    const {
-        data = {
-            candles: {
-                history: []
-            }
-        }
-    } = useCandlesQuery({
-        symbol,
-        tf,
-        emaPeriod: 100,
-        from
-    }, {
-        skip: !symbol
-    });
-
-    const candles = data.candles.history;
-
-    const {data: portfolio = {}} = usePortfolioQuery(undefined, {
-        pollingInterval: 10000
-    });
-
-    const ordersMap = useMemo(() => portfolio?.orders?.reduce((acc, curr) => {
-        acc[curr.id] = curr;
-        return acc;
-    }, {}) || {}, [portfolio?.orders]);
-
-    const stopordersMap = useMemo(() => portfolio?.stoporders?.reduce((acc, curr) => {
-        acc[curr.id] = curr;
-        return acc;
-    }, {}) || {}, [portfolio?.stoporders]);
-
-    const tradesMap = useMemo(() => portfolio?.trades?.reduce((acc, curr) => {
-        acc[curr.id] = curr;
-        return acc;
-    }, {}) || {}, [portfolio?.trades]);
-
-    const tradesOrdernoMap = useMemo(() => portfolio?.trades?.reduce((acc, curr) => {
-        acc[curr.orderno] = curr;
-        return acc;
-    }, {}) || {}, [portfolio?.trades]);
-
-    // Получить индекс свечки на которой была
-    const patterns = useMemo(() => (portfolio.patterns || []).map(p => ({
-        ...p,
-        limit: ordersMap[p.limitOrderNumber],
-        limitTrade: tradesMap[p.limitTradeId],
-        stopLoss: stopordersMap[p.stopOrderNumber],
-        stopLossTrade: tradesMap[p.stopTradeId],
-        takeProfit: stopordersMap[p.takeOrderNumber],
-        takeProfitTrade: tradesMap[p.takeTradeId]
-    })), [portfolio.patterns, stopordersMap, ordersMap, tradesMap]);
-
-    const props = {
-        colors: {
-            backgroundColor: "white",
-            lineColor: "#2962FF",
-            textColor: "black",
-            areaTopColor: "#2962FF",
-            areaBottomColor: "rgba(41, 98, 255, 0.28)"
-        }
-    };
-
-    const positionsColumns = [
-        {
-            title: "Тикер",
-            dataIndex: "ticker",
-            key: "ticker"
-        },
-        {
-            title: "Паттерн",
-            dataIndex: "pattern",
-            key: "pattern"
-        },
-        {
-            title: "Время пересвипа",
-            dataIndex: "liquidSweepTime",
-            key: "liquidSweepTime",
-            render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
-        },
-        {
-            title: "Время ОБ",
-            dataIndex: "orderblockTime",
-            key: "orderblockTime",
-            render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
-        },
-        {
-            title: "Цена входа",
-            dataIndex: "limitTrade",
-            key: "limitTrade",
-            render: (value) => value?.price || "-"
-        },
-        {
-            title: "Время входа",
-            dataIndex: "limitTrade",
-            key: "limitTrade",
-            render: (value, row) => row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-"
-        },
-        {
-            title: "Стоп-лосс",
-            dataIndex: "stopLoss",
-            key: "stopLoss",
-            render: (value, row) => {
-                if (!value?.stopPrice) {
-                    return "-";
+        const {
+            data = {
+                candles: {
+                    history: []
                 }
-                const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
-
-                return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%)`;
             }
-        },
-        // {
-        //   title: "stopLossTime",
-        //   dataIndex: "stopLoss",
-        //   key: "stopLoss",
-        //   render: (value) =>  value?.transTime ? moment(value?.transTime).format("YYYY-MM-DD HH:mm") : '-'
-        // },
-        {
-            title: "Тейк-профит",
-            dataIndex: "takeProfit",
-            key: "takeProfit",
-            render: (value, row) => {
-                if (!value?.stopPrice) {
-                    return "-";
+        } = useCandlesQuery({
+            symbol,
+            tf,
+            emaPeriod: 100,
+            from: moment(searchParams.get("liquidSweepTime")).add(-(Number(searchParams.get("tf")) / 1800), "days").unix().toString()
+        }, {
+            skip: !symbol || !searchParams.get("liquidSweepTime") || !searchParams.get("tf")
+        });
+
+        const candles = data.candles.history;
+
+        const {data: portfolio = {}} = usePortfolioQuery(undefined, {
+            pollingInterval: 10000
+        });
+
+        const ordersMap = useMemo(() => portfolio?.orders?.reduce((acc, curr) => {
+            acc[curr.id] = curr;
+            return acc;
+        }, {}) || {}, [portfolio?.orders]);
+
+        const stopordersMap = useMemo(() => portfolio?.stoporders?.reduce((acc, curr) => {
+            acc[curr.id] = curr;
+            return acc;
+        }, {}) || {}, [portfolio?.stoporders]);
+
+        const tradesMap = useMemo(() => portfolio?.trades?.reduce((acc, curr) => {
+            acc[curr.id] = curr;
+            return acc;
+        }, {}) || {}, [portfolio?.trades]);
+
+        const tradesOrdernoMap = useMemo(() => portfolio?.trades?.reduce((acc, curr) => {
+            acc[curr.orderno] = curr;
+            return acc;
+        }, {}) || {}, [portfolio?.trades]);
+
+        // Получить индекс свечки на которой была
+        const patterns = useMemo(() => (portfolio.patterns || []).map(p => ({
+            ...p,
+            limit: ordersMap[p.limitOrderNumber],
+            limitTrade: tradesMap[p.limitTradeId],
+            stopLoss: stopordersMap[p.stopOrderNumber],
+            stopLossTrade: tradesMap[p.stopTradeId],
+            takeProfit: stopordersMap[p.takeOrderNumber],
+            takeProfitTrade: tradesMap[p.takeTradeId]
+        })), [portfolio.patterns, stopordersMap, ordersMap, tradesMap]);
+
+        const selectedPattern = useMemo(() => patterns.find(p => getPatternKey(p) === selectedKey), [selectedKey, patterns])
+
+        const props = {
+            colors: {
+                backgroundColor: "white",
+                lineColor: "#2962FF",
+                textColor: "black",
+                areaTopColor: "#2962FF",
+                areaBottomColor: "rgba(41, 98, 255, 0.28)"
+            }
+        };
+
+        const positionsColumns = [
+            {
+                title: "Тикер",
+                dataIndex: "ticker",
+                key: "ticker"
+            },
+            {
+                title: "Паттерн",
+                dataIndex: "pattern",
+                key: "pattern"
+            },
+            {
+                title: "Время пересвипа",
+                dataIndex: "liquidSweepTime",
+                key: "liquidSweepTime",
+                render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
+            },
+            {
+                title: "Время ОБ",
+                dataIndex: "orderblockTime",
+                key: "orderblockTime",
+                render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
+            },
+            {
+                title: "Цена входа",
+                dataIndex: "limitTrade",
+                key: "limitTrade",
+                render: (value) => value?.price || "-"
+            },
+            {
+                title: "Время входа",
+                dataIndex: "limitTrade",
+                key: "limitTrade",
+                render: (value, row) => row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-"
+            },
+            {
+                title: "Стоп-лосс",
+                dataIndex: "stopLoss",
+                key: "stopLoss",
+                render: (value, row) => {
+                    if (!value?.stopPrice) {
+                        return "-";
+                    }
+                    const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
+
+                    return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%)`;
                 }
-                const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
+            },
+            // {
+            //   title: "stopLossTime",
+            //   dataIndex: "stopLoss",
+            //   key: "stopLoss",
+            //   render: (value) =>  value?.transTime ? moment(value?.transTime).format("YYYY-MM-DD HH:mm") : '-'
+            // },
+            {
+                title: "Тейк-профит",
+                dataIndex: "takeProfit",
+                key: "takeProfit",
+                render: (value, row) => {
+                    if (!value?.stopPrice) {
+                        return "-";
+                    }
+                    const percent = row.limitTrade?.price > value?.stopPrice ? row.limitTrade?.price / value?.stopPrice : value?.stopPrice / row.limitTrade?.price
 
-                return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%)`;
+                    return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%)`;
+                }
             }
+            // {
+            //   title: "takeProfitTime",
+            //   dataIndex: "takeProfit",
+            //   key: "takeProfit",
+            //   render: (value) =>  value?.transTime ? moment(value?.transTime).format("YYYY-MM-DD HH:mm") : '-'
+            // },
+        ];
+
+        const columns = [
+            {
+                title: "Ticker",
+                dataIndex: "ticker",
+                key: "ticker"
+            },
+            {
+                title: "pattern",
+                dataIndex: "pattern",
+                key: "pattern"
+            },
+            {
+                title: "liquidSweepTime",
+                dataIndex: "liquidSweepTime",
+                key: "liquidSweepTime",
+                render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
+            },
+            {
+                title: "orderblockTime",
+                dataIndex: "orderblockTime",
+                key: "orderblockTime",
+                render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
+            },
+            {
+                title: "limit",
+                dataIndex: "limit",
+                key: "limit",
+                render: (value) => value?.price || "-"
+            },
+            {
+                title: "limitTime",
+                dataIndex: "limit",
+                key: "limit",
+                render: (value) => value?.updateTime ? moment(value?.updateTime).format("YYYY-MM-DD HH:mm") : "-"
+            },
+            {
+                title: "stopLoss",
+                dataIndex: "stopLoss",
+                key: "stopLoss",
+                render: (value) => value?.stopPrice || "-"
+            },
+            // {
+            //   title: "stopLossTime",
+            //   dataIndex: "stopLoss",
+            //   key: "stopLoss",
+            //   render: (value) =>  value?.transTime ? moment(value?.transTime).format("YYYY-MM-DD HH:mm") : '-'
+            // },
+            {
+                title: "takeProfit",
+                dataIndex: "takeProfit",
+                key: "takeProfit",
+                render: (value) => value?.stopPrice || "-"
+            }
+            // {
+            //   title: "takeProfitTime",
+            //   dataIndex: "takeProfit",
+            //   key: "takeProfit",
+            //   render: (value) =>  value?.transTime ? moment(value?.transTime).format("YYYY-MM-DD HH:mm") : '-'
+            // },
+        ];
+
+        const historyColumns = [
+            {
+                title: "Тикер",
+                dataIndex: "ticker",
+                key: "ticker"
+            },
+            {
+                title: "Паттерн",
+                dataIndex: "pattern",
+                key: "pattern"
+            },
+            {
+                title: "Тип",
+                dataIndex: "side",
+                key: "side",
+                render: (value, row) => row?.limitTrade?.side || "-"
+            },
+            {
+                title: "Время пересвип",
+                dataIndex: "liquidSweepTime",
+                key: "liquidSweepTime",
+                render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
+            },
+            {
+                title: "Время ОБ",
+                dataIndex: "orderblockTime",
+                key: "orderblockTime",
+                render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
+            },
+            {
+                title: "Цена входа",
+                dataIndex: "limitTrade",
+                key: "limitTrade",
+                render: (value) => value?.price || "-"
+            },
+            {
+                title: "Время входа",
+                dataIndex: "limitTrade",
+                key: "limitTrade",
+                render: (value, row) => row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-"
+            },
+            {
+                title: "Стоп-лосс",
+                dataIndex: "stopLossTrade",
+                key: "stopLossTrade",
+                render: (value, row) => {
+                    if (!value?.price) {
+                        return "-";
+                    }
+                    const percent = row.limitTrade?.price > value?.price ? row.limitTrade?.price / value?.price : value?.price / row.limitTrade?.price
+
+                    return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+                }
+            },
+            {
+                title: "Тейк-профит",
+                dataIndex: "takeProfitTrade",
+                key: "takeProfitTrade",
+                render: (value, row) => {
+                    if (!value?.price) {
+                        return "-";
+                    }
+                    const percent = row.limitTrade?.price > value?.price ? row.limitTrade?.price / value?.price : value?.price / row.limitTrade?.price
+
+                    return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+                }
+            },
+            {
+                title: "Финрез",
+                dataIndex: "PnL",
+                key: "PnL",
+                align: "right",
+                render: (value, row) => row.PnL ? moneyFormat(row.PnL, "RUB", 2, 2) : "-"
+            },
+        ];
+
+        function onSelect(record: any): void {
+            searchParams.set("ticker", record.ticker);
+            searchParams.set("tf", record.timeframe);
+            searchParams.set("liquidSweepTime", record.liquidSweepTime);
+            setSearchParams(searchParams);
         }
-        // {
-        //   title: "takeProfitTime",
-        //   dataIndex: "takeProfit",
-        //   key: "takeProfit",
-        //   render: (value) =>  value?.transTime ? moment(value?.transTime).format("YYYY-MM-DD HH:mm") : '-'
-        // },
-    ];
 
-    const columns = [
-        {
-            title: "Ticker",
-            dataIndex: "ticker",
-            key: "ticker"
-        },
-        {
-            title: "pattern",
-            dataIndex: "pattern",
-            key: "pattern"
-        },
-        {
-            title: "liquidSweepTime",
-            dataIndex: "liquidSweepTime",
-            key: "liquidSweepTime",
-            render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
-        },
-        {
-            title: "orderblockTime",
-            dataIndex: "orderblockTime",
-            key: "orderblockTime",
-            render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
-        },
-        {
-            title: "limit",
-            dataIndex: "limit",
-            key: "limit",
-            render: (value) => value?.price || "-"
-        },
-        {
-            title: "limitTime",
-            dataIndex: "limit",
-            key: "limit",
-            render: (value) => value?.updateTime ? moment(value?.updateTime).format("YYYY-MM-DD HH:mm") : "-"
-        },
-        {
-            title: "stopLoss",
-            dataIndex: "stopLoss",
-            key: "stopLoss",
-            render: (value) => value?.stopPrice || "-"
-        },
-        // {
-        //   title: "stopLossTime",
-        //   dataIndex: "stopLoss",
-        //   key: "stopLoss",
-        //   render: (value) =>  value?.transTime ? moment(value?.transTime).format("YYYY-MM-DD HH:mm") : '-'
-        // },
-        {
-            title: "takeProfit",
-            dataIndex: "takeProfit",
-            key: "takeProfit",
-            render: (value) => value?.stopPrice || "-"
-        }
-        // {
-        //   title: "takeProfitTime",
-        //   dataIndex: "takeProfit",
-        //   key: "takeProfit",
-        //   render: (value) =>  value?.transTime ? moment(value?.transTime).format("YYYY-MM-DD HH:mm") : '-'
-        // },
-    ];
+        const position = useMemo(() => tradesOrdernoMap[selectedPattern?.limitOrderNumber], [selectedPattern, tradesOrdernoMap]);
 
-    const historyColumns = [
-        {
-            title: "Тикер",
-            dataIndex: "ticker",
-            key: "ticker"
-        },
-        {
-            title: "Паттерн",
-            dataIndex: "pattern",
-            key: "pattern"
-        },
-        {
-            title: "Тип",
-            dataIndex: "side",
-            key: "side",
-            render: (value, row) => row?.limitTrade?.side || "-"
-        },
-        {
-            title: "Время пересвип",
-            dataIndex: "liquidSweepTime",
-            key: "liquidSweepTime",
-            render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
-        },
-        {
-            title: "Время ОБ",
-            dataIndex: "orderblockTime",
-            key: "orderblockTime",
-            render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
-        },
-        {
-            title: "Цена входа",
-            dataIndex: "limitTrade",
-            key: "limitTrade",
-            render: (value) => value?.price || "-"
-        },
-        {
-            title: "Время входа",
-            dataIndex: "limitTrade",
-            key: "limitTrade",
-            render: (value, row) => row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-"
-        },
-        {
-            title: "Стоп-лосс",
-            dataIndex: "stopLossTrade",
-            key: "stopLossTrade",
-            render: (value, row) => {
-                if (!value?.price) {
-                    return "-";
+        const stop = useMemo(() => stopordersMap[selectedPattern?.stopOrderNumber], [selectedPattern, stopordersMap]);
+
+        const take = useMemo(() => stopordersMap[selectedPattern?.takeOrderNumber], [selectedPattern, stopordersMap]);
+
+        const onChange = (key: string) => {
+            searchParams.set('tab', key);
+            setSearchParams(searchParams);
+        };
+
+        const positions = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && p.limitTradeId && p.stopLoss?.status === "working"), [patterns]);
+        const orders = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && !p.limitTradeId), [patterns]);
+        const history = useMemo(() => patterns.filter(p => p.takeTradeId || p.stopTradeId).map(row => ({
+            ...row,
+            PnL: row.limitTrade?.side === "buy" ? row.limitTrade?.qtyUnits * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price) : row.limitTrade?.side === "sell" ? row.limitTrade?.qtyUnits * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
+        })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [patterns]);
+
+        const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[selectedPattern?.limitOrderNumber], tradesMap[selectedPattern?.stopTradeId], tradesMap[selectedPattern?.takeTradeId]].filter(Boolean).map(t => ({
+                time: roundTime(t.date, tf, false) * 1000,
+                position: t.side === "buy" ? "belowBar" : "aboveBar",
+                color: t.side === "buy" ? "rgb(19,193,123)" : "rgb(255,117,132)",
+                shape: t.side === "buy" ? "arrowUp" : "arrowDown",
+                // size: t.volume,
+                id: t.id,
+                value: t.price,
+                size: 2
+                // text: `${t.side === Side.Buy ? 'Buy' : 'Sell'} ${t.qty} lots by ${t.price}`
+            }))
+            , [tradesOrdernoMap, selectedPattern, tradesMap]);
+
+        const lastCandle = candles?.[candles?.length - 1];
+
+        const orderBlock = useMemo(() => {
+            if (selectedPattern?.orderblockHigh && selectedPattern?.orderblockLow && selectedPattern?.orderblockTime) {
+                let rightTime;
+                if (position)
+                    rightTime = (roundTime(position.date, tf, false) + Number(tf) * 4) * 1000;
+                if (lastCandle)
+                    rightTime = (roundTime((lastCandle?.time * 1000), tf, false)) * 1000;
+                if (!rightTime) {
+                    return undefined;
                 }
-                const percent = row.limitTrade?.price > value?.price ? row.limitTrade?.price / value?.price : value?.price / row.limitTrade?.price
 
-                return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+                const orderblockTime = new Date(selectedPattern?.orderblockTime).getTime();
+
+                const leftTop = {
+                    price: Number(selectedPattern?.orderblockHigh),
+                    time: (orderblockTime) as Time
+                } as Point
+                const rightBottom = {
+                    time: rightTime,
+                    price: Number(selectedPattern?.orderblockLow)
+                } as Point
+
+                return {leftTop, rightBottom}
             }
-        },
-        {
-            title: "Тейк-профит",
-            dataIndex: "takeProfitTrade",
-            key: "takeProfitTrade",
-            render: (value, row) => {
-                if (!value?.price) {
-                    return "-";
-                }
-                const percent = row.limitTrade?.price > value?.price ? row.limitTrade?.price / value?.price : value?.price / row.limitTrade?.price
 
-                return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
+            return undefined;
+        }, [selectedPattern, position, lastCandle]);
+
+        const imbalance = useMemo(() => {
+            if (selectedPattern?.imbalanceHigh && selectedPattern?.imbalanceLow && selectedPattern?.imbalanceTime && selectedPattern?.orderblockHigh && selectedPattern?.orderblockLow && selectedPattern?.orderblockTime) {
+
+                const orderBlockPrice = selectedPattern?.orderblockLow >= selectedPattern?.imbalanceHigh ? selectedPattern?.orderblockLow : selectedPattern?.orderblockHigh;
+                const imbalancePrice = selectedPattern?.orderblockLow >= selectedPattern?.imbalanceHigh ? selectedPattern?.imbalanceHigh : selectedPattern?.imbalanceLow;
+                const leftTop = {
+                    price: Number(orderBlockPrice),
+                    time: Number(selectedPattern?.orderblockTime) as Time
+                } as Point
+                const rightBottom = {time: Number(selectedPattern?.imbalanceTime), price: Number(imbalancePrice)} as Point
+
+                return {leftTop, rightBottom}
             }
-        },
-        {
-            title: "Финрез",
-            dataIndex: "PnL",
-            key: "PnL",
-            align: "right",
-            render: (value, row) => row.PnL ? moneyFormat(row.PnL, "RUB", 2, 2) : "-"
-        },
-    ];
 
-    function onSelect(record: any): void {
-        searchParams.set("symbol", record.ticker);
-        searchParams.set("tf", record.timeframe);
-        const diff = Number(record.timeframe) / 1800;
-        searchParams.set("from", moment(record.liquidSweepTime).add(-diff, "days").unix().toString());
-        searchParams.set("stopOrderNumber", record.stopOrderNumber);
-        searchParams.set("limitOrderNumber", record.limitOrderNumber);
-        searchParams.set("takeOrderNumber", record.takeOrderNumber);
+            return undefined;
+        }, [selectedPattern]);
 
-        searchParams.set("imbalanceHigh", record.imbalanceHigh);
-        searchParams.set("imbalanceLow", record.imbalanceLow);
-        searchParams.set("imbalanceTime", new Date(record.imbalanceTime).getTime().toString());
+        const items: TabsProps["items"] = [
+            {
+                key: "positions",
+                label: "Позиции",
+                children:
+                    <Table size="small" dataSource={positions} columns={positionsColumns}
+                           onRow={(record) => {
+                               return {
+                                   onClick: () => onSelect(record),
+                                   className: "hoverable",
+                                   style: symbol === record.ticker ? {backgroundColor: "rgba(179, 199, 219, .2)"} : undefined
+                               };
+                           }}/>
+            },
+            {
+                key: "orders",
+                label: "Заявки",
+                children:
+                    <Table size="small" dataSource={orders} columns={columns}
+                           onRow={(record: any) => {
+                               return {
+                                   onClick: () => onSelect(record),
+                                   className: "hoverable",
+                                   style: symbol === record.ticker ? {backgroundColor: "rgba(179, 199, 219, .2)"} : undefined
+                               };
+                           }}/>
+            },
+            {
+                key: "history",
+                label: "История сделок",
+                children:
+                    <Table size="small" dataSource={history} columns={historyColumns as any} rowKey={getPatternKey}
+                           pagination={{
+                               pageSize: 14,
+                           }}
+                           onRow={(record) => {
+                               return {
+                                   style: symbol === record.ticker ? {backgroundColor: "rgba(179, 199, 219, .2)"} : record.PnL < 0 ? {
+                                       backgroundColor: "#d1261b66",
+                                       color: "rgb(255, 117, 132)"
+                                   } : record.PnL > 0 ? {
+                                       backgroundColor: "#15785566",
+                                       color: "rgb(44, 232, 156)"
+                                   } : undefined,
+                                   onClick: () => onSelect(record),
+                                   className: "hoverable",
+                               };
+                           }}/>
+            }
+        ];
 
-        searchParams.set("orderblockOpen", record.orderblockOpen);
-        searchParams.set("orderblockHigh", record.orderblockHigh);
-        searchParams.set("orderblockLow", record.orderblockLow);
-        searchParams.set("orderblockTime", new Date(record.orderblockTime).getTime().toString());
+        const totalPnL = history.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0); // useMemo(() => history.filter(p => p.PnL && !blacklist[getPatternKey(p)]).reduce((acc, curr) => acc + curr.PnL, 0), [history, blacklist]);
+        const losses = history.filter(p => p.PnL < 0).length
+        // useMemo(() => history.filter(p => p.PnL < 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
+        const profits = history.filter(p => p.PnL > 0).length
+        // useMemo(() => history.filter(p => p.PnL > 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
 
-        searchParams.set("stopTradeId", record.stopTradeId);
-        searchParams.set("limitTradeId", record.limitTradeId);
-        searchParams.set("takeTradeId", record.takeTradeId);
-        setSearchParams(searchParams);
+        const emas = [{
+            array: data.ema20, color: 'rgba(255, 0, 0, 0.65)', title: 'ema20'
+        }, {
+            array: data.ema50, color: 'rgba(255, 127, 0, 0.65)', title: 'ema50'
+        }, {
+            array: data.ema100, color: 'rgba(0, 255, 255, 0.65)', title: 'ema100'
+        }, {
+            array: data.ema200, color: 'rgba(0, 0, 255, 0.65)', title: 'ema200'
+        }];
+
+        return (
+            <Layout>
+                <Content
+                    style={{
+                        padding: 24,
+                        margin: 0,
+                        minHeight: 280,
+                        background: colorBgContainer,
+                        borderRadius: borderRadiusLG
+                    }}
+                >
+                    <Space direction="vertical" style={{width: '100%'}}>
+                        <Row gutter={8}>
+                            <Col span={8}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Общий финрез"
+                                        value={moneyFormat(totalPnL, 'RUB', 2, 2)}
+                                        precision={2}
+                                        valueStyle={{color: totalPnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col span={8}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Прибыльных сделок"
+                                        value={profits}
+                                        valueStyle={{color: "rgb(44, 232, 156)"}}
+                                        suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col span={8}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Убыточных сделок"
+                                        value={losses}
+                                        valueStyle={{color: "rgb(255, 117, 132)"}}
+                                        suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
+                                    />
+                                </Card>
+                            </Col>
+                        </Row>
+                        <div style={{display: 'grid', gridTemplateColumns: 'auto 1000px', gap: '8px'}}>
+                            <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
+                                            markers={markers}
+                                            orderBlock={orderBlock}
+                                            imbalance={imbalance}
+                                            position={position}/>
+                            <Tabs defaultActiveKey="positions" activeKey={tab} items={items} onChange={onChange}/>
+                        </div>
+                    </Space>
+                </Content>
+            </Layout>
+        );
     }
+;
 
-    // const position = useMemo(() => portfolio?.positions?.find(p => p.symbol === symbol), [symbol, portfolio?.positions]);
-    const position = useMemo(() => tradesOrdernoMap[limitOrderNumber], [limitOrderNumber, tradesOrdernoMap]);
-
-    // const stop = useMemo(() => portfolio?.stoporders?.find(p => p.symbol === symbol && p.status === "working" && (p.side === "buy" ? p.condition === "LessOrEqual" : p.condition === "MoreOrEqual")), [symbol, portfolio?.positions]);
-
-    // const take = useMemo(() => portfolio?.stoporders?.find(p => p.symbol === symbol && p.status === "working" && (p.side === "sell" ? p.condition === "LessOrEqual" : p.condition === "MoreOrEqual")), [symbol, portfolio?.positions]);
-
-    const stop = useMemo(() => stopordersMap[stopOrderNumber], [stopOrderNumber, stopordersMap]);
-
-    const take = useMemo(() => stopordersMap[takeOrderNumber], [takeOrderNumber, stopordersMap]);
-
-    const onChange = (key: string) => {
-        searchParams.set('tab', key);
-        setSearchParams(searchParams);
-    };
-
-    const positions = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && p.limitTradeId && p.stopLoss?.status === "working"), [patterns]);
-    const orders = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && !p.limitTradeId), [patterns]);
-    const history = useMemo(() => patterns.filter(p => p.takeTradeId || p.stopTradeId).map(row => ({
-        ...row,
-        PnL: row.limitTrade?.side === "buy" ? row.limitTrade?.qtyUnits * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price) : row.limitTrade?.side === "sell" ? row.limitTrade?.qtyUnits * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
-    })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [patterns]);
-
-    const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[limitOrderNumber], tradesMap[stopTradeId], tradesMap[takeTradeId]].filter(Boolean).map(t => ({
-            time: roundTime(t.date, tf, false) * 1000,
-            position: t.side === "buy" ? "belowBar" : "aboveBar",
-            color: t.side === "buy" ? "rgb(19,193,123)" : "rgb(255,117,132)",
-            shape: t.side === "buy" ? "arrowUp" : "arrowDown",
-            // size: t.volume,
-            id: t.id,
-            value: t.price,
-            size: 2
-            // text: `${t.side === Side.Buy ? 'Buy' : 'Sell'} ${t.qty} lots by ${t.price}`
-        }))
-        , [tradesOrdernoMap, limitOrderNumber, stopTradeId, takeTradeId, tradesMap]);
-
-    const lastCandle = candles?.[candles?.length - 1];
-
-    const orderBlock = useMemo(() => {
-        if (orderblockHigh && orderblockLow && orderblockTime) {
-            let rightTime;
-            if(position)
-                rightTime = (roundTime(position.date, tf, false) + Number(tf) * 4) * 1000;
-            if(lastCandle)
-                rightTime = (roundTime((lastCandle?.time * 1000), tf, false)) * 1000;
-            if(!rightTime){
-                return undefined;
-            }
-
-            const leftTop = {price: Number(orderblockHigh), time: Number(orderblockTime) as Time} as Point
-            const rightBottom = {
-                time: rightTime,
-                price: Number(orderblockLow)
-            } as Point
-
-            return {leftTop, rightBottom}
-        }
-
-        return undefined;
-    }, [orderblockHigh, orderblockLow, orderblockTime, position, lastCandle]);
-
-    const imbalance = useMemo(() => {
-        if (imbalanceHigh && imbalanceLow && imbalanceTime && orderblockHigh && orderblockLow && orderblockTime) {
-
-            const orderBlockPrice = orderblockLow >= imbalanceHigh ? orderblockLow : orderblockHigh;
-            const imbalancePrice = orderblockLow >= imbalanceHigh ? imbalanceHigh : imbalanceLow;
-            const leftTop = {price: Number(orderBlockPrice), time: Number(orderblockTime) as Time} as Point
-            const rightBottom = {time: Number(imbalanceTime), price: Number(imbalancePrice)} as Point
-
-            return {leftTop, rightBottom}
-        }
-
-        return undefined;
-    }, [imbalanceHigh, imbalanceLow, imbalanceTime, orderblockHigh, orderblockLow, orderblockTime]);
-
-    const items: TabsProps["items"] = [
-        {
-            key: "positions",
-            label: "Позиции",
-            children:
-                <Table size="small" dataSource={positions} columns={positionsColumns}
-                       onRow={(record) => {
-                           return {
-                               onClick: () => onSelect(record),
-                               className: "hoverable",
-                               style: symbol === record.ticker ? {backgroundColor: "rgba(179, 199, 219, .2)"} : undefined
-                           };
-                       }}/>
-        },
-        {
-            key: "orders",
-            label: "Заявки",
-            children:
-                <Table size="small" dataSource={orders} columns={columns}
-                       onRow={(record: any) => {
-                           return {
-                               onClick: () => onSelect(record),
-                               className: "hoverable",
-                               style: symbol === record.ticker ? {backgroundColor: "rgba(179, 199, 219, .2)"} : undefined
-                           };
-                       }}/>
-        },
-        {
-            key: "history",
-            label: "История сделок",
-            children:
-                <Table size="small" dataSource={history} columns={historyColumns as any} rowKey={getPatternKey}
-                       pagination={{
-                           pageSize: 14,
-                       }}
-                       onRow={(record) => {
-                           return {
-                               style: symbol === record.ticker ? {backgroundColor: "rgba(179, 199, 219, .2)"} : record.PnL < 0 ? {
-                                   backgroundColor: "#d1261b66",
-                                   color: "rgb(255, 117, 132)"
-                               } : record.PnL > 0 ? {
-                                   backgroundColor: "#15785566",
-                                   color: "rgb(44, 232, 156)"
-                               } : undefined,
-                               onClick: () => onSelect(record),
-                               className: "hoverable",
-                           };
-                       }}/>
-        }
-    ];
-
-    const totalPnL = history.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0); // useMemo(() => history.filter(p => p.PnL && !blacklist[getPatternKey(p)]).reduce((acc, curr) => acc + curr.PnL, 0), [history, blacklist]);
-    const losses = history.filter(p => p.PnL < 0).length
-    // useMemo(() => history.filter(p => p.PnL < 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
-    const profits = history.filter(p => p.PnL > 0).length
-    // useMemo(() => history.filter(p => p.PnL > 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
-
-    const emas = [{
-        array: data.ema20, color: 'rgba(255, 0, 0, 0.65)', title: 'ema20'
-    }, {
-        array: data.ema50, color: 'rgba(255, 127, 0, 0.65)', title: 'ema50'
-    }, {
-        array: data.ema100, color: 'rgba(0, 255, 255, 0.65)', title: 'ema100'
-    }, {
-        array: data.ema200, color: 'rgba(0, 0, 255, 0.65)', title: 'ema200'
-    }];
-
-    return (
-        <Layout>
-            <Content
-                style={{
-                    padding: 24,
-                    margin: 0,
-                    minHeight: 280,
-                    background: colorBgContainer,
-                    borderRadius: borderRadiusLG
-                }}
-            >
-                <Space direction="vertical" style={{width: '100%'}}>
-                    <Row gutter={8}>
-                        <Col span={8}>
-                            <Card bordered={false}>
-                                <Statistic
-                                    title="Общий финрез"
-                                    value={moneyFormat(totalPnL, 'RUB', 2, 2)}
-                                    precision={2}
-                                    valueStyle={{color: totalPnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={8}>
-                            <Card bordered={false}>
-                                <Statistic
-                                    title="Прибыльных сделок"
-                                    value={profits}
-                                    valueStyle={{color: "rgb(44, 232, 156)"}}
-                                    suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={8}>
-                            <Card bordered={false}>
-                                <Statistic
-                                    title="Убыточных сделок"
-                                    value={losses}
-                                    valueStyle={{color: "rgb(255, 117, 132)"}}
-                                    suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
-                                />
-                            </Card>
-                        </Col>
-                    </Row>
-                    <div style={{display: 'grid', gridTemplateColumns: 'auto 1000px', gap: '8px'}}>
-                        <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
-                                        markers={markers}
-                                        orderBlock={orderBlock}
-                                        imbalance={imbalance}
-                                        position={position}/>
-                        <Tabs defaultActiveKey="positions" activeKey={tab} items={items} onChange={onChange}/>
-                    </div>
-                </Space>
-            </Content>
-        </Layout>
-    );
-}
-    ;
-
-    export default App;
+export default App;
