@@ -488,44 +488,60 @@ const App: React.FC = () => {
 
         const columns = [
             {
-                title: "Ticker",
+                title: "Тикер",
                 dataIndex: "ticker",
                 key: "ticker"
             },
             {
-                title: "pattern",
+                title: "Паттерн",
                 dataIndex: "pattern",
                 key: "pattern"
             },
             {
-                title: "liquidSweepTime",
+                title: "Время пересвипа",
                 dataIndex: "liquidSweepTime",
                 key: "liquidSweepTime",
                 render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
             },
             {
-                title: "orderblockTime",
+                title: "Время ОБ",
                 dataIndex: "orderblockTime",
                 key: "orderblockTime",
                 render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
             },
             {
-                title: "limit",
+                title: "Вход",
                 dataIndex: "limit",
                 key: "limit",
                 render: (value) => value?.price || "-"
             },
             {
-                title: "limitTime",
+                title: "Время",
                 dataIndex: "limit",
                 key: "limit",
                 render: (value) => value?.updateTime ? moment(value?.updateTime).format("YYYY-MM-DD HH:mm") : "-"
             },
             {
-                title: "stopLoss",
+                title: "Стоп-лосс",
                 dataIndex: "stopLoss",
                 key: "stopLoss",
-                render: (value) => value?.stopPrice || "-"
+                render: (value, row) => {
+                    if (!value?.stopPrice) {
+                        return "-";
+                    }
+                    // const orderblockOpen = Number(row.orderblockOpen);
+                    // const imbalanceOpen = Number(row.imbalanceOpen);
+                    const limitOrder = ordersMap[Number(row.limitOrderNumber)]
+                    const side = limitOrder.side; //  orderblockOpen < imbalanceOpen ? 'buy' : 'sell';
+                    const openPrice = side === 'buy' ? Number(row.orderblockHigh) : Number(row.orderblockLow);
+                    const stopLoss = value?.stopPrice
+
+                    const percent = side === 'buy' ? openPrice / stopLoss : stopLoss / openPrice
+
+                    const PnL = side === 'buy' ? openPrice - stopLoss : stopLoss - openPrice;
+
+                    return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%) (${moneyFormat(PnL * (limitOrder?.qtyUnits), 'RUB', 2, 2)})`;
+                }
             },
             // {
             //   title: "stopLossTime",
