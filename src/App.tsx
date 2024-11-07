@@ -796,7 +796,7 @@ const App: React.FC = () => {
                            }}
                            onRow={(record) => {
                                return {
-                                   style: symbol === record.ticker ? {backgroundColor: "rgba(179, 199, 219, .2)"} : record.PnL < 0 ? {
+                                   style: getPatternKey(selectedPattern) === getPatternKey(record) ? {backgroundColor: "rgba(179, 199, 219, .2)"} : record.PnL < 0 ? {
                                        backgroundColor: "#d1261b66",
                                        color: "rgb(255, 117, 132)"
                                    } : record.PnL > 0 ? {
