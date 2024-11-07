@@ -14,7 +14,6 @@ import {
 } from "lightweight-charts";
 import moment from "moment";
 import {useSearchParams} from "react-router-dom";
-import dayjs from "dayjs";
 import {Point, Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool.ts";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions.ts";
 
@@ -332,24 +331,6 @@ const App: React.FC = () => {
             liquidSweepTime: searchParams.get("liquidSweepTime")
         })
 
-        const {
-            data = {
-                candles: {
-                    history: []
-                }
-            }
-        } = useCandlesQuery({
-            symbol,
-            tf,
-            emaPeriod: 100,
-            from: moment(searchParams.get("liquidSweepTime")).add(-(Number(searchParams.get("tf")) / 1800), "days").unix().toString()
-        }, {
-            skip: !symbol || !searchParams.get("liquidSweepTime") || !searchParams.get("tf"),
-            pollingInterval: 10000,
-        });
-
-        const candles = data.candles.history;
-
         const {data: portfolio = {}} = usePortfolioQuery(undefined, {
             pollingInterval: 10000
         });
@@ -370,7 +351,7 @@ const App: React.FC = () => {
         }, {}) || {}, [portfolio?.trades]);
 
         const accTradesOrdernoQtyMap = useMemo(() => portfolio?.trades?.reduce((acc, curr) => {
-            if(!acc[curr.orderno] ){
+            if (!acc[curr.orderno]) {
                 acc[curr.orderno] = 0;
             }
             acc[curr.orderno] += curr.qtyUnits;
@@ -394,6 +375,44 @@ const App: React.FC = () => {
         })), [portfolio.patterns, stopordersMap, ordersMap, tradesMap]);
 
         const selectedPattern = useMemo(() => patterns.find(p => getPatternKey(p) === selectedKey), [selectedKey, patterns])
+
+    const to = useMemo(() => {
+        if(!selectedPattern){
+            return undefined;
+        }
+        if(selectedPattern.takeProfitTrade){
+            return moment(selectedPattern.takeProfitTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+        }
+        if(selectedPattern.stopLossTrade){
+            return moment(selectedPattern.stopLossTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+        }
+        if(selectedPattern.takeProfit){
+            return moment(selectedPattern.takeProfit.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+        }
+        if(selectedPattern.stopLoss){
+            return moment(selectedPattern.stopLoss.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+        }
+        return undefined;
+    }, [selectedPattern]);
+
+        const {
+            data = {
+                candles: {
+                    history: []
+                }
+            }
+        } = useCandlesQuery({
+            symbol,
+            tf,
+            emaPeriod: 100,
+            from: moment(selectedPattern?.liquidSweepTime).add(-(Number(selectedPattern?.timeframe) / 1800), "days").unix().toString(),
+            to
+        }, {
+            skip: !symbol || !selectedPattern,
+            pollingInterval: 10000,
+        });
+
+        const candles = data.candles.history;
 
         const props = {
             colors: {
