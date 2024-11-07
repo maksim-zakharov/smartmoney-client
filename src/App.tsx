@@ -581,31 +581,31 @@ const App: React.FC = () => {
                 render: (value, row) => row?.limitTrade?.side || "-"
             },
             {
-                title: "Время пересвип",
+                title: "Пересвип",
                 dataIndex: "liquidSweepTime",
                 key: "liquidSweepTime",
                 render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
             },
             {
-                title: "Время ОБ",
+                title: "ОБ",
                 dataIndex: "orderblockTime",
                 key: "orderblockTime",
                 render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
             },
             {
-                title: "Цена входа",
+                title: "Вход",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
                 render: (value) => value?.price || "-"
             },
             {
-                title: "Время входа",
+                title: "Время",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
                 render: (value, row) => row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-"
             },
             {
-                title: "Стоп-лосс",
+                title: "Стоп цена",
                 dataIndex: "stopLossTrade",
                 key: "stopLossTrade",
                 render: (value, row) => {
@@ -618,7 +618,13 @@ const App: React.FC = () => {
                 }
             },
             {
-                title: "Тейк-профит",
+                title: "Стоп время",
+                dataIndex: "stopLossTrade",
+                key: "stopLossTrade",
+                render: (value, row) => value?.date ? moment(value?.date).format("YYYY-MM-DD HH:mm") : "-"
+            },
+            {
+                title: "Тейк цена",
                 dataIndex: "takeProfitTrade",
                 key: "takeProfitTrade",
                 render: (value, row) => {
@@ -629,6 +635,12 @@ const App: React.FC = () => {
 
                     return `${value?.price} (${((percent - 1) * 100).toFixed(2)}%)`;
                 }
+            },
+            {
+                title: "Тейк время",
+                dataIndex: "takeProfitTrade",
+                key: "takeProfitTrade",
+                render: (value, row) => value?.date ? moment(value?.date).format("YYYY-MM-DD HH:mm") : "-"
             },
             {
                 title: "Финрез",
@@ -761,7 +773,7 @@ const App: React.FC = () => {
                 children:
                     <Table size="small" dataSource={history} columns={historyColumns as any} rowKey={getPatternKey}
                            pagination={{
-                               pageSize: 14,
+                               pageSize: 16,
                            }}
                            onRow={(record) => {
                                return {
@@ -799,7 +811,7 @@ const App: React.FC = () => {
             <Layout>
                 <Content
                     style={{
-                        padding: 24,
+                        padding: 8,
                         margin: 0,
                         minHeight: 280,
                         background: colorBgContainer,
@@ -839,7 +851,7 @@ const App: React.FC = () => {
                                 </Card>
                             </Col>
                         </Row>
-                        <div style={{display: 'grid', gridTemplateColumns: 'auto 1000px', gap: '8px'}}>
+                        <div style={{display: 'grid', gridTemplateColumns: 'auto 1100px', gap: '8px'}}>
                             <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
                                             markers={markers}
                                             orderBlock={orderBlock}
