@@ -376,24 +376,24 @@ const App: React.FC = () => {
 
         const selectedPattern = useMemo(() => patterns.find(p => getPatternKey(p) === selectedKey), [selectedKey, patterns])
 
-    const to = useMemo(() => {
-        if(!selectedPattern){
+        const to = useMemo(() => {
+            if (!selectedPattern) {
+                return undefined;
+            }
+            if (selectedPattern.takeProfitTrade) {
+                return moment(selectedPattern.takeProfitTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+            }
+            if (selectedPattern.stopLossTrade) {
+                return moment(selectedPattern.stopLossTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+            }
+            if (selectedPattern.takeProfit) {
+                return moment(selectedPattern.takeProfit.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+            }
+            if (selectedPattern.stopLoss) {
+                return moment(selectedPattern.stopLoss.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+            }
             return undefined;
-        }
-        if(selectedPattern.takeProfitTrade){
-            return moment(selectedPattern.takeProfitTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
-        }
-        if(selectedPattern.stopLossTrade){
-            return moment(selectedPattern.stopLossTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
-        }
-        if(selectedPattern.takeProfit){
-            return moment(selectedPattern.takeProfit.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
-        }
-        if(selectedPattern.stopLoss){
-            return moment(selectedPattern.stopLoss.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
-        }
-        return undefined;
-    }, [selectedPattern]);
+        }, [selectedPattern]);
 
         const {
             data = {
@@ -597,37 +597,40 @@ const App: React.FC = () => {
                 title: "Тип",
                 dataIndex: "side",
                 key: "side",
-                render: (value, row) => row?.limitTrade?.side || "-"
+                render: (value, row) => row?.type !== 'summary' ? row?.limitTrade?.side || "-" : ""
             },
             {
                 title: "Пересвип",
                 dataIndex: "liquidSweepTime",
                 key: "liquidSweepTime",
-                render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
+                render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
             },
             {
                 title: "ОБ",
                 dataIndex: "orderblockTime",
                 key: "orderblockTime",
-                render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
+                render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
             },
             {
                 title: "Вход",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
-                render: (value) => value?.price || "-"
+                render: (value, row) => row?.type !== 'summary' ? value?.price || "-" : ""
             },
             {
                 title: "Время",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
-                render: (value, row) => row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-"
+                render: (value, row) => row?.type !== 'summary' ? row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-" : ""
             },
             {
                 title: "Стоп цена",
                 dataIndex: "stopLossTrade",
                 key: "stopLossTrade",
                 render: (value, row) => {
+                    if (row.type === 'summary') {
+                        return '';
+                    }
                     if (!value?.price) {
                         return "-";
                     }
@@ -640,13 +643,16 @@ const App: React.FC = () => {
                 title: "Стоп время",
                 dataIndex: "stopLossTrade",
                 key: "stopLossTrade",
-                render: (value, row) => value?.date ? moment(value?.date).format("YYYY-MM-DD HH:mm") : "-"
+                render: (value, row) => row?.type !== 'summary' ? value?.date ? moment(value?.date).format("YYYY-MM-DD HH:mm") : "-" : ""
             },
             {
                 title: "Тейк цена",
                 dataIndex: "takeProfitTrade",
                 key: "takeProfitTrade",
                 render: (value, row) => {
+                    if (row.type === 'summary') {
+                        return '';
+                    }
                     if (!value?.price) {
                         return "-";
                     }
@@ -659,7 +665,7 @@ const App: React.FC = () => {
                 title: "Тейк время",
                 dataIndex: "takeProfitTrade",
                 key: "takeProfitTrade",
-                render: (value, row) => value?.date ? moment(value?.date).format("YYYY-MM-DD HH:mm") : "-"
+                render: (value, row) => row?.type !== 'summary' ? value?.date ? moment(value?.date).format("YYYY-MM-DD HH:mm") : "-" : ""
             },
             {
                 title: "Финрез",
@@ -671,6 +677,9 @@ const App: React.FC = () => {
         ];
 
         function onSelect(record: any): void {
+            if (record.type === 'summary') {
+                return;
+            }
             searchParams.set("ticker", record.ticker);
             searchParams.set("tf", record.timeframe);
             searchParams.set("liquidSweepTime", record.liquidSweepTime);
@@ -694,6 +703,41 @@ const App: React.FC = () => {
             ...row,
             PnL: row.limitTrade?.side === "buy" ? accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price) : row.limitTrade?.side === "sell" ? accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
         })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [accTradesOrdernoQtyMap, patterns]);
+
+        const historyTableData = useMemo(() => {
+            let data = history.map((p: any) => ({
+                ...p,
+                id: getPatternKey(p),
+            }));
+
+            const dayPositionsWithSummaryMap = {};
+            for (let i = 0; i < data.length; i++) {
+                const currentDay = moment(data[i].limitTrade?.date).format(
+                    'YYYY-MM-DD',
+                );
+                if (!dayPositionsWithSummaryMap[currentDay]) {
+                    const currentDayPositions = data.filter(
+                        (p) => moment(p.limitTrade?.date).format('YYYY-MM-DD') === currentDay,
+                    );
+
+                    dayPositionsWithSummaryMap[currentDay] = [
+                        {
+                            type: 'summary',
+                            PnL: summ(currentDayPositions.map((p) => p.PnL)),
+                            openDate: currentDay
+                        },
+                    ];
+                    dayPositionsWithSummaryMap[currentDay].push(...currentDayPositions);
+                }
+            }
+
+            data = Object.entries(dayPositionsWithSummaryMap)
+                .sort((a, b) => b[0].localeCompare(a[0]))
+                .map(([key, value]) => value)
+                .flat();
+
+            return data;
+        }, [history]);
 
         const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[selectedPattern?.limitOrderNumber], tradesMap[selectedPattern?.stopTradeId], tradesMap[selectedPattern?.takeTradeId]].filter(Boolean).map(t => ({
                 time: roundTime(t.date, tf, false) * 1000,
@@ -796,7 +840,7 @@ const App: React.FC = () => {
                 key: "history",
                 label: "История сделок",
                 children:
-                    <Table size="small" dataSource={history} columns={historyColumns as any} rowKey={getPatternKey}
+                    <Table size="small" dataSource={historyTableData} columns={historyColumns as any} rowKey={getPatternKey}
                            pagination={{
                                pageSize: 16,
                            }}
@@ -890,5 +934,7 @@ const App: React.FC = () => {
         );
     }
 ;
+export const summ = (numbers: number[]) =>
+    numbers.reduce((acc, curr) => acc + curr, 0);
 
 export default App;
