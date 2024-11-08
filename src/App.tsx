@@ -551,6 +551,9 @@ const App: React.FC = () => {
                     // const orderblockOpen = Number(row.orderblockOpen);
                     // const imbalanceOpen = Number(row.imbalanceOpen);
                     const limitOrder = ordersMap[Number(row.limitOrderNumber)]
+                    if(!limitOrder){
+                        return "-";
+                    }
                     const side = limitOrder.side; //  orderblockOpen < imbalanceOpen ? 'buy' : 'sell';
                     const openPrice = side === 'buy' ? Number(row.orderblockHigh) : Number(row.orderblockLow);
                     const stopLoss = value?.stopPrice
