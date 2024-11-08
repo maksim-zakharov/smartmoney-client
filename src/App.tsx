@@ -765,6 +765,9 @@ const App: React.FC = () => {
                 label: "Позиции",
                 children:
                     <Table size="small" dataSource={positions} columns={positionsColumns}
+                           pagination={{
+                               pageSize: 16,
+                           }}
                            onRow={(record) => {
                                return {
                                    onClick: () => onSelect(record),
@@ -778,6 +781,9 @@ const App: React.FC = () => {
                 label: "Заявки",
                 children:
                     <Table size="small" dataSource={orders} columns={columns}
+                           pagination={{
+                               pageSize: 16,
+                           }}
                            onRow={(record: any) => {
                                return {
                                    onClick: () => onSelect(record),
