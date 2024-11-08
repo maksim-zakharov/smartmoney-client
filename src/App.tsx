@@ -621,7 +621,7 @@ const App: React.FC = () => {
                 title: "Время",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
-                render: (value, row) => row?.type !== 'summary' ? row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-" : ""
+                render: (value, row) => row?.type !== 'summary' ? row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-" : moment(row?.openDate).format('LL')
             },
             {
                 title: "Стоп цена",
