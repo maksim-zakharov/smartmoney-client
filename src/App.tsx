@@ -317,7 +317,7 @@ const App: React.FC = () => {
             token: {colorBgContainer, borderRadiusLG}
         } = theme.useToken();
 
-        const getPatternKey = useCallback(pattern => `${pattern?.ticker}_${pattern?.timeframe}_${pattern?.liquidSweepTime}`, []);
+        const getPatternKey = useCallback(pattern => pattern.type === 'summary' ? pattern.openDate : `${pattern?.ticker}_${pattern?.timeframe}_${pattern?.liquidSweepTime}`, []);
 
         const [searchParams, setSearchParams] = useSearchParams();
         const symbol = searchParams.get("ticker") || "SBER";
