@@ -624,12 +624,29 @@ const App: React.FC = () => {
                 title: "Время",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
-                render: (value, row) => row?.type !== 'summary' ? row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-" : moment(row?.openDate).format('LL')
+                // colSpan: 2,
+                onCell: (row, index) => ({
+                    colSpan: row.type === 'summary' ? 3 : 1,
+                }),
+                render: (value, row) => {
+                    if(row?.type !== 'summary'){
+                        return row?.limitTrade?.date ? moment(row?.limitTrade?.date).format("YYYY-MM-DD HH:mm") : "-"
+                    }
+
+                    const formatDate = moment(row?.openDate).format('LL');
+
+                    const percent = row.stats.profitTrades.length * 100 / (row.stats.profitTrades.length + row.stats.lossTrades.length)
+
+                    return  `${formatDate} Profits: ${row.stats.profitTrades.length} / Losses: ${row.stats.lossTrades.length} (Profit rate: ${percent.toFixed(0)}%)`
+                }
             },
             {
                 title: "Стоп цена",
                 dataIndex: "stopLossTrade",
                 key: "stopLossTrade",
+                onCell: (row, index) => ({
+                    colSpan: row.type === 'summary' ? 0 : 1,
+                }),
                 render: (value, row) => {
                     if (row.type === 'summary') {
                         return '';
@@ -646,6 +663,9 @@ const App: React.FC = () => {
                 title: "Стоп время",
                 dataIndex: "stopLossTrade",
                 key: "stopLossTrade",
+                onCell: (row, index) => ({
+                    colSpan: row.type === 'summary' ? 0 : 1,
+                }),
                 render: (value, row) => row?.type !== 'summary' ? value?.date ? moment(value?.date).format("YYYY-MM-DD HH:mm") : "-" : ""
             },
             {
@@ -723,11 +743,18 @@ const App: React.FC = () => {
                         (p) => moment(p.limitTrade?.date).format('YYYY-MM-DD') === currentDay,
                     );
 
+                    const profitTrades = currentDayPositions.filter(p => p.PnL > 0);
+                    const lossTrades = currentDayPositions.filter(p => p.PnL < 0);
+
                     dayPositionsWithSummaryMap[currentDay] = [
                         {
                             type: 'summary',
                             PnL: summ(currentDayPositions.map((p) => p.PnL)),
-                            openDate: currentDay
+                            openDate: currentDay,
+                            stats: {
+                                profitTrades,
+                                lossTrades
+                            }
                         },
                     ];
                     dayPositionsWithSummaryMap[currentDay].push(...currentDayPositions);
