@@ -5,6 +5,7 @@ function Max(...numbers: number[]) {
 function Min(...numbers: number[]) {
     return Math.min(...numbers);
 }
+
 class double {
     static nan = [];
 }
@@ -86,13 +87,38 @@ function CrossUnder(source1: number[], source2: number[], index: number = 0, off
     return IsCross(CrossEnum.Down, source1, source2, index, offset1, offset2);
 }
 
+class SwingClass {
+    len: number;
+    os: number;
+    old_os: number;
+    owner: { High: number[], Low: number[] } = {High: [], Low: []};
+
+    constructor(candles: { high: number, low: number }[]) {
+        const highs = candles.map((price) => price.high);
+        const lows = candles.map((price) => price.low);
+        this.owner.High = highs;
+        this.owner.Low = lows;
+    }
+
+    doCalc(top: number, btm: number, len: number, upper: number, lower: number) {
+        this.os = this.owner.High[len] > upper ? 0 : (this.owner.Low[len] < lower ? 1 : this.old_os);
+        top = this.os != 0 || this.old_os == 0 ? 0 : this.owner.High[len];
+        btm = this.os != 1 || this.old_os == 1 ? 0 : this.owner.Low[len];
+        this.old_os = this.os;
+
+        return {top, btm};
+    }
+}
+
 function swings(len: number = 5, candles: { high: number, low: number }[]) {
     const highs = candles.map((price) => price.high);
     const lows = candles.map((price) => price.low);
 
-    const os = new Array(len).fill(0);
-    const _top = new Array(len).fill(0);
-    const btm = new Array(len).fill(0);
+    const os = new Structure(0, 0); //   new Array<number>(len).fill(0);
+    const _top = new Structure(0, 0);// new Array<number>(len).fill(0);
+    const btm = new Structure(0, 0);// new Array<number>(len).fill(0);
+
+    // const swing = new SwingClass(candles);
 
     // Инициализация состояния os для первого периода
     // os[0] = undefined;
@@ -102,32 +128,37 @@ function swings(len: number = 5, candles: { high: number, low: number }[]) {
         const highestHigh = Math.max(...highs.slice(i - len, i));
         const lowestLow = Math.min(...lows.slice(i - len, i));
 
-        if (highs[i] > highestHigh) {
-            os[i] = 0; // Обновляем состояние на 0 (перелом вверх)
-        } else if (lows[i] < lowestLow) {
-            os[i] = 1; // Обновляем состояние на 1 (перелом вниз)
-        } else {
-            os[i] = os[i - 1]; // Сохраняем предыдущее состояние
-        }
+        // const {top, btm: _btm} = swing.doCalc(_top[i], btm[i], len, highestHigh, lowestLow);
+        os.add(highs[i] > highestHigh ? 0 : lows[i] < lowestLow ? 1 : os.at(0));
 
         // Определяем top и btm
-        if (os[i] === 0 && os[i - 1] !== 0) {
-            _top[i] = highs[i]; // Отображаем верхнюю точку
+        if (os.at(0) === 0 && os.at(1) !== 0) {
+            _top.add(highs[i]); // Отображаем верхнюю точку
         } else {
-            _top[i] = 0; // Нет верхней точки
+            _top.add(0); // Нет верхней точки
         }
 
-        if (os[i] === 1 && os[i - 1] !== 1) {
-            btm[i] = lows[i]; // Отображаем нижнюю точку
+        if (os.at(0) === 1 && os.at(1) !== 1) {
+            btm.add(lows[i]); // Отображаем нижнюю точку
         } else {
-            btm[i] = 0; // Нет нижней точки
+            btm.add(0); // Нет нижней точки
         }
+
+        // console.log(`Equals: ${i} top:${top === _top[i]} btm:${_btm === btm[i]}`);
+        // _top[i] = top;
+        // btm[i] = _btm;
     }
 
-    return {top: _top, btm};
+    return {top: _top.asArray(), btm: btm.asArray()};
 }
 
-export function calculate(candles: { high: number, low: number, close: number, open: number, time: number }[]) {
+export function calculate(candles: {
+    high: number,
+    low: number,
+    close: number,
+    open: number,
+    time: number
+}[], windowLength?: number) {
     const markers = [];
 
     let colors = {};
@@ -178,10 +209,14 @@ export function calculate(candles: { high: number, low: number, close: number, o
     const low = candles.map((c) => c.low);
     const open = candles.map((c) => c.open);
 
-    const localLength = 5;
+    const localLength = windowLength || 5;
 
     const {top: _top, btm} = swings(length, candles);
     const {top: itop, btm: ibtm} = swings(localLength, candles);
+    console.log("_top", _top)
+    console.log("btm", btm)
+    console.log("itop", itop)
+    console.log("ibtm", ibtm)
 
 
     for (let n = length; n < candles.length; n++) {
@@ -655,5 +690,5 @@ export function calculate(candles: { high: number, low: number, close: number, o
 
     console.log(markers);
 
-    return markers;
+    return {markers, btm, ibtm, _top, itop, top_x, btm_x, itop_x, ibtm_x, ibtm_cross, itop_cross};
 }

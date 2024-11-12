@@ -1,11 +1,12 @@
 import React, {FC, useEffect, useMemo, useRef, useState} from "react";
-import {ColorType, createChart, CrosshairMode} from "lightweight-charts";
+import {ColorType, createChart, CrosshairMode, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts.ts";
+import {Slider} from "antd";
 
 
-const Chart: FC<{ data: any[], ema: any[] }> = ({data, ema}) => {
+const Chart: FC<{ data: any[], ema: any[], windowLength: number }> = ({data, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -36,7 +37,7 @@ const Chart: FC<{ data: any[], ema: any[] }> = ({data, ema}) => {
 
             const chart = createChart(chartContainerRef.current, {
                 crosshair: {
-                    mode: CrosshairMode.Normal
+                    mode: CrosshairMode.Normal,
                 },
                 localization: {
                     locale: "ru-RU",
@@ -114,7 +115,15 @@ const Chart: FC<{ data: any[], ema: any[] }> = ({data, ema}) => {
 
             newSeries.setData(data.map(t => ({...t, time: t.time * 1000})));
 
-            chart.timeScale().fitContent();
+            chart.timeScale()
+            //     .setVisibleLogicalRange({
+            //     from: -200,          // Начало диапазона
+            //     to: -1            // Конец диапазона, большее значение уменьшает масштаб
+            // });//.fitContent();
+        .setVisibleRange({
+                from: moment().add(-1, 'weeks').unix() * 1000,
+                to: moment().unix() * 1000,
+            });
 
             const emaSeries = chart.addLineSeries({
                 color: "rgb(255, 186, 102)",
@@ -126,7 +135,28 @@ const Chart: FC<{ data: any[], ema: any[] }> = ({data, ema}) => {
             // @ts-ignore
             emaSeries.setData(emaSeriesData);
 
-            const markers = calculate(data);
+            const {markers, btm, _top, itop, ibtm, ibtm_x, itop_x, btm_x, top_x, itop_cross, ibtm_cross} = calculate(data, windowLength);
+
+            const btmMarkers = Array.from(new Set(ibtm_cross.asArray())).map((index) => ({
+                time: (data[index]?.time * 1000) as UTCTimestamp,
+                // value: btm_x[index],
+                color: 'rgb(157, 43, 56)',
+                position: 'belowBar',
+                shape: 'arrowUp',
+            }) as SeriesMarker<Time>)
+
+            const topMarkers = data.map(({time}, index) => ({
+                time: (time * 1000) as UTCTimestamp,
+                value: itop[index],
+                color: 'rgb(20, 131, 92)',
+                position: 'aboveBar',
+                shape: 'arrowUp',
+            }) as SeriesMarker<Time>)
+
+            console.log("ibtm_cross", ibtm_cross)
+            console.log("btmMarkers", btmMarkers)
+
+            // newSeries.setMarkers([...btmMarkers])
             newSeries.setMarkers(markers)
 
             window.addEventListener("resize", handleResize);
@@ -137,7 +167,7 @@ const Chart: FC<{ data: any[], ema: any[] }> = ({data, ema}) => {
                 chart.remove();
             };
         },
-        [data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor]
+        [data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength]
     );
 
     return <div
@@ -147,7 +177,7 @@ const Chart: FC<{ data: any[], ema: any[] }> = ({data, ema}) => {
 
 // Функция для получения данных из Alor API
 async function fetchCandlesFromAlor(symbol, tf) {
-    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-11-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-11-21T00:00:00Z").getTime() / 1000)}`;
+    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-10-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-11-21T00:00:00Z").getTime() / 1000)}`;
 
     try {
         const response = await fetch(url, {
@@ -187,6 +217,7 @@ export const TestPage = () => {
 
     const [data, setData] = useState([]);
     const [ema, setEma] = useState([]);
+    const [windowLength, setWindowLength] = useState(5);
     const [searchParams, setSearchParams] = useSearchParams();
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '900';
@@ -201,7 +232,10 @@ export const TestPage = () => {
         fetchCandlesFromAlor(ticker, tf).then(setData);
     }, [tf, ticker]);
 
-    return <Chart data={data} ema={ema}/>
+    return <>
+        {/*<Slider defaultValue={windowLength} onChange={setWindowLength} />*/}
+        <Chart data={data} ema={ema} windowLength={windowLength}/>
+        </>
 }
 
 export default TestPage;
