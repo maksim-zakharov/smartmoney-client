@@ -115,41 +115,22 @@ function swings(len: number = 5, candles: { high: number, low: number }[]) {
     const lows = candles.map((price) => price.low);
 
     const os = new Structure(0, 0); //   new Array<number>(len).fill(0);
-    const _top = new Structure(0, 0);// new Array<number>(len).fill(0);
+    const top = new Structure(0, 0);// new Array<number>(len).fill(0);
     const btm = new Structure(0, 0);// new Array<number>(len).fill(0);
-
-    // const swing = new SwingClass(candles);
-
-    // Инициализация состояния os для первого периода
-    // os[0] = undefined;
 
     // Проходим по данным начиная с индекса len
     for (let i = len; i < candles.length; i++) {
         const highestHigh = Math.max(...highs.slice(i - len, i));
         const lowestLow = Math.min(...lows.slice(i - len, i));
 
-        // const {top, btm: _btm} = swing.doCalc(_top[i], btm[i], len, highestHigh, lowestLow);
         os.add(highs[i] > highestHigh ? 0 : lows[i] < lowestLow ? 1 : os.at(0));
 
         // Определяем top и btm
-        if (os.at(0) === 0 && os.at(1) !== 0) {
-            _top.add(highs[i]); // Отображаем верхнюю точку
-        } else {
-            _top.add(0); // Нет верхней точки
-        }
-
-        if (os.at(0) === 1 && os.at(1) !== 1) {
-            btm.add(lows[i]); // Отображаем нижнюю точку
-        } else {
-            btm.add(0); // Нет нижней точки
-        }
-
-        // console.log(`Equals: ${i} top:${top === _top[i]} btm:${_btm === btm[i]}`);
-        // _top[i] = top;
-        // btm[i] = _btm;
+        top.add(os.at(0) === 0 && os.at(1) !== 0 ? highs[i] : 0)
+        btm.add(os.at(0) === 1 && os.at(1) !== 1 ? lows[i] : 0)
     }
 
-    return {top: _top.asArray(), btm: btm.asArray()};
+    return {top: top.asArray(), btm: btm.asArray()};
 }
 
 export function calculate(candles: {
@@ -539,12 +520,19 @@ export function calculate(candles: {
         //   );
         const InternalBearStructureVal = Max(...plotBearInternalNewFixed.slice(-6));
 
+        const highest = (from, count, key: 'high' | 'low') => {
+
+            const batch = candles.slice(from, from + count).map(c => c[key]);
+
+            return key === 'high' ? Math.max(...batch) : Math.min(...batch);
+        }
+
         console.log('plotBearInternalNewFixed.slice(-6)', plotBearInternalNewFixed);
         console.log('InternalBullStructureVal', InternalBearStructureVal);
         const InternalBearStructure = showInternals
             ? InternalBearStructureVal
-                ? [InternalBearStructureVal] // - 6]
-                : []
+                ? InternalBearStructureVal // highest(InternalBearStructureVal, 6, 'low') // - 6]
+                : 0
             : // ? Displacer(-6, InternalBullStructureVal)
             double.nan;
         // InternalBullStructure.SetDefaultColor(GlobalColor("Internal Bullish"));
@@ -660,7 +648,7 @@ export function calculate(candles: {
             // index > 0,
             // InternalBearStructure > -1,
             // && !IsNan(InternalBearStructure[InternalBearStructure.length - 1 - 4])
-            candles[InternalBearStructure[InternalBearStructure.length - 1]], // last(InternalBearStructure),
+            candles[InternalBearStructure], // last(InternalBearStructure),
             itrend.at(0) === 1
                 ? // || !IsNan(InternalBullStructure[4])
                 'CHoCH'
