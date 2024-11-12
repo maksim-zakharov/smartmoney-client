@@ -333,7 +333,7 @@ export function calculate(candles: {
                 const recentValues = prices.slice(start, i + 1);
 
                 const highestValueIndex = recentValues.reduce((acc, curr, index, items) => {
-                    if(index === 0 || items[index] > items[index - 1]){
+                    if(items[index] > items[index - 1]){
                         acc = index;
                     }
 
@@ -367,7 +367,7 @@ export function calculate(candles: {
                 const recentValues = prices.slice(start, i + 1);
 
                 const highestValueIndex = recentValues.reduce((acc, curr, index, items) => {
-                    if(index === 0 || items[index] > items[index - 1]){
+                    if(items[index] > items[index - 1]){
                         acc = index;
                     }
 
@@ -376,7 +376,7 @@ export function calculate(candles: {
 
                 // Проверка условия: если максимум не равен 0, записываем его, иначе null
                 const internalBearStructureVal = highestValueIndex > -1 ? times[start + highestValueIndex] : null;
-
+// debugger
                 // Смещаем значение internalBullStructureVal назад на 6 периодов, если showInternals включен
                 const displacedIndex = i + 6;
                 if (showInternals && displacedIndex < prices.length) {
@@ -423,7 +423,7 @@ export function calculate(candles: {
             InternalBullStructure.at(0) !== InternalBullStructure.getValue(1)
             && !Number.isNaN(InternalBullStructure.at(4)),
             candles[InternalBullStructure.at(0)],
-            itrend.at(0) === -1 // || !Number.isNaN(InternalBearStructure.at(4))
+            itrend.at(0) === -1 || !InternalBearStructure.at(4)
                 ?
                 'CHoCH'
                 : 'BOS',
@@ -436,7 +436,7 @@ export function calculate(candles: {
             InternalBearStructure.at(0) !== InternalBearStructure.getValue(1)
             && !Number.isNaN(InternalBearStructure.at(4)),
             candles[InternalBearStructure.at(0)],
-            itrend.at(0) === -1 // || !Number.isNaN(InternalBullStructure.at(4))
+            itrend.at(0) === -1 || !InternalBullStructure.at(4)
                 ?
                 'CHoCH'
                 : 'BOS',
