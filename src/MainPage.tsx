@@ -148,8 +148,8 @@ export const ChartComponent = props => {
             });
             newSeries.priceScale().applyOptions({
                 scaleMargins: {
-                    top: 0.1, // highest point of the series will be 10% away from the top
-                    bottom: 0.4, // lowest point will be 40% away from the bottom
+                    top: 0.05, // highest point of the series will be 10% away from the top
+                    bottom: 0.3, // lowest point will be 40% away from the bottom
                 },
             });
 
@@ -235,7 +235,18 @@ export const ChartComponent = props => {
                 emaSeries.setData(momentData);
             })
 
-            chart.timeScale().fitContent();
+            // chart.timeScale().fitContent();
+            chart.timeScale()
+                .setVisibleRange({
+                    from: moment().add(-5, 'days').unix() * 1000,
+                    to: moment().unix() * 1000,
+                });
+
+            chart.applyOptions({
+                timeScale: {
+                    rightOffset: 12,
+                },
+            })
 
 
             if (markers && markers.length > 0) {
