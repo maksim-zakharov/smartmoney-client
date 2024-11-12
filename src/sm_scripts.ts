@@ -61,11 +61,11 @@ class Structure {
         this._data.push(val ?? 0);
     }
 
-    addAt(index: number, val: number){
+    addAt(index: number, val: number) {
         this._data[index] = val;
     }
 
-    displaced(shift: number){
+    displaced(shift: number) {
         const result = new Array(this._data.length).fill(null); // Массив для хранения результата
 
         for (let i = 0; i < this._data.length; i++) {
@@ -111,6 +111,45 @@ function CrossOver(source1: number[], source2: number[], index: number = 0, offs
 
 function CrossUnder(source1: number[], source2: number[], index: number = 0, offset1: number = 0, offset2: number = 0) {
     return IsCross(CrossEnum.Down, source1, source2, index, offset1, offset2);
+}
+
+function Crosses(value1, value2, direction) {
+    // Проверяем, что оба массива имеют одинаковую длину
+    // if (value1.length !== value2.length) {
+    //   // throw new Error('Arrays must have the same length');
+    //   return false;
+    // }
+
+    let result = [];
+
+    for (let i = 1; i < value2.length; i++) {
+        const prevValue1 = value1[i - 1];
+        const currValue1 = value1[i];
+        const prevValue2 = value2[i - 1];
+        const currValue2 = value2[i];
+
+        // Проверка пересечения для направления "above" (снизу вверх)
+        if (
+            direction === 'above' &&
+            prevValue1 < prevValue2 &&
+            currValue1 >= currValue2
+        ) {
+            // result.push({ index: i, type: 'crosses above' });
+            return true;
+        }
+
+        // Проверка пересечения для направления "below" (сверху вниз)
+        if (
+            direction === 'below' &&
+            prevValue1 > prevValue2 &&
+            currValue1 <= currValue2
+        ) {
+            // result.push({ index: i, type: 'crosses below' });
+            return true;
+        }
+    }
+
+    return false;
 }
 
 class SwingClass {
@@ -282,8 +321,8 @@ export function calculate(candles: {
 
         if (
             // Если цена close пересекает линию itop_y снизу верх
-            CrossOver(close, itop_y.asArray()) &&
-            // Crosses(close, itop_y.asArray(), CrossingDirection.ABOVE) &&
+            // CrossOver(close, itop_y.asArray()) &&
+            Crosses(close, itop_y.asArray(), 'above') &&
             // и время прошлого пересечения сверху (x) меньше времени текущего локального перехая (x)
             itop_cross.at(1) < itop_x.at(0) &&
             // и если цена текущего ГЛОБАЛЬНОГО хая не равна цене текущего ЛОКАЛЬНОГО хая
@@ -299,8 +338,8 @@ export function calculate(candles: {
             ibtm_cross.add(ibtm_cross.at(0));
         } else if (
             // Если цена close пересекает линию ibtm_y сверху вниз
-            CrossUnder(close, ibtm_y.asArray()) &&
-            // Crosses(close, ibtm_y.asArray(), CrossingDirection.BELOW) &&
+            // CrossUnder(close, ibtm_y.asArray()) &&
+            Crosses(close, ibtm_y.asArray(), 'below') &&
             // и время прошлого пересечения (x) меньше времени текущего локального перелоя (x)
             ibtm_cross.at(1) < ibtm_x.at(0) &&
             // и если цена текущего ГЛОБАЛЬНОГО лоя не равна цене текущего ЛОКАЛЬНОГО лоя
@@ -333,7 +372,7 @@ export function calculate(candles: {
                 const recentValues = prices.slice(start, i + 1);
 
                 const highestValueIndex = recentValues.reduce((acc, curr, index, items) => {
-                    if(items[index] > items[index - 1]){
+                    if (items[index] > items[index - 1]) {
                         acc = index;
                     }
 
@@ -367,7 +406,7 @@ export function calculate(candles: {
                 const recentValues = prices.slice(start, i + 1);
 
                 const highestValueIndex = recentValues.reduce((acc, curr, index, items) => {
-                    if(items[index] > items[index - 1]){
+                    if (items[index] > items[index - 1]) {
                         acc = index;
                     }
 
@@ -388,7 +427,7 @@ export function calculate(candles: {
         }
 
         const InternalBearStructure = calculateInternalBearStructure(ibtm_x.asArray(), ibtm_y.asArray(), true);
-            console.log('InternalBearStructure', InternalBearStructure);
+        console.log('InternalBearStructure', InternalBearStructure);
 
         function GlobalColor(key) {
             return colors[key];
@@ -417,13 +456,47 @@ export function calculate(candles: {
             }
         }
 
+        const highestCandle = (from: number, offset: number) => {
+            if (from + offset < 0) {
+                return null;
+            }
+            const batch = candles.slice(from + offset, from);
+            const candle = batch.reduce((acc, curr) => {
+                if (!acc) {
+                    acc = curr;
+                } else if (curr.high > acc.high) {
+                    acc = curr;
+                }
+
+                return acc
+            }, null);
+            return candle;
+        }
+        const lowestCandle = (from: number, offset: number) => {
+            if (from + offset < 0) {
+                return null;
+            }
+            const batch = candles.slice(from + offset, from);
+            const candle = batch.reduce((acc, curr) => {
+                if (!acc) {
+                    acc = curr;
+                } else if (curr.low < acc.low) {
+                    acc = curr;
+                }
+
+                return acc
+            }, null);
+            return candle;
+        }
+
         AddChartBubble(
             showInternals &&
             // Отображать только если есть пересечения
-            InternalBullStructure.at(0) !== InternalBullStructure.getValue(1)
-            && !Number.isNaN(InternalBullStructure.at(4)),
-            candles[InternalBullStructure.at(0)],
-            itrend.at(0) === -1 || !InternalBearStructure.at(4)
+            InternalBullStructure.at(0) !== InternalBullStructure.at(1)
+            && InternalBullStructure.at(5),
+            // candles[InternalBullStructure.at(0)],
+            highestCandle(InternalBullStructure.at(1), -6),
+            itrend.at(0) === -1 || InternalBearStructure.at(5)
                 ?
                 'CHoCH'
                 : 'BOS',
@@ -433,10 +506,11 @@ export function calculate(candles: {
         AddChartBubble(
             showInternals &&
             // Отображать только если есть пересечения
-            InternalBearStructure.at(0) !== InternalBearStructure.getValue(1)
-            && !Number.isNaN(InternalBearStructure.at(4)),
-            candles[InternalBearStructure.at(0)],
-            itrend.at(0) === -1 || !InternalBullStructure.at(4)
+            InternalBearStructure.at(0) !== InternalBearStructure.at(1)
+            && InternalBearStructure.at(5),
+            // candles[InternalBearStructure.at(0)],
+            lowestCandle(InternalBearStructure.at(1), -6), // candles[InternalBearStructure.at(0)],
+            itrend.at(0) === 1 || InternalBullStructure.at(5)
                 ?
                 'CHoCH'
                 : 'BOS',
