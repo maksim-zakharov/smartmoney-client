@@ -2,6 +2,7 @@ import React, {FC, useEffect, useMemo, useRef, useState} from "react";
 import {ColorType, createChart, CrosshairMode} from "lightweight-charts";
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
+import {calculate} from "./sm_scripts.ts";
 
 
 const Chart: FC<{ data: any[], ema: any[] }> = ({data, ema}) => {
@@ -124,6 +125,9 @@ const Chart: FC<{ data: any[], ema: any[] }> = ({data, ema}) => {
                 .map((extremum, i) => ({ time: extremum.time * 1000, value: ema[i] }));
             // @ts-ignore
             emaSeries.setData(emaSeriesData);
+
+            const markers = calculate(data);
+            newSeries.setMarkers(markers)
 
             window.addEventListener("resize", handleResize);
 
