@@ -1,12 +1,11 @@
 import React, {FC, useEffect, useMemo, useRef, useState} from "react";
-import {ColorType, createChart, CrosshairMode, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
+import {ColorType, createChart, CrosshairMode, LineStyle, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts.ts";
-import {Slider} from "antd";
 
 
-const Chart: FC<{ data: any[], ema: any[], windowLength: number }> = ({data, ema, windowLength}) => {
+const Chart: FC<{ data: any[], ema: any[], windowLength: number, tf: number }> = ({data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -88,8 +87,8 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number }> = ({data, ema
             });
             newSeries.priceScale().applyOptions({
                 scaleMargins: {
-                    top: 0.1, // highest point of the series will be 10% away from the top
-                    bottom: 0.4, // lowest point will be 40% away from the bottom
+                    top: 0.05, // highest point of the series will be 10% away from the top
+                    bottom: 0.2, // lowest point will be 40% away from the bottom
                 },
             });
 
@@ -116,14 +115,14 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number }> = ({data, ema
             newSeries.setData(data.map(t => ({...t, time: t.time * 1000})));
 
             chart.timeScale()
-            //     .setVisibleLogicalRange({
-            //     from: -200,          // Начало диапазона
-            //     to: -1            // Конец диапазона, большее значение уменьшает масштаб
-            // });//.fitContent();
-        .setVisibleRange({
-                from: moment().add(-1, 'weeks').unix() * 1000,
-                to: moment().unix() * 1000,
-            });
+                //     .setVisibleLogicalRange({
+                //     from: -200,          // Начало диапазона
+                //     to: -1            // Конец диапазона, большее значение уменьшает масштаб
+                // });//.fitContent();
+                .setVisibleRange({
+                    from: moment().add(-5, 'days').unix() * 1000,
+                    to: moment().unix() * 1000,
+                });
 
             const emaSeries = chart.addLineSeries({
                 color: "rgb(255, 186, 102)",
@@ -131,11 +130,23 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number }> = ({data, ema
                 // crossHairMarkerVisible: false
             });
             const emaSeriesData = data
-                .map((extremum, i) => ({ time: extremum.time * 1000, value: ema[i] }));
+                .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i]}));
             // @ts-ignore
             emaSeries.setData(emaSeriesData);
 
-            const {markers, btm, _top, itop, ibtm, ibtm_x, itop_x, btm_x, top_x, itop_cross, ibtm_cross} = calculate(data, windowLength);
+            const {
+                markers,
+                btm,
+                _top,
+                itop,
+                ibtm,
+                ibtm_x,
+                itop_x,
+                btm_x,
+                top_x,
+                itop_cross,
+                ibtm_cross
+            } = calculate(data, windowLength);
 
             const btmMarkers = Array.from(new Set(ibtm_cross.asArray())).map((index) => ({
                 time: (data[index]?.time * 1000) as UTCTimestamp,
@@ -157,7 +168,25 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number }> = ({data, ema
             console.log("btmMarkers", btmMarkers)
 
             // newSeries.setMarkers([...btmMarkers])
-            newSeries.setMarkers(markers)
+            newSeries.setMarkers(markers.sort((a, b) => a.time - b.time))
+
+            const addLine = (price: number, from: UTCTimestamp, to: UTCTimestamp, color: string) => {
+                const lineSeries = chart.addLineSeries({
+                    color, // Цвет линии
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    lineWidth: 1,
+                    lineStyle: LineStyle.LargeDashed,
+                });
+                // debugger
+
+// 5. Устанавливаем данные для линии
+                lineSeries.setData([
+                    {time: from, value: price}, // начальная точка между свечками
+                    {time: to, value: price}, // конечная точка между свечками
+                ]);
+            }
+            markers.forEach(marker => addLine(marker.value, marker.time, marker.time + tf * 10 * 1000, marker.color))
 
             window.addEventListener("resize", handleResize);
 
@@ -167,7 +196,7 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number }> = ({data, ema
                 chart.remove();
             };
         },
-        [data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength]
+        [data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -197,6 +226,7 @@ async function fetchCandlesFromAlor(symbol, tf) {
         console.error("Ошибка получения данных:", error);
     }
 }
+
 function calculateEMA(
     prices,
     period
@@ -234,8 +264,8 @@ export const TestPage = () => {
 
     return <>
         {/*<Slider defaultValue={windowLength} onChange={setWindowLength} />*/}
-        <Chart data={data} ema={ema} windowLength={windowLength}/>
-        </>
+        <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)}/>
+    </>
 }
 
 export default TestPage;
