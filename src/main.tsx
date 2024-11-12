@@ -1,10 +1,9 @@
 import {StrictMode} from "react";
 import {createRoot} from "react-dom/client";
 import "./index.css";
-import App from "./App";
 import {Provider} from "react-redux";
 import {store} from "./store";
-import {BrowserRouter} from "react-router-dom";
+import {HashRouter} from "react-router-dom";
 import 'moment/locale/ru'
 import moment from "moment"; // without this line it didn't work
 import ru_RU from 'antd/es/locale/ru_RU';
@@ -12,6 +11,7 @@ import updateLocale from "dayjs/plugin/updateLocale";
 import {ConfigProvider} from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
+import App from "./App.tsx";
 
 dayjs.extend(updateLocale);
 dayjs.updateLocale("zh-cn", {
@@ -22,7 +22,7 @@ moment().locale('ru');
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <BrowserRouter>
+        <HashRouter>
             <Provider store={store}>
                 <ConfigProvider locale={ru_RU}
                                 theme={{
@@ -46,6 +46,6 @@ createRoot(document.getElementById("root")!).render(
                     <App/>
                 </ConfigProvider>
             </Provider>
-        </BrowserRouter>
+        </HashRouter>
     </StrictMode>
 );
