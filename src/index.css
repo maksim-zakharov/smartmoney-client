@@ -3,7 +3,7 @@ body {
 }
 
 .ant-layout-content {
-    height: 100vh;
+    height: calc(100vh - 36px);
     padding: 24px;
     overflow: auto;
 }
