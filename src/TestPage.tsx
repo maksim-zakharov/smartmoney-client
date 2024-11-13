@@ -3,9 +3,19 @@ import {ColorType, createChart, CrosshairMode, LineStyle, SeriesMarker, Time, UT
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts.ts";
+import {Checkbox} from "antd";
 
 
-const Chart: FC<{ data: any[], ema: any[], windowLength: number, tf: number }> = ({data, tf, ema, windowLength}) => {
+const Chart: FC<{
+    crosses?: boolean,
+    smPatterns?: boolean,
+    lines?: boolean,
+    extremums?: boolean,
+    data: any[],
+    ema: any[],
+    windowLength: number,
+    tf: number
+}> = ({crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -114,16 +124,6 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number, tf: number }> =
 
             newSeries.setData(data.map(t => ({...t, time: t.time * 1000})));
 
-            chart.timeScale()
-                //     .setVisibleLogicalRange({
-                //     from: -200,          // Начало диапазона
-                //     to: -1            // Конец диапазона, большее значение уменьшает масштаб
-                // });//.fitContent();
-                .setVisibleRange({
-                    from: moment().add(-5, 'days').unix() * 1000,
-                    to: moment().unix() * 1000,
-                });
-
             const emaSeries = chart.addLineSeries({
                 color: "rgb(255, 186, 102)",
                 lineWidth: 1,
@@ -136,6 +136,7 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number, tf: number }> =
 
             const {
                 markers,
+                lines: linesData,
                 btm,
                 _top,
                 itop,
@@ -148,27 +149,70 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number, tf: number }> =
                 ibtm_cross
             } = calculate(data, windowLength);
 
-            const btmMarkers = Array.from(new Set(ibtm_cross.asArray())).map((index) => ({
-                time: (data[index]?.time * 1000) as UTCTimestamp,
-                // value: btm_x[index],
-                color: 'rgb(157, 43, 56)',
-                position: 'belowBar',
-                shape: 'arrowUp',
-            }) as SeriesMarker<Time>)
+            // console.log("ibtm_cross", ibtm_cross)
+            // console.log("btmMarkers", btmMarkers)
 
-            const topMarkers = data.map(({time}, index) => ({
-                time: (time * 1000) as UTCTimestamp,
-                value: itop[index],
-                color: 'rgb(20, 131, 92)',
-                position: 'aboveBar',
-                shape: 'arrowUp',
-            }) as SeriesMarker<Time>)
+            const allMarkers = [];
 
-            console.log("ibtm_cross", ibtm_cross)
-            console.log("btmMarkers", btmMarkers)
+            if(crosses){
+                const btmMarkers = Array.from(new Set(ibtm_cross.asArray())).map((index) => ({
+                    time: (data[index]?.time * 1000) as UTCTimestamp,
+                    // value: btm_x[index],
+                    color: 'rgb(157, 43, 56)',
+                    position: 'belowBar',
+                    shape: 'arrowUp',
+                }) as SeriesMarker<Time>)
+
+                allMarkers.push(...btmMarkers)
+
+                const topMarkers = Array.from(new Set(itop_cross.asArray())).map((index) => ({
+                    time: (data[index]?.time * 1000) as UTCTimestamp,
+                    value: itop[index],
+                    color: 'rgb(20, 131, 92)',
+                    position: 'aboveBar',
+                    shape: 'arrowUp',
+                }) as SeriesMarker<Time>)
+
+                allMarkers.push(...topMarkers)
+            }
+
+            smPatterns && allMarkers.push(...markers);
+
+            if (extremums) {
+                const ibtm_x_markers = Array.from(new Set(ibtm_x.asArray())).map(index => ({
+                    time: (data[index]?.time * 1000) as UTCTimestamp,
+                    // value: itop[index],
+                    color: 'rgb(157, 43, 56)',
+                    position: 'belowBar',
+                    text: 'LL',
+                    shape: 'text', // 'arrowUp',
+                }))
+                allMarkers.push(...ibtm_x_markers)
+
+                const itop_x_markers = Array.from(new Set(itop_x.asArray())).map(index => ({
+                    time: (data[index]?.time * 1000) as UTCTimestamp,
+                    // value: itop[index],
+                    color: 'rgb(20, 131, 92)',
+                    position: 'aboveBar',
+                    text: 'HH',
+                    shape: 'text', // 'arrowDown',
+                }))
+
+                allMarkers.push(...itop_x_markers)
+            }
 
             // newSeries.setMarkers([...btmMarkers])
-            newSeries.setMarkers(markers.sort((a, b) => a.time - b.time))
+            newSeries.setMarkers(allMarkers.sort((a, b) => a.time - b.time))
+
+            chart.timeScale()
+                //     .setVisibleLogicalRange({
+                //     from: -200,          // Начало диапазона
+                //     to: -1            // Конец диапазона, большее значение уменьшает масштаб
+                // });//.fitContent();
+                .setVisibleRange({
+                    from: moment().add(-5, 'days').unix() * 1000,
+                    to: moment().unix() * 1000,
+                });
 
             const addLine = (price: number, from: UTCTimestamp, to: UTCTimestamp, color: string) => {
                 const lineSeries = chart.addLineSeries({
@@ -186,7 +230,9 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number, tf: number }> =
                     {time: to, value: price}, // конечная точка между свечками
                 ]);
             }
-            markers.forEach(marker => addLine(marker.value, marker.time, marker.time + tf * 10 * 1000, marker.color))
+            lines &&
+            linesData.forEach(marker => addLine(marker.price, marker.fromTime, marker.toTime, marker.color))
+            smPatterns && markers.forEach(marker => addLine(marker.value, marker.time, marker.time + tf * 10 * 1000, marker.color))
 
             window.addEventListener("resize", handleResize);
 
@@ -196,7 +242,7 @@ const Chart: FC<{ data: any[], ema: any[], windowLength: number, tf: number }> =
                 chart.remove();
             };
         },
-        [data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [crosses, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -244,9 +290,9 @@ function calculateEMA(
 }
 
 export const TestPage = () => {
-
     const [data, setData] = useState([]);
     const [ema, setEma] = useState([]);
+    const [checkboxValues, setCheckboxValues] = useState([]);
     const [windowLength, setWindowLength] = useState(5);
     const [searchParams, setSearchParams] = useSearchParams();
     const ticker = searchParams.get('ticker') || 'MTLR';
@@ -262,9 +308,22 @@ export const TestPage = () => {
         fetchCandlesFromAlor(ticker, tf).then(setData);
     }, [tf, ticker]);
 
+    const config = useMemo(() => ({
+        extremums: checkboxValues.includes('extremums'),
+        lines: checkboxValues.includes('lines'),
+        smPatterns: checkboxValues.includes('smPatterns'),
+        crosses: checkboxValues.includes('crosses'),
+    }), [checkboxValues])
+
     return <>
         {/*<Slider defaultValue={windowLength} onChange={setWindowLength} />*/}
-        <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)}/>
+        <Checkbox.Group onChange={setCheckboxValues}>
+            <Checkbox key="extremums" value="extremums">Экстремумы</Checkbox>
+            <Checkbox key="lines" value="lines">Линии</Checkbox>
+            <Checkbox key="smPatterns" value="smPatterns">BOS/CHoCH</Checkbox>
+            <Checkbox key="crosses" value="crosses">Пересечения</Checkbox>
+        </Checkbox.Group>
+        <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>
 }
 
