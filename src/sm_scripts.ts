@@ -186,7 +186,7 @@ class SwingClass {
  * @param len Размер окна
  * @param candles Свечной ряд
  */
-function swings(len: number = 5, candles: { high: number, low: number }[]): { top: number[]; btm: number[]; } {
+function swings(len: number = 5, candles: { high: number, low: number }[], withBug?: boolean = false): { top: number[]; btm: number[]; } {
     // Берем хаи и лои свечек
     const highs = candles.map((price) => price.high);
     const lows = candles.map((price) => price.low);
@@ -204,7 +204,7 @@ function swings(len: number = 5, candles: { high: number, low: number }[]): { to
         const lowestLow = Math.min(...lows.slice(i - len, i));
 
         // Если текущий хай выше прошлого максимума - 0 (произошло обновление максимума), если текущий лой ниже прошлого лоя - 1 (произошло обновление минимума), иначе берем последнее значение.
-        os.add(highs[i] > highestHigh ? 0 : lows[i] < lowestLow ? 1 : os.at(0));
+        os.add(highs[i] > highestHigh ? (withBug ? 1 : 0) : lows[i] < lowestLow ? (withBug ? 0 : 1) : os.at(0));
 
         // Из общего массива значений разделяем его на 2 массива:
         // - если последнее значение было максимумом, а последнее нет (не обновлялось) - записываем максимум
@@ -222,7 +222,7 @@ export function calculate(candles: {
     close: number,
     open: number,
     time: number
-}[], windowLength?: number) {
+}[], windowLength?: number, withBug?: boolean) {
     let markers = [];
 
     const colors = {};
@@ -272,9 +272,9 @@ export function calculate(candles: {
     const localLength = windowLength || 5;
 
     // Нашли максимумы и минимумы с окном в 50 свечек
-    const {top, btm} = swings(length, candles);
+    const {top, btm} = swings(length, candles, withBug);
     // Нашли максимумы и минимумы с окном в 5 свечек
-    const {top: itop, btm: ibtm} = swings(localLength, candles);
+    const {top: itop, btm: ibtm} = swings(localLength, candles, withBug);
 
     for (let n = length; n < candles.length; n++) {
         // Если перехай найден

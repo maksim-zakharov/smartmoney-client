@@ -13,9 +13,10 @@ const Chart: FC<{
     extremums?: boolean,
     data: any[],
     ema: any[],
+    withBug,
     windowLength: number,
     tf: number
-}> = ({crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
+}> = ({withBug, crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -147,7 +148,7 @@ const Chart: FC<{
                 top_x,
                 itop_cross,
                 ibtm_cross
-            } = calculate(data, windowLength);
+            } = calculate(data, windowLength, withBug);
 
             // console.log("ibtm_cross", ibtm_cross)
             // console.log("btmMarkers", btmMarkers)
@@ -170,7 +171,7 @@ const Chart: FC<{
                     value: itop[index],
                     color: 'rgb(20, 131, 92)',
                     position: 'aboveBar',
-                    shape: 'arrowUp',
+                    shape: 'arrowDown',
                 }) as SeriesMarker<Time>)
 
                 allMarkers.push(...topMarkers)
@@ -242,7 +243,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [crosses, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [crosses, withBug, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -252,7 +253,7 @@ const Chart: FC<{
 
 // Функция для получения данных из Alor API
 async function fetchCandlesFromAlor(symbol, tf) {
-    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-10-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-11-21T00:00:00Z").getTime() / 1000)}`;
+    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-11-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-11-21T00:00:00Z").getTime() / 1000)}`;
 
     try {
         const response = await fetch(url, {
@@ -313,6 +314,7 @@ export const TestPage = () => {
         lines: checkboxValues.includes('lines'),
         smPatterns: checkboxValues.includes('smPatterns'),
         crosses: checkboxValues.includes('crosses'),
+        withBug: checkboxValues.includes('withBug'),
     }), [checkboxValues])
 
     return <>
@@ -322,6 +324,7 @@ export const TestPage = () => {
             <Checkbox key="lines" value="lines">Линии</Checkbox>
             <Checkbox key="smPatterns" value="smPatterns">BOS/CHoCH</Checkbox>
             <Checkbox key="crosses" value="crosses">Пересечения</Checkbox>
+            <Checkbox key="withBug" value="withBug">С Багом))</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>
