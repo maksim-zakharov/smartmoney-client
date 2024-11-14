@@ -1,5 +1,3 @@
-import {IChartApi} from "lightweight-charts";
-
 function Max(...numbers: number[]) {
     return Math.max(...numbers);
 }
@@ -122,36 +120,33 @@ enum CrossDirection {
     Below = 'below',
 }
 
-function Crosses(close: number[], extremumPrice: number[], direction: CrossDirection) {
-    for (let i = 1; i < extremumPrice.length; i++) {
-        const prevClose = close[i - 1];
-        const currClose = close[i];
-        const prevExtremumPrice = extremumPrice[i - 1];
-        const currExtremumPrice = extremumPrice[i];
+function Crosses(close: number[], extremumPrice: Structure, direction: CrossDirection) {
+    if (close.length < 2 || extremumPrice._data.length < 2) {
+        return false;
+    }
 
-        // Проверка пересечения для направления "below" (сверху вниз)
-        if (
-            direction === CrossDirection.Below &&
-            // Когда предыдущая цена закрытия выше последнего минимума
-            prevClose > prevExtremumPrice &&
-            // А новая цена закрытия ниже последнего (текущего) минимума
-            currClose <= currExtremumPrice
-        ) {
-            // То считаем что произошло пробитие минимума (перелой)
-            return true;
-        }
+    // Проверка пересечения для направления "below" (сверху вниз)
+    if (
+        direction === CrossDirection.Below &&
+        // Когда предыдущая цена закрытия выше последнего минимума
+        close[close.length - 1 - 1] > extremumPrice.at(1) &&
+        // А новая цена закрытия ниже последнего (текущего) минимума
+        close[close.length - 1] <= extremumPrice.at(0)
+    ) {
+        // То считаем что произошло пробитие минимума (перелой)
+        return true;
+    }
 
-        // Проверка пересечения для направления "above" (снизу вверх)
-        if (
-            direction === CrossDirection.Above &&
-            // Когда предыдущая цена закрытия ниже последнего максимума
-            prevClose < prevExtremumPrice &&
-            // А новая цена закрытия выше последнего (текущего) максимума
-            currClose >= currExtremumPrice
-        ) {
-            // То считаем что произошло пробитие максимума (перехай)
-            return true;
-        }
+    // Проверка пересечения для направления "above" (снизу вверх)
+    if (
+        direction === CrossDirection.Above &&
+        // Когда предыдущая цена закрытия ниже последнего максимума
+        close[close.length - 1 - 1] < extremumPrice.at(1) &&
+        // А новая цена закрытия выше последнего (текущего) максимума
+        close[close.length - 1] >= extremumPrice.at(0)
+    ) {
+        // То считаем что произошло пробитие максимума (перехай)
+        return true;
     }
 
     return false;
@@ -190,7 +185,7 @@ enum OSType {
  * @param len Размер окна
  * @param candles Свечной ряд
  */
-function swings(len: number = 5, candles: { high: number, low: number }[], withBug?: boolean = false): {
+function swings(len: number = 5, candles: { high: number, low: number }[]): {
     top: number[];
     btm: number[];
 } {
@@ -216,9 +211,9 @@ function swings(len: number = 5, candles: { high: number, low: number }[], withB
 
         // Из общего массива значений разделяем его на 2 массива:
         // - если последнее значение было максимумом, а последнее нет (не обновлялось) - записываем максимум
-        top.add(os.at(0) === (withBug ? OSType.UpdateLow : OSType.UpdateHigh) && os.at(1) === (withBug ? OSType.UpdateHigh : OSType.UpdateLow) ? highs[i] : 0)
+        top.add(os.at(0) === OSType.UpdateHigh && os.at(1) === OSType.UpdateLow ? highs[i] : 0)
         // - если последнее значение было минимумом, а последнее нет (не обновлялось) - записываем минимум
-        btm.add(os.at(0) === (withBug ? OSType.UpdateHigh : OSType.UpdateLow) && os.at(1) === (withBug ? OSType.UpdateLow : OSType.UpdateHigh) ? lows[i] : 0)
+        btm.add(os.at(0) === OSType.UpdateLow && os.at(1) === OSType.UpdateHigh ? lows[i] : 0)
     }
 
     return {top: top.asArray(), btm: btm.asArray()};
@@ -230,7 +225,7 @@ export function calculate(candles: {
     close: number,
     open: number,
     time: number
-}[], windowLength?: number, withBug?: boolean) {
+}[], windowLength?: number) {
     let markers = [];
 
     const colors = {};
@@ -280,24 +275,35 @@ export function calculate(candles: {
     const open = candles.map((c) => c.open);
 
     // Нашли максимумы и минимумы с окном в 50 свечек
-    const {top, btm} = swings(length, candles, withBug);
+    const {top, btm} = swings(length, candles);
     // Нашли максимумы и минимумы с окном в 5 свечек
-    const {top: itop, btm: ibtm} = swings(localLength, candles, withBug);
+    const {top: itop, btm: ibtm} = swings(localLength, candles);
 
     for (let n = length; n < candles.length; n++) {
 
-        fillSwings(n, localLength, top, top_x, top_y, btm, btm_x, btm_y, itop, ibtm, itop_x, itop_y, ibtm_x, ibtm_y)
+        fillSwings(n, length, localLength, top, top_x, top_y, btm, btm_x, btm_y, itop, ibtm, itop_x, itop_y, ibtm_x, ibtm_y)
 
         calculateCrossesExtremes(high, low, close, open, itop_y, btm_y, itop_cross, itop_x, ibtm_cross, ibtm_x, ibtm_y, top_y, itrend, n, ifilter_confluence)
 
-        // <-- TODO ДО СЮДА ВОПРОСОВ НЕТ -->
+        /** Рисуем пунктирные линии
+         * def plotBullInternal =
+         *      fold i1 = 0 to 1000
+         *          with p1 = 0
+         *              while GetValue(itop_cross,-(i1-1)) < GetValue(itop_x,-(i1-1)) and itop_x == GetValue(itop_x,-(i1-1))
+         *                  do
+         *                      if GetValue(itop_cross,-(i1)) == GetValue(itop_x,-(i1))
+         *                          then GetValue(itop_y,-i1)
+         *                          else 0;
+         */
 
-        // plotBullInternal - формула рисования пунктирных линий, в которой находим точку начала и конца пунктирной линии
-        // Рисуем пунктирную линию PaintingStrategy.DASHES
-        // от точки GetValue(itop_x,-(i1-1)
-        // пока точка GetValue(itop_x,-(i1-1) является последней точкой itop_x
-        // и пока не пересечена новой свечой itop_cross
-        // В момент пересечения GetValue(itop_cross,-(i1)) == GetValue(itop_x,-(i1)) записываем цену GetValue(itop_y,-i1)
+            // <-- TODO ДО СЮДА ВОПРОСОВ НЕТ -->
+
+            // plotBullInternal - формула рисования пунктирных линий, в которой находим точку начала и конца пунктирной линии
+            // Рисуем пунктирную линию PaintingStrategy.DASHES
+            // от точки GetValue(itop_x,-(i1-1)
+            // пока точка GetValue(itop_x,-(i1-1) является последней точкой itop_x
+            // и пока не пересечена новой свечой itop_cross
+            // В момент пересечения GetValue(itop_cross,-(i1)) == GetValue(itop_x,-(i1)) записываем цену GetValue(itop_y,-i1)
 
         const itop_crossArray = itop_cross.asArray()
         const itop_yArray = itop_y.asArray()
@@ -484,10 +490,31 @@ export function calculate(candles: {
         );
     }
 
+    const plotBullInternal = [];
+    for (let i1 = 0; i1 < 1000; i1++) {
+
+        // Пока мы копим последнее значение - рисуем его
+        if (itop_x.at(0) === itop_x.at(i1)) {
+            plotBullInternal.push(itop_y.at(i1));
+        } else {
+            break;
+        }
+
+        // if (itop_cross.at(i1) < itop_x.at(i1) && itop_x.at(0) === itop_x.at(i1)) {
+        //     if (itop_cross.at(i1) === itop_x.at(i1)) {
+        //         plotBullInternal.push(itop_y.at(i1));
+        //     } else {
+        //         plotBullInternal.push(0);
+        //     }
+        // }
+    }
+
     const itop_cross_array = itop_cross.asArray();
+    const itop_x_array = itop_x.asArray();
     const itop_y_array = itop_y.asArray();
     const itop_cross_result = [];
     let itop_cross_last;
+    let itop_cross_price;
     for (let i = 0; i < itop_cross_array.length; i++) {
         if (!itop_cross_array[i]) {
             continue;
@@ -495,13 +522,15 @@ export function calculate(candles: {
 
         if (!itop_cross_last) {
             itop_cross_last = itop_cross_array[i]
+            itop_cross_price = itop_y_array[i];
         } else if (itop_cross_last !== itop_cross_array[i]) {
             itop_cross_result.push({
                 from: itop_cross_last,
                 to: itop_cross_array[i],
-                price: candles[itop_cross_last].high
+                price: itop_cross_price
             });
             itop_cross_last = null;
+            itop_cross_price = null;
         }
     }
 
@@ -510,6 +539,7 @@ export function calculate(candles: {
     const ibtm_y_array = ibtm_y.asArray();
     const ibtm_cross_result = [];
     let ibtm_cross_last;
+    let ibtm_cross_price;
     for (let i = 0; i < ibtm_cross_array.length; i++) {
         if (!ibtm_cross_array[i]) {
             continue;
@@ -517,11 +547,12 @@ export function calculate(candles: {
 
         if (!ibtm_cross_last) {
             ibtm_cross_last = ibtm_cross_array[i]
+            ibtm_cross_price = ibtm_y_array[i];
         } else if (ibtm_cross_last !== ibtm_cross_array[i]) {
             ibtm_cross_result.push({
                 from: ibtm_cross_last,
                 to: ibtm_cross_array[i],
-                price: candles[ibtm_cross_last].low
+                price: ibtm_cross_price
             });
             ibtm_cross_last = null;
         }
@@ -579,7 +610,7 @@ function calculateCrossesExtremes(high: number[], low: number[], close: number[]
 
     // Проверка на восходящий тренд
     if (
-        Crosses(close, itop_y.asArray(), CrossDirection.Above) &&
+        Crosses(close.slice(n - 1, n + 1), itop_y, CrossDirection.Above) &&
         itop_cross.at(1) < itop_x.at(0) &&
         top_y.at(0) !== itop_y.at(0) &&
         bull_concordant
@@ -590,7 +621,7 @@ function calculateCrossesExtremes(high: number[], low: number[], close: number[]
     }
     // Проверка на нисходящий тренд
     else if (
-        Crosses(close, ibtm_y.asArray(), CrossDirection.Below) &&
+        Crosses(close.slice(n - 1, n + 1), ibtm_y, CrossDirection.Below) &&
         ibtm_cross.at(1) < ibtm_x.at(0) &&
         btm_y.at(0) !== ibtm_y.at(0) &&
         bear_concordant
@@ -606,7 +637,7 @@ function calculateCrossesExtremes(high: number[], low: number[], close: number[]
     }
 }
 
-function fillSwings(n: number, localLength: number, top: number[], top_x: Structure, top_y: Structure, btm: number[], btm_x: Structure, btm_y: Structure, itop: number[], ibtm: number[], itop_x: Structure, itop_y: Structure, ibtm_x: Structure, ibtm_y: Structure) {
+function fillSwings(n: number, length: number, localLength: number, top: number[], top_x: Structure, top_y: Structure, btm: number[], btm_x: Structure, btm_y: Structure, itop: number[], ibtm: number[], itop_x: Structure, itop_y: Structure, ibtm_x: Structure, ibtm_y: Structure) {
     // Если перехай найден
     if (top[n]) {
         // Записываем цену у перехаев

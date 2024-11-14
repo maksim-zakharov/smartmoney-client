@@ -28,7 +28,7 @@ const Chart: FC<{
     withBug,
     windowLength: number,
     tf: number
-}> = ({trend, withBug, crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
+}> = ({trend, crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -161,7 +161,7 @@ const Chart: FC<{
                 top_x,
                 itop_cross,
                 ibtm_cross
-            } = calculate(data, windowLength, withBug);
+            } = calculate(data, windowLength);
 
             if(trend){
 
@@ -293,7 +293,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [trend, crosses, withBug, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [trend, crosses, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -364,7 +364,6 @@ export const TestPage = () => {
         lines: checkboxValues.includes('lines'),
         smPatterns: checkboxValues.includes('smPatterns'),
         crosses: checkboxValues.includes('crosses'),
-        withBug: checkboxValues.includes('withBug'),
         trend: checkboxValues.includes('trend'),
     }), [checkboxValues])
 
@@ -375,7 +374,6 @@ export const TestPage = () => {
             <Checkbox key="lines" value="lines">Линии</Checkbox>
             <Checkbox key="smPatterns" value="smPatterns">BOS/CHoCH</Checkbox>
             <Checkbox key="crosses" value="crosses">Пересечения</Checkbox>
-            <Checkbox key="withBug" value="withBug">С Багом))</Checkbox>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
