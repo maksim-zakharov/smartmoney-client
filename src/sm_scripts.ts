@@ -1,5 +1,4 @@
-import {LineStyle} from "lightweight-charts";
-import moment from "moment";
+import {IChartApi} from "lightweight-charts";
 
 function Max(...numbers: number[]) {
     return Math.max(...numbers);
@@ -10,7 +9,7 @@ function Min(...numbers: number[]) {
 }
 
 function GetValue(plot: Structure, offset: number): number {
-    if(offset >= 0){
+    if (offset >= 0) {
         return plot.at(0);
     }
     return plot._data[-offset];
@@ -40,8 +39,8 @@ class Structure {
         }
     }
 
-    private get fill(){
-        if(this._fill !== undefined){
+    private get fill() {
+        if (this._fill !== undefined) {
             return this._fill;
         }
         return 0;
@@ -74,8 +73,8 @@ class Structure {
         this._data[index] = val;
     }
 
-    highest(length: number){
-        if(!this._data.length){
+    highest(length: number) {
+        if (!this._data.length) {
             return NaN;
         }
         return Math.max(...this._data.slice(-length))
@@ -116,10 +115,10 @@ function CrossUnder(source1: number[], source2: number[], index: number = 0, off
     return IsCross(CrossEnum.Down, source1, source2, index, offset1, offset2);
 }
 
-enum CrossDirection{
-    // Цена (close) пробивает максимум (i_y) снизу верх - пробитие максимума, перехай
+enum CrossDirection {
+    // Перехай. Цена (close) пробивает максимум (i_y) снизу верх.
     Above = 'above',
-    // Цена (close) пробивает минимум (i_y) сверху вниз - пробитие минимума, перелой
+    // Перелой. Цена (close) пробивает минимум (i_y) сверху вниз.
     Below = 'below',
 }
 
@@ -130,27 +129,27 @@ function Crosses(close: number[], extremumPrice: number[], direction: CrossDirec
         const prevExtremumPrice = extremumPrice[i - 1];
         const currExtremumPrice = extremumPrice[i];
 
-        // Проверка пересечения для направления "above" (снизу вверх)
-        if (
-            direction === 'above' &&
-            // Когда предыдущая цена закрытия ниже последнего максимума
-            prevClose < prevExtremumPrice &&
-            // А новая цена закрытия выше последнего (текущего) максимума
-            currClose >= currExtremumPrice
-        ) {
-            // То считаем что произошло пробитие максимума (перехай)
-            return true;
-        }
-
         // Проверка пересечения для направления "below" (сверху вниз)
         if (
-            direction === 'below' &&
+            direction === CrossDirection.Below &&
             // Когда предыдущая цена закрытия выше последнего минимума
             prevClose > prevExtremumPrice &&
             // А новая цена закрытия ниже последнего (текущего) минимума
             currClose <= currExtremumPrice
         ) {
             // То считаем что произошло пробитие минимума (перелой)
+            return true;
+        }
+
+        // Проверка пересечения для направления "above" (снизу вверх)
+        if (
+            direction === CrossDirection.Above &&
+            // Когда предыдущая цена закрытия ниже последнего максимума
+            prevClose < prevExtremumPrice &&
+            // А новая цена закрытия выше последнего (текущего) максимума
+            currClose >= currExtremumPrice
+        ) {
+            // То считаем что произошло пробитие максимума (перехай)
             return true;
         }
     }
@@ -181,12 +180,20 @@ class SwingClass {
     }
 }
 
+enum OSType {
+    UpdateHigh = 1,
+    UpdateLow = 0
+}
+
 /**
  * Поиск максимумов/минимумов свечного массива в рамках окна размером в len свечей
  * @param len Размер окна
  * @param candles Свечной ряд
  */
-function swings(len: number = 5, candles: { high: number, low: number }[], withBug?: boolean = false): { top: number[]; btm: number[]; } {
+function swings(len: number = 5, candles: { high: number, low: number }[], withBug?: boolean = false): {
+    top: number[];
+    btm: number[];
+} {
     // Берем хаи и лои свечек
     const highs = candles.map((price) => price.high);
     const lows = candles.map((price) => price.low);
@@ -204,13 +211,14 @@ function swings(len: number = 5, candles: { high: number, low: number }[], withB
         const lowestLow = Math.min(...lows.slice(i - len, i));
 
         // Если текущий хай выше прошлого максимума - 0 (произошло обновление максимума), если текущий лой ниже прошлого лоя - 1 (произошло обновление минимума), иначе берем последнее значение.
-        os.add(highs[i] > highestHigh ? (withBug ? 1 : 0) : lows[i] < lowestLow ? (withBug ? 0 : 1) : os.at(0));
+        os.add(highs[i] > highestHigh ? OSType.UpdateHigh : lows[i] < lowestLow ? OSType.UpdateLow : os.at(0));
+        // os.add(highs[i] > highestHigh ? 0 : lows[i] < lowestLow ? 1 : os.at(0));
 
         // Из общего массива значений разделяем его на 2 массива:
         // - если последнее значение было максимумом, а последнее нет (не обновлялось) - записываем максимум
-        top.add(os.at(0) === 0 && os.at(1) !== 0 ? highs[i] : 0)
+        top.add(os.at(0) === (withBug ? OSType.UpdateLow : OSType.UpdateHigh) && os.at(1) === (withBug ? OSType.UpdateHigh : OSType.UpdateLow) ? highs[i] : 0)
         // - если последнее значение было минимумом, а последнее нет (не обновлялось) - записываем минимум
-        btm.add(os.at(0) === 1 && os.at(1) !== 1 ? lows[i] : 0)
+        btm.add(os.at(0) === (withBug ? OSType.UpdateHigh : OSType.UpdateLow) && os.at(1) === (withBug ? OSType.UpdateLow : OSType.UpdateHigh) ? lows[i] : 0)
     }
 
     return {top: top.asArray(), btm: btm.asArray()};
@@ -262,14 +270,14 @@ export function calculate(candles: {
         trail_dn = new Structure(),
         trail_dn_x = new Structure();
 
-    const itrend = new Structure();
+    const localLength = windowLength || 5;
+
+    const itrend = new Structure(50, 0);
 
     const high = candles.map((c) => c.high);
     const close = candles.map((c) => c.close);
     const low = candles.map((c) => c.low);
     const open = candles.map((c) => c.open);
-
-    const localLength = windowLength || 5;
 
     // Нашли максимумы и минимумы с окном в 50 свечек
     const {top, btm} = swings(length, candles, withBug);
@@ -277,116 +285,10 @@ export function calculate(candles: {
     const {top: itop, btm: ibtm} = swings(localLength, candles, withBug);
 
     for (let n = length; n < candles.length; n++) {
-        // Если перехай найден
-        if (top[n]) {
-            // Записываем цену у перехаев
-            top_y.add(top[n]);
-            // Записываем индекс у перехаев
-            top_x.add(n - length);
 
-            // хз
-            trail_up.add(top[n]);
-            trail_up_x.add(n - length);
-        } else {
-            // Если перехая нет - будет 0, поэтому просто повторяем предыдущее значение и индекс
-            top_y.add(top_y.at(0));
-            top_x.add(top_x.at(0));
+        fillSwings(n, localLength, top, top_x, top_y, btm, btm_x, btm_y, itop, ibtm, itop_x, itop_y, ibtm_x, ibtm_y)
 
-            // хз
-            trail_up.add(Max(high[n], trail_up.at(0)));
-            trail_up_x.add(trail_up.at(0) === high[n] ? n : trail_up_x.at(0));
-        }
-        // Аналогично для локального перехая
-        if (itop[n]) {
-            itop_y.add(itop[n]);
-            itop_x.add(n - localLength);
-        } else {
-            itop_y.add(itop_y.at(0));
-            itop_x.add(itop_x.at(0));
-        }
-
-        // Если перелой найден
-        if (btm[n]) {
-            // Записываем цену у перелоев
-            btm_y.add(btm[n]);
-            // Записываем индекс у перелоев
-            btm_x.add(n - length);
-
-            trail_dn.add(btm[n]);
-            trail_dn_x.add(n - length);
-        } else {
-            // Если перелоев нет - будет 0, поэтому просто повторяем предыдущее значение и индекс
-            btm_y.add(btm_y.at(0));
-            btm_x.add(btm_x.at(0));
-
-            trail_dn.add(Min(low[n], trail_dn.at(0)));
-            trail_dn_x.add(trail_dn.at(0) === low[n] ? n : trail_dn_x.at(0));
-        }
-        // Аналогично для локального перелоев
-        if (ibtm[n]) {
-            ibtm_y.add(ibtm[n]);
-            ibtm_x.add(n - localLength);
-        } else {
-            ibtm_y.add(ibtm_y.at(0));
-            ibtm_x.add(ibtm_x.at(0));
-        }
-
-        // Тут типо фильтруются малозначительные пробои.
-        // - Для пробоя быками нужно чтобы хвост сверху был больше хвоста снизу
-        // - Для пробоя медведями нужно чтобы хвост снизу был больше хвоста сверху
-        // Вычисляем хвосты: если хвост сверху больше чем хвост снизу - то бык
-        const bull_concordant =
-            !ifilter_confluence ||
-            high[n] - Max(close[n], open[n]) > Min(close[n], open[n]) - low[n];
-            // high[n] - Max(close[n], open[n]) > Min(close[n], open[n] - low[n]); // TODO кажется тут баг
-        // Если хвост сверху меньше чем хвост снизу - медведь
-        const bear_concordant =
-            !ifilter_confluence ||
-            high[n] - Max(close[n], open[n]) < Min(close[n], open[n]) - low[n];
-            // high[n] - Max(close[n], open[n]) < Min(close[n], open[n] - low[n]);
-
-        if (
-            // Если цена close превышает последний максимум itop_y снизу верх
-            Crosses(close, itop_y.asArray(), CrossDirection.Above) &&
-            // и время прошлого перехая (x) меньше времени текущего локального хая (x) (Cross который отработал перед этим - новый, а не повторный)
-            itop_cross.at(1) < itop_x.at(0) &&
-            // и если цена текущего ГЛОБАЛЬНОГО хая не равна цене текущего ЛОКАЛЬНОГО хая
-            top_y.at(0) !== itop_y.at(0) &&
-            // и если хвост сверху больше хвоста снизу
-            bull_concordant
-        ) {
-            // Записываем что последний локальный хай был обновлен
-            itop_cross.add(itop_x.at(0));
-            // Тренд восходящий
-            itrend.add(1);
-            // Обновления локального лоя не произошло
-            ibtm_cross.add(ibtm_cross.at(0));
-        } else if (
-            // Если цена close принижает последний минимум ibtm_y сверху вниз
-            Crosses(close, ibtm_y.asArray(), CrossDirection.Below) &&
-            // и время прошлого перелоя (x) меньше времени текущего локального лоя (x) (Cross который отработал перед этим - новый, а не повторный)
-            ibtm_cross.at(1) < ibtm_x.at(0) &&
-            // и если цена текущего ГЛОБАЛЬНОГО лоя не равна цене текущего ЛОКАЛЬНОГО лоя
-            btm_y.at(0) !== ibtm_y.at(0) &&
-            // и если хвост снизу больше хвоста сверху
-            bear_concordant
-        ) {
-            // Записываем что последний локальный лой был обновлен
-            ibtm_cross.add(ibtm_x.at(0));
-            // Тренд нисходящий
-            itrend.add(-1);
-            // Обновления локального хая не произошло
-            itop_cross.add(itop_cross.at(0));
-        } else {
-            // Продлеваем оба пересечения
-            ibtm_cross.add(ibtm_cross.at(0));
-            itop_cross.add(itop_cross.at(0));
-            // Просто берем предыдущие значения, тренд не менялся
-            itrend.add(itrend.at(0));
-        }
-
-        // console.log("itop_cross", itop_cross)
-        // console.log("ibtm_cross", ibtm_cross)
+        calculateCrossesExtremes(high, low, close, open, itop_y, btm_y, itop_cross, itop_x, ibtm_cross, ibtm_x, ibtm_y, top_y, itrend, n, ifilter_confluence)
 
         // <-- TODO ДО СЮДА ВОПРОСОВ НЕТ -->
 
@@ -397,10 +299,8 @@ export function calculate(candles: {
         // и пока не пересечена новой свечой itop_cross
         // В момент пересечения GetValue(itop_cross,-(i1)) == GetValue(itop_x,-(i1)) записываем цену GetValue(itop_y,-i1)
 
-        const itop_xArray = itop_x.asArray()
         const itop_crossArray = itop_cross.asArray()
         const itop_yArray = itop_y.asArray()
-        const plotBullInternalResult = new Structure();
 
 
         // Найти первое совпадение itop_x.at(0) среди itop_crossArray
@@ -415,78 +315,16 @@ export function calculate(candles: {
             // } else if (start){
             //     break;
             // }
-            if(!start && itop_crossArray[i] && itop_crossArray[i] === itop_x.at(0)){
+            if (!start && itop_crossArray[i] && itop_crossArray[i] === itop_x.at(0)) {
                 start = true;
                 from = itop_crossArray[i];
                 price = itop_yArray[i];
-            } else if (start  && itop_crossArray[i] && itop_crossArray[i] !== itop_x.at(0)){
+            } else if (start && itop_crossArray[i] && itop_crossArray[i] !== itop_x.at(0)) {
                 debugger
                 to = itop_crossArray[i];
                 break;
             }
-
-
-
-            // if(itop_crossArray[i] < itop_xArray[i] && itop_xArray[i] === itop_x.at(0)){
-            //     // debugger
-            //         if(itop_crossArray[i] === itop_xArray[i]){
-            //             plotBullInternalResult.add(itop_yArray[i])
-            //         } else {
-            //             plotBullInternalResult.add(0);
-            //         }
-            // }
-            // if(itop_crossArray[i] < itop_xArray[i] && itop_xArray[i] === itop_x.at(0)){
-            //
-            //     if(itop_crossArray[i - 1] === itop_yArray[i-1]){
-            //         plotBullInternalResult.add(itop_yArray[i-1])
-            //     } else {
-            //         plotBullInternalResult.add(0);
-            //     }
-            // } else {
-            //     break;
-            // }
         }
-        // if(from && to){
-        //     console.log("plotBullInternalResult", [from, to]);
-        // }
-
-        // if(!Number.isNaN(plotBullInternalResult.highest(6))){
-        //     console.log("plotBullInternalResult", plotBullInternalResult.highest(6))
-        //     // lines.push({
-        //     //     fromIndex,
-        //     //     toIndex,
-        //     //     price,
-        //     //     color,
-        //     //     style: LineStyle.LargeDashed
-        //     // })
-        // }
-
-        // InternalBullStructureVal
-
-        // Переводим fold из Thinkscript в TypeScript
-        // function plotBullInternal(itop_cross: Structure, itop_x: Structure, itop_y: Structure): Structure {
-        //     const result = new Structure();  // начальное значение переменной
-        //     for (let i1 = 0; i1 < 1000; i1++) {
-        //         const prevCross = GetValue(itop_cross, -(i1 - 1));
-        //         const prevX = GetValue(itop_x, -(i1 - 1));
-        //
-        //         // while GetValue(itop_cross,-(i1-1)) < GetValue(itop_x,-(i1-1)) and itop_x == GetValue(itop_x,-(i1-1))
-        //         if(prevCross < prevX &&  itop_x.at(0) === prevX){
-        //             if(GetValue(itop_cross,-(i1)) === GetValue(itop_x,-(i1))){
-        //                 result.add(GetValue(itop_y,-i1));
-        //             } else {
-        //                 result.add(0);
-        //             }
-        //         } else {
-        //             break;
-        //         }
-        //     }
-        //     return result;
-        // }
-        //
-        //
-        // const res = plotBullInternal(itop_cross, itop_x, itop_y);
-        // res._data.length && console.log('plotBullInternal', res)
 
         function calculateInternalBullStructure(times: number[], prices: number[], showInternals: boolean) {
             const length = 6; // количество периодов для поиска максимума
@@ -520,7 +358,6 @@ export function calculate(candles: {
         }
 
         const InternalBullStructure = calculateInternalBullStructure(itop_x.asArray(), itop_y.asArray(), true);
-        // console.log('InternalBullStructure', InternalBullStructure);
 
         function calculateInternalBearStructure(times: number[], prices: number[], showInternals: boolean) {
             const length = 6; // количество периодов для поиска максимума
@@ -554,6 +391,7 @@ export function calculate(candles: {
         }
 
         const InternalBearStructure = calculateInternalBearStructure(ibtm_x.asArray(), ibtm_y.asArray(), true);
+
         // console.log('InternalBearStructure', InternalBearStructure);
 
         function GlobalColor(key) {
@@ -651,32 +489,40 @@ export function calculate(candles: {
     const itop_cross_result = [];
     let itop_cross_last;
     for (let i = 0; i < itop_cross_array.length; i++) {
-        if(!itop_cross_array[i]){
+        if (!itop_cross_array[i]) {
             continue;
         }
 
-        if(!itop_cross_last){
+        if (!itop_cross_last) {
             itop_cross_last = itop_cross_array[i]
-        } else if(itop_cross_last !== itop_cross_array[i]) {
-            itop_cross_result.push({from: itop_cross_last, to: itop_cross_array[i], price: candles[itop_cross_last].high});
+        } else if (itop_cross_last !== itop_cross_array[i]) {
+            itop_cross_result.push({
+                from: itop_cross_last,
+                to: itop_cross_array[i],
+                price: candles[itop_cross_last].high
+            });
             itop_cross_last = null;
         }
     }
 
 
-    const ibtm_cross_array =  ibtm_cross.asArray();
+    const ibtm_cross_array = ibtm_cross.asArray();
     const ibtm_y_array = ibtm_y.asArray();
     const ibtm_cross_result = [];
     let ibtm_cross_last;
     for (let i = 0; i < ibtm_cross_array.length; i++) {
-        if(!ibtm_cross_array[i]){
+        if (!ibtm_cross_array[i]) {
             continue;
         }
 
-        if(!ibtm_cross_last){
+        if (!ibtm_cross_last) {
             ibtm_cross_last = ibtm_cross_array[i]
-        } else if(ibtm_cross_last !== ibtm_cross_array[i]) {
-            ibtm_cross_result.push({from: ibtm_cross_last, to: ibtm_cross_array[i], price: candles[ibtm_cross_last].low});
+        } else if (ibtm_cross_last !== ibtm_cross_array[i]) {
+            ibtm_cross_result.push({
+                from: ibtm_cross_last,
+                to: ibtm_cross_array[i],
+                price: candles[ibtm_cross_last].low
+            });
             ibtm_cross_last = null;
         }
     }
@@ -690,9 +536,19 @@ export function calculate(candles: {
 
     // console.log("itop_cross_result", itop_cross_result)
 
-    const topLines = itop_cross_result.map(({from, to, price}) => ({price, fromTime: candles[from].time * 1000, toTime: candles[to].time * 1000, color: 'rgb(20, 131, 92)'}))
+    const topLines = itop_cross_result.map(({from, to, price}) => ({
+        price,
+        fromTime: candles[from].time * 1000,
+        toTime: candles[to].time * 1000,
+        color: 'rgb(20, 131, 92)'
+    }))
 
-    const btmLines = ibtm_cross_result.map(({from, to, price}) => ({price, fromTime: candles[from].time * 1000, toTime: candles[to].time * 1000, color: 'rgb(157, 43, 56)'}))
+    const btmLines = ibtm_cross_result.map(({from, to, price}) => ({
+        price,
+        fromTime: candles[from].time * 1000,
+        toTime: candles[to].time * 1000,
+        color: 'rgb(157, 43, 56)'
+    }))
 
     const lines = [...btmLines, ...topLines];
 
@@ -705,5 +561,103 @@ export function calculate(candles: {
     // console.log("ibtm_cross_format_time", ibtm_cross._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
     // console.log("lines", lines);
 
-    return {markers, lines, btm, ibtm, _top: top, itop, top_x, btm_x, itop_x, ibtm_x, ibtm_cross, itop_cross};
+    return {markers, lines, btm, ibtm, _top: top, itop, top_x, btm_x, itop_x, ibtm_x, ibtm_cross, itop_cross, itrend};
+}
+
+// Тут типо фильтруются малозначительные пробои.
+// - Для пробоя быками нужно чтобы хвост сверху был больше хвоста снизу
+// - Для пробоя медведями нужно чтобы хвост снизу был больше хвоста сверху
+// Вычисляем хвосты: если хвост сверху больше чем хвост снизу - то бык
+function calculateConcordance(high: number[], low: number[], close: number[], open: number[], n: number, ifilter_confluence: boolean) {
+    const bull_concordant = !ifilter_confluence || high[n] - Math.max(close[n], open[n]) > Math.min(close[n], open[n]) - low[n];
+    const bear_concordant = !ifilter_confluence || high[n] - Math.max(close[n], open[n]) < Math.min(close[n], open[n]) - low[n];
+    return {bull_concordant, bear_concordant};
+}
+
+function calculateCrossesExtremes(high: number[], low: number[], close: number[], open: number[], itop_y: Structure, btm_y: Structure, itop_cross: Structure, itop_x: Structure, ibtm_cross: Structure, ibtm_x: Structure, ibtm_y: Structure, top_y: Structure, itrend: Structure, n: number, ifilter_confluence: boolean) {
+    const {bull_concordant, bear_concordant} = calculateConcordance(high, low, close, open, n, ifilter_confluence);
+
+    // Проверка на восходящий тренд
+    if (
+        Crosses(close, itop_y.asArray(), CrossDirection.Above) &&
+        itop_cross.at(1) < itop_x.at(0) &&
+        top_y.at(0) !== itop_y.at(0) &&
+        bull_concordant
+    ) {
+        itop_cross.add(itop_x.at(0));  // Записываем что последний локальный хай был обновлен
+        itrend.add(1);  // Тренд восходящий
+        ibtm_cross.add(ibtm_cross.at(0));  // Обновления локального лоя не произошло
+    }
+    // Проверка на нисходящий тренд
+    else if (
+        Crosses(close, ibtm_y.asArray(), CrossDirection.Below) &&
+        ibtm_cross.at(1) < ibtm_x.at(0) &&
+        btm_y.at(0) !== ibtm_y.at(0) &&
+        bear_concordant
+    ) {
+        ibtm_cross.add(ibtm_x.at(0));  // Записываем что последний локальный лой был обновлен
+        itrend.add(-1);  // Тренд нисходящий
+        itop_cross.add(itop_cross.at(0));  // Обновления локального хая не произошло
+    } else {
+        // Если нет изменений
+        ibtm_cross.add(ibtm_cross.at(0));  // Продлеваем оба пересечения
+        itop_cross.add(itop_cross.at(0));  // Продлеваем оба пересечения
+        itrend.add(itrend.at(0));  // Просто берем предыдущие значения, тренд не менялся
+    }
+}
+
+function fillSwings(n: number, localLength: number, top: number[], top_x: Structure, top_y: Structure, btm: number[], btm_x: Structure, btm_y: Structure, itop: number[], ibtm: number[], itop_x: Structure, itop_y: Structure, ibtm_x: Structure, ibtm_y: Structure) {
+    // Если перехай найден
+    if (top[n]) {
+        // Записываем цену у перехаев
+        top_y.add(top[n]);
+        // Записываем индекс у перехаев
+        top_x.add(n - length);
+
+        // хз
+        // trail_up.add(top[n]);
+        // trail_up_x.add(n - length);
+    } else {
+        // Если перехая нет - будет 0, поэтому просто повторяем предыдущее значение и индекс
+        top_y.add(top_y.at(0));
+        top_x.add(top_x.at(0));
+
+        // хз
+        // trail_up.add(Max(high[n], trail_up.at(0)));
+        // trail_up_x.add(trail_up.at(0) === high[n] ? n : trail_up_x.at(0));
+    }
+    // Аналогично для локального перехая
+    if (itop[n]) {
+        itop_y.add(itop[n]);
+        itop_x.add(n - localLength);
+    } else {
+        itop_y.add(itop_y.at(0));
+        itop_x.add(itop_x.at(0));
+    }
+
+    // Если перелой найден
+    if (btm[n]) {
+        // Записываем цену у перелоев
+        btm_y.add(btm[n]);
+        // Записываем индекс у перелоев
+        btm_x.add(n - length);
+
+        // trail_dn.add(btm[n]);
+        // trail_dn_x.add(n - length);
+    } else {
+        // Если перелоев нет - будет 0, поэтому просто повторяем предыдущее значение и индекс
+        btm_y.add(btm_y.at(0));
+        btm_x.add(btm_x.at(0));
+
+        // trail_dn.add(Min(low[n], trail_dn.at(0)));
+        // trail_dn_x.add(trail_dn.at(0) === low[n] ? n : trail_dn_x.at(0));
+    }
+    // Аналогично для локального перелоев
+    if (ibtm[n]) {
+        ibtm_y.add(ibtm[n]);
+        ibtm_x.add(n - localLength);
+    } else {
+        ibtm_y.add(ibtm_y.at(0));
+        ibtm_x.add(ibtm_x.at(0));
+    }
 }

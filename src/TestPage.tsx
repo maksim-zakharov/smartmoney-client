@@ -1,14 +1,26 @@
 import React, {FC, useEffect, useMemo, useRef, useState} from "react";
-import {ColorType, createChart, CrosshairMode, LineStyle, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
+import {
+    ColorType,
+    createChart,
+    CrosshairMode,
+    isBusinessDay,
+    isUTCTimestamp,
+    LineStyle,
+    SeriesMarker,
+    Time,
+    UTCTimestamp
+} from "lightweight-charts";
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts.ts";
-import {Checkbox} from "antd";
+import {Checkbox, Slider} from "antd";
+import {SessionHighlighting} from "./lwc-plugins/session-highlighting.ts";
 
 
 const Chart: FC<{
     crosses?: boolean,
     smPatterns?: boolean,
+    trend?: boolean,
     lines?: boolean,
     extremums?: boolean,
     data: any[],
@@ -16,7 +28,7 @@ const Chart: FC<{
     withBug,
     windowLength: number,
     tf: number
-}> = ({withBug, crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
+}> = ({trend, withBug, crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -138,6 +150,7 @@ const Chart: FC<{
             const {
                 markers,
                 lines: linesData,
+                itrend,
                 btm,
                 _top,
                 itop,
@@ -150,12 +163,49 @@ const Chart: FC<{
                 ibtm_cross
             } = calculate(data, windowLength, withBug);
 
+            if(trend){
+
+                function getDate(time: Time): Date {
+                    if (isUTCTimestamp(time)) {
+                        return new Date(time);
+                    } else if (isBusinessDay(time)) {
+                        return new Date(time.year, time.month, time.day);
+                    } else {
+                        return new Date(time);
+                    }
+                }
+
+                const sessionHighlighter = (time: Time) => {
+                    const index = data.findIndex(c => c.time * 1000 === time);
+                    if (itrend._data[index] > 0) {
+                        return 'rgba(20, 131, 92, 0.4)';
+                    }
+                    if (itrend._data[index] < 0) {
+                        return 'rgba(157, 43, 56, 0.4)';
+                    }
+                    if (itrend._data[index] === 0) {
+                        return 'gray';
+                    }
+
+                    const date = getDate(time);
+                    const dayOfWeek = date.getDay();
+                    if (dayOfWeek === 0 || dayOfWeek === 6) {
+                        // Weekend 🏖️
+                        return 'rgba(255, 152, 1, 0.08)'
+                    }
+                    return 'rgba(41, 98, 255, 0.08)';
+                };
+
+                const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
+                newSeries.attachPrimitive(sessionHighlighting);
+            }
+
             // console.log("ibtm_cross", ibtm_cross)
             // console.log("btmMarkers", btmMarkers)
 
             const allMarkers = [];
 
-            if(crosses){
+            if (crosses) {
                 const btmMarkers = Array.from(new Set(ibtm_cross.asArray())).map((index) => ({
                     time: (data[index]?.time * 1000) as UTCTimestamp,
                     // value: btm_x[index],
@@ -243,7 +293,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [crosses, withBug, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [trend, crosses, withBug, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -253,7 +303,7 @@ const Chart: FC<{
 
 // Функция для получения данных из Alor API
 async function fetchCandlesFromAlor(symbol, tf) {
-    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-11-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-11-21T00:00:00Z").getTime() / 1000)}`;
+    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-11-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-12-31:00:00Z").getTime() / 1000)}`;
 
     try {
         const response = await fetch(url, {
@@ -315,16 +365,18 @@ export const TestPage = () => {
         smPatterns: checkboxValues.includes('smPatterns'),
         crosses: checkboxValues.includes('crosses'),
         withBug: checkboxValues.includes('withBug'),
+        trend: checkboxValues.includes('trend'),
     }), [checkboxValues])
 
     return <>
-        {/*<Slider defaultValue={windowLength} onChange={setWindowLength} />*/}
+        <Slider defaultValue={windowLength} onChange={setWindowLength} />
         <Checkbox.Group onChange={setCheckboxValues}>
             <Checkbox key="extremums" value="extremums">Экстремумы</Checkbox>
             <Checkbox key="lines" value="lines">Линии</Checkbox>
             <Checkbox key="smPatterns" value="smPatterns">BOS/CHoCH</Checkbox>
             <Checkbox key="crosses" value="crosses">Пересечения</Checkbox>
             <Checkbox key="withBug" value="withBug">С Багом))</Checkbox>
+            <Checkbox key="trend" value="trend">Тренд</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>
