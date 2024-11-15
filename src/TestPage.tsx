@@ -22,13 +22,14 @@ const Chart: FC<{
     smPatterns?: boolean,
     trend?: boolean,
     lines?: boolean,
+    plotBullInternal?: boolean,
     extremums?: boolean,
     data: any[],
     ema: any[],
     withBug,
     windowLength: number,
     tf: number
-}> = ({trend, crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
+}> = ({plotBullInternal, trend, crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -150,6 +151,7 @@ const Chart: FC<{
             const {
                 markers,
                 lines: linesData,
+                newLines,
                 itrend,
                 btm,
                 _top,
@@ -285,6 +287,8 @@ const Chart: FC<{
             linesData.forEach(marker => addLine(marker.price, marker.fromTime, marker.toTime, marker.color))
             smPatterns && markers.forEach(marker => addLine(marker.value, marker.time, marker.time + tf * 10 * 1000, marker.color))
 
+            plotBullInternal && newLines.forEach(marker => addLine(marker.price, marker.time, marker.time + tf * 10 * 1000, marker.color));
+
             window.addEventListener("resize", handleResize);
 
             return () => {
@@ -293,7 +297,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [trend, crosses, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [plotBullInternal, trend, crosses, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -365,6 +369,7 @@ export const TestPage = () => {
         smPatterns: checkboxValues.includes('smPatterns'),
         crosses: checkboxValues.includes('crosses'),
         trend: checkboxValues.includes('trend'),
+        plotBullInternal: checkboxValues.includes('plotInternal'),
     }), [checkboxValues])
 
     return <>
@@ -375,6 +380,7 @@ export const TestPage = () => {
             <Checkbox key="smPatterns" value="smPatterns">BOS/CHoCH</Checkbox>
             <Checkbox key="crosses" value="crosses">Пересечения</Checkbox>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
+            <Checkbox key="plotInternal" value="plotInternal">Линии по LuxAlgo</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>

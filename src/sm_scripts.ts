@@ -1,31 +1,3 @@
-function Max(...numbers: number[]) {
-    return Math.max(...numbers);
-}
-
-function Min(...numbers: number[]) {
-    return Math.min(...numbers);
-}
-
-function GetValue(plot: Structure, offset: number): number {
-    if (offset >= 0) {
-        return plot.at(0);
-    }
-    return plot._data[-offset];
-}
-
-class double {
-    static nan = Number.NaN;
-}
-
-function highest(arr: number[], length: number) {
-    // Проверяем, что длина массива больше либо равна нужному количеству периодов
-    if (arr.length < length) return null;
-
-    // Берем последние length элементов массива и находим максимальное значение
-    const recentValues = arr.slice(-length);
-    return Math.max(...recentValues);
-}
-
 class Structure {
     _data: number[] = [];
     _fill;
@@ -72,10 +44,35 @@ class Structure {
     }
 
     highest(length: number) {
+        const newSctuct = new Structure();
         if (!this._data.length) {
-            return NaN;
+            return newSctuct;
         }
-        return Math.max(...this._data.slice(-length))
+        newSctuct.add(Math.max(...this._data.slice(-Math.min(this._data.length, length))))
+        return newSctuct
+    }
+
+    displacer(shift: number){
+
+        // Проверяем, что массив не пустой
+        if (this._data.length === 0) {
+            return null; // Или можно вернуть NaN
+        }
+
+        // Получаем последний элемент массива
+        const lastValue = this.at(0);
+
+        // Проверяем сдвиг влево
+        if (shift < 0) {
+            // Рассчитываем новый индекс для перемещения последнего значения
+            const newIndex = this._data.length + shift; // Позиция на 6 позиций назад
+            if (newIndex >= 0) {
+                this._data[newIndex] = lastValue; // Перемещаем значение на новый индекс
+                this._data[this._data.length - 1] = 0; // Убираем последнее значение (перезаписываем его на null)
+            }
+        }
+
+        return this;
     }
 }
 
@@ -120,11 +117,28 @@ enum CrossDirection {
     Below = 'below',
 }
 
+/**
+ * Берутся текущее и прошлое значения цены закрытия и экстремума и сравниваются на пересечения
+ * @param close
+ * @param extremumPrice
+ * @param direction
+ * @constructor
+ */
 function Crosses(close: Structure, extremumPrice: Structure, direction: CrossDirection) {
     if (!close.at(1) || extremumPrice._data.length < 2) {
         return false;
     }
 
+    /**
+     * Что проверяется? Функция проверяет, произошло ли пересечение с первым значением (close) снизу вверх через второе значение (itop_y).
+     *
+     * Пояснение:
+     * Если на предыдущем баре (bar[1]) close было больше itop_y, а на текущем баре close стало меньше itop_y, то это будет пересечение вниз.
+     *
+     * Результат:
+     * В данном случае пересечение вниз не происходит, так как текущий close (100) больше текущего itop_y (99).
+     * Поэтому, если на предыдущем баре close было больше, чем itop_y, то функция не вернет true для CrossingDirection.BELOW.
+     */
     // Проверка пересечения для направления "below" (сверху вниз)
     if (
         direction === CrossDirection.Below &&
@@ -137,6 +151,18 @@ function Crosses(close: Structure, extremumPrice: Structure, direction: CrossDir
         return true;
     }
 
+    /**
+     * Что проверяется? Функция проверяет, произошло ли пересечение с первым значением (close) сверху вниз через второе значение (itop_y).
+     *
+     * Пояснение:
+     * На предыдущем баре (bar[1]) значение close должно было быть меньше itop_y для того, чтобы сработала логика пересечения "вверх".
+     * На текущем баре значение close (100) больше itop_y (99).
+     *
+     * Результат:
+     * Если на предыдущем баре (bar[1]) значение close было меньше, чем itop_y, и на текущем баре close стало больше itop_y, то это пересечение вверх.
+     * В этом случае, если на предыдущем баре close было меньше, чем itop_y, то функция вернет true, потому что произошло пересечение вверх.
+     * Таким образом, если на предыдущем баре close было меньше itop_y, то результат будет true.
+     */
     // Проверка пересечения для направления "above" (снизу вверх)
     if (
         direction === CrossDirection.Above &&
@@ -226,7 +252,7 @@ export function calculate(candles: {
     open: number,
     time: number
 }[], windowLength?: number) {
-    let markers = [];
+    const markers = [];
 
     const colors = {};
 
@@ -274,6 +300,9 @@ export function calculate(candles: {
     const high = new Structure(length, 0);
     const low = new Structure(length, 0);
 
+    const InternalBullStructureVal = new Structure(length, 0);
+    const InternalBearStructureVal = new Structure(length, 0);
+
     // Нашли максимумы и минимумы с окном в 50 свечек
     const {top, btm} = swings(length, candles);
     // Нашли максимумы и минимумы с окном в 5 свечек
@@ -297,6 +326,48 @@ export function calculate(candles: {
          *                          then GetValue(itop_y,-i1)
          *                          else 0;
          */
+
+        const plotBullInternal = new Structure();
+        for (let i1 = 0; i1 < 1000; i1++) {
+            if(itop_cross.at(i1+1) < itop_x.at(i1+1) && itop_x.at(0) === itop_x.at(i1+1)){
+                if(itop_cross.at(i1) === itop_x.at(i1)){
+                    plotBullInternal.add(itop_y.at(i1));
+                } else {
+                    plotBullInternal.add(0);
+                }
+            } else {
+                break;
+            }
+        }
+
+        InternalBullStructureVal.add(plotBullInternal.highest(6).at(0) ? plotBullInternal.highest(6).at(0) : 0);
+
+        console.log("InternalBullStructureVal", InternalBullStructureVal);
+        if(showInternals){
+            const displaced = InternalBullStructureVal.displacer(-6);
+            console.log("InternalBullStructureVal.displaced", displaced);
+        }
+
+        const plotBearInternal = new Structure();
+        for (let i1 = 0; i1 < 1000; i1++) {
+            if(ibtm_cross.at(i1+1) < ibtm_x.at(i1+1) && ibtm_x.at(0) === ibtm_x.at(i1+1)){
+                if(ibtm_cross.at(i1) === ibtm_x.at(i1)){
+                    plotBearInternal.add(ibtm_y.at(i1));
+                } else {
+                    plotBearInternal.add(0);
+                }
+            } else {
+                break;
+            }
+        }
+
+        InternalBearStructureVal.add(plotBearInternal.highest(6).at(0) ? plotBearInternal.highest(6).at(0) : 0);
+
+        console.log("InternalBearStructureVal", InternalBearStructureVal);
+        if(showInternals){
+            const displaced = InternalBearStructureVal.displacer(-6);
+            console.log("InternalBearStructureVal.displaced", displaced);
+        }
 
             // <-- TODO ДО СЮДА ВОПРОСОВ НЕТ -->
 
@@ -492,25 +563,6 @@ export function calculate(candles: {
         );
     }
 
-    const plotBullInternal = [];
-    for (let i1 = 0; i1 < 1000; i1++) {
-
-        // Пока мы копим последнее значение - рисуем его
-        if (itop_x.at(0) === itop_x.at(i1)) {
-            plotBullInternal.push(itop_y.at(i1));
-        } else {
-            break;
-        }
-
-        // if (itop_cross.at(i1) < itop_x.at(i1) && itop_x.at(0) === itop_x.at(i1)) {
-        //     if (itop_cross.at(i1) === itop_x.at(i1)) {
-        //         plotBullInternal.push(itop_y.at(i1));
-        //     } else {
-        //         plotBullInternal.push(0);
-        //     }
-        // }
-    }
-
     const itop_cross_array = itop_cross.asArray();
     const itop_x_array = itop_x.asArray();
     const itop_y_array = itop_y.asArray();
@@ -585,6 +637,28 @@ export function calculate(candles: {
 
     const lines = [...btmLines, ...topLines];
 
+    const newLines = [];
+    for (let i = 0; i < InternalBullStructureVal._data.length; i++) {
+        if(!InternalBullStructureVal._data[i]){
+            continue;
+        }
+        newLines.push({
+            price: InternalBullStructureVal._data[i],
+            time: candles[i].time * 1000,
+            color: 'rgb(20, 131, 92)'
+        })
+    }
+    for (let i = 0; i < InternalBearStructureVal._data.length; i++) {
+        if(!InternalBearStructureVal._data[i]){
+            continue;
+        }
+        newLines.push({
+            price: InternalBearStructureVal._data[i],
+            time: candles[i].time * 1000,
+            color: 'rgb(157, 43, 56)'
+        })
+    }
+
     // console.log("itop_x", itop_x._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
     // console.log("ibtm_x", ibtm_x._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
     // console.log("itop_x_format_time", itop_x._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
@@ -594,14 +668,14 @@ export function calculate(candles: {
     // console.log("ibtm_cross_format_time", ibtm_cross._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
     // console.log("lines", lines);
 
-    return {markers, lines, btm, ibtm, _top: top, itop, top_x, btm_x, itop_x, ibtm_x, ibtm_cross, itop_cross, itrend};
+    return {markers, newLines, lines, btm, ibtm, _top: top, itop, top_x, btm_x, itop_x, ibtm_x, ibtm_cross, itop_cross, itrend};
 }
 
 // Тут типо фильтруются малозначительные пробои.
 // - Для пробоя быками нужно чтобы хвост сверху был больше хвоста снизу
 // - Для пробоя медведями нужно чтобы хвост снизу был больше хвоста сверху
 // Вычисляем хвосты: если хвост сверху больше чем хвост снизу - то бык
-function calculateConcordance(high: Structure, low: Structure, close:Structure, open: Structure, ifilter_confluence: boolean) {
+function calculateConcordance(high: Structure, low: Structure, close: Structure, open: Structure, ifilter_confluence: boolean) {
     const bull_concordant = !ifilter_confluence || high.at(0) - Math.max(close.at(0), open.at(0)) > Math.min(close.at(0), open.at(0)) - low.at(0);
     const bear_concordant = !ifilter_confluence || high.at(0) - Math.max(close.at(0), open.at(0)) < Math.min(close.at(0), open.at(0)) - low.at(0);
     return {bull_concordant, bear_concordant};
@@ -710,7 +784,7 @@ function fillPrices(candles: {
     close: number,
     open: number,
     time: number
-}[], n: number, open: Structure, close: Structure, high: Structure, low: Structure){
+}[], n: number, open: Structure, close: Structure, high: Structure, low: Structure) {
     open.add(candles[n].open);
     close.add(candles[n].close);
     high.add(candles[n].high);
