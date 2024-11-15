@@ -52,7 +52,7 @@ class Structure {
         return newSctuct
     }
 
-    displacer(shift: number){
+    displacer(shift: number) {
 
         // Проверяем, что массив не пустой
         if (this._data.length === 0) {
@@ -300,8 +300,8 @@ export function calculate(candles: {
     const high = new Structure(length, 0);
     const low = new Structure(length, 0);
 
-    const InternalBullStructureVal = new Structure(length, 0);
-    const InternalBearStructureVal = new Structure(length, 0);
+    const InternalBullStructureVal = new Structure(0, 0);
+    const InternalBearStructureVal = new Structure(0, 0);
 
     // Нашли максимумы и минимумы с окном в 50 свечек
     const {top, btm} = swings(length, candles);
@@ -316,67 +316,28 @@ export function calculate(candles: {
 
         calculateCrossesExtremes(high, low, close, open, itop_y, btm_y, itop_cross, itop_x, ibtm_cross, ibtm_x, ibtm_y, top_y, itrend, n, ifilter_confluence)
 
-        /** Рисуем пунктирные линии
-         * def plotBullInternal =
-         *      fold i1 = 0 to 1000
-         *          with p1 = 0
-         *              while GetValue(itop_cross,-(i1-1)) < GetValue(itop_x,-(i1-1)) and itop_x == GetValue(itop_x,-(i1-1))
-         *                  do
-         *                      if GetValue(itop_cross,-(i1)) == GetValue(itop_x,-(i1))
-         *                          then GetValue(itop_y,-i1)
-         *                          else 0;
-         */
+        if (showInternals) {
+            const InternalBullStructure = calculatePlotInternal(itop_cross, itop_x, itop_y, InternalBullStructureVal, showInternals)
+            const InternalBearStructure = calculatePlotInternal(ibtm_cross, ibtm_x, ibtm_y, InternalBearStructureVal, showInternals)
 
-        const plotBullInternal = new Structure();
-        for (let i1 = 0; i1 < 1000; i1++) {
-            if(itop_cross.at(i1+1) < itop_x.at(i1+1) && itop_x.at(0) === itop_x.at(i1+1)){
-                if(itop_cross.at(i1) === itop_x.at(i1)){
-                    plotBullInternal.add(itop_y.at(i1));
-                } else {
-                    plotBullInternal.add(0);
-                }
-            } else {
-                break;
-            }
+            console.log("InternalBullStructure", InternalBullStructure)
+            console.log("InternalBearStructure", InternalBearStructure)
+
+            const bullBubble = buildBubble(itop_x, candles[itop_x.at(0)].time, InternalBullStructure, InternalBearStructure, itrend, true)
+            const bearBubble = buildBubble(ibtm_x, candles[ibtm_x.at(0)].time, InternalBearStructure, InternalBullStructure, itrend, false)
+
+            if(bullBubble) markers.push(bullBubble);
+            if(bearBubble) markers.push(bearBubble);
         }
 
-        InternalBullStructureVal.add(plotBullInternal.highest(6).at(0) ? plotBullInternal.highest(6).at(0) : 0);
+        // <-- TODO ДО СЮДА ВОПРОСОВ НЕТ -->
 
-        console.log("InternalBullStructureVal", InternalBullStructureVal);
-        if(showInternals){
-            const displaced = InternalBullStructureVal.displacer(-6);
-            console.log("InternalBullStructureVal.displaced", displaced);
-        }
-
-        const plotBearInternal = new Structure();
-        for (let i1 = 0; i1 < 1000; i1++) {
-            if(ibtm_cross.at(i1+1) < ibtm_x.at(i1+1) && ibtm_x.at(0) === ibtm_x.at(i1+1)){
-                if(ibtm_cross.at(i1) === ibtm_x.at(i1)){
-                    plotBearInternal.add(ibtm_y.at(i1));
-                } else {
-                    plotBearInternal.add(0);
-                }
-            } else {
-                break;
-            }
-        }
-
-        InternalBearStructureVal.add(plotBearInternal.highest(6).at(0) ? plotBearInternal.highest(6).at(0) : 0);
-
-        console.log("InternalBearStructureVal", InternalBearStructureVal);
-        if(showInternals){
-            const displaced = InternalBearStructureVal.displacer(-6);
-            console.log("InternalBearStructureVal.displaced", displaced);
-        }
-
-            // <-- TODO ДО СЮДА ВОПРОСОВ НЕТ -->
-
-            // plotBullInternal - формула рисования пунктирных линий, в которой находим точку начала и конца пунктирной линии
-            // Рисуем пунктирную линию PaintingStrategy.DASHES
-            // от точки GetValue(itop_x,-(i1-1)
-            // пока точка GetValue(itop_x,-(i1-1) является последней точкой itop_x
-            // и пока не пересечена новой свечой itop_cross
-            // В момент пересечения GetValue(itop_cross,-(i1)) == GetValue(itop_x,-(i1)) записываем цену GetValue(itop_y,-i1)
+        // plotBullInternal - формула рисования пунктирных линий, в которой находим точку начала и конца пунктирной линии
+        // Рисуем пунктирную линию PaintingStrategy.DASHES
+        // от точки GetValue(itop_x,-(i1-1)
+        // пока точка GetValue(itop_x,-(i1-1) является последней точкой itop_x
+        // и пока не пересечена новой свечой itop_cross
+        // В момент пересечения GetValue(itop_cross,-(i1)) == GetValue(itop_x,-(i1)) записываем цену GetValue(itop_y,-i1)
 
         const itop_crossArray = itop_cross.asArray()
         const itop_yArray = itop_y.asArray()
@@ -639,7 +600,7 @@ export function calculate(candles: {
 
     const newLines = [];
     for (let i = 0; i < InternalBullStructureVal._data.length; i++) {
-        if(!InternalBullStructureVal._data[i]){
+        if (!InternalBullStructureVal._data[i]) {
             continue;
         }
         newLines.push({
@@ -649,7 +610,7 @@ export function calculate(candles: {
         })
     }
     for (let i = 0; i < InternalBearStructureVal._data.length; i++) {
-        if(!InternalBearStructureVal._data[i]){
+        if (!InternalBearStructureVal._data[i]) {
             continue;
         }
         newLines.push({
@@ -668,7 +629,22 @@ export function calculate(candles: {
     // console.log("ibtm_cross_format_time", ibtm_cross._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
     // console.log("lines", lines);
 
-    return {markers, newLines, lines, btm, ibtm, _top: top, itop, top_x, btm_x, itop_x, ibtm_x, ibtm_cross, itop_cross, itrend};
+    return {
+        markers,
+        newLines,
+        lines,
+        btm,
+        ibtm,
+        _top: top,
+        itop,
+        top_x,
+        btm_x,
+        itop_x,
+        ibtm_x,
+        ibtm_cross,
+        itop_cross,
+        itrend
+    };
 }
 
 // Тут типо фильтруются малозначительные пробои.
@@ -789,4 +765,56 @@ function fillPrices(candles: {
     close.add(candles[n].close);
     high.add(candles[n].high);
     low.add(candles[n].low);
+}
+
+function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, structureVal: Structure, showInternals?: boolean) {
+    const plotBullInternal = new Structure();
+    for (let i1 = 0; i1 < 1000; i1++) {
+        if (cross.at(i1 + 1) < x.at(i1 + 1) && x.at(0) === x.at(i1 + 1)) {
+            if (cross.at(i1) === x.at(i1)) {
+                plotBullInternal.add(y.at(i1));
+            } else {
+                plotBullInternal.add(0);
+            }
+        } else {
+            break;
+        }
+    }
+
+    structureVal.add(plotBullInternal.highest(6).at(0) ? plotBullInternal.highest(6).at(0) : 0);
+
+    return showInternals ? structureVal.displacer(-6) : null;
+}
+
+function buildBubble(x: Structure, time: number, internalStructure: Structure, contrStructure: Structure, itrend: Structure, bullish?: boolean) {
+
+    const conf = bullish
+        ? {
+            color: 'rgb(20, 131, 92)',
+            position: 'aboveBar',
+            shape: 'text', // 'arrowUp',
+        }
+        : {
+            color: 'rgb(157, 43, 56)',
+            position: 'belowBar',
+            shape: 'text', // 'arrowDown',
+        };
+
+    const trend = bullish ? 1 : -1;
+
+    if (x.at(0) !== x.at(1)
+        && internalStructure.at(4)) {
+
+        return {
+            ...conf,
+            value: internalStructure.at(0),
+            time: time * 1000,
+            text: itrend.at(0) === trend || contrStructure.at(4)
+                ?
+                'CHoCH'
+                : 'BOS', // Текст внутри пузырька
+        }
+    }
+
+    return null;
 }
