@@ -120,8 +120,8 @@ enum CrossDirection {
     Below = 'below',
 }
 
-function Crosses(close: number[], extremumPrice: Structure, direction: CrossDirection) {
-    if (close.length < 2 || extremumPrice._data.length < 2) {
+function Crosses(close: Structure, extremumPrice: Structure, direction: CrossDirection) {
+    if (!close.at(1) || extremumPrice._data.length < 2) {
         return false;
     }
 
@@ -129,9 +129,9 @@ function Crosses(close: number[], extremumPrice: Structure, direction: CrossDire
     if (
         direction === CrossDirection.Below &&
         // Когда предыдущая цена закрытия выше последнего минимума
-        close[close.length - 1 - 1] > extremumPrice.at(1) &&
+        close.at(1) > extremumPrice.at(1) &&
         // А новая цена закрытия ниже последнего (текущего) минимума
-        close[close.length - 1] <= extremumPrice.at(0)
+        close.at(0) <= extremumPrice.at(0)
     ) {
         // То считаем что произошло пробитие минимума (перелой)
         return true;
@@ -141,9 +141,9 @@ function Crosses(close: number[], extremumPrice: Structure, direction: CrossDire
     if (
         direction === CrossDirection.Above &&
         // Когда предыдущая цена закрытия ниже последнего максимума
-        close[close.length - 1 - 1] < extremumPrice.at(1) &&
+        close.at(1) < extremumPrice.at(1) &&
         // А новая цена закрытия выше последнего (текущего) максимума
-        close[close.length - 1] >= extremumPrice.at(0)
+        close.at(0) >= extremumPrice.at(0)
     ) {
         // То считаем что произошло пробитие максимума (перехай)
         return true;
@@ -269,10 +269,10 @@ export function calculate(candles: {
 
     const itrend = new Structure(50, 0);
 
-    const high = candles.map((c) => c.high);
-    const close = candles.map((c) => c.close);
-    const low = candles.map((c) => c.low);
-    const open = candles.map((c) => c.open);
+    const open = new Structure(length, 0);
+    const close = new Structure(length, 0);
+    const high = new Structure(length, 0);
+    const low = new Structure(length, 0);
 
     // Нашли максимумы и минимумы с окном в 50 свечек
     const {top, btm} = swings(length, candles);
@@ -280,6 +280,8 @@ export function calculate(candles: {
     const {top: itop, btm: ibtm} = swings(localLength, candles);
 
     for (let n = length; n < candles.length; n++) {
+        // НЕ УДАЛЯТЬ, ТУТ ТОЧНО ВСЕ ОК, ПРОСТО ЗАПОЛНЯЮТСЯ СТРУКТУРЫ ПОСЛЕДНЕЙ ЦЕНОЙ (чтобы потом не ебаться с массивом)
+        fillPrices(candles, n, open, close, high, low)
 
         fillSwings(n, length, localLength, top, top_x, top_y, btm, btm_x, btm_y, itop, ibtm, itop_x, itop_y, ibtm_x, ibtm_y)
 
@@ -599,18 +601,18 @@ export function calculate(candles: {
 // - Для пробоя быками нужно чтобы хвост сверху был больше хвоста снизу
 // - Для пробоя медведями нужно чтобы хвост снизу был больше хвоста сверху
 // Вычисляем хвосты: если хвост сверху больше чем хвост снизу - то бык
-function calculateConcordance(high: number[], low: number[], close: number[], open: number[], n: number, ifilter_confluence: boolean) {
-    const bull_concordant = !ifilter_confluence || high[n] - Math.max(close[n], open[n]) > Math.min(close[n], open[n]) - low[n];
-    const bear_concordant = !ifilter_confluence || high[n] - Math.max(close[n], open[n]) < Math.min(close[n], open[n]) - low[n];
+function calculateConcordance(high: Structure, low: Structure, close:Structure, open: Structure, ifilter_confluence: boolean) {
+    const bull_concordant = !ifilter_confluence || high.at(0) - Math.max(close.at(0), open.at(0)) > Math.min(close.at(0), open.at(0)) - low.at(0);
+    const bear_concordant = !ifilter_confluence || high.at(0) - Math.max(close.at(0), open.at(0)) < Math.min(close.at(0), open.at(0)) - low.at(0);
     return {bull_concordant, bear_concordant};
 }
 
-function calculateCrossesExtremes(high: number[], low: number[], close: number[], open: number[], itop_y: Structure, btm_y: Structure, itop_cross: Structure, itop_x: Structure, ibtm_cross: Structure, ibtm_x: Structure, ibtm_y: Structure, top_y: Structure, itrend: Structure, n: number, ifilter_confluence: boolean) {
-    const {bull_concordant, bear_concordant} = calculateConcordance(high, low, close, open, n, ifilter_confluence);
+function calculateCrossesExtremes(high: Structure, low: Structure, close: Structure, open: Structure, itop_y: Structure, btm_y: Structure, itop_cross: Structure, itop_x: Structure, ibtm_cross: Structure, ibtm_x: Structure, ibtm_y: Structure, top_y: Structure, itrend: Structure, n: number, ifilter_confluence: boolean) {
+    const {bull_concordant, bear_concordant} = calculateConcordance(high, low, close, open, ifilter_confluence);
 
     // Проверка на восходящий тренд
     if (
-        Crosses(close.slice(n - 1, n + 1), itop_y, CrossDirection.Above) &&
+        Crosses(close, itop_y, CrossDirection.Above) &&
         itop_cross.at(1) < itop_x.at(0) &&
         top_y.at(0) !== itop_y.at(0) &&
         bull_concordant
@@ -621,7 +623,7 @@ function calculateCrossesExtremes(high: number[], low: number[], close: number[]
     }
     // Проверка на нисходящий тренд
     else if (
-        Crosses(close.slice(n - 1, n + 1), ibtm_y, CrossDirection.Below) &&
+        Crosses(close, ibtm_y, CrossDirection.Below) &&
         ibtm_cross.at(1) < ibtm_x.at(0) &&
         btm_y.at(0) !== ibtm_y.at(0) &&
         bear_concordant
@@ -691,4 +693,26 @@ function fillSwings(n: number, length: number, localLength: number, top: number[
         ibtm_y.add(ibtm_y.at(0));
         ibtm_x.add(ibtm_x.at(0));
     }
+}
+
+/**
+ * Заполняем OHLC структуры последними ценами по n
+ * @param candles
+ * @param n
+ * @param open
+ * @param close
+ * @param high
+ * @param low
+ */
+function fillPrices(candles: {
+    high: number,
+    low: number,
+    close: number,
+    open: number,
+    time: number
+}[], n: number, open: Structure, close: Structure, high: Structure, low: Structure){
+    open.add(candles[n].open);
+    close.add(candles[n].close);
+    high.add(candles[n].high);
+    low.add(candles[n].low);
 }
