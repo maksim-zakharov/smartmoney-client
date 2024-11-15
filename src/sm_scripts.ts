@@ -178,29 +178,6 @@ function Crosses(close: Structure, extremumPrice: Structure, direction: CrossDir
     return false;
 }
 
-class SwingClass {
-    len: number;
-    os: number;
-    old_os: number;
-    owner: { High: number[], Low: number[] } = {High: [], Low: []};
-
-    constructor(candles: { high: number, low: number }[]) {
-        const highs = candles.map((price) => price.high);
-        const lows = candles.map((price) => price.low);
-        this.owner.High = highs;
-        this.owner.Low = lows;
-    }
-
-    doCalc(top: number, btm: number, len: number, upper: number, lower: number) {
-        this.os = this.owner.High[len] > upper ? 0 : (this.owner.Low[len] < lower ? 1 : this.old_os);
-        top = this.os != 0 || this.old_os == 0 ? 0 : this.owner.High[len];
-        btm = this.os != 1 || this.old_os == 1 ? 0 : this.owner.Low[len];
-        this.old_os = this.os;
-
-        return {top, btm};
-    }
-}
-
 enum OSType {
     UpdateHigh = 1,
     UpdateLow = 0
@@ -219,11 +196,11 @@ function swings(len: number = 5, candles: { high: number, low: number }[]): {
     const highs = candles.map((price) => price.high);
     const lows = candles.map((price) => price.low);
 
-    const os = new Structure(len, null);
+    const os = new Structure(0, null);
     // Массив перехаев, если 0 - то не было продолжения
-    const top = new Structure(len, 0);
+    const top = new Structure(0, 0);
     // Массив перелоев, если 0 - то не было продолжения
-    const btm = new Structure(len, 0);
+    const btm = new Structure(0, 0);
 
     // Проходим по данным начиная с индекса len
     for (let i = len; i < candles.length; i++) {
@@ -233,7 +210,6 @@ function swings(len: number = 5, candles: { high: number, low: number }[]): {
 
         // Если текущий хай выше прошлого максимума - 0 (произошло обновление максимума), если текущий лой ниже прошлого лоя - 1 (произошло обновление минимума), иначе берем последнее значение.
         os.add(highs[i] > highestHigh ? OSType.UpdateHigh : lows[i] < lowestLow ? OSType.UpdateLow : os.at(0));
-        // os.add(highs[i] > highestHigh ? 0 : lows[i] < lowestLow ? 1 : os.at(0));
 
         // Из общего массива значений разделяем его на 2 массива:
         // - если последнее значение было максимумом, а последнее нет (не обновлялось) - записываем максимум
@@ -251,26 +227,12 @@ export function calculate(candles: {
     close: number,
     open: number,
     time: number
-}[], windowLength?: number) {
+}[], colors: { bullColor: string, bearColor: string }, windowLength?: number) {
     const markers = [];
-
-    const colors = {};
-
-    function CreateColor(...params) {
-        return `rgb(${params.join(',')})`;
-    }
-
-    function DefineGlobalColor(key, value) {
-        colors[key] = value;
-    }
 
     const showInternals = true;
     const length = 50;
     const ifilter_confluence = false;
-    DefineGlobalColor('Internal Bullish', CreateColor(20, 131, 92));
-    DefineGlobalColor('Internal Bearish', CreateColor(157, 43, 56));
-    DefineGlobalColor('Swing Bullish', CreateColor(20, 131, 92));
-    DefineGlobalColor('Swing Bearish', CreateColor(157, 43, 56));
 
     const top_cross = [],
         top_y = new Structure(),
@@ -323,11 +285,11 @@ export function calculate(candles: {
             console.log("InternalBullStructure", InternalBullStructure)
             console.log("InternalBearStructure", InternalBearStructure)
 
-            const bullBubble = buildBubble(itop_x, candles[itop_x.at(0)].time, InternalBullStructure, InternalBearStructure, itrend, true)
-            const bearBubble = buildBubble(ibtm_x, candles[ibtm_x.at(0)].time, InternalBearStructure, InternalBullStructure, itrend, false)
+            const bullBubble = buildBubble(itop_x, candles[itop_x.at(0)].time, InternalBullStructure, InternalBearStructure, itrend, colors,true)
+            const bearBubble = buildBubble(ibtm_x, candles[ibtm_x.at(0)].time, InternalBearStructure, InternalBullStructure, itrend, colors,false)
 
-            if(bullBubble) markers.push(bullBubble);
-            if(bearBubble) markers.push(bearBubble);
+            if (bullBubble) markers.push(bullBubble);
+            if (bearBubble) markers.push(bearBubble);
         }
 
         // <-- TODO ДО СЮДА ВОПРОСОВ НЕТ -->
@@ -441,12 +403,12 @@ export function calculate(candles: {
         function AddChartBubble(condition, candle, text, bullish, isVertical) {
             const conf = bullish
                 ? {
-                    color: GlobalColor('Internal Bullish'),
+                    color: colors.bullColor,
                     position: 'aboveBar',
                     shape: 'text', // 'arrowUp',
                 }
                 : {
-                    color: GlobalColor('Internal Bearish'),
+                    color: colors.bearColor,
                     position: 'belowBar',
                     shape: 'text', // 'arrowDown',
                 };
@@ -586,14 +548,14 @@ export function calculate(candles: {
         price,
         fromTime: candles[from].time * 1000,
         toTime: candles[to].time * 1000,
-        color: 'rgb(20, 131, 92)'
+        color: colors.bullColor
     }))
 
     const btmLines = ibtm_cross_result.map(({from, to, price}) => ({
         price,
         fromTime: candles[from].time * 1000,
         toTime: candles[to].time * 1000,
-        color: 'rgb(157, 43, 56)'
+        color: colors.bearColor
     }))
 
     const lines = [...btmLines, ...topLines];
@@ -606,7 +568,7 @@ export function calculate(candles: {
         newLines.push({
             price: InternalBullStructureVal._data[i],
             time: candles[i].time * 1000,
-            color: 'rgb(20, 131, 92)'
+            color: colors.bullColor
         })
     }
     for (let i = 0; i < InternalBearStructureVal._data.length; i++) {
@@ -616,7 +578,7 @@ export function calculate(candles: {
         newLines.push({
             price: InternalBearStructureVal._data[i],
             time: candles[i].time * 1000,
-            color: 'rgb(157, 43, 56)'
+            color: colors.bearColor
         })
     }
 
@@ -786,25 +748,27 @@ function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, str
     return showInternals ? structureVal.displacer(-6) : null;
 }
 
-function buildBubble(x: Structure, time: number, internalStructure: Structure, contrStructure: Structure, itrend: Structure, bullish?: boolean) {
+// Тут работает окей
+function buildBubble(x: Structure, time: number, internalStructure: Structure, contrStructure: Structure, itrend: Structure, colors: { bullColor: string, bearColor: string }, bullish?: boolean) {
+    if (x._data.length < 2) {
+        return null;
+    }
 
     const conf = bullish
         ? {
-            color: 'rgb(20, 131, 92)',
+            color: colors.bullColor,
             position: 'aboveBar',
             shape: 'text', // 'arrowUp',
         }
         : {
-            color: 'rgb(157, 43, 56)',
+            color: colors.bearColor,
             position: 'belowBar',
             shape: 'text', // 'arrowDown',
         };
 
-    const trend = bullish ? 1 : -1;
+    const trend = bullish ? -1 : 1;
 
-    if (x.at(0) !== x.at(1)
-        && internalStructure.at(4)) {
-
+    if (x.at(0) !== x.at(1) && internalStructure.at(4)) {
         return {
             ...conf,
             value: internalStructure.at(0),

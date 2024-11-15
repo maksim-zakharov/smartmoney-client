@@ -99,10 +99,15 @@ const Chart: FC<{
                 height: 700
             });
 
+            const markerColors = {
+                bearColor: "rgb(157, 43, 56)",
+                bullColor: "rgb(20, 131, 92)"
+            }
+
             const newSeries = chart.addCandlestickSeries({
-                downColor: "rgb(157, 43, 56)",
+                downColor: markerColors.bearColor,
                 borderDownColor: "rgb(213, 54, 69)",
-                upColor: "rgb(20, 131, 92)",
+                upColor: markerColors.bullColor,
                 borderUpColor: "rgb(11, 176, 109)",
                 wickUpColor: "rgb(11, 176, 109)",
                 wickDownColor: "rgb(213, 54, 69)",
@@ -133,7 +138,7 @@ const Chart: FC<{
                 ...d,
                 time: d.time * 1000,
                 value: d.volume,
-                color: d.open < d.close ? 'rgb(20, 131, 92)' : 'rgb(157, 43, 56)'
+                color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
             })));
 
             newSeries.setData(data.map(t => ({...t, time: t.time * 1000})));
@@ -163,7 +168,7 @@ const Chart: FC<{
                 top_x,
                 itop_cross,
                 ibtm_cross
-            } = calculate(data, windowLength);
+            } = calculate(data, markerColors, windowLength);
 
             if(trend){
 
@@ -211,7 +216,7 @@ const Chart: FC<{
                 const btmMarkers = Array.from(new Set(ibtm_cross.asArray())).map((index) => ({
                     time: (data[index]?.time * 1000) as UTCTimestamp,
                     // value: btm_x[index],
-                    color: 'rgb(157, 43, 56)',
+                    color: markerColors.bearColor,
                     position: 'belowBar',
                     shape: 'arrowUp',
                 }) as SeriesMarker<Time>)
@@ -221,7 +226,7 @@ const Chart: FC<{
                 const topMarkers = Array.from(new Set(itop_cross.asArray())).map((index) => ({
                     time: (data[index]?.time * 1000) as UTCTimestamp,
                     value: itop[index],
-                    color: 'rgb(20, 131, 92)',
+                    color: markerColors.bullColor,
                     position: 'aboveBar',
                     shape: 'arrowDown',
                 }) as SeriesMarker<Time>)
@@ -235,7 +240,7 @@ const Chart: FC<{
                 const ibtm_x_markers = Array.from(new Set(ibtm_x.asArray())).map(index => ({
                     time: (data[index]?.time * 1000) as UTCTimestamp,
                     // value: itop[index],
-                    color: 'rgb(157, 43, 56)',
+                    color: markerColors.bearColor,
                     position: 'belowBar',
                     text: 'LL',
                     shape: 'text', // 'arrowUp',
@@ -245,7 +250,7 @@ const Chart: FC<{
                 const itop_x_markers = Array.from(new Set(itop_x.asArray())).map(index => ({
                     time: (data[index]?.time * 1000) as UTCTimestamp,
                     // value: itop[index],
-                    color: 'rgb(20, 131, 92)',
+                    color: markerColors.bullColor,
                     position: 'aboveBar',
                     text: 'HH',
                     shape: 'text', // 'arrowDown',
