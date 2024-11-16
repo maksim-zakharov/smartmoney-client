@@ -62,7 +62,7 @@ class Structure {
         if (!this._data.length) {
             return newSctuct;
         }
-        newSctuct.add(Math.max(...this._data.slice(-length - 1, length + 1)))
+        newSctuct.add(Math.max(...this._data.slice(-length)))
         return newSctuct
     }
 
@@ -94,15 +94,6 @@ class Structure {
 
         return this;
     }
-}
-
-function highest(data: number[], length: number = 12) {
-    const newSctuct = new Structure();
-    if (!data.length) {
-        return newSctuct;
-    }
-    newSctuct.add(Math.max(...data.slice(-length - 1, length + 1)))
-    return newSctuct
 }
 
 enum CrossEnum {
@@ -268,6 +259,7 @@ export function calculate(candles: {
     time: number
 }[], colors: { bullColor: string, bearColor: string }, windowLength?: number) {
     const markers = [];
+    const plots = [];
 
     const showInternals = true;
     const length = 50;
@@ -324,8 +316,8 @@ export function calculate(candles: {
             console.log("InternalBullStructure", InternalBullStructure)
             console.log("InternalBearStructure", InternalBearStructure)
 
-            const bullBubble = buildBubble(candles, itop_x, InternalBullStructure, InternalBearStructure, itrend, colors,true)
-            const bearBubble = buildBubble(candles, ibtm_x, InternalBearStructure, InternalBullStructure, itrend, colors,false)
+            const bullBubble = buildBubble(candles, itop_x, itop_cross, InternalBullStructure, InternalBearStructure, itrend, colors,true)
+            const bearBubble = buildBubble(candles, ibtm_x, ibtm_cross, InternalBearStructure, InternalBullStructure, itrend, colors,false)
 
             if (bullBubble) markers.push(bullBubble);
             if (bearBubble) markers.push(bearBubble);
@@ -540,6 +532,7 @@ export function calculate(candles: {
         InternalBullStructureVal,
         InternalBearStructureVal,
         markers,
+        plots,
         newLines,
         itop_x,
         ibtm_x,
@@ -671,27 +664,52 @@ function fillPrices(candles: {
 }
 
 function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, structureVal: Structure, showInternals?: boolean) {
+    const lastCross = cross.at(0);
+    // if(!lastCross){
+    //     return null;
+    // }
+
     const plotBullInternal = new Structure();
-    for (let i1 = 0; i1 < 1000; i1++) {
-        // if (cross.getValue(-(i1-1)) < x.getValue(-(i1-1)) && x.at(0) === x.getValue(-(i1-1))) {
-        //     if (cross.getValue(-i1) === x.getValue(-i1)) {
-        //         plotBullInternal.add(y.getValue(-i1));
-        //     } else {
-        //         plotBullInternal.add(0);
-        //     }
-        // } else {
-        //     break;
-        // }
-        if (cross.at(i1 + 1) < x.at(i1 + 1) && x.at(0) === x.at(i1 + 1)) {
-            if (cross.at(i1) === x.at(i1)) {
-                plotBullInternal.add(y.at(i1));
-            } else {
-                plotBullInternal.add(0);
-            }
+    // Отрицательное значение offset возвращает данные из баров вперед
+    // cross.getValue(0) вернет текущее, cross.getValue(1) вернет предпоследнее, cross.getValue(-1) вернет БУДУЩЕЕ (а не первое)
+    /**
+     * offset - -(i1-1)
+     * i1 - 0, offset - 1
+     * i1 - 1, offset - 0
+     * i1 - 2, offset - -1
+     * i1 - 3, offset - -2
+     * i1 - 4, offset - -3
+     * i1 - 5, offset - -4
+     */
+    for (let i1 = 0; i1 < 1000 && x.at(i1) >= cross.at(i1); i1++) {
+        if(cross.at(i1 + 1) === x.at(i1 + 1) && lastCross === x.at(i1)){
+            plotBullInternal._data.unshift(y.at(i1+1))
         } else {
-            break;
-        }
+            // plotBullInternal._data.unshift(plotBullInternal.at(0));
+                        plotBullInternal._data.unshift(0);
+                    }
     }
+
+    // for (let i1 = 0; i1 < 1000; i1++) {
+    //     if (cross.getValue(-(i1-1)) < x.getValue(-(i1-1)) && x.at(0) === x.getValue(-(i1-1))) {
+    //         if (cross.getValue(-i1) === x.getValue(-i1)) {
+    //             plotBullInternal.add(y.getValue(-i1));
+    //         } else {
+    //             plotBullInternal.add(0);
+    //         }
+    //     } else {
+    //         break;
+    //     }
+    //     // if (cross.at(i1 + 1) < x.at(i1 + 1) && x.at(0) === x.at(i1 + 1)) {
+    //     //     if (cross.at(i1) === x.at(i1)) {
+    //     //         plotBullInternal.add(y.at(i1));
+    //     //     } else {
+    //     //         plotBullInternal.add(0);
+    //     //     }
+    //     // } else {
+    //     //     break;
+    //     // }
+    // }
 
     structureVal.add(plotBullInternal.highest(6).at(0)? plotBullInternal.highest(6).at(0) : 0);
 
@@ -699,7 +717,7 @@ function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, str
 }
 
 // Тут работает окей
-function buildBubble(candles, x: Structure, internalStructure: Structure, contrStructure: Structure, itrend: Structure, colors: { bullColor: string, bearColor: string }, bullish?: boolean) {
+function buildBubble(candles, x: Structure, cross: Structure, internalStructure: Structure, contrStructure: Structure, itrend: Structure, colors: { bullColor: string, bearColor: string }, bullish?: boolean) {
     const conf = bullish
         ? {
             color: colors.bullColor,
@@ -714,13 +732,48 @@ function buildBubble(candles, x: Structure, internalStructure: Structure, contrS
 
     const trend = bullish ? -1 : 1;
 
-    if (x.at(0) !== x.at(1)){ // && internalStructure.at(0)) {
-        const index = x.at(0);
+    // if(x._data.length === 604){
+    //     debugger
+    // }
+
+    if (cross.at(1) && cross.at(0) > cross.at(1)) {
+        console.log("internalStructure?.at(0)", internalStructure?.at(0))
+        console.log("internalStructure?.at(1)", internalStructure?.at(1))
+        console.log("internalStructure?.at(2)", internalStructure?.at(2))
+        console.log("internalStructure?.at(3)", internalStructure?.at(3))
+        console.log("internalStructure?.at(4)", internalStructure?.at(4))
+        console.log("internalStructure?.at(5)", internalStructure?.at(5))
+        console.log("internalStructure?.at(6)", internalStructure?.at(6))
+
+        console.log("contrStructure?.at(4)", contrStructure?.at(4))
+        console.log("contrStructure?.at(5)", contrStructure?.at(5))
+        console.log("contrStructure?.at(6)", contrStructure?.at(6))
+        const index = x._data.findIndex(c => c === cross.at(0));
+
+        const offset = 6;
+
+        const maxBatch = candles.slice(index - offset, index);
+        let max = null;
+        for (let i = 0; i < offset; i++) {
+            if(i === 0 || max.high < maxBatch[i].high){
+                max = maxBatch[i]
+            }
+        }
+        const minBatch = candles.slice(index - offset, index);
+        let min = null;
+        for (let i = 0; i < offset; i++) {
+            if(i === 0 || min.low > minBatch[i].low){
+                min = minBatch[i]
+            }
+        }
+        const to = cross._data.length;
+        const candle = bullish ? max : min;
         return {
             ...conf,
-            value: bullish ? candles[index].high  : candles[index].low, //internalStructure.at(5),
-            time: candles[index].time * 1000,
-            text: itrend.at(0) === trend //|| contrStructure.at(5)
+            value: bullish ? candle.high : candle.low, //internalStructure.at(5),
+            time: candle.time * 1000,
+            toTime: candles[to].time * 1000,
+            text: itrend.at(0) === trend || contrStructure?.at(6)
                 ?
                 'CHoCH'
                 : 'BOS', // Текст внутри пузырька

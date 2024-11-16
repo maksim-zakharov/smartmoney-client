@@ -176,6 +176,7 @@ const Chart: FC<{
                 InternalBearStructureVal,
                 markers,
                 newLines,
+                plots,
                 itop_x,
                 ibtm_x,
                 ibtm_cross,
@@ -225,38 +226,38 @@ const Chart: FC<{
 
             const allMarkers = [];
 
-            const InternalBearStructureVal_markers = InternalBearStructureVal.asArray().map((item, index) => {
-                if(!item){
-                    return null;
-                }
-
-                return {
-                    time: (data[index+1]?.time * 1000) as UTCTimestamp,
-                    color: markerColors.bearColor,
-                    position: 'belowBar',
-                    shape: 'text',
-                    text: 'CHoCH',
-                    size: 4,
-                }
-            }).filter(Boolean);
-
-            allMarkers.push(...InternalBearStructureVal_markers);
-
-            const InternalBullStructureVal_markers = InternalBullStructureVal.asArray().map((item, index) => {
-                if(!item){
-                    return null;
-                }
-
-                return {
-                    time: (data[index]?.time * 1000) as UTCTimestamp,
-                    color: markerColors.bullColor,
-                    position: 'aboveBar',
-                    shape: 'text',
-                    text: 'CHoCH'
-                }
-            }).filter(Boolean);
-
-            allMarkers.push(...InternalBullStructureVal_markers);
+            // const InternalBearStructureVal_markers = InternalBearStructureVal.asArray().map((item, index) => {
+            //     if(!item){
+            //         return null;
+            //     }
+            //
+            //     return {
+            //         time: (data[index+1]?.time * 1000) as UTCTimestamp,
+            //         color: markerColors.bearColor,
+            //         position: 'belowBar',
+            //         shape: 'text',
+            //         text: 'CHoCH',
+            //         size: 4,
+            //     }
+            // }).filter(Boolean);
+            //
+            // allMarkers.push(...InternalBearStructureVal_markers);
+            //
+            // const InternalBullStructureVal_markers = InternalBullStructureVal.asArray().map((item, index) => {
+            //     if(!item){
+            //         return null;
+            //     }
+            //
+            //     return {
+            //         time: (data[index]?.time * 1000) as UTCTimestamp,
+            //         color: markerColors.bullColor,
+            //         position: 'aboveBar',
+            //         shape: 'text',
+            //         text: 'CHoCH'
+            //     }
+            // }).filter(Boolean);
+            //
+            // allMarkers.push(...InternalBullStructureVal_markers);
 
             // const itop_x_markers = itop_x.asArray().map((item, index) => {
             //     if(!item){
@@ -380,7 +381,7 @@ const Chart: FC<{
                     {time: to, value: price}, // конечная точка между свечками
                 ]);
             }
-            smPatterns && markers.forEach(marker => addLine(marker.value, marker.time, marker.time + tf * 10 * 1000, marker.color))
+            smPatterns && markers.forEach(marker => addLine(marker.value, marker.time, marker.toTime, marker.color))
 
             // plotBullInternal && newLines.forEach(marker => addLine(marker.price, marker.time, marker.time + tf * 10 * 1000, marker.color));
 
