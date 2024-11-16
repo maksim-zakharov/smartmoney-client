@@ -27,12 +27,17 @@ class Structure {
         return this._data[this._data.length - 1 - index] ?? this.fill;
     }
 
-    getValue(index: number) {
-        if (index >= 0) {
-            return this.at(index);
+    /**
+     * Возвращает значение data с указанным dynamic offset.
+     * @description Для положительных значений смещения dynamic offset должно быть меньше или равно max offset. Для отрицательных значений смещения dynamic offsetдолжно быть меньше или равно max offset
+     * @param offset Это значение положительно для прошлого динамического смещения и отрицательно для динамического будущего смещения. При установке на ноль смещение не корректируется.
+     */
+    getValue(offset: number): number{
+        if (offset >= 0) {
+            return this.at(offset);
         }
 
-        return this._data[-index];
+        return this._data[-offset] ?? this.fill;
     }
 
     get current(){
@@ -47,9 +52,12 @@ class Structure {
         this._data[index] = val;
     }
 
-    // Текущий бар не учитываются
-    // @link https://toslc.thinkorswim.com/center/reference/thinkScript/Functions/Tech-Analysis/Highest
-    highest(length: number) {
+    /**
+     * Возвращает наибольшее значение data для последних length баров. Текущий бар не учитываются
+     * @link https://toslc.thinkorswim.com/center/reference/thinkScript/Functions/Tech-Analysis/Highest
+     * @param [length=12] Определяет период, за который получено наибольшее значение
+     */
+    highest(length: number = 12) {
         const newSctuct = new Structure();
         if (!this._data.length) {
             return newSctuct;
@@ -61,6 +69,7 @@ class Structure {
     /**
      * Смещения выбранной ценовой линии вперед или назад на определенное количество баров (без учета текущей цены)
      * TODO Сделать смещение вперед
+     * @link https://toslc.thinkorswim.com/center/reference/Tech-Indicators/studies-library/C-D/Displacer
      * @param shift Количество баров для смещения ценовой линии. Отрицательные значения означают смещение в прошлое.
      */
     displacer(shift: number) {
@@ -643,15 +652,24 @@ function fillPrices(candles: {
 function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, structureVal: Structure, showInternals?: boolean) {
     const plotBullInternal = new Structure();
     for (let i1 = 0; i1 < 1000; i1++) {
-        if (cross.at(i1 + 1) < x.at(i1 + 1) && x.at(0) === x.at(i1 + 1)) {
-            if (cross.at(i1) === x.at(i1)) {
-                plotBullInternal.add(y.at(i1));
+        if (cross.getValue(-(i1-1)) < x.getValue(-(i1-1)) && x.at(0) === x.getValue(-(i1-1))) {
+            if (cross.getValue(-i1) === x.getValue(-i1)) {
+                plotBullInternal.add(y.getValue(-i1));
             } else {
                 plotBullInternal.add(0);
             }
         } else {
             break;
         }
+        // if (cross.at(i1 + 1) < x.at(i1 + 1) && x.at(0) === x.at(i1 + 1)) {
+        //     if (cross.at(i1) === x.at(i1)) {
+        //         plotBullInternal.add(y.at(i1));
+        //     } else {
+        //         plotBullInternal.add(0);
+        //     }
+        // } else {
+        //     break;
+        // }
     }
 
     structureVal.add(plotBullInternal.highest(6).at(0) ? plotBullInternal.highest(6).at(0) : 0);
