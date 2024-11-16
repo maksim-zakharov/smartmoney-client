@@ -16,6 +16,9 @@ import {calculate} from "./sm_scripts";
 import {Checkbox, Slider} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
 
+function capitalizeFirstLetter(str) {
+    return str[0].toUpperCase() + str.slice(1);
+}
 
 const Chart: FC<{
     crosses?: boolean,
@@ -75,9 +78,26 @@ const Chart: FC<{
                 timeScale: {
                     rightOffset: 10,  // это создаст отступ на 10 временных единиц вправо
                     tickMarkFormatter: (time, tickMarkType, locale) => {
-                        // Преобразуем время в формат, используя moment.js
-                        return moment.unix(time / 1000).format('HH:mm'); // Измените формат, если нужно
+                        const date = new Date(time); // Переводим время в миллисекунды
+
+                        // Если это первый день месяца
+                        if (date.getDate() === 1) {
+                            return capitalizeFirstLetter(date.toLocaleString(locale, { month: 'long' })).slice(0, 3); // Название месяца
+                        }
+
+                        // Часы (для секций 12 и 18 часов)
+                        const hours = date.getHours();
+                        if (hours >= 0 && hours <= 10) {
+                            return date.toLocaleString(locale, { day: 'numeric' });
+                        }
+
+                        // Дата (день месяца)
+                        return `${hours}:00`; // date.toLocaleString(locale, { day: 'numeric' });
                     },
+                    // tickMarkFormatter: (time, tickMarkType, locale) => {
+                    //     // Преобразуем время в формат, используя moment.js
+                    //     return moment.unix(time / 1000).format('HH:mm'); // Измените формат, если нужно
+                    // },
                 },
                 grid: {
                     vertLines: {
@@ -94,7 +114,7 @@ const Chart: FC<{
                     textColor: color
                 },
                 width: chartContainerRef.current.clientWidth,
-                height: 400
+                height: chartContainerRef.current.height || 600,
             });
 
             const markerColors = {
@@ -152,11 +172,15 @@ const Chart: FC<{
             emaSeries.setData(emaSeriesData);
 
             const {
+                InternalBullStructureVal,
+                InternalBearStructureVal,
                 markers,
                 newLines,
-                itrend,
+                itop_x,
+                ibtm_x,
+                ibtm_cross,
                 itop_cross,
-                ibtm_cross
+                itrend
             } = calculate(data, markerColors, windowLength);
 
             if (trend) {
@@ -201,6 +225,103 @@ const Chart: FC<{
 
             const allMarkers = [];
 
+            const InternalBearStructureVal_markers = InternalBearStructureVal.asArray().map((item, index) => {
+                if(!item){
+                    return null;
+                }
+
+                return {
+                    time: (data[index+1]?.time * 1000) as UTCTimestamp,
+                    color: markerColors.bearColor,
+                    position: 'belowBar',
+                    shape: 'text',
+                    text: 'CHoCH',
+                    size: 4,
+                }
+            }).filter(Boolean);
+
+            allMarkers.push(...InternalBearStructureVal_markers);
+
+            const InternalBullStructureVal_markers = InternalBullStructureVal.asArray().map((item, index) => {
+                if(!item){
+                    return null;
+                }
+
+                return {
+                    time: (data[index]?.time * 1000) as UTCTimestamp,
+                    color: markerColors.bullColor,
+                    position: 'aboveBar',
+                    shape: 'text',
+                    text: 'CHoCH'
+                }
+            }).filter(Boolean);
+
+            allMarkers.push(...InternalBullStructureVal_markers);
+
+            // const itop_x_markers = itop_x.asArray().map((item, index) => {
+            //     if(!item){
+            //         return null;
+            //     }
+            //
+            //     return {
+            //         time: (data[index]?.time * 1000) as UTCTimestamp,
+            //         color: markerColors.bullColor,
+            //         position: 'aboveBar',
+            //         shape: 'text',
+            //         text: 'itop_x'
+            //     }
+            // }).filter(Boolean);
+            //
+            // allMarkers.push(...itop_x_markers);
+            //
+            // const ibtm_x_markers = ibtm_x.asArray().map((item, index) => {
+            //     if(!item){
+            //         return null;
+            //     }
+            //
+            //     return {
+            //         time: (data[index]?.time * 1000) as UTCTimestamp,
+            //         color: markerColors.bearColor,
+            //         position: 'belowBar',
+            //         shape: 'text',
+            //         text: 'ibtm_x'
+            //     }
+            // }).filter(Boolean);
+            //
+            // allMarkers.push(...ibtm_x_markers);
+
+            // const itop_cross_markers = itop_cross.asArray().map((item, index) => {
+            //     if(!item){
+            //         return null;
+            //     }
+            //
+            //     return {
+            //         time: (data[index]?.time * 1000) as UTCTimestamp,
+            //         color: markerColors.bullColor,
+            //         position: 'aboveBar',
+            //         shape: 'text',
+            //         text: 'itop_cross'
+            //     }
+            // }).filter(Boolean);
+            //
+            // allMarkers.push(...itop_cross_markers);
+            //
+            // const ibtm_cross_markers = ibtm_cross.asArray().map((item, index) => {
+            //     if(!item){
+            //         return null;
+            //     }
+            //
+            //     return {
+            //         time: (data[index]?.time * 1000) as UTCTimestamp,
+            //         color: markerColors.bearColor,
+            //         position: 'belowBar',
+            //         shape: 'text',
+            //         text: 'ibtm_cross'
+            //     }
+            // }).filter(Boolean);
+            //
+            // allMarkers.push(...ibtm_cross_markers);
+
             if (crosses) {
                 const btmMarkers = Array.from(new Set(ibtm_cross.asArray())).map((index) => ({
                     time: (data[index]?.time * 1000) as UTCTimestamp,
@@ -233,15 +354,15 @@ const Chart: FC<{
             // newSeries.setMarkers([...btmMarkers])
             newSeries.setMarkers(allMarkers.sort((a, b) => a.time - b.time))
 
-            chart.timeScale()
+            // chart.timeScale()
                 //     .setVisibleLogicalRange({
                 //     from: -200,          // Начало диапазона
                 //     to: -1            // Конец диапазона, большее значение уменьшает масштаб
                 // });//.fitContent();
-                .setVisibleRange({
-                    from: moment().add(-5, 'days').unix() * 1000,
-                    to: moment().unix() * 1000,
-                });
+                // .setVisibleRange({
+                //     from: moment().add(-3, 'days').unix() * 1000,
+                //     to: moment().add(1, 'days').unix() * 1000,
+                // });
 
             const addLine = (price: number, from: UTCTimestamp, to: UTCTimestamp, color: string) => {
                 const lineSeries = chart.addLineSeries({

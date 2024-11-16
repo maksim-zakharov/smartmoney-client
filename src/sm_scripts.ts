@@ -96,6 +96,15 @@ class Structure {
     }
 }
 
+function highest(data: number[], length: number = 12) {
+    const newSctuct = new Structure();
+    if (!data.length) {
+        return newSctuct;
+    }
+    newSctuct.add(Math.max(...data.slice(-length - 1, length + 1)))
+    return newSctuct
+}
+
 enum CrossEnum {
     Up = 'Up',
     Any = 'Any',
@@ -223,19 +232,29 @@ function swings(len: number = 5, candles: { high: number, low: number }[]): {
     const btm = new Structure(0, 0);
 
     // Проходим по данным начиная с индекса len
+    // for (let i = len; i < candles.length; i++) {
+    //     // За каждое окно длинную в len свечек находим максимум и минимум
+    //     const highestHigh = Math.max(...highs.slice(i - len + 1, i + 1));
+    //     const lowestLow = Math.min(...lows.slice(i - len + 1, i + 1));
+    //
+    //     const high = highs[i-len];
+    //     const low = lows[i-len];
     for (let i = len; i < candles.length; i++) {
         // За каждое окно длинную в len свечек находим максимум и минимум
         const highestHigh = Math.max(...highs.slice(i - len, i));
         const lowestLow = Math.min(...lows.slice(i - len, i));
 
+        const high = highs[i];
+        const low = lows[i];
+
         // Если текущий хай выше прошлого максимума - 0 (произошло обновление максимума), если текущий лой ниже прошлого лоя - 1 (произошло обновление минимума), иначе берем последнее значение.
-        os.add(highs[i] > highestHigh ? OSType.UpdateHigh : lows[i] < lowestLow ? OSType.UpdateLow : os.at(0));
+        os.add(high > highestHigh ? OSType.UpdateHigh : low < lowestLow ? OSType.UpdateLow : os.at(0));
 
         // Из общего массива значений разделяем его на 2 массива:
         // - если последнее значение было максимумом, а последнее нет (не обновлялось) - записываем максимум
-        top.add(os.at(0) === OSType.UpdateHigh && os.at(1) === OSType.UpdateLow ? highs[i] : 0)
+        top.add(os.at(0) === OSType.UpdateHigh && os.at(1) === OSType.UpdateLow ? high : 0)
         // - если последнее значение было минимумом, а последнее нет (не обновлялось) - записываем минимум
-        btm.add(os.at(0) === OSType.UpdateLow && os.at(1) === OSType.UpdateHigh ? lows[i] : 0)
+        btm.add(os.at(0) === OSType.UpdateLow && os.at(1) === OSType.UpdateHigh ? low : 0)
     }
 
     return {top: top.asArray(), btm: btm.asArray()};
@@ -522,6 +541,8 @@ export function calculate(candles: {
         InternalBearStructureVal,
         markers,
         newLines,
+        itop_x,
+        ibtm_x,
         ibtm_cross,
         itop_cross,
         itrend
@@ -652,27 +673,27 @@ function fillPrices(candles: {
 function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, structureVal: Structure, showInternals?: boolean) {
     const plotBullInternal = new Structure();
     for (let i1 = 0; i1 < 1000; i1++) {
-        if (cross.getValue(-(i1-1)) < x.getValue(-(i1-1)) && x.at(0) === x.getValue(-(i1-1))) {
-            if (cross.getValue(-i1) === x.getValue(-i1)) {
-                plotBullInternal.add(y.getValue(-i1));
-            } else {
-                plotBullInternal.add(0);
-            }
-        } else {
-            break;
-        }
-        // if (cross.at(i1 + 1) < x.at(i1 + 1) && x.at(0) === x.at(i1 + 1)) {
-        //     if (cross.at(i1) === x.at(i1)) {
-        //         plotBullInternal.add(y.at(i1));
+        // if (cross.getValue(-(i1-1)) < x.getValue(-(i1-1)) && x.at(0) === x.getValue(-(i1-1))) {
+        //     if (cross.getValue(-i1) === x.getValue(-i1)) {
+        //         plotBullInternal.add(y.getValue(-i1));
         //     } else {
         //         plotBullInternal.add(0);
         //     }
         // } else {
         //     break;
         // }
+        if (cross.at(i1 + 1) < x.at(i1 + 1) && x.at(0) === x.at(i1 + 1)) {
+            if (cross.at(i1) === x.at(i1)) {
+                plotBullInternal.add(y.at(i1));
+            } else {
+                plotBullInternal.add(0);
+            }
+        } else {
+            break;
+        }
     }
 
-    structureVal.add(plotBullInternal.highest(6).at(0) ? plotBullInternal.highest(6).at(0) : 0);
+    structureVal.add(plotBullInternal.highest(6).at(0)? plotBullInternal.highest(6).at(0) : 0);
 
     return showInternals ? structureVal.displacer(-6) : null;
 }
@@ -693,7 +714,7 @@ function buildBubble(candles, x: Structure, internalStructure: Structure, contrS
 
     const trend = bullish ? -1 : 1;
 
-    if (x.at(0) !== x.at(1)){ // && internalStructure.at(5)) {
+    if (x.at(0) !== x.at(1)){ // && internalStructure.at(0)) {
         const index = x.at(0);
         return {
             ...conf,

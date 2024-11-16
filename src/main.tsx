@@ -8,15 +8,18 @@ import 'moment/locale/ru'
 import moment from "moment"; // without this line it didn't work
 import ru_RU from 'antd/es/locale/ru_RU';
 import updateLocale from "dayjs/plugin/updateLocale";
+import localizedFormat from "dayjs/plugin/localizedFormat";
 import {ConfigProvider} from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import App from "./App.tsx";
 
+dayjs.extend(localizedFormat);
 dayjs.extend(updateLocale);
-dayjs.updateLocale("zh-cn", {
-    weekStart: 0
-});
+dayjs.locale('ru');
+// dayjs.updateLocale("zh-cn", {
+//     weekStart: 0
+// });
 
 moment().locale('ru');
 
