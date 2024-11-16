@@ -12,24 +12,22 @@ import {
 } from "lightweight-charts";
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
-import {calculate} from "./sm_scripts.ts";
+import {calculate} from "./sm_scripts";
 import {Checkbox, Slider} from "antd";
-import {SessionHighlighting} from "./lwc-plugins/session-highlighting.ts";
+import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
 
 
 const Chart: FC<{
     crosses?: boolean,
     smPatterns?: boolean,
     trend?: boolean,
-    lines?: boolean,
     plotBullInternal?: boolean,
-    extremums?: boolean,
     data: any[],
     ema: any[],
     withBug,
     windowLength: number,
     tf: number
-}> = ({plotBullInternal, trend, crosses, smPatterns, lines, extremums, data, tf, ema, windowLength}) => {
+}> = ({plotBullInternal, trend, crosses, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -96,7 +94,7 @@ const Chart: FC<{
                     textColor: color
                 },
                 width: chartContainerRef.current.clientWidth,
-                height: 700
+                height: 400
             });
 
             const markerColors = {
@@ -155,17 +153,8 @@ const Chart: FC<{
 
             const {
                 markers,
-                lines: linesData,
                 newLines,
                 itrend,
-                btm,
-                _top,
-                itop,
-                ibtm,
-                ibtm_x,
-                itop_x,
-                btm_x,
-                top_x,
                 itop_cross,
                 ibtm_cross
             } = calculate(data, markerColors, windowLength);
@@ -225,7 +214,6 @@ const Chart: FC<{
 
                 const topMarkers = Array.from(new Set(itop_cross.asArray())).map((index) => ({
                     time: (data[index]?.time * 1000) as UTCTimestamp,
-                    value: itop[index],
                     color: markerColors.bullColor,
                     position: 'aboveBar',
                     shape: 'arrowDown',
@@ -235,29 +223,6 @@ const Chart: FC<{
             }
 
             smPatterns && allMarkers.push(...markers);
-
-            if (extremums) {
-                const ibtm_x_markers = Array.from(new Set(ibtm_x.asArray())).map(index => ({
-                    time: (data[index]?.time * 1000) as UTCTimestamp,
-                    // value: itop[index],
-                    color: markerColors.bearColor,
-                    position: 'belowBar',
-                    text: 'LL',
-                    shape: 'text', // 'arrowUp',
-                }))
-                allMarkers.push(...ibtm_x_markers)
-
-                const itop_x_markers = Array.from(new Set(itop_x.asArray())).map(index => ({
-                    time: (data[index]?.time * 1000) as UTCTimestamp,
-                    // value: itop[index],
-                    color: markerColors.bullColor,
-                    position: 'aboveBar',
-                    text: 'HH',
-                    shape: 'text', // 'arrowDown',
-                }))
-
-                allMarkers.push(...itop_x_markers)
-            }
 
             // newSeries.setMarkers([...btmMarkers])
             newSeries.setMarkers(allMarkers.sort((a, b) => a.time - b.time))
@@ -288,8 +253,6 @@ const Chart: FC<{
                     {time: to, value: price}, // конечная точка между свечками
                 ]);
             }
-            lines &&
-            linesData.forEach(marker => addLine(marker.price, marker.fromTime, marker.toTime, marker.color))
             smPatterns && markers.forEach(marker => addLine(marker.value, marker.time, marker.time + tf * 10 * 1000, marker.color))
 
             plotBullInternal && newLines.forEach(marker => addLine(marker.price, marker.time, marker.time + tf * 10 * 1000, marker.color));
@@ -302,7 +265,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [plotBullInternal, trend, crosses, extremums, smPatterns, lines, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [plotBullInternal, trend, crosses, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -369,8 +332,6 @@ export const TestPage = () => {
     }, [tf, ticker]);
 
     const config = useMemo(() => ({
-        extremums: checkboxValues.includes('extremums'),
-        lines: checkboxValues.includes('lines'),
         smPatterns: checkboxValues.includes('smPatterns'),
         crosses: checkboxValues.includes('crosses'),
         trend: checkboxValues.includes('trend'),
@@ -380,8 +341,6 @@ export const TestPage = () => {
     return <>
         <Slider defaultValue={windowLength} onChange={setWindowLength} />
         <Checkbox.Group onChange={setCheckboxValues}>
-            <Checkbox key="extremums" value="extremums">Экстремумы</Checkbox>
-            <Checkbox key="lines" value="lines">Линии</Checkbox>
             <Checkbox key="smPatterns" value="smPatterns">BOS/CHoCH</Checkbox>
             <Checkbox key="crosses" value="crosses">Пересечения</Checkbox>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
