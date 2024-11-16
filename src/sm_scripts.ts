@@ -47,12 +47,14 @@ class Structure {
         this._data[index] = val;
     }
 
+    // Текущий бар не учитываются
+    // @link https://toslc.thinkorswim.com/center/reference/thinkScript/Functions/Tech-Analysis/Highest
     highest(length: number) {
         const newSctuct = new Structure();
         if (!this._data.length) {
             return newSctuct;
         }
-        newSctuct.add(Math.max(...this._data.slice(-Math.min(this._data.length, length))))
+        newSctuct.add(Math.max(...this._data.slice(-length - 1, length + 1)))
         return newSctuct
     }
 
@@ -266,8 +268,8 @@ export function calculate(candles: {
     const high = new Structure(length, 0);
     const low = new Structure(length, 0);
 
-    const InternalBullStructureVal = new Structure(0, 0);
-    const InternalBearStructureVal = new Structure(0, 0);
+    const InternalBullStructureVal = new Structure(length, 0);
+    const InternalBearStructureVal = new Structure(length, 0);
 
     // Нашли максимумы и минимумы с окном в 50 свечек
     const {top, btm} = swings(length, candles);
@@ -277,7 +279,6 @@ export function calculate(candles: {
     for (let n = length; n < candles.length; n++) {
         // Заполняю структуры ценами
         fillPrices(candles, n, open, close, high, low)
-
         // Заполняется x, y. Если найден экстремум - заполняется x индекс, y цена
         fillSwings(n, length, localLength, top, top_x, top_y, btm, btm_x, btm_y, itop, ibtm, itop_x, itop_y, ibtm_x, ibtm_y)
 
@@ -298,13 +299,6 @@ export function calculate(candles: {
         }
 
         // <-- TODO ДО СЮДА ВОПРОСОВ НЕТ -->
-
-        // plotBullInternal - формула рисования пунктирных линий, в которой находим точку начала и конца пунктирной линии
-        // Рисуем пунктирную линию PaintingStrategy.DASHES
-        // от точки GetValue(itop_x,-(i1-1)
-        // пока точка GetValue(itop_x,-(i1-1) является последней точкой itop_x
-        // и пока не пересечена новой свечой itop_cross
-        // В момент пересечения GetValue(itop_cross,-(i1)) == GetValue(itop_x,-(i1)) записываем цену GetValue(itop_y,-i1)
 
         const itop_crossArray = itop_cross.asArray()
         const itop_yArray = itop_y.asArray()
@@ -398,12 +392,6 @@ export function calculate(candles: {
         }
 
         const InternalBearStructure = calculateInternalBearStructure(ibtm_x.asArray(), ibtm_y.asArray(), true);
-
-        // console.log('InternalBearStructure', InternalBearStructure);
-
-        function GlobalColor(key) {
-            return colors[key];
-        }
 
         function AddChartBubble(condition, candle, text, bullish, isVertical) {
             const conf = bullish
@@ -513,16 +501,9 @@ export function calculate(candles: {
         })
     }
 
-    // console.log("itop_x", itop_x._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
-    // console.log("ibtm_x", ibtm_x._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
-    // console.log("itop_x_format_time", itop_x._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
-    // console.log("itop_y", itop_y);
-    // console.log("itop_cross", itop_cross);
-    // console.log("itop_cross_format_time", itop_cross._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
-    // console.log("ibtm_cross_format_time", ibtm_cross._data.map(i => moment(candles[i].time * 1000).format('YYYY-MM-DD HH:mm')));
-    // console.log("lines", lines);
-
     return {
+        InternalBullStructureVal,
+        InternalBearStructureVal,
         markers,
         newLines,
         ibtm_cross,
@@ -659,7 +640,7 @@ function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, str
             if (cross.at(i1) === x.at(i1)) {
                 plotBullInternal.add(y.at(i1));
             } else {
-                // plotBullInternal.add(0);
+                plotBullInternal.add(0);
             }
         } else {
             break;
