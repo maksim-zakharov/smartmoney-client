@@ -58,6 +58,11 @@ class Structure {
         return newSctuct
     }
 
+    /**
+     * Смещения выбранной ценовой линии вперед или назад на определенное количество баров (без учета текущей цены)
+     * TODO Сделать смещение вперед
+     * @param shift Количество баров для смещения ценовой линии. Отрицательные значения означают смещение в прошлое.
+     */
     displacer(shift: number) {
 
         // Проверяем, что массив не пустой
@@ -71,7 +76,7 @@ class Structure {
         // Проверяем сдвиг влево
         if (shift < 0) {
             // Рассчитываем новый индекс для перемещения последнего значения
-            const newIndex = this._data.length + shift; // Позиция на 6 позиций назад
+            const newIndex = this._data.length + shift - 1; // Позиция на 6 позиций назад
             if (newIndex >= 0) {
                 this._data[newIndex] = lastValue; // Перемещаем значение на новый индекс
                 this._data[this._data.length - 1] = 0; // Убираем последнее значение (перезаписываем его на null)
@@ -487,7 +492,8 @@ export function calculate(candles: {
         newLines.push({
             price: InternalBullStructureVal._data[i],
             time: candles[i].time * 1000,
-            color: colors.bullColor
+            color: colors.bullColor,
+            bullish: true
         })
     }
     for (let i = 0; i < InternalBearStructureVal._data.length; i++) {
@@ -497,7 +503,8 @@ export function calculate(candles: {
         newLines.push({
             price: InternalBearStructureVal._data[i],
             time: candles[i].time * 1000,
-            color: colors.bearColor
+            color: colors.bearColor,
+            bullish: false
         })
     }
 

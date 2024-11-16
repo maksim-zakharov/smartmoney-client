@@ -159,7 +159,7 @@ const Chart: FC<{
                 ibtm_cross
             } = calculate(data, markerColors, windowLength);
 
-            if(trend){
+            if (trend) {
 
                 function getDate(time: Time): Date {
                     if (isUTCTimestamp(time)) {
@@ -221,6 +221,12 @@ const Chart: FC<{
 
                 allMarkers.push(...topMarkers)
             }
+            plotBullInternal && newLines.forEach(marker => allMarkers.push({
+                time: marker.time,
+                color: marker.color,
+                position: marker.bullish ? 'aboveBar' : 'belowBar',
+                shape: marker.bullish ? 'arrowDown' : 'arrowUp',
+            }));
 
             smPatterns && allMarkers.push(...markers);
 
@@ -255,7 +261,7 @@ const Chart: FC<{
             }
             smPatterns && markers.forEach(marker => addLine(marker.value, marker.time, marker.time + tf * 10 * 1000, marker.color))
 
-            plotBullInternal && newLines.forEach(marker => addLine(marker.price, marker.time, marker.time + tf * 10 * 1000, marker.color));
+            // plotBullInternal && newLines.forEach(marker => addLine(marker.price, marker.time, marker.time + tf * 10 * 1000, marker.color));
 
             window.addEventListener("resize", handleResize);
 
@@ -339,7 +345,7 @@ export const TestPage = () => {
     }), [checkboxValues])
 
     return <>
-        <Slider defaultValue={windowLength} onChange={setWindowLength} />
+        <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Checkbox.Group onChange={setCheckboxValues}>
             <Checkbox key="smPatterns" value="smPatterns">BOS/CHoCH</Checkbox>
             <Checkbox key="crosses" value="crosses">Пересечения</Checkbox>
