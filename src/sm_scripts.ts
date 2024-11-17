@@ -557,31 +557,27 @@ function DrawText(candles, x: Structure, cross: Structure, internalStructure: St
 
     const trend = bullish ? -1 : 1;
 
-    // if(x._data.length === 598){
+    // if(x._data.length === 600){
     //     debugger
     // }
 
     if (cross.at(1) && cross.at(0) > cross.at(1)) {
-        console.log("internalStructure?.at(0)", internalStructure?.at(0))
-        console.log("internalStructure?.at(1)", internalStructure?.at(1))
-        console.log("internalStructure?.at(2)", internalStructure?.at(2))
-        console.log("internalStructure?.at(3)", internalStructure?.at(3))
-        console.log("internalStructure?.at(4)", internalStructure?.at(4))
-        console.log("internalStructure?.at(5)", internalStructure?.at(5))
-        console.log("internalStructure?.at(6)", internalStructure?.at(6))
-
-        console.log("contrStructure?.at(4)", contrStructure?.at(4))
-        console.log("contrStructure?.at(5)", contrStructure?.at(5))
-        console.log("contrStructure?.at(6)", contrStructure?.at(6))
         const index = x._data.findIndex(c => c === cross.at(0));
+
+        const from = index - 5;
         const to = cross._data.length - 1;
-        const candle = candles[index - 5]
+        const textIndex = to - Math.floor((to - from) / 2);
+
+        const fromCandle = candles[from];
+        const toCandle = candles[to];
+        const textCandle = candles[textIndex];
 
         return {
             ...conf,
-            value: bullish ? candle.high : candle.low, //internalStructure.at(5),
-            time: candle.time * 1000,
-            toTime: candles[to].time * 1000,
+            value: bullish ? fromCandle.high : fromCandle.low, //internalStructure.at(5),
+            fromTime: fromCandle.time * 1000,
+            textTime: textCandle.time * 1000,
+            toTime: toCandle.time * 1000,
             text: itrend.at(0) === trend || contrStructure?.at(6)
                 ?
                 'CHoCH'

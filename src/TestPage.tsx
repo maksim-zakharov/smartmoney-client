@@ -7,7 +7,6 @@ import {
     isUTCTimestamp,
     LineStyle,
     Time,
-    UTCTimestamp
 } from "lightweight-charts";
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
@@ -171,9 +170,6 @@ const Chart: FC<{
 
             const {
                 markers,
-                newLines,
-                ibtm_cross,
-                itop_cross,
                 itrend
             } = calculate(data, markerColors, windowLength);
 
@@ -214,113 +210,9 @@ const Chart: FC<{
                 newSeries.attachPrimitive(sessionHighlighting);
             }
 
-            const allMarkers = [];
-
-            // const InternalBearStructureVal_markers = InternalBearStructureVal.asArray().map((item, index) => {
-            //     if(!item){
-            //         return null;
-            //     }
-            //
-            //     return {
-            //         time: (data[index+1]?.time * 1000) as UTCTimestamp,
-            //         color: markerColors.bearColor,
-            //         position: 'belowBar',
-            //         shape: 'text',
-            //         text: 'CHoCH',
-            //         size: 4,
-            //     }
-            // }).filter(Boolean);
-            //
-            // allMarkers.push(...InternalBearStructureVal_markers);
-            //
-            // const InternalBullStructureVal_markers = InternalBullStructureVal.asArray().map((item, index) => {
-            //     if(!item){
-            //         return null;
-            //     }
-            //
-            //     return {
-            //         time: (data[index]?.time * 1000) as UTCTimestamp,
-            //         color: markerColors.bullColor,
-            //         position: 'aboveBar',
-            //         shape: 'text',
-            //         text: 'CHoCH'
-            //     }
-            // }).filter(Boolean);
-            //
-            // allMarkers.push(...InternalBullStructureVal_markers);
-
-            // const itop_x_markers = itop_x.asArray().map((item, index) => {
-            //     if(!item){
-            //         return null;
-            //     }
-            //
-            //     return {
-            //         time: (data[index]?.time * 1000) as UTCTimestamp,
-            //         color: markerColors.bullColor,
-            //         position: 'aboveBar',
-            //         shape: 'text',
-            //         text: 'itop_x'
-            //     }
-            // }).filter(Boolean);
-            //
-            // allMarkers.push(...itop_x_markers);
-            //
-            // const ibtm_x_markers = ibtm_x.asArray().map((item, index) => {
-            //     if(!item){
-            //         return null;
-            //     }
-            //
-            //     return {
-            //         time: (data[index]?.time * 1000) as UTCTimestamp,
-            //         color: markerColors.bearColor,
-            //         position: 'belowBar',
-            //         shape: 'text',
-            //         text: 'ibtm_x'
-            //     }
-            // }).filter(Boolean);
-            //
-            // allMarkers.push(...ibtm_x_markers);
-
-            // const itop_cross_markers = itop_cross.asArray().map((item, index) => {
-            //     if(!item){
-            //         return null;
-            //     }
-            //
-            //     return {
-            //         time: (data[index]?.time * 1000) as UTCTimestamp,
-            //         color: markerColors.bullColor,
-            //         position: 'aboveBar',
-            //         shape: 'text',
-            //         text: 'itop_cross'
-            //     }
-            // }).filter(Boolean);
-            //
-            // allMarkers.push(...itop_cross_markers);
-            //
-            // const ibtm_cross_markers = ibtm_cross.asArray().map((item, index) => {
-            //     if(!item){
-            //         return null;
-            //     }
-            //
-            //     return {
-            //         time: (data[index]?.time * 1000) as UTCTimestamp,
-            //         color: markerColors.bearColor,
-            //         position: 'belowBar',
-            //         shape: 'text',
-            //         text: 'ibtm_cross'
-            //     }
-            // }).filter(Boolean);
-            //
-            // allMarkers.push(...ibtm_cross_markers);
-
-            smPatterns && allMarkers.push(...markers);
-
-            // newSeries.setMarkers([...btmMarkers])
-            newSeries.setMarkers(allMarkers.sort((a, b) => a.time - b.time))
-
-            const addLine = (price: number, from: UTCTimestamp, to: UTCTimestamp, color: string) => {
+            smPatterns && markers.forEach(marker => {
                 const lineSeries = chart.addLineSeries({
-                    color, // Цвет линии
+                    color: marker.color, // Цвет линии
                     priceLineVisible: false,
                     lastValueVisible: false,
                     lineWidth: 1,
@@ -330,11 +222,13 @@ const Chart: FC<{
 
 // 5. Устанавливаем данные для линии
                 lineSeries.setData([
-                    {time: from, value: price}, // начальная точка между свечками
-                    {time: to, value: price}, // конечная точка между свечками
+                    {time: marker.fromTime, value: marker.value}, // начальная точка между свечками
+                    {time: marker.textTime, value: marker.value}, // начальная точка между свечками
+                    {time: marker.toTime, value: marker.value}, // конечная точка между свечками
                 ]);
-            }
-            smPatterns && markers.forEach(marker => addLine(marker.value, marker.time, marker.toTime, marker.color))
+
+                lineSeries.setMarkers([{color: marker.color, time: marker.textTime, shape: marker.shape, position: marker.position, text: marker.text}])
+            })
 
             window.addEventListener("resize", handleResize);
 
