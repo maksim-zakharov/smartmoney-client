@@ -6,14 +6,13 @@ import {
     isBusinessDay,
     isUTCTimestamp,
     LineStyle,
-    SeriesMarker,
     Time,
     UTCTimestamp
 } from "lightweight-charts";
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts";
-import {Checkbox, Slider} from "antd";
+import {Checkbox} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
 
 function capitalizeFirstLetter(str) {
@@ -21,16 +20,14 @@ function capitalizeFirstLetter(str) {
 }
 
 const Chart: FC<{
-    crosses?: boolean,
     smPatterns?: boolean,
     trend?: boolean,
-    plotBullInternal?: boolean,
     data: any[],
     ema: any[],
     withBug,
     windowLength: number,
     tf: number
-}> = ({plotBullInternal, trend, crosses, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({trend, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -92,7 +89,7 @@ const Chart: FC<{
                         }
 
                         // Дата (день месяца)
-                        return `${hours}:00`; // date.toLocaleString(locale, { day: 'numeric' });
+                        return `${hours}:00`;
                     },
                     // tickMarkFormatter: (time, tickMarkType, locale) => {
                     //     // Преобразуем время в формат, используя moment.js
@@ -164,6 +161,7 @@ const Chart: FC<{
             const emaSeries = chart.addLineSeries({
                 color: "rgb(255, 186, 102)",
                 lineWidth: 1,
+                priceLineVisible: false,
                 // crossHairMarkerVisible: false
             });
             const emaSeriesData = data
@@ -172,13 +170,8 @@ const Chart: FC<{
             emaSeries.setData(emaSeriesData);
 
             const {
-                InternalBullStructureVal,
-                InternalBearStructureVal,
                 markers,
                 newLines,
-                plots,
-                itop_x,
-                ibtm_x,
                 ibtm_cross,
                 itop_cross,
                 itrend
@@ -220,9 +213,6 @@ const Chart: FC<{
                 const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
                 newSeries.attachPrimitive(sessionHighlighting);
             }
-
-            // console.log("ibtm_cross", ibtm_cross)
-            // console.log("btmMarkers", btmMarkers)
 
             const allMarkers = [];
 
@@ -323,47 +313,10 @@ const Chart: FC<{
             //
             // allMarkers.push(...ibtm_cross_markers);
 
-            if (crosses) {
-                const btmMarkers = Array.from(new Set(ibtm_cross.asArray())).map((index) => ({
-                    time: (data[index]?.time * 1000) as UTCTimestamp,
-                    // value: btm_x[index],
-                    color: markerColors.bearColor,
-                    position: 'belowBar',
-                    shape: 'arrowUp',
-                }) as SeriesMarker<Time>)
-
-                allMarkers.push(...btmMarkers)
-
-                const topMarkers = Array.from(new Set(itop_cross.asArray())).map((index) => ({
-                    time: (data[index]?.time * 1000) as UTCTimestamp,
-                    color: markerColors.bullColor,
-                    position: 'aboveBar',
-                    shape: 'arrowDown',
-                }) as SeriesMarker<Time>)
-
-                allMarkers.push(...topMarkers)
-            }
-            plotBullInternal && newLines.forEach(marker => allMarkers.push({
-                time: marker.time,
-                color: marker.color,
-                position: marker.bullish ? 'aboveBar' : 'belowBar',
-                shape: marker.bullish ? 'arrowDown' : 'arrowUp',
-            }));
-
             smPatterns && allMarkers.push(...markers);
 
             // newSeries.setMarkers([...btmMarkers])
             newSeries.setMarkers(allMarkers.sort((a, b) => a.time - b.time))
-
-            // chart.timeScale()
-                //     .setVisibleLogicalRange({
-                //     from: -200,          // Начало диапазона
-                //     to: -1            // Конец диапазона, большее значение уменьшает масштаб
-                // });//.fitContent();
-                // .setVisibleRange({
-                //     from: moment().add(-3, 'days').unix() * 1000,
-                //     to: moment().add(1, 'days').unix() * 1000,
-                // });
 
             const addLine = (price: number, from: UTCTimestamp, to: UTCTimestamp, color: string) => {
                 const lineSeries = chart.addLineSeries({
@@ -383,8 +336,6 @@ const Chart: FC<{
             }
             smPatterns && markers.forEach(marker => addLine(marker.value, marker.time, marker.toTime, marker.color))
 
-            // plotBullInternal && newLines.forEach(marker => addLine(marker.price, marker.time, marker.time + tf * 10 * 1000, marker.color));
-
             window.addEventListener("resize", handleResize);
 
             return () => {
@@ -393,7 +344,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [plotBullInternal, trend, crosses, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [trend, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -460,19 +411,14 @@ export const TestPage = () => {
     }, [tf, ticker]);
 
     const config = useMemo(() => ({
-        smPatterns: checkboxValues.includes('smPatterns'),
-        crosses: checkboxValues.includes('crosses'),
+        smPatterns: true, // checkboxValues.includes('smPatterns'),
         trend: checkboxValues.includes('trend'),
-        plotBullInternal: checkboxValues.includes('plotInternal'),
     }), [checkboxValues])
 
     return <>
-        <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Checkbox.Group onChange={setCheckboxValues}>
             <Checkbox key="smPatterns" value="smPatterns">BOS/CHoCH</Checkbox>
-            <Checkbox key="crosses" value="crosses">Пересечения</Checkbox>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
-            <Checkbox key="plotInternal" value="plotInternal">Линии по LuxAlgo</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>

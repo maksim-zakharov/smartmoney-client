@@ -32,7 +32,7 @@ class Structure {
      * @description Для положительных значений смещения dynamic offset должно быть меньше или равно max offset. Для отрицательных значений смещения dynamic offsetдолжно быть меньше или равно max offset
      * @param offset Это значение положительно для прошлого динамического смещения и отрицательно для динамического будущего смещения. При установке на ноль смещение не корректируется.
      */
-    getValue(offset: number): number{
+    getValue(offset: number): number {
         if (offset >= 0) {
             return this.at(offset);
         }
@@ -40,7 +40,7 @@ class Structure {
         return this._data[-offset] ?? this.fill;
     }
 
-    get current(){
+    get current() {
         return this.at(0);
     }
 
@@ -216,11 +216,11 @@ function swings(len: number = 5, candles: { high: number, low: number }[]): {
     const highs = candles.map((price) => price.high);
     const lows = candles.map((price) => price.low);
 
-    const os = new Structure(0, null);
+    const os = new Structure(len, null);
     // Массив перехаев, если 0 - то не было продолжения
-    const top = new Structure(0, 0);
+    const top = new Structure(len, 0);
     // Массив перелоев, если 0 - то не было продолжения
-    const btm = new Structure(0, 0);
+    const btm = new Structure(len, 0);
 
     // Проходим по данным начиная с индекса len
     // for (let i = len; i < candles.length; i++) {
@@ -230,22 +230,26 @@ function swings(len: number = 5, candles: { high: number, low: number }[]): {
     //
     //     const high = highs[i-len];
     //     const low = lows[i-len];
-    for (let i = len; i < candles.length; i++) {
+    for (let i = len + 1; i < candles.length; i++) {
         // За каждое окно длинную в len свечек находим максимум и минимум
         const highestHigh = Math.max(...highs.slice(i - len, i));
         const lowestLow = Math.min(...lows.slice(i - len, i));
 
-        const high = highs[i];
-        const low = lows[i];
+        const high = highs[i - len - 1];
+        const low = lows[i - len - 1];
 
         // Если текущий хай выше прошлого максимума - 0 (произошло обновление максимума), если текущий лой ниже прошлого лоя - 1 (произошло обновление минимума), иначе берем последнее значение.
         os.add(high > highestHigh ? OSType.UpdateHigh : low < lowestLow ? OSType.UpdateLow : os.at(0));
 
+        // if(i >= 600 && len === 5){
+        //     debugger
+        // }
+
         // Из общего массива значений разделяем его на 2 массива:
         // - если последнее значение было максимумом, а последнее нет (не обновлялось) - записываем максимум
-        top.add(os.at(0) === OSType.UpdateHigh && os.at(1) === OSType.UpdateLow ? high : 0)
+        top.add(os.at(0) === OSType.UpdateHigh && os.at(1) !== OSType.UpdateHigh ? high : 0)
         // - если последнее значение было минимумом, а последнее нет (не обновлялось) - записываем минимум
-        btm.add(os.at(0) === OSType.UpdateLow && os.at(1) === OSType.UpdateHigh ? low : 0)
+        btm.add(os.at(0) === OSType.UpdateLow && os.at(1) !== OSType.UpdateLow ? low : 0)
     }
 
     return {top: top.asArray(), btm: btm.asArray()};
@@ -309,6 +313,7 @@ export function calculate(candles: {
 
         calculateCrossesExtremes(high, low, close, open, itop_y, btm_y, itop_cross, itop_x, ibtm_cross, ibtm_x, ibtm_y, top_y, itrend, n, ifilter_confluence)
 
+        // #Plot Internal Structure
         if (showInternals) {
             const InternalBullStructure = calculatePlotInternal(itop_cross, itop_x, itop_y, InternalBullStructureVal, showInternals)
             const InternalBearStructure = calculatePlotInternal(ibtm_cross, ibtm_x, ibtm_y, InternalBearStructureVal, showInternals)
@@ -316,8 +321,8 @@ export function calculate(candles: {
             console.log("InternalBullStructure", InternalBullStructure)
             console.log("InternalBearStructure", InternalBearStructure)
 
-            const bullBubble = buildBubble(candles, itop_x, itop_cross, InternalBullStructure, InternalBearStructure, itrend, colors,true)
-            const bearBubble = buildBubble(candles, ibtm_x, ibtm_cross, InternalBearStructure, InternalBullStructure, itrend, colors,false)
+            const bullBubble = DrawText(candles, itop_x, itop_cross, InternalBullStructure, InternalBearStructure, itrend, colors, true)
+            const bearBubble = DrawText(candles, ibtm_x, ibtm_cross, InternalBearStructure, InternalBullStructure, itrend, colors, false)
 
             if (bullBubble) markers.push(bullBubble);
             if (bearBubble) markers.push(bearBubble);
@@ -529,13 +534,8 @@ export function calculate(candles: {
     }
 
     return {
-        InternalBullStructureVal,
-        InternalBearStructureVal,
         markers,
-        plots,
         newLines,
-        itop_x,
-        ibtm_x,
         ibtm_cross,
         itop_cross,
         itrend
@@ -663,11 +663,38 @@ function fillPrices(candles: {
     low.add(candles[n].low);
 }
 
+/**
+ * 1. Запоминаем текущий хай (itop_x)
+ * 2. Проверяем что мы сейчас рисуем именно его (itop_x == GetValue(itop_x,-(i1-1))
+ * 3. Рисуем до тех пор пока хай не пересечется с itop_cross (GetValue(itop_cross,-(i1-1)) < GetValue(itop_x,-(i1-1))
+ * 4. Ну и записываем цены значений которые у нас идут пока рисуем хай GetValue(itop_y,-i1), это цена
+ * 5. Далее из последних 6 значений берем самое высокое highest(plotBullInternal,6)
+ * Почему 6? Наверно потому что у нас для определения локальных хаев берется окно в 5 баров, а функция highest учитывает также текущий бар
+ * 6. Короче если хай найден (не 0) - то рисуем его
+ * 7. Зачем Displacer? Смещает значения на offset влево если отрицательно
+ * @param cross
+ * @param x
+ * @param y
+ * @param structureVal
+ * @param showInternals
+ */
 function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, structureVal: Structure, showInternals?: boolean) {
     const lastCross = cross.at(0);
     // if(!lastCross){
     //     return null;
     // }
+
+    if (x._data.length === 618) {
+        const res = y._data.reduce((acc: number[], curr: number) => {
+            if (!acc.length || acc[acc.length - 1] !== curr) {
+                acc.push(curr);
+            }
+
+            return acc;
+        }, [])
+        console.log(res)
+        debugger
+    }
 
     const plotBullInternal = new Structure();
     // Отрицательное значение offset возвращает данные из баров вперед
@@ -681,13 +708,14 @@ function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, str
      * i1 - 4, offset - -3
      * i1 - 5, offset - -4
      */
-    for (let i1 = 0; i1 < 1000 && x.at(i1) >= cross.at(i1); i1++) {
-        if(cross.at(i1 + 1) === x.at(i1 + 1) && lastCross === x.at(i1)){
-            plotBullInternal._data.unshift(y.at(i1+1))
+    const maxLength = Math.max(x._data.length, cross._data.length);
+    for (let i1 = 0; i1 < maxLength && x.at(i1) >= cross.at(i1); i1++) {
+        if (cross.at(i1 + 1) === x.at(i1 + 1) && lastCross === x.at(i1)) {
+            plotBullInternal._data.unshift(y.at(i1 + 1))
         } else {
             // plotBullInternal._data.unshift(plotBullInternal.at(0));
-                        plotBullInternal._data.unshift(0);
-                    }
+            plotBullInternal._data.unshift(0);
+        }
     }
 
     // for (let i1 = 0; i1 < 1000; i1++) {
@@ -711,13 +739,16 @@ function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, str
     //     // }
     // }
 
-    structureVal.add(plotBullInternal.highest(6).at(0)? plotBullInternal.highest(6).at(0) : 0);
+    structureVal.add(plotBullInternal.highest(6).at(0) ? plotBullInternal.highest(6).at(0) : 0);
 
     return showInternals ? structureVal.displacer(-6) : null;
 }
 
 // Тут работает окей
-function buildBubble(candles, x: Structure, cross: Structure, internalStructure: Structure, contrStructure: Structure, itrend: Structure, colors: { bullColor: string, bearColor: string }, bullish?: boolean) {
+function DrawText(candles, x: Structure, cross: Structure, internalStructure: Structure, contrStructure: Structure, itrend: Structure, colors: {
+    bullColor: string,
+    bearColor: string
+}, bullish?: boolean) {
     const conf = bullish
         ? {
             color: colors.bullColor,
@@ -749,25 +780,27 @@ function buildBubble(candles, x: Structure, cross: Structure, internalStructure:
         console.log("contrStructure?.at(5)", contrStructure?.at(5))
         console.log("contrStructure?.at(6)", contrStructure?.at(6))
         const index = x._data.findIndex(c => c === cross.at(0));
+        // const index = x._data.findIndex(c => c === cross.at(0));
+        const to = cross._data.length - 1;
+        const candle = candles[index]
 
-        const offset = 6;
-
-        const maxBatch = candles.slice(index - offset, index);
-        let max = null;
-        for (let i = 0; i < offset; i++) {
-            if(i === 0 || max.high < maxBatch[i].high){
-                max = maxBatch[i]
-            }
-        }
-        const minBatch = candles.slice(index - offset, index);
-        let min = null;
-        for (let i = 0; i < offset; i++) {
-            if(i === 0 || min.low > minBatch[i].low){
-                min = minBatch[i]
-            }
-        }
-        const to = cross._data.length;
-        const candle = bullish ? max : min;
+        // const offset = 6;
+        //
+        // const maxBatch = candles.slice(index - offset, index);
+        // let max = null;
+        // for (let i = 0; i < offset; i++) {
+        //     if(i === 0 || max.high < maxBatch[i].high){
+        //         max = maxBatch[i]
+        //     }
+        // }
+        // const minBatch = candles.slice(index - offset, index);
+        // let min = null;
+        // for (let i = 0; i < offset; i++) {
+        //     if(i === 0 || min.low > minBatch[i].low){
+        //         min = minBatch[i]
+        //     }
+        // }
+        // const candle = bullish ? max : min;
         return {
             ...conf,
             value: bullish ? candle.high : candle.low, //internalStructure.at(5),
