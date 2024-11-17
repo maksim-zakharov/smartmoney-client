@@ -680,9 +680,6 @@ function fillPrices(candles: {
  */
 function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, structureVal: Structure, showInternals?: boolean) {
     const lastCross = cross.at(0);
-    // if(!lastCross){
-    //     return null;
-    // }
 
     if (x._data.length === 618) {
         const res = y._data.reduce((acc: number[], curr: number) => {
@@ -713,31 +710,9 @@ function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, str
         if (cross.at(i1 + 1) === x.at(i1 + 1) && lastCross === x.at(i1)) {
             plotBullInternal._data.unshift(y.at(i1 + 1))
         } else {
-            // plotBullInternal._data.unshift(plotBullInternal.at(0));
             plotBullInternal._data.unshift(0);
         }
     }
-
-    // for (let i1 = 0; i1 < 1000; i1++) {
-    //     if (cross.getValue(-(i1-1)) < x.getValue(-(i1-1)) && x.at(0) === x.getValue(-(i1-1))) {
-    //         if (cross.getValue(-i1) === x.getValue(-i1)) {
-    //             plotBullInternal.add(y.getValue(-i1));
-    //         } else {
-    //             plotBullInternal.add(0);
-    //         }
-    //     } else {
-    //         break;
-    //     }
-    //     // if (cross.at(i1 + 1) < x.at(i1 + 1) && x.at(0) === x.at(i1 + 1)) {
-    //     //     if (cross.at(i1) === x.at(i1)) {
-    //     //         plotBullInternal.add(y.at(i1));
-    //     //     } else {
-    //     //         plotBullInternal.add(0);
-    //     //     }
-    //     // } else {
-    //     //     break;
-    //     // }
-    // }
 
     structureVal.add(plotBullInternal.highest(6).at(0) ? plotBullInternal.highest(6).at(0) : 0);
 
@@ -763,7 +738,7 @@ function DrawText(candles, x: Structure, cross: Structure, internalStructure: St
 
     const trend = bullish ? -1 : 1;
 
-    // if(x._data.length === 604){
+    // if(x._data.length === 598){
     //     debugger
     // }
 
@@ -780,27 +755,9 @@ function DrawText(candles, x: Structure, cross: Structure, internalStructure: St
         console.log("contrStructure?.at(5)", contrStructure?.at(5))
         console.log("contrStructure?.at(6)", contrStructure?.at(6))
         const index = x._data.findIndex(c => c === cross.at(0));
-        // const index = x._data.findIndex(c => c === cross.at(0));
         const to = cross._data.length - 1;
-        const candle = candles[index]
+        const candle = candles[index - 5]
 
-        // const offset = 6;
-        //
-        // const maxBatch = candles.slice(index - offset, index);
-        // let max = null;
-        // for (let i = 0; i < offset; i++) {
-        //     if(i === 0 || max.high < maxBatch[i].high){
-        //         max = maxBatch[i]
-        //     }
-        // }
-        // const minBatch = candles.slice(index - offset, index);
-        // let min = null;
-        // for (let i = 0; i < offset; i++) {
-        //     if(i === 0 || min.low > minBatch[i].low){
-        //         min = minBatch[i]
-        //     }
-        // }
-        // const candle = bullish ? max : min;
         return {
             ...conf,
             value: bullish ? candle.high : candle.low, //internalStructure.at(5),
