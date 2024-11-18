@@ -79,55 +79,30 @@ class Structure {
             return null; // Или можно вернуть NaN
         }
 
-        // Получаем последний элемент массива
-        const lastValue = this.at(0);
 
         // Проверяем сдвиг влево
         if (shift < 0) {
+            // Получаем последний элемент массива
+            const lastValue = this.at(0);
             // Рассчитываем новый индекс для перемещения последнего значения
             const newIndex = this._data.length + shift - 1; // Позиция на 6 позиций назад
             if (newIndex >= 0) {
                 this._data[newIndex] = lastValue; // Перемещаем значение на новый индекс
                 this._data[this._data.length - 1] = 0; // Убираем последнее значение (перезаписываем его на null)
             }
+        } else {
+            // Получаем последний элемент массива
+            const lastValue = this.at(shift);
+            // Рассчитываем новый индекс для перемещения последнего значения
+            const newIndex = this._data.length - 1 - shift; // Позиция на 6 позиций назад
+            if (newIndex >= 0) {
+                this._data[this._data.length - 1] = lastValue; // Перемещаем значение на новый индекс
+                this._data[this._data.length - 1 + shift] = 0; // Убираем последнее значение (перезаписываем его на null)
+            }
         }
 
         return this;
     }
-}
-
-enum CrossEnum {
-    Up = 'Up',
-    Any = 'Any',
-    Down = 'Down'
-}
-
-function IsCross(dir: CrossEnum, array1: number[], array2: number[], i: number = 0, offset1: number = 0, offset2: number = 0) {
-    let flag = false;
-    let num;
-    if (dir === CrossEnum.Up || dir === CrossEnum.Any) {
-        num = array1[i + offset1];
-        if (num > array2[i + offset2]) {
-            num = array1[i + 1 + offset1];
-            if (num <= array2[i + 1 + offset2]) flag = true;
-        }
-    }
-    if (dir === CrossEnum.Down || dir === CrossEnum.Any) {
-        num = array1[i + offset1];
-        if (num < array2[i + offset2]) {
-            num = array1[i + 1 + offset1];
-            if (num >= array2[i + 1 + offset2]) flag = true;
-        }
-    }
-    return flag;
-}
-
-function CrossOver(source1: number[], source2: number[], index: number = 0, offset1: number = 0, offset2: number = 0) {
-    return IsCross(CrossEnum.Up, source1, source2, index, offset1, offset2);
-}
-
-function CrossUnder(source1: number[], source2: number[], index: number = 0, offset1: number = 0, offset2: number = 0) {
-    return IsCross(CrossEnum.Down, source1, source2, index, offset1, offset2);
 }
 
 enum CrossDirection {
@@ -223,13 +198,6 @@ function swings(len: number = 5, candles: { high: number, low: number }[]): {
     const btm = new Structure(len, 0);
 
     // Проходим по данным начиная с индекса len
-    // for (let i = len; i < candles.length; i++) {
-    //     // За каждое окно длинную в len свечек находим максимум и минимум
-    //     const highestHigh = Math.max(...highs.slice(i - len + 1, i + 1));
-    //     const lowestLow = Math.min(...lows.slice(i - len + 1, i + 1));
-    //
-    //     const high = highs[i-len];
-    //     const low = lows[i-len];
     for (let i = len + 1; i < candles.length; i++) {
         // За каждое окно длинную в len свечек находим максимум и минимум
         const highestHigh = Math.max(...highs.slice(i - len, i));
@@ -240,10 +208,6 @@ function swings(len: number = 5, candles: { high: number, low: number }[]): {
 
         // Если текущий хай выше прошлого максимума - 0 (произошло обновление максимума), если текущий лой ниже прошлого лоя - 1 (произошло обновление минимума), иначе берем последнее значение.
         os.add(high > highestHigh ? OSType.UpdateHigh : low < lowestLow ? OSType.UpdateLow : os.at(0));
-
-        // if(i >= 600 && len === 5){
-        //     debugger
-        // }
 
         // Из общего массива значений разделяем его на 2 массива:
         // - если последнее значение было максимумом, а последнее нет (не обновлялось) - записываем максимум
@@ -296,8 +260,8 @@ export function calculate(candles: {
     const high = new Structure(length, 0);
     const low = new Structure(length, 0);
 
-    const InternalBullStructureVal = new Structure(length, 0);
-    const InternalBearStructureVal = new Structure(length, 0);
+    const topPlots = [];
+    const btmPlots = [];
 
     // Нашли максимумы и минимумы с окном в 50 свечек
     const {top, btm} = swings(length, candles);
@@ -312,49 +276,22 @@ export function calculate(candles: {
 
         calculateCrossesExtremes(high, low, close, open, itop_y, btm_y, itop_cross, itop_x, ibtm_cross, ibtm_x, ibtm_y, top_y, itrend, n, ifilter_confluence)
 
+        topPlots.push(calculateCustomPlot(itop_x, itop_cross));
+        btmPlots.push(calculateCustomPlot(ibtm_x, ibtm_cross));
+
         // #Plot Internal Structure
         if (showInternals) {
-            const InternalBullStructure = calculatePlotInternal(itop_cross, itop_x, itop_y, InternalBullStructureVal, showInternals)
-            const InternalBearStructure = calculatePlotInternal(ibtm_cross, ibtm_x, ibtm_y, InternalBearStructureVal, showInternals)
 
-            console.log("InternalBullStructure", InternalBullStructure)
-            console.log("InternalBearStructure", InternalBearStructure)
-
-            const bullBubble = DrawText(candles, itop_x, itop_cross, InternalBullStructure, InternalBearStructure, itrend, colors, true)
-            const bearBubble = DrawText(candles, ibtm_x, ibtm_cross, InternalBearStructure, InternalBullStructure, itrend, colors, false)
+            const bullBubble = DrawText(candles, itop_x, itop_cross, topPlots, btmPlots, itrend, colors, true)
+            const bearBubble = DrawText(candles, ibtm_x, ibtm_cross, btmPlots, topPlots, itrend, colors, false)
 
             if (bullBubble) markers.push(bullBubble);
             if (bearBubble) markers.push(bearBubble);
         }
     }
 
-    const newLines = [];
-    for (let i = 0; i < InternalBullStructureVal._data.length; i++) {
-        if (!InternalBullStructureVal._data[i]) {
-            continue;
-        }
-        newLines.push({
-            price: InternalBullStructureVal._data[i],
-            time: candles[i].time * 1000,
-            color: colors.bullColor,
-            bullish: true
-        })
-    }
-    for (let i = 0; i < InternalBearStructureVal._data.length; i++) {
-        if (!InternalBearStructureVal._data[i]) {
-            continue;
-        }
-        newLines.push({
-            price: InternalBearStructureVal._data[i],
-            time: candles[i].time * 1000,
-            color: colors.bearColor,
-            bullish: false
-        })
-    }
-
     return {
         markers,
-        newLines,
         ibtm_cross,
         itop_cross,
         itrend
@@ -482,64 +419,25 @@ function fillPrices(candles: {
     low.add(candles[n].low);
 }
 
-/**
- * 1. Запоминаем текущий хай (itop_x)
- * 2. Проверяем что мы сейчас рисуем именно его (itop_x == GetValue(itop_x,-(i1-1))
- * 3. Рисуем до тех пор пока хай не пересечется с itop_cross (GetValue(itop_cross,-(i1-1)) < GetValue(itop_x,-(i1-1))
- * 4. Ну и записываем цены значений которые у нас идут пока рисуем хай GetValue(itop_y,-i1), это цена
- * 5. Далее из последних 6 значений берем самое высокое highest(plotBullInternal,6)
- * Почему 6? Наверно потому что у нас для определения локальных хаев берется окно в 5 баров, а функция highest учитывает также текущий бар
- * 6. Короче если хай найден (не 0) - то рисуем его
- * 7. Зачем Displacer? Смещает значения на offset влево если отрицательно
- * @param cross
- * @param x
- * @param y
- * @param structureVal
- * @param showInternals
- */
-function calculatePlotInternal(cross: Structure, x: Structure, y: Structure, structureVal: Structure, showInternals?: boolean) {
-    const lastCross = cross.at(0);
+function calculateCustomPlot(x: Structure, cross: Structure){
+    if (cross.at(1) && cross.at(0) > cross.at(1)) {
 
-    if (x._data.length === 618) {
-        const res = y._data.reduce((acc: number[], curr: number) => {
-            if (!acc.length || acc[acc.length - 1] !== curr) {
-                acc.push(curr);
-            }
+        const index = x._data.findIndex(c => c === cross.at(0));
 
-            return acc;
-        }, [])
-        console.log(res)
-        debugger
-    }
+        const from = index - 5;
+        const to = cross._data.length - 1;
 
-    const plotBullInternal = new Structure();
-    // Отрицательное значение offset возвращает данные из баров вперед
-    // cross.getValue(0) вернет текущее, cross.getValue(1) вернет предпоследнее, cross.getValue(-1) вернет БУДУЩЕЕ (а не первое)
-    /**
-     * offset - -(i1-1)
-     * i1 - 0, offset - 1
-     * i1 - 1, offset - 0
-     * i1 - 2, offset - -1
-     * i1 - 3, offset - -2
-     * i1 - 4, offset - -3
-     * i1 - 5, offset - -4
-     */
-    const maxLength = Math.max(x._data.length, cross._data.length);
-    for (let i1 = 0; i1 < maxLength && x.at(i1) >= cross.at(i1); i1++) {
-        if (cross.at(i1 + 1) === x.at(i1 + 1) && lastCross === x.at(i1)) {
-            plotBullInternal._data.unshift(y.at(i1 + 1))
-        } else {
-            plotBullInternal._data.unshift(0);
+        return {
+            from,
+            to,
         }
     }
 
-    structureVal.add(plotBullInternal.highest(6).at(0) ? plotBullInternal.highest(6).at(0) : 0);
-
-    return showInternals ? structureVal.displacer(-6) : null;
+    return 0;
 }
 
 // Тут работает окей
-function DrawText(candles, x: Structure, cross: Structure, internalStructure: Structure, contrStructure: Structure, itrend: Structure, colors: {
+function DrawText(candles, x: Structure, cross: Structure, trendSctructure: any[], contrTrendStructure: any[], itrend: Structure, colors: {
     bullColor: string,
     bearColor: string
 }, bullish?: boolean) {
@@ -557,11 +455,8 @@ function DrawText(candles, x: Structure, cross: Structure, internalStructure: St
 
     const trend = bullish ? -1 : 1;
 
-    // if(x._data.length === 600){
-    //     debugger
-    // }
-
     if (cross.at(1) && cross.at(0) > cross.at(1)) {
+
         const index = x._data.findIndex(c => c === cross.at(0));
 
         const from = index - 5;
@@ -572,13 +467,18 @@ function DrawText(candles, x: Structure, cross: Structure, internalStructure: St
         const toCandle = candles[to];
         const textCandle = candles[textIndex];
 
+        const contrIndex = contrTrendStructure.findLastIndex(c => c !== 0)
+        const prevExtIndex = trendSctructure.findLastIndex((c, i) => c !== 0 && i !== trendSctructure.length - 1)
+
+        const isCHoCH = contrIndex > prevExtIndex;
+
         return {
             ...conf,
-            value: bullish ? fromCandle.high : fromCandle.low, //internalStructure.at(5),
+            value: bullish ? fromCandle.high : fromCandle.low,
             fromTime: fromCandle.time * 1000,
             textTime: textCandle.time * 1000,
             toTime: toCandle.time * 1000,
-            text: itrend.at(0) === trend || contrStructure?.at(6)
+            text: itrend.at(0) === trend || isCHoCH
                 ?
                 'CHoCH'
                 : 'BOS', // Текст внутри пузырька
