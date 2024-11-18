@@ -255,6 +255,7 @@ const Chart: FC<{
             //     }])
             // })
 
+            let idms=[]
             smPatterns && markers.forEach(marker => {
                 const lineSeries = chart.addLineSeries({
                     color: marker.color, // Цвет линии
@@ -273,7 +274,13 @@ const Chart: FC<{
                 ]);
 
                 lineSeries.setMarkers([{color: marker.color, time: marker.textTime, shape: marker.shape, position: marker.position, text: marker.text}])
+
+                if(marker.idmIndex){
+                    idms.push({color: marker.color, time: data[marker.idmIndex].time * 1000, shape: 'text', position: marker.position, text: 'IDM'})
+                }
             })
+
+            newSeries.setMarkers(idms.sort((a: any, b: any) => a.time - b.time));
 
             window.addEventListener("resize", handleResize);
 

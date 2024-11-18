@@ -295,8 +295,8 @@ export function calculate(candles: {
         // #Plot Internal Structure
         if (showInternals) {
 
-            const bullBubble = DrawText(candles, itop_x, itop_cross, topPlots, btmPlots, itrend, colors, true)
-            const bearBubble = DrawText(candles, ibtm_x, ibtm_cross, btmPlots, topPlots, itrend, colors, false)
+            const bullBubble = DrawText(candles, itop_x, ibtm_x, itop_cross, topPlots, btmPlots, itrend, colors, true)
+            const bearBubble = DrawText(candles, ibtm_x, itop_x, ibtm_cross, btmPlots, topPlots, itrend, colors, false)
 
             if (bullBubble) markers.push(bullBubble);
             if (bearBubble) markers.push(bearBubble);
@@ -453,7 +453,7 @@ function calculateCustomPlot(x: Structure, cross: Structure, candles, bullish){
 }
 
 // Тут работает окей
-function DrawText(candles, x: Structure, cross: Structure, trendSctructure: any[], contrTrendStructure: any[], itrend: Structure, colors: {
+function DrawText(candles, x: Structure, contrX: Structure, cross: Structure, trendSctructure: any[], contrTrendStructure: any[], itrend: Structure, colors: {
     bullColor: string,
     bearColor: string
 }, bullish?: boolean) {
@@ -491,13 +491,26 @@ function DrawText(candles, x: Structure, cross: Structure, trendSctructure: any[
         if( prevExtIndex > -1)
         trendSctructure[prevExtIndex].isCHoCH = true;
 
+        let idmIndex;
+
+        const isMarkerCHoCH = itrend.at(0) === trend || isCHoCH;
+        if(isMarkerCHoCH){
+            // idmIndex = x._data[from];
+        }
+
         return {
             ...conf,
             value: bullish ? fromCandle.high : fromCandle.low,
+            from,
+            to,
+            textIndex,
             fromTime: fromCandle.time * 1000,
             textTime: textCandle.time * 1000,
             toTime: toCandle.time * 1000,
-            text: itrend.at(0) === trend || isCHoCH
+            trend: itrend.at(0),
+            idmIndex,
+            isCHoCH: isMarkerCHoCH,
+            text: isMarkerCHoCH
                 ?
                 'CHoCH'
                 : 'BOS', // Текст внутри пузырька
