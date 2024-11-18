@@ -78,13 +78,13 @@ const Chart: FC<{
 
                         // Если это первый день месяца
                         if (date.getDate() === 1) {
-                            return capitalizeFirstLetter(date.toLocaleString(locale, { month: 'long' })).slice(0, 3); // Название месяца
+                            return capitalizeFirstLetter(date.toLocaleString(locale, {month: 'long'})).slice(0, 3); // Название месяца
                         }
 
                         // Часы (для секций 12 и 18 часов)
                         const hours = date.getHours();
                         if (hours >= 0 && hours <= 10) {
-                            return date.toLocaleString(locale, { day: 'numeric' });
+                            return date.toLocaleString(locale, {day: 'numeric'});
                         }
 
                         // Дата (день месяца)
@@ -169,6 +169,8 @@ const Chart: FC<{
             emaSeries.setData(emaSeriesData);
 
             const {
+                topPlots,
+                btmPlots,
                 markers,
                 itrend
             } = calculate(data, markerColors, windowLength);
@@ -210,6 +212,49 @@ const Chart: FC<{
                 newSeries.attachPrimitive(sessionHighlighting);
             }
 
+
+            // smPatterns && [...topPlots.filter(Boolean).map(v => ({
+            //     ...v,
+            //     position: 'aboveBar',
+            //     text: v.isCHoCH ? 'CHoCH' : 'BOS',
+            //     color: markerColors.bullColor
+            // })),
+            //     ...btmPlots.filter(Boolean).map(v => ({
+            //         ...v,
+            //         position: 'belowBar',
+            //         text: v.isCHoCH ? 'CHoCH' : 'BOS',
+            //         color: markerColors.bearColor
+            //     }))
+            // ].forEach(plot => {
+            //     const lineSeries = chart.addLineSeries({
+            //         color: plot.color, // Цвет линии
+            //         priceLineVisible: false,
+            //         lastValueVisible: false,
+            //         lineWidth: 1,
+            //         lineStyle: LineStyle.LargeDashed,
+            //     });
+            //
+            //     const textIndex = plot.to - Math.floor((plot.to - plot.from) / 2);
+            //
+            //     const fromCandle = data[plot.from];
+            //     const toCandle = data[plot.to];
+            //     const textCandle = data[textIndex];
+            //
+            //     lineSeries.setData([
+            //         {time: fromCandle.time * 1000, value: plot.price}, // начальная точка между свечками
+            //         {time: textCandle.time * 1000, value: plot.price}, // начальная точка между свечками
+            //         {time: toCandle.time * 1000, value: plot.price}, // конечная точка между свечками
+            //     ]);
+            //
+            //     lineSeries.setMarkers([{
+            //         color: plot.color,
+            //         time: textCandle.time * 1000,
+            //         shape: 'text',
+            //         position: plot.position,
+            //         text: plot.text
+            //     }])
+            // })
+
             smPatterns && markers.forEach(marker => {
                 const lineSeries = chart.addLineSeries({
                     color: marker.color, // Цвет линии
@@ -248,7 +293,7 @@ const Chart: FC<{
 
 // Функция для получения данных из Alor API
 async function fetchCandlesFromAlor(symbol, tf) {
-    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-10-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-12-31:00:00Z").getTime() / 1000)}`;
+    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-11-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-12-31:00:00Z").getTime() / 1000)}`;
 
     try {
         const response = await fetch(url, {

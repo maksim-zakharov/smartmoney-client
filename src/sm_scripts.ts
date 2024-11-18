@@ -260,8 +260,8 @@ export function calculate(candles: {
     const high = new Structure(length, 0);
     const low = new Structure(length, 0);
 
-    const topPlots = [];
-    const btmPlots = [];
+    const topPlots = new Array(length).fill(0);
+    const btmPlots = new Array(length).fill(0);
 
     // Нашли максимумы и минимумы с окном в 50 свечек
     const {top, btm} = swings(length, candles);
@@ -276,8 +276,21 @@ export function calculate(candles: {
 
         calculateCrossesExtremes(high, low, close, open, itop_y, btm_y, itop_cross, itop_x, ibtm_cross, ibtm_x, ibtm_y, top_y, itrend, n, ifilter_confluence)
 
-        topPlots.push(calculateCustomPlot(itop_x, itop_cross));
-        btmPlots.push(calculateCustomPlot(ibtm_x, ibtm_cross));
+        topPlots.push(calculateCustomPlot(itop_x, itop_cross, candles, true));
+        btmPlots.push(calculateCustomPlot(ibtm_x, ibtm_cross, candles, false));
+
+        const contrIndex = btmPlots.findLastIndex(c => c !== 0)
+        const prevExtIndex = topPlots.findLastIndex((c, i) => c !== 0 && i !== topPlots.length - 1)
+
+        if( prevExtIndex > -1 && contrIndex > prevExtIndex)
+            topPlots[prevExtIndex].isCHoCH = true;
+
+
+        const contrIndex2 = topPlots.findLastIndex(c => c !== 0)
+        const prevExtIndex2 = btmPlots.findLastIndex((c, i) => c !== 0 && i !== btmPlots.length - 1)
+
+        if( prevExtIndex2 > -1 && contrIndex2 > prevExtIndex2)
+            btmPlots[prevExtIndex2].isCHoCH = true;
 
         // #Plot Internal Structure
         if (showInternals) {
@@ -292,8 +305,8 @@ export function calculate(candles: {
 
     return {
         markers,
-        ibtm_cross,
-        itop_cross,
+        topPlots,
+        btmPlots,
         itrend
     };
 }
@@ -419,7 +432,7 @@ function fillPrices(candles: {
     low.add(candles[n].low);
 }
 
-function calculateCustomPlot(x: Structure, cross: Structure){
+function calculateCustomPlot(x: Structure, cross: Structure, candles, bullish){
     if (cross.at(1) && cross.at(0) > cross.at(1)) {
 
         const index = x._data.findIndex(c => c === cross.at(0));
@@ -427,8 +440,11 @@ function calculateCustomPlot(x: Structure, cross: Structure){
         const from = index - 5;
         const to = cross._data.length - 1;
 
+        const fromCandle = candles[from];
+
         return {
             from,
+            price: bullish ? fromCandle.high : fromCandle.low,
             to,
         }
     }
@@ -471,6 +487,9 @@ function DrawText(candles, x: Structure, cross: Structure, trendSctructure: any[
         const prevExtIndex = trendSctructure.findLastIndex((c, i) => c !== 0 && i !== trendSctructure.length - 1)
 
         const isCHoCH = contrIndex > prevExtIndex;
+
+        if( prevExtIndex > -1)
+        trendSctructure[prevExtIndex].isCHoCH = true;
 
         return {
             ...conf,
