@@ -11,7 +11,7 @@ import {
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts";
-import {Checkbox} from "antd";
+import {Checkbox, Slider} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
 
 function capitalizeFirstLetter(str) {
@@ -357,13 +357,13 @@ export const TestPage = () => {
     }, [tf, ticker]);
 
     const config = useMemo(() => ({
-        smPatterns: true, // checkboxValues.includes('smPatterns'),
+        smPatterns: true,
         trend: checkboxValues.includes('trend'),
     }), [checkboxValues])
 
     return <>
+        <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Checkbox.Group onChange={setCheckboxValues}>
-            <Checkbox key="smPatterns" value="smPatterns">BOS/CHoCH</Checkbox>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />

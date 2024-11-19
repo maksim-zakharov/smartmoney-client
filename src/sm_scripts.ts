@@ -295,8 +295,8 @@ export function calculate(candles: {
         // #Plot Internal Structure
         if (showInternals) {
 
-            const bullBubble = DrawText(candles, itop_x, ibtm_x, itop_cross, topPlots, btmPlots, itrend, colors, true)
-            const bearBubble = DrawText(candles, ibtm_x, itop_x, ibtm_cross, btmPlots, topPlots, itrend, colors, false)
+            const bullBubble = DrawText(localLength, candles, itop_x, itop_cross, topPlots, btmPlots, itrend, colors, true)
+            const bearBubble = DrawText(localLength, candles, ibtm_x, ibtm_cross, btmPlots, topPlots, itrend, colors, false)
 
             if (bullBubble) markers.push(bullBubble);
             if (bearBubble) markers.push(bearBubble);
@@ -453,7 +453,7 @@ function calculateCustomPlot(x: Structure, cross: Structure, candles, bullish){
 }
 
 // Тут работает окей
-function DrawText(candles, x: Structure, contrX: Structure, cross: Structure, trendSctructure: any[], contrTrendStructure: any[], itrend: Structure, colors: {
+function DrawText(length: number, candles, x: Structure, cross: Structure, trendSctructure: any[], contrTrendStructure: any[], itrend: Structure, colors: {
     bullColor: string,
     bearColor: string
 }, bullish?: boolean) {
@@ -475,7 +475,7 @@ function DrawText(candles, x: Structure, contrX: Structure, cross: Structure, tr
 
         const index = x._data.findIndex(c => c === cross.at(0));
 
-        const from = index - 5;
+        const from = index - length;
         const to = cross._data.length - 1;
         const textIndex = to - Math.floor((to - from) / 2);
 
