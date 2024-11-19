@@ -432,7 +432,7 @@ function fillPrices(candles: {
     low.add(candles[n].low);
 }
 
-function calculateCustomPlot(length: number, x: Structure, cross: Structure, candles, bullish){
+function calculateCustomPlot(length: number, x: Structure, cross: Structure, candles, bullish: boolean){
     if (cross.at(1) && cross.at(0) > cross.at(1)) {
 
         const index = x._data.findIndex(c => c === cross.at(0));

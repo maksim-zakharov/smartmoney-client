@@ -11,7 +11,7 @@ import {
 import moment from "moment/moment";
 import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts";
-import {Checkbox, Slider} from "antd";
+import {Checkbox, Radio, Select, Slider, Space} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
 
 function capitalizeFirstLetter(str) {
@@ -337,7 +337,10 @@ function calculateEMA(
     return [ema, array];
 }
 
+const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
+
 export const TestPage = () => {
+    const [securities, setSecurities] = useState([]);
     const [data, setData] = useState([]);
     const [ema, setEma] = useState([]);
     const [checkboxValues, setCheckboxValues] = useState([]);
@@ -345,12 +348,16 @@ export const TestPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '900';
-    useMemo(() => {
+    useEffect(() => {
         setEma(calculateEMA(
             data.map((h) => h.close),
             100
         )[1]);
     }, [data])
+
+    useEffect(() => {
+        fetchSecurities().then(setSecurities)
+    }, []);
 
     useEffect(() => {
         fetchCandlesFromAlor(ticker, tf).then(setData);
@@ -361,7 +368,38 @@ export const TestPage = () => {
         trend: checkboxValues.includes('trend'),
     }), [checkboxValues])
 
+    const setSize = (tf: string) => {
+        searchParams.set('tf', tf);
+        setSearchParams(searchParams)
+    }
+
+    const onSelectTicker = (ticker) => {
+        searchParams.set('ticker', ticker);
+        setSearchParams(searchParams)
+    }
+
+    const options = useMemo(() => securities.map(s => ({label: s.symbol, value: s.symbol})), [securities]);
+
     return <>
+        <Space>
+            <Radio.Group value={tf} onChange={(e) => setSize(e.target.value)}>
+                <Radio.Button value="300">5M</Radio.Button>
+                <Radio.Button value="900">15M</Radio.Button>
+                <Radio.Button value="1800">30M</Radio.Button>
+                <Radio.Button value="3600">1H</Radio.Button>
+            </Radio.Group>
+            <Select
+                value={ticker}
+                showSearch
+                placeholder="Введи тикер"
+                onSelect={onSelectTicker}
+                filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                style={{width: 160}}
+                options={options}
+            />
+        </Space>
         <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Checkbox.Group onChange={setCheckboxValues}>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
