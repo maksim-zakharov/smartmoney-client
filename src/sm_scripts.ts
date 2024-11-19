@@ -276,8 +276,8 @@ export function calculate(candles: {
 
         calculateCrossesExtremes(high, low, close, open, itop_y, btm_y, itop_cross, itop_x, ibtm_cross, ibtm_x, ibtm_y, top_y, itrend, n, ifilter_confluence)
 
-        topPlots.push(calculateCustomPlot(itop_x, itop_cross, candles, true));
-        btmPlots.push(calculateCustomPlot(ibtm_x, ibtm_cross, candles, false));
+        topPlots.push(calculateCustomPlot(localLength, itop_x, itop_cross, candles, true));
+        btmPlots.push(calculateCustomPlot(localLength, ibtm_x, ibtm_cross, candles, false));
 
         const contrIndex = btmPlots.findLastIndex(c => c !== 0)
         const prevExtIndex = topPlots.findLastIndex((c, i) => c !== 0 && i !== topPlots.length - 1)
@@ -432,12 +432,12 @@ function fillPrices(candles: {
     low.add(candles[n].low);
 }
 
-function calculateCustomPlot(x: Structure, cross: Structure, candles, bullish){
+function calculateCustomPlot(length: number, x: Structure, cross: Structure, candles, bullish){
     if (cross.at(1) && cross.at(0) > cross.at(1)) {
 
         const index = x._data.findIndex(c => c === cross.at(0));
 
-        const from = index - 5;
+        const from = index - length;
         const to = cross._data.length - 1;
 
         const fromCandle = candles[from];

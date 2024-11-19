@@ -300,7 +300,7 @@ const Chart: FC<{
 
 // Функция для получения данных из Alor API
 async function fetchCandlesFromAlor(symbol, tf) {
-    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-11-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-12-31:00:00Z").getTime() / 1000)}`;
+    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${Math.floor(new Date("2024-10-01T00:00:00Z").getTime() / 1000)}&to=${Math.floor(new Date("2024-12-31:00:00Z").getTime() / 1000)}`;
 
     try {
         const response = await fetch(url, {
