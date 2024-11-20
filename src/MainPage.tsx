@@ -1,5 +1,5 @@
-import React, {useCallback, useEffect, useMemo, useRef} from "react";
-import {Card, Col, Layout, Menu, Row, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {Card, Col, Layout, Row, Slider, SliderSingleProps, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
 import {useCandlesQuery, usePortfolioQuery} from "./api";
 import {
     ColorType,
@@ -16,7 +16,6 @@ import moment from "moment";
 import {useSearchParams} from "react-router-dom";
 import {Point, Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
-import {Header} from "antd/es/layout/layout";
 
 function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);
@@ -133,7 +132,7 @@ export const ChartComponent = props => {
                     textColor: color
                 },
                 width: chartContainerRef.current.clientWidth,
-                height: 700
+                height: 600
             });
 
             const newSeries = chart.addCandlestickSeries({
@@ -852,7 +851,7 @@ const MainPage: React.FC = () => {
                 children:
                     <Table size="small" dataSource={positions} columns={positionsColumns}
                            pagination={{
-                               pageSize: 16,
+                               pageSize: 15,
                            }}
                            onRow={(record) => {
                                return {
@@ -868,7 +867,7 @@ const MainPage: React.FC = () => {
                 children:
                     <Table size="small" dataSource={orders} columns={columns}
                            pagination={{
-                               pageSize: 16,
+                               pageSize: 15,
                            }}
                            onRow={(record: any) => {
                                return {
@@ -884,7 +883,7 @@ const MainPage: React.FC = () => {
                 children:
                     <Table size="small" dataSource={historyTableData} columns={historyColumns as any} rowKey={getPatternKey}
                            pagination={{
-                               pageSize: 16,
+                               pageSize: 15,
                            }}
                            onRow={(record) => {
                                return {
@@ -902,10 +901,16 @@ const MainPage: React.FC = () => {
             }
         ];
 
-        const totalPnL = history.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0); // useMemo(() => history.filter(p => p.PnL && !blacklist[getPatternKey(p)]).reduce((acc, curr) => acc + curr.PnL, 0), [history, blacklist]);
-        const losses = history.filter(p => p.PnL < 0).length
+        const [{fromDate, toDate}, setDates] = useState({
+            fromDate: moment().startOf('years').unix(),
+            toDate: 9999999999999
+        });
+
+        const filteredHistory = history.filter(c => moment(c.limitTrade?.date).unix() >= fromDate && moment(c.limitTrade?.date).unix() <= toDate);
+        const totalPnL = filteredHistory.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0); // useMemo(() => history.filter(p => p.PnL && !blacklist[getPatternKey(p)]).reduce((acc, curr) => acc + curr.PnL, 0), [history, blacklist]);
+        const losses = filteredHistory.filter(p => p.PnL < 0).length
         // useMemo(() => history.filter(p => p.PnL < 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
-        const profits = history.filter(p => p.PnL > 0).length
+        const profits = filteredHistory.filter(p => p.PnL > 0).length
         // useMemo(() => history.filter(p => p.PnL > 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
 
         const emas = [{
@@ -918,8 +923,30 @@ const MainPage: React.FC = () => {
             array: data.ema200, color: 'rgba(0, 0, 255, 0.65)', title: 'ema200'
         }];
 
+        const minDate = moment('2024-10-10T00:00:00.000Z');
+        const min = minDate.unix()
+        const max = moment().unix()
+
+        const diff = max - min;
+        const length = 10;
+        const part = Math.floor(diff / length);
+        const betweedDates = new Array(length).fill(0).map((v, i) => moment((i * part + min) * 1000));
+
+        const marks: SliderSingleProps['marks'] = {
+            [min]: minDate.format('YYYY-MM-DD'),
+            [max]: moment(max * 1000).format('YYYY-MM-DD'),
+        };
+
+        betweedDates.forEach(date => marks[date.unix()] = date.format('YYYY-MM-DD'))
+
         return (
             <Space direction="vertical" style={{width: '100%'}}>
+                <div style={{margin: '0 40px'}}>
+                    <Slider range defaultValue={[fromDate, toDate]} marks={marks}
+                            onChange={([fromDate, toDate]) => setDates({fromDate, toDate})}
+                            tooltip={{formatter: val => moment(val * 1000).format('YYYY-MM-DD')}}
+                            min={min} step={60 * 60 * 24} max={moment().unix()}/>
+                </div>
                 <Row gutter={8}>
                     <Col span={8}>
                         <Card bordered={false}>
