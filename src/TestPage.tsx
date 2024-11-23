@@ -255,7 +255,7 @@ const Chart: FC<{
             //     }])
             // })
 
-            let idms=[]
+            let idms = []
             smPatterns && markers.forEach(marker => {
                 const lineSeries = chart.addLineSeries({
                     color: marker.color, // Цвет линии
@@ -273,10 +273,22 @@ const Chart: FC<{
                     {time: marker.toTime, value: marker.value}, // конечная точка между свечками
                 ]);
 
-                lineSeries.setMarkers([{color: marker.color, time: marker.textTime, shape: marker.shape, position: marker.position, text: marker.text}])
+                lineSeries.setMarkers([{
+                    color: marker.color,
+                    time: marker.textTime,
+                    shape: marker.shape,
+                    position: marker.position,
+                    text: marker.text
+                }])
 
-                if(marker.idmIndex){
-                    idms.push({color: marker.color, time: data[marker.idmIndex].time * 1000, shape: 'text', position: marker.position, text: 'IDM'})
+                if (marker.idmIndex) {
+                    idms.push({
+                        color: marker.color,
+                        time: data[marker.idmIndex].time * 1000,
+                        shape: 'text',
+                        position: marker.position,
+                        text: 'IDM'
+                    })
                 }
             })
 
@@ -378,7 +390,10 @@ export const TestPage = () => {
         setSearchParams(searchParams)
     }
 
-    const options = useMemo(() => securities.map(s => ({label: s.symbol, value: s.symbol})), [securities]);
+    const options = useMemo(() => securities.filter(s => !['Unknown'].includes(s.complexProductCategory) && !['TQIF', 'ROPD', 'TQIR', 'TQRD', 'TQPI', 'CETS', 'TQTF', 'TQCB', 'TQOB', 'FQBR'].includes(s.board) && ['RUB'].includes(s.currency)).sort((a, b) => a.symbol.localeCompare(b.symbol)).map(s => ({
+        label: s.symbol,
+        value: s.symbol
+    })), [securities]);
 
     return <>
         <Space>
