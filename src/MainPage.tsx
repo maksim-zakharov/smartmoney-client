@@ -414,7 +414,7 @@ const MainPage: React.FC = () => {
             symbol,
             tf,
             emaPeriod: 100,
-            from: moment(selectedPattern?.liquidSweepTime).add(-(Number(selectedPattern?.timeframe) / 1800), "days").unix().toString(),
+            from: moment(selectedPattern?.liquidSweepTime).add(-(Number(selectedPattern?.timeframe) / 1800), "w").unix().toString(),
             to
         }, {
             skip: !symbol || !selectedPattern,
