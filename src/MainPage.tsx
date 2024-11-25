@@ -88,7 +88,7 @@ export const ChartComponent = props => {
 
     useEffect(
         () => {
-            if (!data.length) return;
+            if (!data?.length) return;
 
             const handleResize = () => {
                 chart.applyOptions({width: chartContainerRef.current.clientWidth});
@@ -408,9 +408,7 @@ const MainPage: React.FC = () => {
 
         const {
             data = {
-                candles: {
-                    history: []
-                }
+                candles: []
             }
         } = useCandlesQuery({
             symbol,
@@ -423,7 +421,7 @@ const MainPage: React.FC = () => {
             pollingInterval: 10000,
         });
 
-        const candles = data.candles.history;
+        const candles = data.candles;
 
         const props = {
             colors: {

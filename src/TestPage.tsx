@@ -49,7 +49,7 @@ const Chart: FC<{
 
     useEffect(
         () => {
-            if (!data.length) return;
+            if (!data?.length) return;
 
             const handleResize = () => {
                 chart.applyOptions({width: chartContainerRef.current.clientWidth});
