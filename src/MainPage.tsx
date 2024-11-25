@@ -111,7 +111,7 @@ export const ChartComponent = props => {
                     }
                 },
                 timeScale: {
-                    rightOffset: 10,  // это создаст отступ на 10 временных единиц вправо
+                    rightOffset: 20,  // это создаст отступ на 10 временных единиц вправо
                     tickMarkFormatter: (time, tickMarkType, locale) => {
                         // Преобразуем время в формат, используя moment.js
                         return moment.unix(time / 1000).format('HH:mm'); // Измените формат, если нужно
@@ -234,6 +234,7 @@ export const ChartComponent = props => {
                 emaSeries.setData(momentData);
             })
 
+            // chart.timeScale()
             // chart.timeScale().fitContent();
             chart.timeScale()
                 .setVisibleRange({
@@ -243,7 +244,7 @@ export const ChartComponent = props => {
 
             chart.applyOptions({
                 timeScale: {
-                    rightOffset: 12,
+                    rightOffset: 16,
                 },
             })
 
