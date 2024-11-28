@@ -88,11 +88,14 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
 
 export const calculateTrend = (highs: Swing[], lows: Swing[]) => {
     const trend: any[] = [];
+    const filteredExtremums = [];
 
     const filledHighs = highs.filter(Boolean);
     const filledLows = lows.filter(Boolean);
 
     const minLength = Math.min(filledHighs.length, filledLows.length);
+
+    const highLows = [];
 
     for (let i = 1; i < minLength; i++) {
         const prevHigh = filledHighs[i - 1];
@@ -102,8 +105,10 @@ export const calculateTrend = (highs: Swing[], lows: Swing[]) => {
 
         if (prevHigh.price > currHigh.price && prevLow.price >= currLow.price) {
             trend.push({time: currLow.time, trend: -1});
+            highLows.push({high: currHigh, low: currLow});
         } else if (prevHigh.price <= currHigh.price && prevLow.price < currLow.price) {
             trend.push({time: currHigh.time, trend: 1});
+            highLows.push({high: currHigh, low: currLow});
         } else {
             if (!trend[trend.length - 1])
                 trend.push(null);
@@ -113,5 +118,29 @@ export const calculateTrend = (highs: Swing[], lows: Swing[]) => {
         }
     }
 
-    return trend;
+    for (let i = 1; i < highLows.length; i++) {
+        // if(i === 224){
+        //     debugger
+        // }
+        if (highLows[i].high.price < highLows[i - 1].high.price && highLows[i].low.price > highLows[i - 1].low.price) {
+            highLows.splice(i, 1);
+            // i--;
+        }
+    }
+
+    highLows.forEach(hl => {
+        filteredExtremums.push(hl.high);
+        filteredExtremums.push(hl.low);
+    })
+
+    return {trend, filteredExtremums};
+}
+
+export const calculateInternal = (highs: Swing[], lows: Swing[]) => {
+    debugger
+
+    const filledHighs = highs.filter(Boolean);
+    const filledLows = lows.filter(Boolean);
+
+    const minLength = Math.min(filledHighs.length, filledLows.length);
 }

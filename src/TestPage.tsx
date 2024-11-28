@@ -13,7 +13,7 @@ import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts";
 import {Checkbox, Radio, Select, Slider, Space} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
-import {calculateStructure, calculateSwings, calculateTrend} from "./samurai_patterns.ts";
+import {calculateInternal, calculateStructure, calculateSwings, calculateTrend} from "./samurai_patterns.ts";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -25,12 +25,13 @@ const Chart: FC<{
     swings?: boolean,
     trend?: boolean,
     smartTrend?: boolean,
+    noInternal?: boolean,
     data: any[],
     ema: any[],
     withBug,
     windowLength: number,
     tf: number
-}> = ({trend, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -182,7 +183,8 @@ const Chart: FC<{
             let allMarkers = [];
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, lowSctuct, highSctuct} = calculateStructure(highs, lows, data);
-            const newTrend = calculateTrend(highSctuct, lowSctuct);
+            // calculateInternal(highSctuct, lowSctuct);
+            const {trend: newTrend, filteredExtremums} = calculateTrend(highSctuct, lowSctuct);
 
             if (noDoubleSwing) {
                 // allMarkers.push(...structure.filter(Boolean).map(s => ({
@@ -210,6 +212,17 @@ const Chart: FC<{
             if (swings) {
 
                 allMarkers.push(...swingsData.filter(Boolean).map(s => ({
+                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.time * 1000) as Time,
+                    shape: 'circle',
+                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                    // text: marker.text
+                })));
+            }
+
+            if(noInternal){
+
+                allMarkers.push(...filteredExtremums.filter(Boolean).map(s => ({
                     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.time * 1000) as Time,
                     shape: 'circle',
@@ -387,7 +400,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [trend, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -465,6 +478,7 @@ export const TestPage = () => {
         trend: checkboxValues.includes('trend'),
         swings: checkboxValues.includes('swings'),
         noDoubleSwing: checkboxValues.includes('noDoubleSwing'),
+        noInternal: checkboxValues.includes('noInternal'),
         smartTrend: checkboxValues.includes('smartTrend'),
     }), [checkboxValues])
 
@@ -508,6 +522,7 @@ export const TestPage = () => {
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
             <Checkbox key="swings" value="swings">Swings</Checkbox>
             <Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>
+            <Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
