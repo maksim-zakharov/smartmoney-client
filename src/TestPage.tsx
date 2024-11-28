@@ -179,7 +179,7 @@ const Chart: FC<{
 
             let allMarkers = [];
             if (swings) {
-                const swingsData = calculateSwings(data);
+                const {swings: swingsData} = calculateSwings(data);
 
                 allMarkers.push(...swingsData.filter(Boolean).map(s => ({
                     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
