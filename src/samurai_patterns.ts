@@ -42,7 +42,9 @@ export const calculateSwings = (candles: HistoryObject[], windowLength = 3) => {
 
 export const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
     const structure: Swing[] = [];
-    const trend: number[] = [];
+
+    const highSctuct: Swing[] = [];
+    const lowSctuct: Swing[] = [];
     /**
      * Нужно посчитать тренд
      * И нужно исключить внутренние свинги
@@ -51,18 +53,54 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
         if (highs[i]) {
             if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'low') {
                 structure.push(highs[i]);
+                highSctuct.push(highs[i]);
+                lowSctuct.push(null);
             } else if (structure[structure.length - 1].price <= highs[i].price) {
                 structure[structure.length - 1] = highs[i];
+                highSctuct[structure.length - 1] = highs[i];
             }
         }
         if (lows[i]) {
             if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'high') {
                 structure.push(lows[i]);
+                lowSctuct.push(lows[i]);
+                highSctuct.push(null);
             } else if (structure[structure.length - 1].price >= lows[i].price) {
                 structure[structure.length - 1] = lows[i];
+                lowSctuct[structure.length - 1] = lows[i];
             }
         }
     }
 
-    return {structure, trend}
+    return {structure, highSctuct, lowSctuct};
+}
+
+export const calculateTrend = (highs: Swing[], lows: Swing[]) => {
+    const trend: any[] = [];
+
+    const filledHighs = highs.filter(Boolean);
+    const filledLows = lows.filter(Boolean);
+
+    const minLength = Math.min(filledHighs.length, filledLows.length);
+
+    for (let i = 1; i < minLength; i++) {
+        const prevHigh = filledHighs[i - 1];
+        const currHigh = filledHighs[i];
+        const prevLow = filledLows[i - 1];
+        const currLow = filledLows[i];
+
+        if (prevHigh.price > currHigh.price && prevLow.price >= currLow.price) {
+            trend.push({time: currLow.time, trend: -1});
+        } else if (prevHigh.price <= currHigh.price && prevLow.price < currLow.price) {
+            trend.push({time: currHigh.time, trend: 1});
+        } else {
+            if (!trend[trend.length - 1])
+                trend.push(null);
+            else {
+                trend.push({time: Math.max(currLow.time, currHigh.time), trend: trend[trend.length - 1].trend});
+            }
+        }
+    }
+
+    return trend;
 }

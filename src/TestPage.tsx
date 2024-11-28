@@ -13,7 +13,7 @@ import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts";
 import {Checkbox, Radio, Select, Slider, Space} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
-import {calculateStructure, calculateSwings} from "./samurai_patterns.ts";
+import {calculateStructure, calculateSwings, calculateTrend} from "./samurai_patterns.ts";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -24,12 +24,13 @@ const Chart: FC<{
     nointernal?: boolean,
     swings?: boolean,
     trend?: boolean,
+    smartTrend?: boolean,
     data: any[],
     ema: any[],
     withBug,
     windowLength: number,
     tf: number
-}> = ({trend, nointernal, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({trend, smartTrend, nointernal, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -180,10 +181,25 @@ const Chart: FC<{
 
             let allMarkers = [];
             const {swings: swingsData, highs, lows} = calculateSwings(data);
-            const {structure} = calculateStructure(highs, lows, data);
+            const {structure, lowSctuct, highSctuct} = calculateStructure(highs, lows, data);
+            const newTrend = calculateTrend(highSctuct, lowSctuct);
 
-            if(nointernal){
-                allMarkers.push(...structure.filter(Boolean).map(s => ({
+            if (nointernal) {
+                // allMarkers.push(...structure.filter(Boolean).map(s => ({
+                //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                //     time: (s.time * 1000) as Time,
+                //     shape: 'circle',
+                //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                //     // text: marker.text
+                // })));
+                allMarkers.push(...lowSctuct.filter(Boolean).map(s => ({
+                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.time * 1000) as Time,
+                    shape: 'circle',
+                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                    // text: marker.text
+                })));
+                allMarkers.push(...highSctuct.filter(Boolean).map(s => ({
                     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.time * 1000) as Time,
                     shape: 'circle',
@@ -200,6 +216,45 @@ const Chart: FC<{
                     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                     // text: marker.text
                 })));
+            }
+
+            if (smartTrend) {
+
+                function getDate(time: Time): Date {
+                    if (isUTCTimestamp(time)) {
+                        return new Date(time);
+                    } else if (isBusinessDay(time)) {
+                        return new Date(time.year, time.month, time.day);
+                    } else {
+                        return new Date(time);
+                    }
+                }
+
+                const sessionHighlighter = (time: Time) => {
+                    let tr = newTrend.find(c => (c.time * 1000) >= (time as number));
+                    if (!tr) {
+                        tr = newTrend.findLast(c => (c.time * 1000) <= (time as number));
+                    }if (!tr) {
+                        return 'gray';
+                    }
+                    if (tr.trend > 0) {
+                        return 'rgba(20, 131, 92, 0.4)';
+                    }
+                    if (tr.trend < 0) {
+                        return 'rgba(157, 43, 56, 0.4)';
+                    }
+
+                    const date = getDate(time);
+                    const dayOfWeek = date.getDay();
+                    if (dayOfWeek === 0 || dayOfWeek === 6) {
+                        // Weekend 🏖️
+                        return 'rgba(255, 152, 1, 0.08)'
+                    }
+                    return 'rgba(41, 98, 255, 0.08)';
+                };
+
+                const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
+                newSeries.attachPrimitive(sessionHighlighting);
             }
 
             if (trend) {
@@ -319,9 +374,9 @@ const Chart: FC<{
                 }
             })
 
-            smPatterns && allMarkers.push(...idms.sort((a: any, b: any) => a.time - b.time));
+            smPatterns && allMarkers.push(...idms);
 
-            newSeries.setMarkers(allMarkers);
+            newSeries.setMarkers(allMarkers.sort((a: any, b: any) => a.time - b.time));
 
             window.addEventListener("resize", handleResize);
 
@@ -331,7 +386,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [trend, nointernal, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [trend, smartTrend, nointernal, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -409,6 +464,7 @@ export const TestPage = () => {
         trend: checkboxValues.includes('trend'),
         swings: checkboxValues.includes('swings'),
         nointernal: checkboxValues.includes('nointernal'),
+        smartTrend: checkboxValues.includes('smartTrend'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -451,6 +507,7 @@ export const TestPage = () => {
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
             <Checkbox key="swings" value="swings">Swings</Checkbox>
             <Checkbox key="nointernal" value="nointernal">Исключить внутренние свинги</Checkbox>
+            <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>
