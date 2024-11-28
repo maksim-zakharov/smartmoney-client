@@ -732,9 +732,12 @@ const MainPage: React.FC = () => {
 
         const positions = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && p.limitTradeId && p.stopLoss?.status === "working"), [patterns]);
         const orders = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && !p.limitTradeId), [patterns]);
-        const history = useMemo(() => patterns.filter(p => p.takeTradeId || p.stopTradeId).map(row => ({
+        const history = useMemo(() => patterns.filter(p => p.takeTradeId || p.stopTradeId).filter(row => row.limitTrade?.price && (row.stopLossTrade?.price || row.takeProfitTrade?.price)).map(row => ({
             ...row,
-            PnL: row.limitTrade?.side === "buy" ? accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price) : row.limitTrade?.side === "sell" ? accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
+            PnL: row.limitTrade?.side === "buy" ?
+                accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price)
+                : row.limitTrade?.side === "sell" ?
+                    accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
         })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [accTradesOrdernoQtyMap, patterns]);
 
         const historyTableData = useMemo(() => {
