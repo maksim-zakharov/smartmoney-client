@@ -13,6 +13,7 @@ import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts";
 import {Checkbox, Radio, Select, Slider, Space} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
+import {calculateSwings} from "./samurai_patterns.ts";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -20,13 +21,14 @@ function capitalizeFirstLetter(str) {
 
 const Chart: FC<{
     smPatterns?: boolean,
+    swings?: boolean,
     trend?: boolean,
     data: any[],
     ema: any[],
     withBug,
     windowLength: number,
     tf: number
-}> = ({trend, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({trend, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -175,6 +177,19 @@ const Chart: FC<{
                 itrend
             } = calculate(data, markerColors, windowLength);
 
+            let allMarkers = [];
+            if (swings) {
+                const swingsData = calculateSwings(data);
+
+                allMarkers.push(...swingsData.filter(Boolean).map(s => ({
+                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.time * 1000) as Time,
+                    shape: 'circle',
+                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                    // text: marker.text
+                })));
+            }
+
             if (trend) {
 
                 function getDate(time: Time): Date {
@@ -292,7 +307,9 @@ const Chart: FC<{
                 }
             })
 
-            newSeries.setMarkers(idms.sort((a: any, b: any) => a.time - b.time));
+            smPatterns && allMarkers.push(...idms.sort((a: any, b: any) => a.time - b.time));
+
+            newSeries.setMarkers(allMarkers);
 
             window.addEventListener("resize", handleResize);
 
@@ -302,7 +319,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [trend, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [trend, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -378,6 +395,7 @@ export const TestPage = () => {
     const config = useMemo(() => ({
         smPatterns: true,
         trend: checkboxValues.includes('trend'),
+        swings: checkboxValues.includes('swings'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -418,6 +436,7 @@ export const TestPage = () => {
         <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Checkbox.Group onChange={setCheckboxValues}>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
+            <Checkbox key="swings" value="swings">Swings</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>
