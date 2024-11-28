@@ -234,7 +234,8 @@ const Chart: FC<{
                     let tr = newTrend.find(c => (c.time * 1000) >= (time as number));
                     if (!tr) {
                         tr = newTrend.findLast(c => (c.time * 1000) <= (time as number));
-                    }if (!tr) {
+                    }
+                    if (!tr) {
                         return 'gray';
                     }
                     if (tr.trend > 0) {

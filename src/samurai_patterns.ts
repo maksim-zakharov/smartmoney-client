@@ -57,7 +57,7 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
                 lowSctuct.push(null);
             } else if (structure[structure.length - 1].price <= highs[i].price) {
                 structure[structure.length - 1] = highs[i];
-                highSctuct[structure.length - 1] = highs[i];
+                highSctuct[highSctuct.length - 1] = highs[i];
             }
         }
         if (lows[i]) {
@@ -67,9 +67,20 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
                 highSctuct.push(null);
             } else if (structure[structure.length - 1].price >= lows[i].price) {
                 structure[structure.length - 1] = lows[i];
-                lowSctuct[structure.length - 1] = lows[i];
+                lowSctuct[lowSctuct.length - 1] = lows[i];
             }
         }
+
+        // const existHighIndex = highSctuct.findLastIndex(Boolean);
+        // const existLowIndex = lowSctuct.findLastIndex(Boolean);
+        // if (existHighIndex > -1 && existLowIndex > -1 && lowSctuct[existLowIndex]?.time === highSctuct[existHighIndex]?.time) {
+        //     if (existLowIndex > 1 && lowSctuct[existLowIndex - 2]) {
+        //         lowSctuct[existLowIndex - 2] = null;
+        //     }
+        //     if (existHighIndex > 1 && highSctuct[existHighIndex - 2]) {
+        //         highSctuct[existHighIndex - 2] = null;
+        //     }
+        // }
     }
 
     return {structure, highSctuct, lowSctuct};
