@@ -13,7 +13,7 @@ import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts";
 import {Checkbox, Radio, Select, Slider, Space} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
-import {calculateSwings} from "./samurai_patterns.ts";
+import {calculateStructure, calculateSwings} from "./samurai_patterns.ts";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -21,6 +21,7 @@ function capitalizeFirstLetter(str) {
 
 const Chart: FC<{
     smPatterns?: boolean,
+    nointernal?: boolean,
     swings?: boolean,
     trend?: boolean,
     data: any[],
@@ -28,7 +29,7 @@ const Chart: FC<{
     withBug,
     windowLength: number,
     tf: number
-}> = ({trend, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({trend, nointernal, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -178,8 +179,19 @@ const Chart: FC<{
             } = calculate(data, markerColors, windowLength);
 
             let allMarkers = [];
+            const {swings: swingsData, highs, lows} = calculateSwings(data);
+            const {structure} = calculateStructure(highs, lows, data);
+
+            if(nointernal){
+                allMarkers.push(...structure.filter(Boolean).map(s => ({
+                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.time * 1000) as Time,
+                    shape: 'circle',
+                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                    // text: marker.text
+                })));
+            }
             if (swings) {
-                const {swings: swingsData} = calculateSwings(data);
 
                 allMarkers.push(...swingsData.filter(Boolean).map(s => ({
                     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
@@ -319,7 +331,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [trend, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [trend, nointernal, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -396,6 +408,7 @@ export const TestPage = () => {
         smPatterns: true,
         trend: checkboxValues.includes('trend'),
         swings: checkboxValues.includes('swings'),
+        nointernal: checkboxValues.includes('nointernal'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -437,6 +450,7 @@ export const TestPage = () => {
         <Checkbox.Group onChange={setCheckboxValues}>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
             <Checkbox key="swings" value="swings">Swings</Checkbox>
+            <Checkbox key="nointernal" value="nointernal">Исключить внутренние свинги</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>

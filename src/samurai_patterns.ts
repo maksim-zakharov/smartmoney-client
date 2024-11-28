@@ -13,44 +13,55 @@ export const calculateSwings = (candles: HistoryObject[], windowLength = 3) => {
 
     for (let i = 0; i < candles.length - windowLength; i++) {
         const [left, middle, right] = candles.slice(i, i + windowLength);
-        if (left.high < middle.high && middle.high > right.high) {
-            const high: Swing = {
-                side: 'high',
-                time: middle.time,
-                price: middle.high
-            }
-            highs.push(high);
-            swings.push(high)
-            lows.push(null);
+        const high: Swing = {
+            side: 'high',
+            time: middle.time,
+            price: middle.high
         }
-        // TODO Должен ли тут быть else? или на одной свече может быть и хай и лоу
-        if (left.low > middle.low && middle.low < right.low) {
-            const low: Swing = {
-                side: 'low',
-                time: middle.time,
-                price: middle.low
-            }
-            highs.push(null);
-            swings.push(low)
-            lows.push(low);
-        } else {
-            highs.push(null);
+        const existHigh = left.high < middle.high && middle.high > right.high ? high : null
+        highs.push(existHigh);
+
+        const low: Swing = {
+            side: 'low',
+            time: middle.time,
+            price: middle.low
+        }
+        const existLow = left.low > middle.low && middle.low < right.low ? low : null
+        lows.push(existLow);
+
+        if (existHigh)
+            swings.push(existHigh)
+        if (existLow)
+            swings.push(existLow)
+        if (!existHigh && !existLow)
             swings.push(null)
-            lows.push(null);
-        }
     }
 
     return {swings, highs, lows};
 }
 
-export const calculateStructure = (swings: Swing[], candles: HistoryObject[]) => {
-    const structure = [];
+export const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
+    const structure: Swing[] = [];
     const trend: number[] = [];
     /**
      * Нужно посчитать тренд
      * И нужно исключить внутренние свинги
      */
-    for (let i = 0; i < swings.length; i++) {
+    for (let i = 0; i < candles.length; i++) {
+        if (highs[i]) {
+            if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'low') {
+                structure.push(highs[i]);
+            } else {
+                structure[structure.length - 1] = highs[i];
+            }
+        }
+        if (lows[i]) {
+            if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'high') {
+                structure.push(lows[i]);
+            } else {
+                structure[structure.length - 1] = lows[i];
+            }
+        }
     }
 
     return {structure, trend}
