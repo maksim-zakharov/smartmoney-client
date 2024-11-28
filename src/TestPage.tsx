@@ -21,7 +21,7 @@ function capitalizeFirstLetter(str) {
 
 const Chart: FC<{
     smPatterns?: boolean,
-    nointernal?: boolean,
+    noDoubleSwing?: boolean,
     swings?: boolean,
     trend?: boolean,
     smartTrend?: boolean,
@@ -30,7 +30,7 @@ const Chart: FC<{
     withBug,
     windowLength: number,
     tf: number
-}> = ({trend, smartTrend, nointernal, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({trend, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -184,7 +184,7 @@ const Chart: FC<{
             const {structure, lowSctuct, highSctuct} = calculateStructure(highs, lows, data);
             const newTrend = calculateTrend(highSctuct, lowSctuct);
 
-            if (nointernal) {
+            if (noDoubleSwing) {
                 // allMarkers.push(...structure.filter(Boolean).map(s => ({
                 //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 //     time: (s.time * 1000) as Time,
@@ -387,7 +387,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [trend, smartTrend, nointernal, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [trend, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -464,7 +464,7 @@ export const TestPage = () => {
         smPatterns: true,
         trend: checkboxValues.includes('trend'),
         swings: checkboxValues.includes('swings'),
-        nointernal: checkboxValues.includes('nointernal'),
+        noDoubleSwing: checkboxValues.includes('noDoubleSwing'),
         smartTrend: checkboxValues.includes('smartTrend'),
     }), [checkboxValues])
 
@@ -507,7 +507,7 @@ export const TestPage = () => {
         <Checkbox.Group onChange={setCheckboxValues}>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
             <Checkbox key="swings" value="swings">Swings</Checkbox>
-            <Checkbox key="nointernal" value="nointernal">Исключить внутренние свинги</Checkbox>
+            <Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
