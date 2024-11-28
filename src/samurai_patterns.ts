@@ -51,14 +51,14 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
         if (highs[i]) {
             if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'low') {
                 structure.push(highs[i]);
-            } else {
+            } else if (structure[structure.length - 1].price <= highs[i].price) {
                 structure[structure.length - 1] = highs[i];
             }
         }
         if (lows[i]) {
             if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'high') {
                 structure.push(lows[i]);
-            } else {
+            } else if (structure[structure.length - 1].price >= lows[i].price) {
                 structure[structure.length - 1] = lows[i];
             }
         }
