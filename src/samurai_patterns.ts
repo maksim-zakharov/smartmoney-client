@@ -41,10 +41,7 @@ export const calculateSwings = (candles: HistoryObject[], windowLength = 3) => {
 }
 
 export const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
-    const structure: Swing[] = [];
-
-    const highSctuct: Swing[] = [];
-    const lowSctuct: Swing[] = [];
+    let structure: Swing[] = [];
     /**
      * Нужно посчитать тренд
      * И нужно исключить внутренние свинги
@@ -53,37 +50,44 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
         if (highs[i]) {
             if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'low') {
                 structure.push(highs[i]);
-                highSctuct.push(highs[i]);
-                lowSctuct.push(null);
             } else if (structure[structure.length - 1].price <= highs[i].price) {
                 structure[structure.length - 1] = highs[i];
-                highSctuct[highSctuct.length - 1] = highs[i];
             }
         }
         if (lows[i]) {
             if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'high') {
                 structure.push(lows[i]);
-                lowSctuct.push(lows[i]);
-                highSctuct.push(null);
             } else if (structure[structure.length - 1].price >= lows[i].price) {
                 structure[structure.length - 1] = lows[i];
-                lowSctuct[lowSctuct.length - 1] = lows[i];
             }
         }
-
-        // const existHighIndex = highSctuct.findLastIndex(Boolean);
-        // const existLowIndex = lowSctuct.findLastIndex(Boolean);
-        // if (existHighIndex > -1 && existLowIndex > -1 && lowSctuct[existLowIndex]?.time === highSctuct[existHighIndex]?.time) {
-        //     if (existLowIndex > 1 && lowSctuct[existLowIndex - 2]) {
-        //         lowSctuct[existLowIndex - 2] = null;
-        //     }
-        //     if (existHighIndex > 1 && highSctuct[existHighIndex - 2]) {
-        //         highSctuct[existHighIndex - 2] = null;
-        //     }
-        // }
     }
 
-    return {structure, highSctuct, lowSctuct};
+    const isBetween = (p1: Swing, p2: Swing, p3: Swing) => {
+        if (p1.side === 'high' && p2.side === 'low') {
+            return p3.price > p2.price && p3.price < p1.price;
+        }
+        if (p1.side === 'low' && p2.side === 'high') {
+            return p3.price < p2.price && p3.price > p1.price;
+        }
+        return false;
+    }
+
+    // Фильтровать структуру
+    for (let i = 0; i < structure.length - 3; i++) {
+        const [s1, s2, s3, s4] = structure.slice(i, i + 4);
+        if (isBetween(s1, s2, s3) && isBetween(s1, s2, s4)) {
+            structure.splice(i + 2, 2);
+            i -= 1;
+        }
+    }
+
+    let highParts = [];
+    let lowParts = [];
+
+    structure.forEach(s => s.side === 'high' ? highParts.push(s) : lowParts.push(s));
+
+    return {structure, highParts, lowParts};
 }
 
 export const calculateTrend = (highs: Swing[], lows: Swing[]) => {
@@ -95,9 +99,11 @@ export const calculateTrend = (highs: Swing[], lows: Swing[]) => {
 
     const minLength = Math.min(filledHighs.length, filledLows.length);
 
-    const highLows = [];
+    let highLows = [];
 
     for (let i = 1; i < minLength; i++) {
+        // const prevPrevLow = filledLows[i - 2];
+        // const prevPrevHigh = filledHighs[i - 2];
         const prevHigh = filledHighs[i - 1];
         const currHigh = filledHighs[i];
         const prevLow = filledLows[i - 1];
@@ -118,15 +124,15 @@ export const calculateTrend = (highs: Swing[], lows: Swing[]) => {
         }
     }
 
-    for (let i = 1; i < highLows.length; i++) {
-        // if(i === 224){
-        //     debugger
-        // }
-        if (highLows[i].high.price < highLows[i - 1].high.price && highLows[i].low.price > highLows[i - 1].low.price) {
-            highLows.splice(i, 1);
-            // i--;
-        }
-    }
+    // for (let i = 1; i < highLows.length; i++) {
+    //     // if(i === 224){
+    //     //     debugger
+    //     // }
+    //     if (highLows[i].high.price < highLows[i - 1].high.price && highLows[i].low.price > highLows[i - 1].low.price) {
+    //         highLows.splice(i, 1);
+    //         // i--;
+    //     }
+    // }
 
     highLows.forEach(hl => {
         filteredExtremums.push(hl.high);

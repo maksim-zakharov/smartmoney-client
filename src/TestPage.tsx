@@ -182,32 +182,32 @@ const Chart: FC<{
 
             let allMarkers = [];
             const {swings: swingsData, highs, lows} = calculateSwings(data);
-            const {structure, lowSctuct, highSctuct} = calculateStructure(highs, lows, data);
+            const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             // calculateInternal(highSctuct, lowSctuct);
-            const {trend: newTrend, filteredExtremums} = calculateTrend(highSctuct, lowSctuct);
+            const {trend: newTrend, filteredExtremums} = calculateTrend(highParts, lowParts);
 
             if (noDoubleSwing) {
-                // allMarkers.push(...structure.filter(Boolean).map(s => ({
+                allMarkers.push(...structure.filter(Boolean).map(s => ({
+                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.time * 1000) as Time,
+                    shape: 'circle',
+                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                    // text: marker.text
+                })));
+                // allMarkers.push(...lowSctuct.filter(Boolean).map(s => ({
                 //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 //     time: (s.time * 1000) as Time,
                 //     shape: 'circle',
                 //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                 //     // text: marker.text
                 // })));
-                allMarkers.push(...lowSctuct.filter(Boolean).map(s => ({
-                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                    time: (s.time * 1000) as Time,
-                    shape: 'circle',
-                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                    // text: marker.text
-                })));
-                allMarkers.push(...highSctuct.filter(Boolean).map(s => ({
-                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                    time: (s.time * 1000) as Time,
-                    shape: 'circle',
-                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                    // text: marker.text
-                })));
+                // allMarkers.push(...highSctuct.filter(Boolean).map(s => ({
+                //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                //     time: (s.time * 1000) as Time,
+                //     shape: 'circle',
+                //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                //     // text: marker.text
+                // })));
             }
             if (swings) {
 
@@ -244,17 +244,20 @@ const Chart: FC<{
                 }
 
                 const sessionHighlighter = (time: Time) => {
-                    let tr = newTrend.find(c => (c.time * 1000) >= (time as number));
+                    let tr = newTrend.find(c => (c?.time * 1000) >= (time as number));
+                    let trend = tr?.trend;
                     if (!tr) {
-                        tr = newTrend.findLast(c => (c.time * 1000) <= (time as number));
+                        tr = newTrend.findLast(c => (c?.time * 1000) <= (time as number));
+                        trend = tr.trend * -1;
                     }
-                    if (!tr) {
+                    if (!trend) {
+                        // debugger
                         return 'gray';
                     }
-                    if (tr.trend > 0) {
+                    if (trend > 0) {
                         return 'rgba(20, 131, 92, 0.4)';
                     }
-                    if (tr.trend < 0) {
+                    if (trend < 0) {
                         return 'rgba(157, 43, 56, 0.4)';
                     }
 
@@ -522,7 +525,7 @@ export const TestPage = () => {
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
             <Checkbox key="swings" value="swings">Swings</Checkbox>
             <Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>
-            <Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>
+            {/*<Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>*/}
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
