@@ -1,10 +1,17 @@
 import {HistoryObject} from "./api.ts";
+import {Time} from "lightweight-charts";
+import {Point} from "./lwc-plugins/rectangle-drawing-tool";
 
 export interface Swing {
     side: 'high' | 'low',
     time: number;
     price: number;
     index: number;
+}
+
+export interface Trend{
+    time: number;
+    trend: number;
 }
 
 export const calculateSwings = (candles: HistoryObject[], windowLength = 3) => {
@@ -106,7 +113,7 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
 }
 
 export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
-    const trend = new Array(candles.length).fill(null);
+    const trend: Trend[] = new Array(candles.length).fill(null);
     const filteredExtremums = [];
 
     const filledHighs = highs.filter(Boolean);
@@ -180,4 +187,72 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
     // })
 
     return {trend, filteredExtremums};
+}
+
+export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: HistoryObject[], trends: Trend[]) => {
+    let crosses = [];
+    let boses = [];
+    let lastHigh, lastLow;
+
+    for (let i = 0; i < candles.length; i++) {
+        const lastCross = crosses[crosses.length - 1];
+        const lastBOS = boses[boses.length - 1];
+        if(lastLow?.price > candles[i].close && trends[i]?.trend === 1 && lastCross?.from?.index !== lastLow?.index){
+            const textIndex = i - Math.floor((i - lastLow.index) / 2);
+            crosses.push({from: lastLow, textCandle: candles[textIndex], to: {index: i, time: candles[i].time, price: candles[i].close}, type: 'low', text: 'CHoCH'});
+        }
+        else if(lastHigh?.price < candles[i].close && trends[i]?.trend === -1&& lastCross?.from?.index !== lastHigh?.index){
+            const textIndex = i - Math.floor((i - lastHigh.index) / 2);
+            crosses.push({from: lastHigh, textCandle: candles[textIndex], to: {index: i, time: candles[i].time, price: candles[i].close}, type: 'high', text: 'CHoCH'});
+        }
+
+        if(lastHigh?.price < candles[i].close && trends[i]?.trend === 1 && (!lastBOS || lastBOS?.from?.index < lastHigh?.index)){
+            const textIndex = i - Math.floor((i - lastHigh.index) / 2);
+            boses.push({
+                from: lastHigh,
+                textCandle: candles[textIndex],
+                to: {index: i, time: candles[i].time, price: candles[i].close},
+                type: 'high',
+                text: 'BOS'
+            });
+            }
+        if(lastLow?.price > candles[i].close && trends[i]?.trend === -1 && (!lastBOS || lastBOS?.from?.index < lastLow?.index)){
+            const textIndex = i - Math.floor((i - lastLow.index) / 2);
+            boses.push({from: lastLow, textCandle: candles[textIndex], to: {index: i, time: candles[i].time, price: candles[i].close}, type: 'low', text: 'BOS'});
+        }
+
+        if(highs[i]){
+            lastHigh = highs[i]
+        }
+        if(lows[i]){
+            lastLow = lows[i]
+        }
+    }
+
+    return {crosses, boses};
+}
+
+export const calculateBreakingBlocks = (crosses: any[], candles: HistoryObject[]) => {
+    let bb = [];
+    let lastCrossIndex = 0;
+    for(let i = 0; i< candles.length; i++){
+        const lastCross = crosses[lastCrossIndex];
+        if(!lastCross){
+            break;
+        }
+        if(lastCross.to.index < i){
+            const textIndex = i - Math.floor((i - lastCross.from.index) / 2);
+
+            if(lastCross.type === 'high' && candles[i].low <= lastCross.to.price && lastCross.to.index+1 < i){
+                bb.push({type: 'high', textCandle: candles[textIndex], price: lastCross.from.price, fromTime: lastCross.from.time, toTime: candles[i].time, text: 'Breaking Block'});
+                lastCrossIndex++;
+            }
+            if(lastCross.type === 'low' && candles[i].high >= lastCross.to.price && lastCross.to.index+1 < i){
+                bb.push({type: 'low', textCandle: candles[textIndex], price: lastCross.from.price, fromTime: lastCross.from.time, toTime: candles[i].time, text: 'Breaking Block'});
+                lastCrossIndex++;
+            }
+        }
+    }
+
+    return bb;
 }

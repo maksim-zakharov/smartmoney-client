@@ -13,7 +13,15 @@ import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts";
 import {Checkbox, Radio, Select, Slider, Space} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
-import {calculateStructure, calculateSwings, calculateTrend} from "./samurai_patterns.ts";
+import {
+    calculateBreakingBlocks,
+    calculateCrosses,
+    calculateStructure,
+    calculateSwings,
+    calculateTrend
+} from "./samurai_patterns.ts";
+import {createRectangle} from "./MainPage";
+import {Point} from "./lwc-plugins/rectangle-drawing-tool";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -184,6 +192,113 @@ const Chart: FC<{
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             const {trend: newTrend, filteredExtremums} = calculateTrend(highParts, lowParts, data);
+            const {crosses, boses} = calculateCrosses(highParts, lowParts, data, newTrend)
+            const breakingBlocks: any[] = calculateBreakingBlocks(crosses, data);
+
+//             breakingBlocks.filter(Boolean).forEach(marker => {
+//                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
+//                 const lineSeries = chart.addLineSeries({
+//                     color, // Цвет линии
+//                     priceLineVisible: false,
+//                     lastValueVisible: false,
+//                     lineWidth: 1,
+//                     lineStyle: LineStyle.LargeDashed,
+//                 });
+// // 5. Устанавливаем данные для линии
+//                 lineSeries.setData([
+//                     {time: marker.fromTime * 1000 as Time, value: marker.price}, // начальная точка между свечками
+//                     {time: marker.textCandle.time * 1000 as Time, value: marker.price}, // конечная точка между свечками
+//                     {time: marker.toTime * 1000 as Time, value: marker.price}, // конечная точка между свечками
+//                 ]);
+//
+//                 lineSeries.setMarkers([{
+//                     color,
+//                     time: (marker.textCandle.time * 1000) as Time,
+//                     shape: 'text',
+//                     position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
+//                     text: marker.text
+//                 }] as any)
+//
+//                 // if (marker.idmIndex) {
+//                 //     crossesMarkers.push({
+//                 //         color: marker.color,
+//                 //         time: data[marker.idmIndex].time * 1000,
+//                 //         shape: 'text',
+//                 //         position: marker.position,
+//                 //         text: 'IDM'
+//                 //     })
+//                 // }
+//             })
+
+            boses.filter(Boolean).forEach(marker => {
+                const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
+                const lineSeries = chart.addLineSeries({
+                    color, // Цвет линии
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    lineWidth: 1,
+                    lineStyle: LineStyle.LargeDashed,
+                });
+// 5. Устанавливаем данные для линии
+                lineSeries.setData([
+                    {time: marker.from.time * 1000 as Time, value: marker.from.price}, // начальная точка между свечками
+                    {time: marker.textCandle.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
+                    {time: marker.to.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
+                ]);
+
+                lineSeries.setMarkers([{
+                    color,
+                    time: (marker.textCandle.time * 1000) as Time,
+                    shape: 'text',
+                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
+                    text: marker.text
+                }] as any)
+
+                // if (marker.idmIndex) {
+                //     crossesMarkers.push({
+                //         color: marker.color,
+                //         time: data[marker.idmIndex].time * 1000,
+                //         shape: 'text',
+                //         position: marker.position,
+                //         text: 'IDM'
+                //     })
+                // }
+            })
+
+            crosses.filter(Boolean).forEach(marker => {
+                const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
+                const lineSeries = chart.addLineSeries({
+                    color, // Цвет линии
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    lineWidth: 1,
+                    lineStyle: LineStyle.LargeDashed,
+                });
+// 5. Устанавливаем данные для линии
+                lineSeries.setData([
+                    {time: marker.from.time * 1000 as Time, value: marker.from.price}, // начальная точка между свечками
+                    {time: marker.textCandle.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
+                    {time: marker.to.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
+                ]);
+
+                lineSeries.setMarkers([{
+                    color,
+                    time: (marker.textCandle.time * 1000) as Time,
+                    shape: 'text',
+                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
+                    text: marker.text
+                }] as any)
+
+                // if (marker.idmIndex) {
+                //     crossesMarkers.push({
+                //         color: marker.color,
+                //         time: data[marker.idmIndex].time * 1000,
+                //         shape: 'text',
+                //         position: marker.position,
+                //         text: 'IDM'
+                //     })
+                // }
+            })
 
             if (noDoubleSwing) {
                 // allMarkers.push(...structure.filter(Boolean).map(s => ({
@@ -478,7 +593,7 @@ export const TestPage = () => {
     }, [tf, ticker]);
 
     const config = useMemo(() => ({
-        smPatterns: true,
+        smPatterns: checkboxValues.includes('smPatterns'),
         trend: checkboxValues.includes('trend'),
         swings: checkboxValues.includes('swings'),
         noDoubleSwing: checkboxValues.includes('noDoubleSwing'),
@@ -523,6 +638,7 @@ export const TestPage = () => {
         </Space>
         <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Checkbox.Group onChange={setCheckboxValues}>
+            <Checkbox key="smPatterns" value="smPatterns">smPatterns</Checkbox>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
             <Checkbox key="swings" value="swings">Swings</Checkbox>
             <Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>
