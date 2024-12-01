@@ -139,12 +139,12 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
         // }
 
         if (prevHigh.price < currHigh.price && currHigh.index === i) {
-            trend[i] = {time: currHigh.time, trend: 1};
+            trend[i+1] = {time: currHigh.time, trend: 1};
             highLows[i] = {high: currHigh, low: currLow};
         }
 
         if (prevLow.price > currLow.price && currLow.index === i) {
-            trend[i] = {time: currLow.time, trend: -1};
+            trend[i+1] = {time: currLow.time, trend: -1};
             highLows[i] = {high: currHigh, low: currLow};
         }
 
