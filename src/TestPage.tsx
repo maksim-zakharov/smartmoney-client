@@ -34,12 +34,14 @@ const Chart: FC<{
     trend?: boolean,
     smartTrend?: boolean,
     noInternal?: boolean,
+    BOS?: boolean,
+    BOS?: boolean,
     data: any[],
     ema: any[],
     withBug,
     windowLength: number,
     tf: number
-}> = ({trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({BOS, CHOCH, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -230,7 +232,7 @@ const Chart: FC<{
 //                 // }
 //             })
 
-            boses.filter(Boolean).forEach(marker => {
+            BOS && boses.filter(Boolean).forEach(marker => {
                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
                 const lineSeries = chart.addLineSeries({
                     color, // Цвет линии
@@ -265,7 +267,7 @@ const Chart: FC<{
                 // }
             })
 
-            crosses.filter(Boolean).forEach(marker => {
+            CHOCH && crosses.filter(Boolean).forEach(marker => {
                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
                 const lineSeries = chart.addLineSeries({
                     color, // Цвет линии
@@ -275,6 +277,12 @@ const Chart: FC<{
                     lineStyle: LineStyle.LargeDashed,
                 });
 // 5. Устанавливаем данные для линии
+                if(marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time){
+                    lineSeries.setData([
+                        {time: marker.from.time * 1000 as Time, value: marker.from.price}, // начальная точка между свечками
+                        {time: marker.to.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
+                    ]);
+                } else
                 lineSeries.setData([
                     {time: marker.from.time * 1000 as Time, value: marker.from.price}, // начальная точка между свечками
                     {time: marker.textCandle.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
@@ -519,7 +527,7 @@ const Chart: FC<{
                 chart.remove();
             };
         },
-        [trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [BOS, CHOCH, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
@@ -599,6 +607,8 @@ export const TestPage = () => {
         noDoubleSwing: checkboxValues.includes('noDoubleSwing'),
         noInternal: checkboxValues.includes('noInternal'),
         smartTrend: checkboxValues.includes('smartTrend'),
+        BOS: checkboxValues.includes('BOS'),
+        CHOCH: checkboxValues.includes('CHOCH'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -644,6 +654,8 @@ export const TestPage = () => {
             <Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>
             {/*<Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>*/}
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
+            <Checkbox key="BOS" value="BOS">BOS</Checkbox>
+            <Checkbox key="CHOCH" value="CHOCH">CHOCH</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>

@@ -92,6 +92,40 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
         }
     }
 
+    // for (let i = 0; i < structure.length - 1; i++) {
+    //     const currStruct = structure[i];
+    //     const nextStruct = structure[i + 1];
+    //
+    //     const batch = candles.slice(currStruct.index + 1, nextStruct.index + 2);
+    //
+    //     if(nextStruct.side === 'low'){
+    //         const index = batch.reduce((acc, curr, index) => {
+    //             if(candles[acc].low > curr.low){
+    //                 return currStruct.index + 1 + index;
+    //             }
+    //             return acc;
+    //         }, currStruct.index + 1);
+    //
+    //         const lowest = candles[index];
+    //         structure[i + 1].index = index;
+    //         structure[i + 1].price = lowest.low;
+    //         structure[i + 1].time = lowest.time;
+    //     }
+    //     if(nextStruct.side === 'high'){
+    //         const index = batch.reduce((acc, curr, index) => {
+    //             if(candles[acc].high < curr.high){
+    //                 return currStruct.index + 1 + index;
+    //             }
+    //             return acc;
+    //         }, currStruct.index + 1);
+    //
+    //         const lowest = candles[index];
+    //         structure[i + 1].index = index;
+    //         structure[i + 1].price = lowest.high;
+    //         structure[i + 1].time = lowest.time;
+    //     }
+    // }
+
     let highParts = new Array(candles.length).fill(null);
     let lowParts = new Array(candles.length).fill(null);
 
