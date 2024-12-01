@@ -4,6 +4,7 @@ export interface Swing {
     side: 'high' | 'low',
     time: number;
     price: number;
+    index: number;
 }
 
 export const calculateSwings = (candles: HistoryObject[], windowLength = 3) => {
@@ -16,7 +17,8 @@ export const calculateSwings = (candles: HistoryObject[], windowLength = 3) => {
         const high: Swing = {
             side: 'high',
             time: middle.time,
-            price: middle.high
+            price: middle.high,
+            index: i
         }
         const existHigh = left.high < middle.high && middle.high > right.high ? high : null
         highs.push(existHigh);
@@ -24,7 +26,8 @@ export const calculateSwings = (candles: HistoryObject[], windowLength = 3) => {
         const low: Swing = {
             side: 'low',
             time: middle.time,
-            price: middle.low
+            price: middle.low,
+            index: i
         }
         const existLow = left.low > middle.low && middle.low < right.low ? low : null
         lows.push(existLow);
@@ -82,16 +85,28 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
         }
     }
 
-    let highParts = [];
-    let lowParts = [];
+    let highParts = new Array(candles.length).fill(null);
+    let lowParts = new Array(candles.length).fill(null);
 
-    structure.forEach(s => s.side === 'high' ? highParts.push(s) : lowParts.push(s));
+    let lastStructIndex = 0;
+    for (let i = 0; i < candles.length; i++) {
+        while(structure[lastStructIndex]?.index === i){
+            if(structure[lastStructIndex].side === 'high'){
+                highParts[i] = structure[lastStructIndex]
+                lowParts[i] = null;
+            } else {
+                lowParts[i] = structure[lastStructIndex]
+                highParts[i] = null;
+            }
+            lastStructIndex++;
+        }
+    }
 
     return {structure, highParts, lowParts};
 }
 
-export const calculateTrend = (highs: Swing[], lows: Swing[]) => {
-    const trend: any[] = [];
+export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
+    const trend = new Array(candles.length).fill(null);
     const filteredExtremums = [];
 
     const filledHighs = highs.filter(Boolean);
@@ -99,54 +114,70 @@ export const calculateTrend = (highs: Swing[], lows: Swing[]) => {
 
     const minLength = Math.min(filledHighs.length, filledLows.length);
 
-    let highLows = [];
+    let highLows = new Array(candles.length).fill(null);
 
-    for (let i = 1; i < minLength; i++) {
-        // const prevPrevLow = filledLows[i - 2];
-        // const prevPrevHigh = filledHighs[i - 2];
-        const prevHigh = filledHighs[i - 1];
-        const currHigh = filledHighs[i];
-        const prevLow = filledLows[i - 1];
-        const currLow = filledLows[i];
+    let prevHigh = null;
+    let currHigh = null;
+    let prevLow = null;
+    let currLow = null;
+    for (let i = 0; i < candles.length; i++) {
+        if(highs[i]){
+            prevHigh = currHigh;
+            currHigh = highs[i];
+        }
+        if(lows[i]){
+            prevLow = currLow;
+            currLow = lows[i];
+        }
 
-        if (prevHigh.price > currHigh.price && prevLow.price >= currLow.price) {
-            trend.push({time: currLow.time, trend: -1});
-            highLows.push({high: currHigh, low: currLow});
-        } else if (prevHigh.price <= currHigh.price && prevLow.price < currLow.price) {
-            trend.push({time: currHigh.time, trend: 1});
-            highLows.push({high: currHigh, low: currLow});
-        } else {
-            if (!trend[trend.length - 1])
-                trend.push(null);
-            else {
-                trend.push({time: Math.max(currLow.time, currHigh.time), trend: trend[trend.length - 1].trend});
-            }
+        if(!prevHigh || !prevLow || !currLow || !currHigh){
+            trend[i] = null;
+            continue;
+        }
+        // if(i === 2367){
+        //     debugger
+        // }
+
+        if (prevHigh.price < currHigh.price && currHigh.index === i) {
+            trend[i] = {time: currHigh.time, trend: 1};
+            highLows[i] = {high: currHigh, low: currLow};
+        }
+
+        if (prevLow.price > currLow.price && currLow.index === i) {
+            trend[i] = {time: currLow.time, trend: -1};
+            highLows[i] = {high: currHigh, low: currLow};
+        }
+
+        if(!trend[i] && trend[i-1]) {
+            trend[i] = {time: candles[i].time, trend: trend[i-1].trend};
         }
     }
 
-    // for (let i = 1; i < highLows.length; i++) {
-    //     // if(i === 224){
-    //     //     debugger
-    //     // }
-    //     if (highLows[i].high.price < highLows[i - 1].high.price && highLows[i].low.price > highLows[i - 1].low.price) {
-    //         highLows.splice(i, 1);
-    //         // i--;
+    // for (let i = 1; i < minLength; i++) {
+    //     const prevHigh = filledHighs[i - 1];
+    //     const currHigh = filledHighs[i];
+    //     const prevLow = filledLows[i - 1];
+    //     const currLow = filledLows[i];
+    //
+    //     if (prevHigh.price > currHigh.price && prevLow.price >= currLow.price) {
+    //         trend.push({time: currLow.time, trend: -1});
+    //         highLows.push({high: currHigh, low: currLow});
+    //     } else if (prevHigh.price <= currHigh.price && prevLow.price < currLow.price) {
+    //         trend.push({time: currHigh.time, trend: 1});
+    //         highLows.push({high: currHigh, low: currLow});
+    //     } else {
+    //         if (!trend[trend.length - 1])
+    //             trend.push(null);
+    //         else {
+    //             trend.push({time: Math.max(currLow.time, currHigh.time), trend: trend[trend.length - 1].trend});
+    //         }
     //     }
     // }
-
-    highLows.forEach(hl => {
-        filteredExtremums.push(hl.high);
-        filteredExtremums.push(hl.low);
-    })
+    //
+    // highLows.forEach(hl => {
+    //     filteredExtremums.push(hl.high);
+    //     filteredExtremums.push(hl.low);
+    // })
 
     return {trend, filteredExtremums};
-}
-
-export const calculateInternal = (highs: Swing[], lows: Swing[]) => {
-    debugger
-
-    const filledHighs = highs.filter(Boolean);
-    const filledLows = lows.filter(Boolean);
-
-    const minLength = Math.min(filledHighs.length, filledLows.length);
 }

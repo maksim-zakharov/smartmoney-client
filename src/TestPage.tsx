@@ -13,7 +13,7 @@ import {useSearchParams} from "react-router-dom";
 import {calculate} from "./sm_scripts";
 import {Checkbox, Radio, Select, Slider, Space} from "antd";
 import {SessionHighlighting} from "./lwc-plugins/session-highlighting";
-import {calculateInternal, calculateStructure, calculateSwings, calculateTrend} from "./samurai_patterns.ts";
+import {calculateStructure, calculateSwings, calculateTrend} from "./samurai_patterns.ts";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -183,31 +183,30 @@ const Chart: FC<{
             let allMarkers = [];
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            // calculateInternal(highSctuct, lowSctuct);
-            const {trend: newTrend, filteredExtremums} = calculateTrend(highParts, lowParts);
+            const {trend: newTrend, filteredExtremums} = calculateTrend(highParts, lowParts, data);
 
             if (noDoubleSwing) {
-                allMarkers.push(...structure.filter(Boolean).map(s => ({
+                // allMarkers.push(...structure.filter(Boolean).map(s => ({
+                //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                //     time: (s.time * 1000) as Time,
+                //     shape: 'circle',
+                //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                //     // text: marker.text
+                // })));
+                allMarkers.push(...lowParts.filter(Boolean).map(s => ({
                     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.time * 1000) as Time,
                     shape: 'circle',
                     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                     // text: marker.text
                 })));
-                // allMarkers.push(...lowSctuct.filter(Boolean).map(s => ({
-                //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                //     time: (s.time * 1000) as Time,
-                //     shape: 'circle',
-                //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                //     // text: marker.text
-                // })));
-                // allMarkers.push(...highSctuct.filter(Boolean).map(s => ({
-                //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                //     time: (s.time * 1000) as Time,
-                //     shape: 'circle',
-                //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                //     // text: marker.text
-                // })));
+                allMarkers.push(...highParts.filter(Boolean).map(s => ({
+                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.time * 1000) as Time,
+                    shape: 'circle',
+                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                    // text: marker.text
+                })));
             }
             if (swings) {
 
@@ -222,13 +221,13 @@ const Chart: FC<{
 
             if(noInternal){
 
-                allMarkers.push(...filteredExtremums.filter(Boolean).map(s => ({
-                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                    time: (s.time * 1000) as Time,
-                    shape: 'circle',
-                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                    // text: marker.text
-                })));
+                // allMarkers.push(...filteredExtremums.filter(Boolean).map(s => ({
+                //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                //     time: (s.time * 1000) as Time,
+                //     shape: 'circle',
+                //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                //     // text: marker.text
+                // })));
             }
 
             if (smartTrend) {
@@ -243,12 +242,14 @@ const Chart: FC<{
                     }
                 }
 
-                const sessionHighlighter = (time: Time) => {
-                    let tr = newTrend.find(c => (c?.time * 1000) >= (time as number));
+                const sessionHighlighter = (time: Time, index) => {
+                    let tr = newTrend[index]; // .find(c => (c?.time * 1000) >= (time as number));
+
+                    // let tr = newTrend.find(c => (c?.time * 1000) >= (time as number));
                     let trend = tr?.trend;
                     if (!tr) {
-                        tr = newTrend.findLast(c => (c?.time * 1000) <= (time as number));
-                        trend = tr.trend * -1;
+                        // tr = newTrend.findLast(c => (c?.time * 1000) <= (time as number));
+                        // trend = tr.trend * -1;
                     }
                     if (!trend) {
                         // debugger

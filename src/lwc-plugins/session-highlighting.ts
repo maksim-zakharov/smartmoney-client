@@ -97,7 +97,7 @@ interface BackgroundData {
     color: string;
 }
 
-export type SessionHighlighter = (date: Time) => string;
+export type SessionHighlighter = (date: Time, index?: number) => string;
 
 export class SessionHighlighting
     extends PluginBase
@@ -135,10 +135,10 @@ export class SessionHighlighting
     dataUpdated(_scope: DataChangedScope) {
         // plugin base has fired a data changed event
         // TODO: only update the last value if the scope is 'update'
-        this._backgroundColors = this.series.data().map(dataPoint => {
+        this._backgroundColors = this.series.data().map((dataPoint, index) => {
             return {
                 time: dataPoint.time,
-                color: this._highlighter(dataPoint.time),
+                color: this._highlighter(dataPoint.time, index),
             };
         });
         this.requestUpdate();
