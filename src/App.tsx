@@ -3,7 +3,7 @@ import {Layout, Menu, theme} from "antd";
 import React from "react";
 import {Route, Routes, useLocation, useNavigate} from "react-router-dom";
 import MainPage from "./MainPage.tsx";
-import TestPage from "./TestPage.tsx";
+import TestPage from "./TestPage/TestPage.tsx";
 
 export default function App() {
     const navigate = useNavigate();

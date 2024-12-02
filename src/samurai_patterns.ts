@@ -1,6 +1,4 @@
 import {HistoryObject} from "./api.ts";
-import {Time} from "lightweight-charts";
-import {Point} from "./lwc-plugins/rectangle-drawing-tool";
 
 export interface Swing {
     side: 'high' | 'low',
@@ -14,13 +12,19 @@ export interface Trend{
     trend: number;
 }
 
-export const calculateSwings = (candles: HistoryObject[], windowLength = 3) => {
-    const swings: (Swing | null)[] = [null]; // null потому что не учитываем левую свечу
-    const highs: (Swing | null)[] = [null]; // null потому что не учитываем левую свечу
-    const lows: (Swing | null)[] = [null]; // null потому что не учитываем левую свечу
+export const calculateSwings = (candles: HistoryObject[]) => {
+    const swings: (Swing | null)[] = []; // null потому что не учитываем левую свечу
+    const highs: (Swing | null)[] = []; // null потому что не учитываем левую свечу
+    const lows: (Swing | null)[] = []; // null потому что не учитываем левую свечу
 
-    for (let i = 0; i < candles.length - windowLength; i++) {
-        const [left, middle, right] = candles.slice(i, i + windowLength);
+    for (let i = 0; i < candles.length; i++) {
+        const [left, middle, right] = candles.slice(i, i + 3);
+        // Чтобы на каждую свечку было значение
+        if(!right){
+            highs.push(null);
+            lows.push(null);
+            continue;
+        }
         const high: Swing = {
             side: 'high',
             time: middle.time,
