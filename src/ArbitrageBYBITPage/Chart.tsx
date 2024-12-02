@@ -56,7 +56,14 @@ export const Chart: FC<{
                         // }
 
                         return moment.unix(businessDayOrTimestamp / 1000).format('MMM D, YYYY HH:mm');
-                    }
+                    },
+                    priceFormatter: price => {
+                        const formatter = new Intl.NumberFormat('en-US', {
+                            minimumFractionDigits: 8,  // Минимальное количество знаков после запятой
+                            maximumFractionDigits: 8,  // Максимальное количество знаков после запятой
+                        });
+                        return formatter.format(price);
+                    },
                 },
                 timeScale: {
                     rightOffset: 10,  // это создаст отступ на 10 временных единиц вправо
@@ -114,6 +121,9 @@ export const Chart: FC<{
                 wickDownColor: "rgb(213, 54, 69)",
                 lastValueVisible: false,
                 priceLineVisible: false,
+                priceFormat: {
+                    precision: 12
+                },
             });
             newSeries.priceScale().applyOptions({
                 scaleMargins: {
@@ -140,9 +150,9 @@ export const Chart: FC<{
                 time: d.time * 1000,
                 value: d.volume,
                 color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
-            })));
+            })).sort((a, b) => a.time - b.time));
 
-            newSeries.setData(data.map(t => ({...t, time: t.time * 1000})));
+            newSeries.setData(data.map(t => ({...t, time: t.time})).sort((a, b) => a.time - b.time));
 
             chart.timeScale()
                 .setVisibleRange({

@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Checkbox, DatePicker, Radio, Row, Select, Slider, Space, TimeRangePickerProps} from "antd";
+import {DatePicker, Radio, Select, Space, TimeRangePickerProps} from "antd";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./Chart";
@@ -80,8 +80,8 @@ export const ArbitrageMOEXPage = () => {
     const [futureData, setFutureData] = useState([]);
     const [searchParams, setSearchParams] = useSearchParams();
     const multiple = searchParams.get('multiple') || '100';
-    const tickerStock = searchParams.get('ticker-stock') || 'MTLR';
-    const tickerFuture = searchParams.get('ticker-future') || 'MTLR';
+    const tickerStock = searchParams.get('ticker-stock') || 'SBER';
+    const tickerFuture = searchParams.get('ticker-future') || 'SBRF-12.24';
     const tf = searchParams.get('tf') || '900';
     const fromDate = searchParams.get('fromDate') || Math.floor(new Date('2024-10-01T00:00:00Z').getTime() / 1000);
     const toDate = searchParams.get('toDate') || Math.floor(new Date('2024-12-31:00:00Z').getTime() / 1000);

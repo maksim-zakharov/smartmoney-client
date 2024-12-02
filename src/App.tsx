@@ -5,7 +5,7 @@ import {Route, Routes, useLocation, useNavigate} from "react-router-dom";
 import MainPage from "./MainPage.tsx";
 import TestPage from "./TestPage/TestPage.tsx";
 import {ArbitrageMOEXPage} from "./ArbitrageMOEXPage";
-import {ArbitrageBYBITPage} from "./ArbitrageBYBITPage";
+import {ArbitrageBYBITPage} from "./ArbitrageBYBITPage/ArbitrageBYBITPage";
 
 export default function App() {
     const navigate = useNavigate();
