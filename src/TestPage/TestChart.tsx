@@ -30,13 +30,12 @@ export const Chart: FC<{
     smartTrend?: boolean,
     noInternal?: boolean,
     BOS?: boolean,
-    BOS?: boolean,
     data: any[],
     ema: any[],
     withBug,
     windowLength: number,
     tf: number
-}> = ({BOS, CHOCH, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -189,8 +188,8 @@ export const Chart: FC<{
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
-            const {crosses, boses} = calculateCrosses(highParts, lowParts, data, newTrend)
-            const breakingBlocks: any[] = calculateBreakingBlocks(crosses, data);
+            const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
+            const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
 
 //             breakingBlocks.filter(Boolean).forEach(marker => {
 //                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
@@ -228,41 +227,6 @@ export const Chart: FC<{
 //             })
 
             BOS && boses.filter(Boolean).forEach(marker => {
-                const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
-                const lineSeries = chart.addLineSeries({
-                    color, // Цвет линии
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                    lineWidth: 1,
-                    lineStyle: LineStyle.LargeDashed,
-                });
-// 5. Устанавливаем данные для линии
-                lineSeries.setData([
-                    {time: marker.from.time * 1000 as Time, value: marker.from.price}, // начальная точка между свечками
-                    {time: marker.textCandle.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
-                    {time: marker.to.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
-                ]);
-
-                lineSeries.setMarkers([{
-                    color,
-                    time: (marker.textCandle.time * 1000) as Time,
-                    shape: 'text',
-                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-                    text: marker.text
-                }] as any)
-
-                // if (marker.idmIndex) {
-                //     crossesMarkers.push({
-                //         color: marker.color,
-                //         time: data[marker.idmIndex].time * 1000,
-                //         shape: 'text',
-                //         position: marker.position,
-                //         text: 'IDM'
-                //     })
-                // }
-            })
-
-            CHOCH && crosses.filter(Boolean).forEach(marker => {
                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
                 const lineSeries = chart.addLineSeries({
                     color, // Цвет линии
@@ -522,7 +486,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [BOS, CHOCH, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div

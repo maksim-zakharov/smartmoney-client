@@ -1,7 +1,7 @@
 import {HistoryObject} from "./api.ts";
 
 export interface Swing {
-    side: 'high' | 'low',
+    side?: 'high' | 'low',
     time: number;
     price: number;
     index: number;
@@ -190,36 +190,39 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
     return {trend};
 }
 
+export interface Cross {
+    from: Swing,
+    textCandle: HistoryObject,
+    to: Swing,
+    type: 'low' | 'high',
+    text: string
+}
+
 export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: HistoryObject[], trends: Trend[]) => {
-    let crosses = [];
-    let boses = [];
+    let boses: Cross[] = [];
     let lastHigh, lastLow;
 
     for (let i = 0; i < candles.length; i++) {
-        const lastCross = crosses[crosses.length - 1];
         const lastBOS = boses[boses.length - 1];
-        if(lastLow?.price > candles[i].close && trends[i]?.trend === 1 && lastCross?.from?.index !== lastLow?.index){
-            const textIndex = i - Math.floor((i - lastLow.index) / 2);
-            crosses.push({from: lastLow, textCandle: candles[textIndex], to: {index: i, time: candles[i].time, price: candles[i].close}, type: 'low', text: 'CHoCH'});
-        }
-        else if(lastHigh?.price < candles[i].close && trends[i]?.trend === -1&& lastCross?.from?.index !== lastHigh?.index){
+        if(lastLow?.price > candles[i].close && (!lastBOS || lastBOS?.from?.index < lastLow?.index)){
             const textIndex = i - Math.floor((i - lastHigh.index) / 2);
-            crosses.push({from: lastHigh, textCandle: candles[textIndex], to: {index: i, time: candles[i].time, price: candles[i].close}, type: 'high', text: 'CHoCH'});
+            boses.push({
+                from: lastLow,
+                textCandle: candles[textIndex],
+                to: {index: i, time: candles[i].time, price: candles[i].close},
+                type: 'low',
+                text: trends[i]?.trend === -1 ? 'BOS' : 'CHoCH'
+            });
         }
-
-        if(lastHigh?.price < candles[i].close && trends[i]?.trend === 1 && (!lastBOS || lastBOS?.from?.index < lastHigh?.index)){
+        else if(lastHigh?.price < candles[i].close && (!lastBOS || lastBOS?.from?.index < lastHigh?.index)){
             const textIndex = i - Math.floor((i - lastHigh.index) / 2);
             boses.push({
                 from: lastHigh,
                 textCandle: candles[textIndex],
                 to: {index: i, time: candles[i].time, price: candles[i].close},
                 type: 'high',
-                text: 'BOS'
+                text: trends[i]?.trend === 1 ? 'BOS' : 'CHoCH'
             });
-            }
-        if(lastLow?.price > candles[i].close && trends[i]?.trend === -1 && (!lastBOS || lastBOS?.from?.index < lastLow?.index)){
-            const textIndex = i - Math.floor((i - lastLow.index) / 2);
-            boses.push({from: lastLow, textCandle: candles[textIndex], to: {index: i, time: candles[i].time, price: candles[i].close}, type: 'low', text: 'BOS'});
         }
 
         if(highs[i]){
@@ -230,7 +233,7 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
         }
     }
 
-    return {crosses, boses};
+    return {boses};
 }
 
 export const calculateBreakingBlocks = (crosses: any[], candles: HistoryObject[]) => {

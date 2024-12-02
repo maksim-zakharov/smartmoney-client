@@ -83,7 +83,6 @@ export const TestPage = () => {
         noInternal: checkboxValues.includes('noInternal'),
         smartTrend: checkboxValues.includes('smartTrend'),
         BOS: checkboxValues.includes('BOS'),
-        CHOCH: checkboxValues.includes('CHOCH'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -150,8 +149,7 @@ export const TestPage = () => {
             <Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>
             {/*<Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>*/}
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
-            <Checkbox key="BOS" value="BOS">BOS</Checkbox>
-            <Checkbox key="CHOCH" value="CHOCH">CHOCH</Checkbox>
+            <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>
