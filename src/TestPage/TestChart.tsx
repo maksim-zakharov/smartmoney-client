@@ -188,7 +188,7 @@ export const Chart: FC<{
             let allMarkers = [];
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const {trend: newTrend, filteredExtremums} = calculateTrend(highParts, lowParts, data);
+            const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
             const {crosses, boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             const breakingBlocks: any[] = calculateBreakingBlocks(crosses, data);
 
