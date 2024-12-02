@@ -95,7 +95,7 @@ export const TestPage = () => {
         setSearchParams(searchParams)
     }
 
-    const options = useMemo(() => securities.filter(s => !['Unknown'].includes(s.complexProductCategory) && !['TQIF', 'ROPD', 'TQIR', 'TQRD', 'TQPI', 'CETS', 'TQTF', 'TQCB', 'TQOB', 'FQBR'].includes(s.board) && ['RUB'].includes(s.currency)).sort((a, b) => a.symbol.localeCompare(b.symbol)).map(s => ({
+    const options = useMemo(() => securities.filter(s => !['Unknown'].includes(s.complexProductCategory) && !['TQIF', 'ROPD', 'TQIR', 'TQRD', 'TQPI', 'CETS', 'TQTF', 'TQCB', 'TQOB', 'FQBR'].includes(s.board)).sort((a, b) => a.symbol.localeCompare(b.symbol)).map(s => ({
         label: s.symbol,
         value: s.symbol
     })), [securities]);

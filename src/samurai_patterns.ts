@@ -205,7 +205,7 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
     for (let i = 0; i < candles.length; i++) {
         const lastBOS = boses[boses.length - 1];
         if(lastLow?.price > candles[i].close && (!lastBOS || lastBOS?.from?.index < lastLow?.index)){
-            const textIndex = i - Math.floor((i - lastHigh.index) / 2);
+            const textIndex = i - Math.floor((i - lastLow.index) / 2);
             boses.push({
                 from: lastLow,
                 textCandle: candles[textIndex],
@@ -236,7 +236,7 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
     return {boses};
 }
 
-export const calculateBreakingBlocks = (crosses: any[], candles: HistoryObject[]) => {
+export const calculateBreakingBlocks = (crosses: Cross[], candles: HistoryObject[]) => {
     let bb = [];
     let lastCrossIndex = 0;
     for(let i = 0; i< candles.length; i++){

@@ -4,6 +4,7 @@ import React from "react";
 import {Route, Routes, useLocation, useNavigate} from "react-router-dom";
 import MainPage from "./MainPage.tsx";
 import TestPage from "./TestPage/TestPage.tsx";
+import {ArbitrageMOEXPage} from "./ArbitrageMOEXPage";
 
 export default function App() {
     const navigate = useNavigate();
@@ -15,7 +16,8 @@ export default function App() {
 
     const menuItems = [
         {key: '/', label: 'Главная', element: <MainPage/>},
-        {key: '/test', label: 'BOS/CHoCH', element: <TestPage/>}
+        {key: '/test', label: 'BOS/CHoCH', element: <TestPage/>},
+        {key: '/arbitrage-moex', label: 'Арбитраж MOEX', element: <ArbitrageMOEXPage/>}
     ]
 
     function onClick(params){
