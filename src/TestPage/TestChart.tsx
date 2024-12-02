@@ -17,6 +17,7 @@ import {
     calculateTrend
 } from "../samurai_patterns";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
+import * as moment from 'moment';
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -246,7 +247,7 @@ export const Chart: FC<{
                         {time: marker.from.time * 1000 as Time, value: marker.from.price}, // начальная точка между свечками
                         {time: marker.textCandle.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
                         {time: marker.to.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
-                    ]);
+                    ].sort((a, b) => a.time - b.time));
 
                 lineSeries.setMarkers([{
                     color,
