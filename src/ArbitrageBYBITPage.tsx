@@ -8,11 +8,11 @@ import {HistoryObject} from "./api";
 
 const {RangePicker} = DatePicker
 
-const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
+const fetchSecurities = (category: 'inverse' | 'linear') => fetch(`https://api.bybit.com/v5/market/tickers?category=${category}`).then(r => r.json()).then(r => r.result.list)
 
 // Функция для получения данных из Alor API
-async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate) {
-    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${fromDate}&to=${toDate}`;
+async function fetchCandlesFromAlor(symbol, tf, category: 'inverse' | 'linear', fromDate, toDate) {
+    const url = `https://api.bybit.com/v5/market/kline?category=${category}&symbol=${symbol}&interval=${tf}&start=${fromDate * 1000}&end=${toDate * 1000}&limit=100000`;
 
     try {
         const response = await fetch(url, {
@@ -27,7 +27,11 @@ async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate) {
         }
 
         const data = await response.json();
-        return data.history;
+
+        if (!data.result?.list) {
+            throw new Error("Ошибка при запросе данных");
+        }
+        return data.result.list.map(([time, open, high, low, close, volume]) => ({time: Number(time), open: Number(open), high: Number(high), low: Number(low), close: Number(close), volume: Number(volume)}) as HistoryObject);
     } catch (error) {
         console.error("Ошибка получения данных:", error);
     }
@@ -74,24 +78,25 @@ if(!stockCandle){
     } as HistoryObject
 }
 
-export const ArbitrageMOEXPage = () => {
-    const [securities, setSecurities] = useState([]);
+export const ArbitrageBYBITPage = () => {
+    const [spotSecurities, setSpotSecurities] = useState([]);
+    const [futureSecurities, setFutureSecurities] = useState([]);
     const [stockData, setStockData] = useState([]);
     const [futureData, setFutureData] = useState([]);
     const [searchParams, setSearchParams] = useSearchParams();
-    const multiple = searchParams.get('multiple') || '100';
-    const tickerStock = searchParams.get('ticker-stock') || 'MTLR';
-    const tickerFuture = searchParams.get('ticker-future') || 'MTLR';
-    const tf = searchParams.get('tf') || '900';
+    const multiple = searchParams.get('multiple') || '1';
+    const tickerStock = searchParams.get('ticker-stock') || 'BTCUSD';
+    const tickerFuture = searchParams.get('ticker-future') || 'BTCUSDT';
+    const tf = searchParams.get('tf') || '60';
     const fromDate = searchParams.get('fromDate') || Math.floor(new Date('2024-10-01T00:00:00Z').getTime() / 1000);
     const toDate = searchParams.get('toDate') || Math.floor(new Date('2024-12-31:00:00Z').getTime() / 1000);
 
     useEffect(() => {
-        fetchCandlesFromAlor(tickerStock, tf, fromDate, toDate).then(setStockData);
+        fetchCandlesFromAlor(tickerStock, tf, 'inverse', fromDate, toDate).then(setStockData);
     }, [tf, tickerStock, fromDate, toDate]);
 
     useEffect(() => {
-        fetchCandlesFromAlor(tickerFuture, tf, fromDate, toDate).then(setFutureData);
+        fetchCandlesFromAlor(tickerFuture, tf, 'linear', fromDate, toDate).then(setFutureData);
     }, [tf, tickerFuture, fromDate, toDate]);
 
     const data = useMemo(() => {
@@ -128,13 +133,17 @@ export const ArbitrageMOEXPage = () => {
         setSearchParams(searchParams)
     }
 
-    const options = useMemo(() => securities
-        .filter(s => !['Unknown'].includes(s.complexProductCategory)
-            && !['TQIF', 'ROPD', 'TQIR', 'TQRD', 'TQPI', 'CETS', 'TQTF', 'TQCB', 'TQOB', 'FQBR'].includes(s.board))
+    const spotOptions = useMemo(() => spotSecurities
         .sort((a, b) => a.symbol.localeCompare(b.symbol)).map(s => ({
         label: s.symbol,
         value: s.symbol
-    })), [securities]);
+    })), [spotSecurities]);
+
+    const futureOptions = useMemo(() => futureSecurities
+        .sort((a, b) => a.symbol.localeCompare(b.symbol)).map(s => ({
+            label: s.symbol,
+            value: s.symbol
+        })), [futureSecurities]);
 
     const onChangeRangeDates = (value: Dayjs[], dateString) => {
         console.log('Selected Time: ', value);
@@ -153,15 +162,18 @@ export const ArbitrageMOEXPage = () => {
     ];
 
     useEffect(() => {
-        fetchSecurities().then(setSecurities)
+        fetchSecurities('inverse').then(setSpotSecurities)
+    }, []);
+    useEffect(() => {
+        fetchSecurities('linear').then(setFutureSecurities)
     }, []);
     return <>
         <Space>
             <Radio.Group value={tf} onChange={(e) => setSize(e.target.value)}>
-                <Radio.Button value="300">5M</Radio.Button>
-                <Radio.Button value="900">15M</Radio.Button>
-                <Radio.Button value="1800">30M</Radio.Button>
-                <Radio.Button value="3600">1H</Radio.Button>
+                <Radio.Button value="5">5M</Radio.Button>
+                <Radio.Button value="15">15M</Radio.Button>
+                <Radio.Button value="30">30M</Radio.Button>
+                <Radio.Button value="60">1H</Radio.Button>
             </Radio.Group>
             <Select
                 value={tickerStock}
@@ -172,7 +184,7 @@ export const ArbitrageMOEXPage = () => {
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                 }
                 style={{width: 160}}
-                options={options}
+                options={spotOptions}
             />
             <Select
                 value={tickerFuture}
@@ -183,7 +195,7 @@ export const ArbitrageMOEXPage = () => {
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                 }
                 style={{width: 160}}
-                options={options}
+                options={futureOptions}
             />
             <Select
                 value={multiple}
