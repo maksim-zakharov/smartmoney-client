@@ -37,47 +37,47 @@ export const DiscrepancyRatingPage = () => {
     useEffect(() => {
         setInterval(async () => {
             const results = [];
-            for (const pair of pairs) {
+            for (const pair of pairs.filter(p => p.stockSymbol === 'ABIO')) {
                 const candles1 = await fetchCandlesFromAlor(pair.stockSymbol, tf, moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
                 const candles2 = await fetchCandlesFromAlor(`${pair.futuresSymbol}-12.24`, tf, moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
-                if(candles1[candles1.length - 1] && candles2[candles2.length - 1])
-                results.push({futuresShortName: pair.futuresShortName, stockSymbol: pair.stockSymbol, futureSymbol: `${pair.futuresSymbol}-12.24`, stockPrice: candles1[candles1.length - 1].close, futurePrice: candles2[candles2.length - 1].close})
+                const stockDataTimeSet = new Set(candles1.map(d => d.time));
+                const filtered = candles2.filter(f => stockDataTimeSet.has(f.time))
+                if(candles1[candles1.length - 1] && filtered[filtered.length - 1]){
+                    const stockPrice = candles1[candles1.length - 1].close
+                    const futurePrice = filtered[filtered.length - 1].close;
+
+                    const diffs = stockPrice / futurePrice;
+                    let dif;
+                    let diffsNumber = 1;
+                    if(diffs < 0.00009){
+                        diffsNumber = 100000;
+                        dif= diffs * 100000;
+                    }
+                    else if(diffs < 0.0009){
+                        diffsNumber = 10000;
+                        dif= diffs * 10000;
+                    }
+                    else if(diffs < 0.009){
+                        diffsNumber = 1000;
+                        dif= diffs * 1000;
+                    }
+                    else if(diffs < 0.09){
+                        diffsNumber = 100;
+                        dif= diffs * 100;
+                    }
+                    else if(diffs < 0.9){
+                        diffsNumber = 10;
+                        dif= diffs * 10;
+                    }
+                    else {
+                        dif = diffs
+                    }
+                    results.push({futuresShortName: pair.futuresShortName, stockSymbol: pair.stockSymbol, futureSymbol: `${pair.futuresSymbol}-12.24`, stockPrice, futurePrice,
+                        diffsNumber,
+                        diffs: dif})
+                }
             }
-            setDataSource(results.map(row => {
-
-                const diffs = row.stockPrice / row.futurePrice;
-                let dif;
-                let diffsNumber = 1;
-                if(diffs < 0.00009){
-                    diffsNumber = 100000;
-                    dif= diffs * 100000;
-                }
-                else if(diffs < 0.0009){
-                    diffsNumber = 10000;
-                    dif= diffs * 10000;
-                }
-                else if(diffs < 0.009){
-                    diffsNumber = 1000;
-                    dif= diffs * 1000;
-                }
-                else if(diffs < 0.09){
-                    diffsNumber = 100;
-                    dif= diffs * 100;
-                }
-                else if(diffs < 0.9){
-                    diffsNumber = 10;
-                    dif= diffs * 10;
-                }
-                else {
-                   dif = diffs
-                }
-
-                return {
-                    ...row,
-                    diffsNumber,
-                    diffs: dif
-                }
-            }).sort((a, b) => b.diffs - a.diffs));
+            setDataSource(results.sort((a, b) => b.diffs - a.diffs));
         }, 15000);
     }, [])
 

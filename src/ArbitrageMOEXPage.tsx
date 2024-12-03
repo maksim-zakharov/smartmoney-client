@@ -4,8 +4,8 @@ import {DatePicker, Radio, Select, Space, TimeRangePickerProps} from "antd";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./Chart";
-import {HistoryObject} from "./api";
 import {calculateCandle} from "../symbolFuturePairs";
+import moment from "moment";
 
 const {RangePicker} = DatePicker
 
@@ -68,8 +68,8 @@ export const ArbitrageMOEXPage = () => {
     const tickerStock = searchParams.get('ticker-stock') || 'SBER';
     const tickerFuture = searchParams.get('ticker-future') || 'SBRF-12.24';
     const tf = searchParams.get('tf') || '900';
-    const fromDate = searchParams.get('fromDate') || Math.floor(new Date('2024-10-01T00:00:00Z').getTime() / 1000);
-    const toDate = searchParams.get('toDate') || Math.floor(new Date('2025-10-01T00:00:00Z').getTime() / 1000);
+    const fromDate = searchParams.get('fromDate') || moment().add(-60, 'day').unix();
+    const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
 
     useEffect(() => {
         fetchCandlesFromAlor(tickerStock, tf, fromDate, toDate).then(setStockData);
@@ -82,18 +82,12 @@ export const ArbitrageMOEXPage = () => {
     const data = useMemo(() => {
         if(stockData.length && futureData.length){
             const stockDataTimeSet = new Set(stockData.map(d => d.time));
-            // debugger
-            // Пример использования
-            const stockPrice = 2200;  // Текущая цена акции Сбербанка
-            const futuresPrice = 2250;  // Текущая цена фьючерса на Сбербанк
-            const riskFreeRate = 0.05;  // Безрисковая ставка (5% годовых)
-            const timeToExpiration = 0.25;  // Время до экспирации фьючерса (3 месяца)
-            const threshold = 20;  // Порог для арбитража
+            const filteredFutures = futureData.filter(f => stockDataTimeSet.has(f.time))
+            const filteredFuturesSet = new Set(filteredFutures.map(d => d.time));
 
-// Проверка на наличие арбитражных возможностей
-            checkArbitrageOpportunities(stockPrice, futuresPrice, riskFreeRate, timeToExpiration, threshold);
+            const filteredStocks = stockData.filter(f => filteredFuturesSet.has(f.time))
 
-        return futureData.filter(f => stockDataTimeSet.has(f.time)).map((item, index) => calculateCandle(stockData[index], item, Number(multiple))).filter(Boolean)
+        return filteredFutures.map((item, index) => calculateCandle(filteredStocks[index], item, Number(multiple))).filter(Boolean)
         }
         return stockData;
     }, [stockData, futureData, multiple]);
