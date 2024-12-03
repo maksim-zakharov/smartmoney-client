@@ -279,6 +279,22 @@ export const symbolFuturePairs = [
 ]
 
 
+export function calculateEMA(
+    prices,
+    period
+) {
+    const alpha = 2 / (period + 1);
+    let ema = prices[0];
+    const array = [prices[0]];
+
+    for (let i = 1; i < prices.length; i++) {
+        ema = prices[i] * alpha + ema * (1 - alpha);
+        array.push(ema);
+    }
+
+    return [ema, array];
+}
+
 export const calculateCandle = (stockCandle: HistoryObject, futureCandle: HistoryObject, multiple: number = 100) => {
     if(!stockCandle){
         return null;

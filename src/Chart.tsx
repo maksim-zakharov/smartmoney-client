@@ -5,6 +5,7 @@ import {
     CrosshairMode
 } from "lightweight-charts";
 import moment from 'moment';
+import {calculateEMA} from "../symbolFuturePairs";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -153,6 +154,23 @@ export const Chart: FC<{
             })));
 
             newSeries.setData(data.map(t => ({...t, time: t.time * 1000})));
+
+            const emaSeries = chart.addLineSeries({
+                color: "rgb(255, 186, 102)",
+                lineWidth: 1,
+                priceLineVisible: false,
+                // crossHairMarkerVisible: false
+            });
+
+            const ema = calculateEMA(
+                data.map((h) => h.close),
+                100
+            )[1]
+
+            const emaSeriesData = data
+                .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i]}));
+            // @ts-ignore
+            emaSeries.setData(emaSeriesData);
 
             chart.timeScale()
                 .setVisibleRange({

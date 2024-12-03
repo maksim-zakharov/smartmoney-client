@@ -4,6 +4,7 @@ import {Checkbox, DatePicker, Radio, Select, Slider, Space, TimeRangePickerProps
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./TestChart";
+import {calculateEMA} from "../../symbolFuturePairs";
 
 const {RangePicker} = DatePicker
 
@@ -28,22 +29,6 @@ async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate) {
     } catch (error) {
         console.error("Ошибка получения данных:", error);
     }
-}
-
-function calculateEMA(
-    prices,
-    period
-) {
-    const alpha = 2 / (period + 1);
-    let ema = prices[0];
-    const array = [prices[0]];
-
-    for (let i = 1; i < prices.length; i++) {
-        ema = prices[i] * alpha + ema * (1 - alpha);
-        array.push(ema);
-    }
-
-    return [ema, array];
 }
 
 const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
