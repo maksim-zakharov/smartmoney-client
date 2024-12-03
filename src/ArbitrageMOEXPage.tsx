@@ -58,7 +58,7 @@ function checkArbitrageOpportunities(stockPrice, futuresPrice, riskFreeRate, tim
     }
 }
 
-const calculateCandle = (futureCandle: HistoryObject, stockCandle: HistoryObject, multiple: number = 100) => {
+const calculateCandle = (stockCandle: HistoryObject, futureCandle: HistoryObject, multiple: number = 100) => {
 if(!stockCandle){
     return null;
 }if(!futureCandle){
@@ -66,10 +66,10 @@ if(!stockCandle){
     }
 
     return {
-       open: futureCandle.open / multiple / stockCandle.open,
-       close: futureCandle.close / multiple / stockCandle.close,
-       high: futureCandle.high / multiple / stockCandle.high,
-       low: futureCandle.low / multiple / stockCandle.low,
+       open: stockCandle.open / futureCandle.open * multiple,
+       close: stockCandle.close / futureCandle.close * multiple,
+       high: stockCandle.high / futureCandle.high * multiple,
+       low: stockCandle.low / futureCandle.low * multiple,
        time: futureCandle.time,
     } as HistoryObject
 }
@@ -108,7 +108,7 @@ export const ArbitrageMOEXPage = () => {
 // Проверка на наличие арбитражных возможностей
             checkArbitrageOpportunities(stockPrice, futuresPrice, riskFreeRate, timeToExpiration, threshold);
 
-        return futureData.filter(f => stockDataTimeSet.has(f.time)).map((item, index) => calculateCandle(item, stockData[index], Number(multiple))).filter(Boolean)
+        return futureData.filter(f => stockDataTimeSet.has(f.time)).map((item, index) => calculateCandle(stockData[index], item, Number(multiple))).filter(Boolean)
         }
         return stockData;
     }, [stockData, futureData, multiple]);
@@ -162,6 +162,8 @@ export const ArbitrageMOEXPage = () => {
                 <Radio.Button value="900">15M</Radio.Button>
                 <Radio.Button value="1800">30M</Radio.Button>
                 <Radio.Button value="3600">1H</Radio.Button>
+                <Radio.Button value="14400">4H</Radio.Button>
+                <Radio.Button value="D">D1</Radio.Button>
             </Radio.Group>
             <Select
                 value={tickerStock}

@@ -1,7 +1,8 @@
-import {Table} from "antd";
+import {Space, Table} from "antd";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 import {useEffect, useState} from "react";
 import moment from "moment";
+import {Link} from "react-router-dom";
 
 // Функция для получения данных из Alor API
 async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate) {
@@ -27,6 +28,7 @@ async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate) {
 }
 
 export const DiscrepancyRatingPage = () => {
+    const tf = '300'
 
     const [dataSource, setDataSource] = useState([]);
 
@@ -36,8 +38,8 @@ export const DiscrepancyRatingPage = () => {
         setInterval(async () => {
             const results = [];
             for (const pair of pairs) {
-                const candles1 = await fetchCandlesFromAlor(pair.stockSymbol, '300', moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
-                const candles2 = await fetchCandlesFromAlor(`${pair.futuresSymbol}-12.24`, '300', moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
+                const candles1 = await fetchCandlesFromAlor(pair.stockSymbol, tf, moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
+                const candles2 = await fetchCandlesFromAlor(`${pair.futuresSymbol}-12.24`, tf, moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
                 if(candles1[candles1.length - 1] && candles2[candles2.length - 1])
                 results.push({futuresShortName: pair.futuresShortName, stockSymbol: pair.stockSymbol, futureSymbol: `${pair.futuresSymbol}-12.24`, stockPrice: candles1[candles1.length - 1].close, futurePrice: candles2[candles2.length - 1].close})
             }
@@ -110,7 +112,10 @@ export const DiscrepancyRatingPage = () => {
             dataIndex: 'diffs',
             key: 'diffs',
             render: (_, row) => {
-                return <a href={`https://www.tradingview.com/chart/?symbol=ALOR%3A${row.stockSymbol}%2FALOR%3A${row.futuresShortName.replace('Z4', 'Z2024')}*${row.diffsNumber}`} target="_blank">График</a>
+                return <Space>
+                    <Link to={`/arbitrage-moex?ticker-stock=${row.stockSymbol}&ticker-future=${row.futureSymbol}&multiple=${row.diffsNumber}&tf=${tf}`} target="_blank">Раздвижка</Link>
+                    <a href={`https://www.tradingview.com/chart/?symbol=ALOR%3A${row.stockSymbol}%2FALOR%3A${row.futuresShortName.replace('Z4', 'Z2024')}*${row.diffsNumber}`} target="_blank">TradingView</a>
+                    </Space>
             }
         },
     ];
