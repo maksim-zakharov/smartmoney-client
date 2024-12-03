@@ -37,7 +37,7 @@ export const DiscrepancyRatingPage = () => {
     useEffect(() => {
         setInterval(async () => {
             const results = [];
-            for (const pair of pairs.filter(p => p.stockSymbol === 'ABIO')) {
+            for (const pair of pairs) {
                 const candles1 = await fetchCandlesFromAlor(pair.stockSymbol, tf, moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
                 const candles2 = await fetchCandlesFromAlor(`${pair.futuresSymbol}-12.24`, tf, moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
                 const stockDataTimeSet = new Set(candles1.map(d => d.time));
