@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./Chart";
 import {HistoryObject} from "../api";
+import {calculateCandle} from "../../symbolFuturePairs";
 
 const {RangePicker} = DatePicker
 
@@ -75,22 +76,6 @@ function checkArbitrageOpportunities(stockPrice, futuresPrice, riskFreeRate, tim
     }
 }
 
-const calculateCandle = (futureCandle: HistoryObject, stockCandle: HistoryObject, multiple: number = 100) => {
-    if(!stockCandle){
-        return null;
-    }if(!futureCandle){
-        return null;
-    }
-
-    return {
-        open: stockCandle.open / futureCandle.open * multiple,
-        close: stockCandle.close / futureCandle.close * multiple,
-        high: stockCandle.high / futureCandle.high * multiple,
-        low: stockCandle.low / futureCandle.low * multiple,
-        time: futureCandle.time,
-    } as HistoryObject
-}
-
 export const ArbitrageBYBITPage = () => {
     const [spotSecurities, setSpotSecurities] = useState([]);
     const [futureSecurities, setFutureSecurities] = useState([]);
@@ -126,7 +111,7 @@ export const ArbitrageBYBITPage = () => {
 // Проверка на наличие арбитражных возможностей
             checkArbitrageOpportunities(stockPrice, futuresPrice, riskFreeRate, timeToExpiration, threshold);
 
-        return futureData.filter(f => stockDataTimeSet.has(f.time)).map((item, index) => calculateCandle(item, stockData[index], Number(multiple))).filter(Boolean)
+        return futureData.filter(f => stockDataTimeSet.has(f.time)).map((item, index) => calculateCandle(stockData[index], item, Number(multiple))).filter(Boolean)
         }
         return stockData;
     }, [stockData, futureData, multiple]);

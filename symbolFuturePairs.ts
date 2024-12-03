@@ -1,3 +1,5 @@
+import {HistoryObject} from "./src/api";
+
 export const symbolFuturePairs = [
     {
         "futuresSymbol": "SGZH",
@@ -275,3 +277,20 @@ export const symbolFuturePairs = [
         "stockSymbol": "IRAO"
     }
 ]
+
+
+export const calculateCandle = (stockCandle: HistoryObject, futureCandle: HistoryObject, multiple: number = 100) => {
+    if(!stockCandle){
+        return null;
+    }if(!futureCandle){
+        return null;
+    }
+
+    return {
+        open: stockCandle.open / futureCandle.open * multiple,
+        close: stockCandle.close / futureCandle.close * multiple,
+        high: stockCandle.high / futureCandle.high * multiple,
+        low: stockCandle.low / futureCandle.low * multiple,
+        time: futureCandle.time,
+    } as HistoryObject
+}
