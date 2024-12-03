@@ -58,7 +58,7 @@ export const TestPage = () => {
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '900';
     const fromDate = searchParams.get('fromDate') || Math.floor(new Date('2024-10-01T00:00:00Z').getTime() / 1000);
-    const toDate = searchParams.get('toDate') || Math.floor(new Date('2024-12-31:00:00Z').getTime() / 1000);
+    const toDate = searchParams.get('toDate') || Math.floor(new Date('2025-10-01T00:00:00Z').getTime() / 1000);
 
     useEffect(() => {
         setEma(calculateEMA(
