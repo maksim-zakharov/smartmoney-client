@@ -37,6 +37,19 @@ async function fetchCandlesFromAlor(symbol, tf, category: 'inverse' | 'linear', 
     }
 }
 
+async function recurciveCandles(symbol, tf, category: 'inverse' | 'linear', fromDate, toDate) {
+    const candles = await fetchCandlesFromAlor(symbol, tf, category, fromDate, toDate);
+    if(candles.length){
+        const firstCandleTime =  candles[candles.length - 1].time / 1000;
+        if(firstCandleTime > fromDate){
+            const result = await recurciveCandles(symbol, tf, category, fromDate, firstCandleTime - 1)
+            // debugger
+            return candles.concat(result);
+        }
+    }
+    return candles;
+}
+
 // Функция для расчета справедливой цены фьючерса
 function calculateFairFuturePrice(stockPrice, riskFreeRate, timeToExpiration) {
     // Формула для справедливой цены фьючерса (без дивидендов)
@@ -92,11 +105,11 @@ export const ArbitrageBYBITPage = () => {
     const toDate = searchParams.get('toDate') || Math.floor(new Date('2025-10-01T00:00:00Z').getTime() / 1000);
 
     useEffect(() => {
-        fetchCandlesFromAlor(tickerStock, tf, 'inverse', fromDate, toDate).then(setStockData);
+        recurciveCandles(tickerStock, tf, 'inverse', fromDate, toDate).then(setStockData);
     }, [tf, tickerStock, fromDate, toDate]);
 
     useEffect(() => {
-        fetchCandlesFromAlor(tickerFuture, tf, 'linear', fromDate, toDate).then(setFutureData);
+        recurciveCandles(tickerFuture, tf, 'linear', fromDate, toDate).then(setFutureData);
     }, [tf, tickerFuture, fromDate, toDate]);
 
     const data = useMemo(() => {
