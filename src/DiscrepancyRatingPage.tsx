@@ -77,7 +77,7 @@ export const DiscrepancyRatingPage = () => {
                         diffs: dif})
                 }
             }
-            setDataSource(results.sort((a, b) => b.diffs - a.diffs));
+            setDataSource(results.sort((a, b) => a.diffs - b.diffs));
         }, 15000);
     }, [])
 
