@@ -89,7 +89,7 @@ export const ArbitrageBYBITPage = () => {
     const tickerFuture = searchParams.get('ticker-future') || 'BTCUSDT';
     const tf = searchParams.get('tf') || '60';
     const fromDate = searchParams.get('fromDate') || Math.floor(new Date('2024-10-01T00:00:00Z').getTime() / 1000);
-    const toDate = searchParams.get('toDate') || Math.floor(new Date('2024-12-31:00:00Z').getTime() / 1000);
+    const toDate = searchParams.get('toDate') || Math.floor(new Date('2025-10-01T00:00:00Z').getTime() / 1000);
 
     useEffect(() => {
         fetchCandlesFromAlor(tickerStock, tf, 'inverse', fromDate, toDate).then(setStockData);
