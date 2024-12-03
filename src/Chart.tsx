@@ -159,7 +159,6 @@ export const Chart: FC<{
                 color: "rgb(255, 186, 102)",
                 lineWidth: 1,
                 priceLineVisible: false,
-                // crossHairMarkerVisible: false
             });
 
             const ema = calculateEMA(
