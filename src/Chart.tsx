@@ -2,7 +2,7 @@ import React, {FC, useEffect, useRef} from "react";
 import {
     ColorType,
     createChart,
-    CrosshairMode
+    CrosshairMode, Time
 } from "lightweight-charts";
 import moment from 'moment';
 import {calculateEMA} from "../symbolFuturePairs";
@@ -161,6 +161,8 @@ export const Chart: FC<{
                 priceLineVisible: false,
             });
 
+            const treshold = 0.007;
+
             const ema = calculateEMA(
                 data.map((h) => h.close),
                 100
@@ -170,6 +172,48 @@ export const Chart: FC<{
                 .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i]}));
             // @ts-ignore
             emaSeries.setData(emaSeriesData);
+
+            const sellSeries = chart.addLineSeries({
+                color: markerColors.bearColor,
+                lineWidth: 1,
+                priceLineVisible: false,
+            });
+
+            const sellSeriesData = data
+                .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i] + treshold}));
+            // @ts-ignore
+            sellSeries.setData(sellSeriesData);
+
+            const sellMarkers = sellSeriesData
+                .filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value)
+                .map((extremum) => ({
+                    color: markerColors.bearColor,
+                    time: extremum.time as Time,
+                    shape: 'circle',
+                    position: 'aboveBar',
+                }))
+
+            const buySeries = chart.addLineSeries({
+                color: markerColors.bullColor,
+                lineWidth: 1,
+                priceLineVisible: false,
+            });
+
+            const buySeriesData = data
+                .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i] - treshold}));
+            // @ts-ignore
+            buySeries.setData(buySeriesData);
+
+            const buyMarkers = buySeriesData
+                .filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value)
+                .map((extremum) => ({
+                    color: markerColors.bullColor,
+                    time: extremum.time as Time,
+                    shape: 'circle',
+                    position: 'belowBar',
+                }));
+
+            newSeries.setMarkers([...sellMarkers, ...buyMarkers].sort((a, b) => a.time - b.time) as any[]);
 
             chart.timeScale()
                 .setVisibleRange({
