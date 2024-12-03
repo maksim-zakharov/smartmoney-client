@@ -1,12 +1,15 @@
 import {Space, Table} from "antd";
-import {symbolFuturePairs} from "../symbolFuturePairs";
+import {calculateCandle, calculateEMA, symbolFuturePairs} from "../symbolFuturePairs";
 import {useEffect, useState} from "react";
 import moment from "moment";
 import {Link} from "react-router-dom";
 
 // Функция для получения данных из Alor API
-async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate) {
-    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${fromDate}&to=${toDate}`;
+async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate, limit?) {
+    let url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${fromDate}&to=${toDate}`;
+    if(limit){
+        url += `&limit=${limit}`;
+    }
 
     try {
         const response = await fetch(url, {
@@ -38,13 +41,18 @@ export const DiscrepancyRatingPage = () => {
         setInterval(async () => {
             const results = [];
             for (const pair of pairs) {
-                const candles1 = await fetchCandlesFromAlor(pair.stockSymbol, tf, moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
-                const candles2 = await fetchCandlesFromAlor(`${pair.futuresSymbol}-12.24`, tf, moment().add(-1, 'hour').unix(), moment().add(1, 'day').unix())
+                const candles1 = await fetchCandlesFromAlor(pair.stockSymbol, tf, moment().add(-1, 'week').unix(), moment().add(1, 'day').unix(), 110)
+                const candles2 = await fetchCandlesFromAlor(`${pair.futuresSymbol}-12.24`, tf, moment().add(-1, 'week').unix(), moment().add(1, 'day').unix(), 110)
+
                 const stockDataTimeSet = new Set(candles1.map(d => d.time));
-                const filtered = candles2.filter(f => stockDataTimeSet.has(f.time))
-                if(candles1[candles1.length - 1] && filtered[filtered.length - 1]){
+                const filteredFutures = candles2.filter(f => stockDataTimeSet.has(f.time))
+                const filteredFuturesSet = new Set(filteredFutures.map(d => d.time));
+
+                const filteredStocks = candles1.filter(f => filteredFuturesSet.has(f.time))
+                
+                if(candles1[candles1.length - 1] && filteredFutures[filteredFutures.length - 1]){
                     const stockPrice = candles1[candles1.length - 1].close
-                    const futurePrice = filtered[filtered.length - 1].close;
+                    const futurePrice = filteredFutures[filteredFutures.length - 1].close;
 
                     const diffs = stockPrice / futurePrice;
                     let dif;
@@ -72,12 +80,27 @@ export const DiscrepancyRatingPage = () => {
                     else {
                         dif = diffs
                     }
+
+                    const data = filteredFutures.map((item, index) => calculateCandle(filteredStocks[index], item, Number(diffsNumber))).filter(Boolean)
+
+                    const ema = calculateEMA(
+                        data.map((h) => h.close),
+                        100
+                    )[1]
+
+                    const lastEma = ema[ema.length - 1];
+
+                    const formatter = new Intl.NumberFormat('en-US', {
+                        minimumFractionDigits: 5,  // Минимальное количество знаков после запятой
+                        maximumFractionDigits: 5,  // Максимальное количество знаков после запятой
+                    });
+
                     results.push({futuresShortName: pair.futuresShortName, stockSymbol: pair.stockSymbol, futureSymbol: `${pair.futuresSymbol}-12.24`, stockPrice, futurePrice,
                         diffsNumber,
-                        diffs: dif})
+                        diffs: Number(formatter.format(dif)), ema: Number(formatter.format(lastEma)), realDiff: Number(formatter.format(Math.abs(dif - lastEma)))})
                 }
             }
-            setDataSource(results.sort((a, b) => a.diffs - b.diffs));
+            setDataSource(results.sort((a, b) => b.realDiff - a.realDiff));
         }, 15000);
     }, [])
 
@@ -103,9 +126,19 @@ export const DiscrepancyRatingPage = () => {
             key: 'futurePrice',
         },
         {
-            title: 'Расхождение',
+            title: 'Базовое расхождение',
             dataIndex: 'diffs',
             key: 'diffs',
+        },
+        {
+            title: 'EMA 100',
+            dataIndex: 'ema',
+            key: 'ema',
+        },
+        {
+            title: 'Реальное расхождение',
+            dataIndex: 'realDiff',
+            key: 'realDiff',
         },
         {
             title: 'Ссылка',
