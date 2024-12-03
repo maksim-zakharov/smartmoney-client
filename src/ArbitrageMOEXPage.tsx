@@ -84,7 +84,7 @@ export const ArbitrageMOEXPage = () => {
     const tickerFuture = searchParams.get('ticker-future') || 'SBRF-12.24';
     const tf = searchParams.get('tf') || '900';
     const fromDate = searchParams.get('fromDate') || Math.floor(new Date('2024-10-01T00:00:00Z').getTime() / 1000);
-    const toDate = searchParams.get('toDate') || Math.floor(new Date('2024-12-31T00:00:00Z').getTime() / 1000);
+    const toDate = searchParams.get('toDate') || Math.floor(new Date('2025-10-01T00:00:00Z').getTime() / 1000);
 
     useEffect(() => {
         fetchCandlesFromAlor(tickerStock, tf, fromDate, toDate).then(setStockData);
