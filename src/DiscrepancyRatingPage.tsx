@@ -9,6 +9,7 @@ export const DiscrepancyRatingPage = () => {
     const tf = '300'
 
     const [dataSource, setDataSource] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const pairs = symbolFuturePairs;
 
@@ -56,7 +57,8 @@ export const DiscrepancyRatingPage = () => {
                 }
             }
             setDataSource(results.sort((a, b) => b.realDiffMod - a.realDiffMod));
-        }, 30000);
+            setLoading(false)
+        }, 15000);
 
         return () => {
             clearInterval(interval);
@@ -116,5 +118,5 @@ export const DiscrepancyRatingPage = () => {
         return record.realDiffMod >= 0.006 ?  record.realDiff < 0 ? 'sell' : 'buy' : '';
     };
 
-    return <Table dataSource={dataSource} rowClassName={rowClassName} size="small" columns={columns} rowId="stockSymbol" pagination={{pageSize: dataSource.length}}/>
+    return <Table loading={loading} dataSource={dataSource} rowClassName={rowClassName} size="small" columns={columns} rowId="stockSymbol" pagination={{pageSize: dataSource.length}}/>
 }

@@ -12,31 +12,6 @@ const {RangePicker} = DatePicker
 
 const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
 
-// Функция для расчета справедливой цены фьючерса
-function calculateFairFuturePrice(stockPrice, riskFreeRate, timeToExpiration) {
-    // Формула для справедливой цены фьючерса (без дивидендов)
-    const fairFuturePrice = stockPrice * Math.pow((1 + riskFreeRate), timeToExpiration);
-    return fairFuturePrice;
-}
-
-// Функция для проверки арбитражных возможностей
-function checkArbitrageOpportunities(stockPrice, futuresPrice, riskFreeRate, timeToExpiration, threshold) {
-    // Рассчитываем справедливую цену фьючерса
-    const fairFuturePrice = calculateFairFuturePrice(stockPrice, riskFreeRate, timeToExpiration);
-
-    // Разница между текущей ценой фьючерса и его справедливой ценой
-    const priceDifference = futuresPrice - fairFuturePrice;
-
-    // Проверяем, есть ли арбитражные возможности
-    if (priceDifference > threshold) {
-        console.log(`Арбитраж: фьючерс переоценён. Продать фьючерс, купить акцию. Разница: ${priceDifference.toFixed(2)}`);
-    } else if (priceDifference < -threshold) {
-        console.log(`Арбитраж: фьючерс недооценён. Купить фьючерс, продать акцию. Разница: ${priceDifference.toFixed(2)}`);
-    } else {
-        console.log('Нет арбитражных возможностей в данный момент.');
-    }
-}
-
 export const ArbitrageMOEXPage = () => {
     const [securities, setSecurities] = useState([]);
     const [stockData, setStockData] = useState([]);

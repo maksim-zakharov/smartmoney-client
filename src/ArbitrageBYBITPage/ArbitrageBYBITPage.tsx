@@ -6,6 +6,7 @@ import type { Dayjs } from 'dayjs';
 import {Chart} from "./Chart";
 import {HistoryObject} from "../api";
 import {calculateCandle} from "../../symbolFuturePairs";
+import {getCommonCandles} from "../utils";
 
 const {RangePicker} = DatePicker
 
@@ -77,10 +78,12 @@ function checkArbitrageOpportunities(stockPrice, futuresPrice, riskFreeRate, tim
 }
 
 export const ArbitrageBYBITPage = () => {
+    const [inputTreshold, onChange] = useState(0.006);
     const [spotSecurities, setSpotSecurities] = useState([]);
     const [futureSecurities, setFutureSecurities] = useState([]);
     const [stockData, setStockData] = useState([]);
     const [futureData, setFutureData] = useState([]);
+    const [chartValues, onChangeChart] = useState({filteredBuyMarkers: [], filteredSellMarkers: []});
     const [searchParams, setSearchParams] = useSearchParams();
     const multiple = searchParams.get('multiple') || '1';
     const tickerStock = searchParams.get('ticker-stock') || 'BTCUSD';
@@ -97,24 +100,16 @@ export const ArbitrageBYBITPage = () => {
         recurciveCandles(tickerFuture, tf, 'linear', fromDate, toDate).then(setFutureData);
     }, [tf, tickerFuture, fromDate, toDate]);
 
+    const commonCandles = useMemo(() => getCommonCandles(stockData, futureData), [stockData, futureData]);
+
     const data = useMemo(() => {
         if(stockData.length && futureData.length){
-            const stockDataTimeSet = new Set(stockData.map(d => d.time));
-            // debugger
-            // Пример использования
-            const stockPrice = 2200;  // Текущая цена акции Сбербанка
-            const futuresPrice = 2250;  // Текущая цена фьючерса на Сбербанк
-            const riskFreeRate = 0.05;  // Безрисковая ставка (5% годовых)
-            const timeToExpiration = 0.25;  // Время до экспирации фьючерса (3 месяца)
-            const threshold = 20;  // Порог для арбитража
+            const {filteredStockCandles, filteredFuturesCandles} = commonCandles;
 
-// Проверка на наличие арбитражных возможностей
-            checkArbitrageOpportunities(stockPrice, futuresPrice, riskFreeRate, timeToExpiration, threshold);
-
-        return futureData.filter(f => stockDataTimeSet.has(f.time)).map((item, index) => calculateCandle(stockData[index], item, Number(multiple))).filter(Boolean)
+        return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, Number(multiple))).filter(Boolean)
         }
         return stockData;
-    }, [stockData, futureData, multiple]);
+    }, [stockData, futureData, multiple, commonCandles]);
 
     const setSize = (tf: string) => {
         searchParams.set('tf', tf);
@@ -151,6 +146,25 @@ export const ArbitrageBYBITPage = () => {
         searchParams.set('toDate', value[1].unix());
         setSearchParams(searchParams);
     }
+
+    const profit = useMemo(() => {
+        let PnL = 0;
+        for (let i = 0; i < chartValues.filteredBuyMarkers.length; i++) {
+            const marker = chartValues.filteredBuyMarkers[i];
+            const stockCandle = commonCandles.filteredStockCandles[marker.index];
+            PnL += inputTreshold; // (stockCandle.close * inputTreshold);
+        }
+        for (let i = 0; i < chartValues.filteredSellMarkers.length; i++) {
+            const marker = chartValues.filteredSellMarkers[i];
+            const stockCandle = commonCandles.filteredStockCandles[marker.index];
+            PnL += inputTreshold; // (stockCandle.close * inputTreshold);
+        }
+
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,  // Минимальное количество знаков после запятой
+            maximumFractionDigits: 2,  // Максимальное количество знаков после запятой
+        }).format(PnL * 100);
+    }, [chartValues, inputTreshold, commonCandles])
 
     const rangePresets: TimeRangePickerProps['presets'] = [
         { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
@@ -208,7 +222,9 @@ export const ArbitrageBYBITPage = () => {
                 value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                 format="YYYY-MM-DD"
                 onChange={onChangeRangeDates} />
+            {profit}%
         </Space>
-    <Chart data={data} tf={tf}/>
+        <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange}/>
+    <Chart data={data} tf={tf} inputTreshold={inputTreshold} onChange={onChangeChart}/>
     </>
 }

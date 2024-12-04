@@ -2,9 +2,10 @@ import React, {FC, useEffect, useRef} from "react";
 import {
     ColorType,
     createChart,
-    CrosshairMode
+    CrosshairMode, Time
 } from "lightweight-charts";
 import moment from 'moment';
+import {calculateEMA} from "../../symbolFuturePairs";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -12,8 +13,10 @@ function capitalizeFirstLetter(str) {
 
 export const Chart: FC<{
     data: any[],
+    inputTreshold?: number,
     tf: number
-}> = ({data, tf}) => {
+    onChange: (value: any) => any,
+}> = ({data, tf, inputTreshold, onChange}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -154,6 +157,72 @@ export const Chart: FC<{
 
             newSeries.setData(data.map(t => ({...t, time: t.time})).sort((a, b) => a.time - b.time));
 
+            const emaSeries = chart.addLineSeries({
+                color: "rgb(255, 186, 102)",
+                lineWidth: 1,
+                priceLineVisible: false,
+            });
+
+            const treshold = (inputTreshold || 0.001);
+
+            const ema = calculateEMA(
+                data.map((h) => h.close),
+                100
+            )[1]
+
+            const emaSeriesData = data.sort((a, b) => a.time - b.time)
+                .map((extremum, i) => ({time: extremum.time, value: ema[i]}));
+            // @ts-ignore
+            emaSeries.setData(emaSeriesData);
+
+            const sellSeries = chart.addLineSeries({
+                color: markerColors.bearColor,
+                lineWidth: 1,
+                priceLineVisible: false,
+            });
+
+            const sellSeriesData = data
+                .map((extremum, i) => ({time: extremum.time, index: i, value: ema[i] + treshold}));
+            // @ts-ignore
+            sellSeries.setData(sellSeriesData);
+
+            const filteredSellMarkers =sellSeriesData
+                .filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value)
+
+            const sellMarkers = filteredSellMarkers
+                .map((extremum) => ({
+                    color: markerColors.bearColor,
+                    time: extremum.time as Time,
+                    shape: 'circle',
+                    position: 'aboveBar',
+                }))
+
+            const buySeries = chart.addLineSeries({
+                color: markerColors.bullColor,
+                lineWidth: 1,
+                priceLineVisible: false,
+            });
+
+            const buySeriesData = data
+                .map((extremum, i) => ({time: extremum.time, index: i, value: ema[i] - treshold}));
+            // @ts-ignore
+            buySeries.setData(buySeriesData);
+
+            const filteredBuyMarkers = buySeriesData
+                .filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value)
+
+            const buyMarkers = filteredBuyMarkers
+                .map((extremum) => ({
+                    color: markerColors.bullColor,
+                    time: extremum.time as Time,
+                    shape: 'circle',
+                    position: 'belowBar',
+                }));
+
+            onChange?.({filteredBuyMarkers, filteredSellMarkers})
+
+            newSeries.setMarkers([...sellMarkers, ...buyMarkers].sort((a, b) => a.time - b.time) as any[]);
+
             chart.timeScale()
                 .setVisibleRange({
                     from: moment().add(-2, 'month').unix() * 1000,
@@ -168,7 +237,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [data, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, tf]
+        [onChange, inputTreshold, data, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, tf]
     );
 
     return <div
