@@ -120,8 +120,6 @@ export const Chart: FC<{
                 borderUpColor: "rgb(11, 176, 109)",
                 wickUpColor: "rgb(11, 176, 109)",
                 wickDownColor: "rgb(213, 54, 69)",
-                lastValueVisible: false,
-                priceLineVisible: false,
                 priceFormat: {
                     precision: 12
                 },
