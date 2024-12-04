@@ -13,9 +13,9 @@ export interface Trend{
 }
 
 export const calculateSwings = (candles: HistoryObject[]) => {
-    const swings: (Swing | null)[] = []; // null потому что не учитываем левую свечу
-    const highs: (Swing | null)[] = []; // null потому что не учитываем левую свечу
-    const lows: (Swing | null)[] = []; // null потому что не учитываем левую свечу
+    const swings: (Swing | null)[] = [];
+    const highs: (Swing | null)[] = [];
+    const lows: (Swing | null)[] = [];
 
     for (let i = 0; i < candles.length; i++) {
         const [left, middle, right] = candles.slice(i, i + 3);
