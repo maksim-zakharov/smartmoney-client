@@ -115,8 +115,8 @@ export const TestPage = () => {
             {/*<Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>*/}
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
-            <Checkbox key="showOB" value="showOB">Ордерблоки</Checkbox>
-            <Checkbox key="showEndOB" value="showEndOB">Отработанные Ордерблоки</Checkbox>
+            <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
+            <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>

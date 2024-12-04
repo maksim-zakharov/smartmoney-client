@@ -198,8 +198,19 @@ export const Chart: FC<{
 
             const lastCandle = data[data.length - 1];
 
+            const checkShow = (ob) => {
+                let result = false;
+                if(showOB && !Boolean(ob.endCandle)){
+                    result = true;
+                }
+                if(showEndOB && Boolean(ob.endCandle)){
+                    result = true;
+                }
+                return result;
+            }
+
             if(showOB || showEndOB){
-                allMarkers.push(...orderBlocks.filter(ob => showEndOB || !Boolean(ob.endCandle)).map(s => ({
+                allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
                     color: s.type === 'high' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.time * 1000) as Time,
                     shape: s.type === 'high' ? 'arrowDown' :'arrowUp',
@@ -207,7 +218,7 @@ export const Chart: FC<{
                     text: "OB"
                 })));
 
-                orderBlocks.filter(ob => showEndOB || !Boolean(ob.endCandle)).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time * 1000}, rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time * 1000}}, {
+                orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time * 1000}, rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time * 1000}}, {
                     fillColor: 'rgba(255, 100, 219, 0.2)',
                     showLabels: false,
                     borderWidth: 0,
