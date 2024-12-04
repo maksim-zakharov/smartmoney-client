@@ -305,6 +305,7 @@ export interface OrderBlock {
     type: 'high' | 'low';
     startCandle: HistoryObject;
     endCandle?: HistoryObject;
+    endIndex?: number;
 }
 
 /**
@@ -355,6 +356,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const candle = candles[j];
             if (hasHitOB(obItem, candle)) {
                 obItem.endCandle = candle;
+                obItem.endIndex = j
                 break;
             }
         }
@@ -362,5 +364,58 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
     return ob;
 };
+
+export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[]) => {
+    const positions = [];
+    for (let i = 0; i < ob.length; i++) {
+        const obItem = ob[i];
+        if(!obItem.endCandle){
+            continue;
+        }
+        const side = obItem.type === 'high' ? 'short' :'long';
+        const max = side === 'long' ? Math.max(...candles.slice(obItem.index, obItem.endIndex).map(c => c.high)) : Math.min(...candles.slice(obItem.index, obItem.endIndex).map(c => c.low));
+        const stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
+        const openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
+
+        const takeProfit = side === 'long' ? openPrice + (max - openPrice) / 2 : openPrice - (openPrice - max) / 2;
+        for (let j = obItem.endIndex + 1; j < candles.length; j++) {
+            if(side === 'long' && candles[j].low <= stopLoss){
+                positions.push({side, takeProfit, stopLoss,
+                    openPrice,openTime: obItem.endCandle.time, closeTime: candles[j].time, type: 'close', pnl: stopLoss - openPrice});
+                break;
+            } else if(side ==='short' && candles[j].high >= stopLoss){
+                positions.push({side, takeProfit, stopLoss,
+                    openPrice,openTime: obItem.endCandle.time,closeTime: candles[j].time, type: 'close', pnl: openPrice - stopLoss});
+                break;
+            } else if (side === 'long' && candles[j].high >= takeProfit){
+                positions.push({
+                    side,
+                    takeProfit,
+                    stopLoss,
+                    openPrice,
+                    openTime: obItem.endCandle.time,
+                    closeTime: candles[j].time,
+                    type: 'close',
+                    pnl: takeProfit - openPrice
+                });
+                break;
+            } else if(side ==='short' && candles[j].low <= takeProfit){
+                positions.push({
+                    side,
+                    takeProfit,
+                    stopLoss,
+                    openPrice,
+                    openTime: obItem.endCandle.time,
+                    closeTime: candles[j].time,
+                    type: 'close',
+                    pnl: openPrice - takeProfit
+                });
+                break;
+            }
+        }
+    }
+
+    return positions;
+}
 
 const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' && ob.startCandle.low <= candle.high) || (ob.type === 'low' && ob.startCandle.high >= candle.low);

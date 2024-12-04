@@ -22,6 +22,7 @@ export const TestPage = () => {
     const tf = searchParams.get('tf') || '900';
     const fromDate = searchParams.get('fromDate') || Math.floor(new Date('2024-10-01T00:00:00Z').getTime() / 1000);
     const toDate = searchParams.get('toDate') || Math.floor(new Date('2025-10-01T00:00:00Z').getTime() / 1000);
+    const [profit, onProfit] = useState({PnL: 0, profits: 0, losses: 0});
 
     useEffect(() => {
         setEma(calculateEMA(
@@ -48,6 +49,7 @@ export const TestPage = () => {
         BOS: checkboxValues.includes('BOS'),
         showOB: checkboxValues.includes('showOB'),
         showEndOB: checkboxValues.includes('showEndOB'),
+        positions: checkboxValues.includes('positions'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -105,6 +107,17 @@ export const TestPage = () => {
                 value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                 format="YYYY-MM-DD"
                 onChange={onChangeRangeDates}/>
+            <Space>
+                <div>Профит: {new Intl.NumberFormat('ru-RU', {
+                    style: 'currency',
+                    currency: 'RUB',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                }).format(profit.PnL)}</div>
+                <div>Прибыльных: {profit.profits}</div>
+                    <div>Убыточных: {profit.losses}</div>
+                    <div>Винрейт: {((profit.profits / (profit.profits + profit.losses)) * 100).toFixed(2)}%</div>
+            </Space>
         </Space>
         <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Checkbox.Group onChange={setCheckboxValues}>
@@ -117,8 +130,9 @@ export const TestPage = () => {
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
             <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
+            <Checkbox key="positions" value="positions">Сделки</Checkbox>
         </Checkbox.Group>
-        <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
+        <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onProfit} />
     </>;
 }
 

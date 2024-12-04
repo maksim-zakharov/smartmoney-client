@@ -11,7 +11,7 @@ import {
 import {calculate} from "../sm_scripts";
 import {
     calculateBreakingBlocks,
-    calculateCrosses, calculateOB,
+    calculateCrosses, calculateOB, calculatePositions,
     calculateStructure,
     calculateSwings,
     calculateTrend
@@ -30,6 +30,7 @@ export const Chart: FC<{
     swings?: boolean,
     trend?: boolean,
     showOB?: boolean,
+    positions?: boolean,
     showEndOB?: boolean,
     smartTrend?: boolean,
     noInternal?: boolean,
@@ -38,8 +39,9 @@ export const Chart: FC<{
     ema: any[],
     withBug,
     windowLength: number,
-    tf: number
-}> = ({BOS,showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+    tf: number,
+    onProfit: any
+}> = ({BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -195,6 +197,8 @@ export const Chart: FC<{
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
             const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+            const positions = calculatePositions(orderBlocks, data);
+            onProfit?.({PnL: positions.reduce((acc, curr) => acc + curr.pnl, 0), profits: positions.filter(p => p.pnl > 0).length, losses: positions.filter(p => p.pnl < 0).length})
 
             const lastCandle = data[data.length - 1];
 
@@ -209,11 +213,47 @@ export const Chart: FC<{
                 return result;
             }
 
+            if(showPositions){
+                const poses = positions.map(s => [{
+                    color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.openTime * 1000) as Time,
+                    shape: s.side === 'long' ? 'arrowUp' : 'arrowDown',
+                    position: s.side === 'short' ? 'aboveBar' : 'belowBar',
+                    price: s.openPrice,
+                    pnl: s.pnl,
+                }, {
+                    color: s.side === 'short' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.closeTime * 1000) as Time,
+                    shape: s.side === 'short' ? 'arrowUp' : 'arrowDown',
+                    position: s.side === (s.pnl > 0 ? 'long' : 'short') ? 'aboveBar' : 'belowBar',
+                    price: s.pnl > 0 ? s.takeProfit : s.stopLoss,
+                }])
+
+
+                poses.forEach(([open , close]) => {
+                    const lineSeries = chart.addLineSeries({
+                        color: open.pnl > 0 ? markerColors.bullColor : markerColors.bearColor, // Цвет линии
+                        priceLineVisible: false,
+                        lastValueVisible: false,
+                        lineWidth: 1,
+                        lineStyle: LineStyle.LargeDashed,
+                    });
+                    lineSeries.setData([
+                        {time: open.time as Time, value: open.price}, // начальная точка между свечками
+                        {time: close.time as Time, value: close.price}, // конечная точка между свечками
+                    ])
+
+                    // lineSeries.setMarkers([open, close])
+                })
+
+                allMarkers.push(...poses.flat())
+            }
+
             if(showOB || showEndOB){
                 allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
                     color: s.type === 'high' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.time * 1000) as Time,
-                    shape: s.type === 'high' ? 'arrowDown' :'arrowUp',
+                    shape: 'text',
                     position: s.type === 'high' ? 'aboveBar' : 'belowBar',
                     text: "OB"
                 })));
@@ -520,7 +560,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
