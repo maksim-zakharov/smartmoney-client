@@ -46,6 +46,8 @@ export const TestPage = () => {
         noInternal: checkboxValues.includes('noInternal'),
         smartTrend: checkboxValues.includes('smartTrend'),
         BOS: checkboxValues.includes('BOS'),
+        showOB: checkboxValues.includes('showOB'),
+        showEndOB: checkboxValues.includes('showEndOB'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -113,6 +115,8 @@ export const TestPage = () => {
             {/*<Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>*/}
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
+            <Checkbox key="showOB" value="showOB">Ордерблоки</Checkbox>
+            <Checkbox key="showEndOB" value="showEndOB">Отработанные Ордерблоки</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>

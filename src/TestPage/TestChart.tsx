@@ -11,13 +11,14 @@ import {
 import {calculate} from "../sm_scripts";
 import {
     calculateBreakingBlocks,
-    calculateCrosses,
+    calculateCrosses, calculateOB,
     calculateStructure,
     calculateSwings,
     calculateTrend
 } from "../samurai_patterns";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import * as moment from 'moment';
+import moment from 'moment';
+import {createRectangle} from "../MainPage";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -28,6 +29,8 @@ export const Chart: FC<{
     noDoubleSwing?: boolean,
     swings?: boolean,
     trend?: boolean,
+    showOB?: boolean,
+    showEndOB?: boolean,
     smartTrend?: boolean,
     noInternal?: boolean,
     BOS?: boolean,
@@ -36,7 +39,7 @@ export const Chart: FC<{
     withBug,
     windowLength: number,
     tf: number
-}> = ({BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({BOS,showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -191,6 +194,25 @@ export const Chart: FC<{
             const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
+            const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+
+            const lastCandle = data[data.length - 1];
+
+            if(showOB || showEndOB){
+                allMarkers.push(...orderBlocks.filter(ob => showEndOB || !Boolean(ob.endCandle)).map(s => ({
+                    color: s.type === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.time * 1000) as Time,
+                    shape: s.type === 'high' ? 'arrowDown' :'arrowUp',
+                    position: s.type === 'high' ? 'aboveBar' : 'belowBar',
+                    text: "OB"
+                })));
+
+                orderBlocks.filter(ob => showEndOB || !Boolean(ob.endCandle)).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time * 1000}, rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time * 1000}}, {
+                    fillColor: 'rgba(255, 100, 219, 0.2)',
+                    showLabels: false,
+                    borderWidth: 0,
+                }));
+            }
 
 //             breakingBlocks.filter(Boolean).forEach(marker => {
 //                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
@@ -487,7 +509,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div

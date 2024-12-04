@@ -262,3 +262,93 @@ export const calculateBreakingBlocks = (crosses: Cross[], candles: HistoryObject
 
     return bb;
 }
+
+const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar.high && candle.low < bar.low;
+
+const isOrderblock = (candles: HistoryObject[]) => {
+    if(candles.length < 3){
+        return null;
+    }
+    let lastCandle;
+    let lastCandleIndex;
+    let lastOrderblockCandle;
+    const firstCandle = candles[0];
+    // return null;
+
+    for (let i = 1; i < candles.length - 1; i++) {
+        if(!isInsideBar(candles[0], candles[i])){
+            lastCandle = candles[i + 1];
+            lastCandleIndex = i + 1;
+            lastOrderblockCandle = candles[i-1];
+            break;
+        }
+    }
+
+    if(!lastCandle){
+        return null;
+    }
+
+
+    if(lastCandle.low > firstCandle.high){
+        return {orderblock: {time: firstCandle.time, high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastImbalanceCandle: lastCandle, imbalanceIndex: lastCandleIndex, type: 'low'};
+    }
+    if(lastCandle.high < firstCandle.low){
+        return {orderblock: {time: firstCandle.time,high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastImbalanceCandle: lastCandle, imbalanceIndex: lastCandleIndex, type: 'high'};
+    }
+    return null;
+}
+
+export interface OrderBlock {
+    index: number;
+    time: number;
+    imbalanceIndex: number;
+    type: 'high' | 'low';
+    startCandle: HistoryObject;
+    endCandle?: HistoryObject;
+}
+
+/**
+ * OB - строится на структурных точках,
+ * только по тренду.
+ * На все тело свечи,
+ * длится пока его не коснутся,
+ * и только если следующая свеча после структурной дает имбаланс
+ * Если Об ни разу не пересекли - тянуть до последней свечи
+ */
+export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], trends: Trend[]) => {
+    const trendHighs = highs.filter(h => h && trends[h.index]?.trend === -1);
+    const trendLows = lows.filter(l => l && trends[l.index]?.trend === 1);
+
+    let ob:OrderBlock [] = [];
+
+    for (let i = 0; i < trendHighs.length; i++) {
+        const candlesBatch = candles.slice(trendHighs[i].index, trendHighs[i].index+10);
+        const imbalance = isOrderblock(candlesBatch);
+        if(imbalance?.type === 'high'){
+            ob.push({type: imbalance.type, index: trendHighs[i].index, time: trendHighs[i].time,imbalanceIndex: imbalance.imbalanceIndex, startCandle: imbalance.orderblock} as any)
+        }
+    }
+
+    for (let i = 0; i < trendLows.length; i++) {
+        const candlesBatch = candles.slice(trendLows[i].index, trendLows[i].index+10);
+        const imbalance = isOrderblock(candlesBatch);
+        if(imbalance?.type === 'low'){
+            ob.push({type: imbalance.type, index: trendLows[i].index, time: trendLows[i].time,imbalanceIndex: imbalance.imbalanceIndex, startCandle: imbalance.orderblock} as any)
+        }
+    }
+
+    for (let i = 0; i < ob.length; i++) {
+        const obItem = ob[i];
+        for (let j = obItem.index + obItem.imbalanceIndex; j < candles.length - 1; j++) {
+const candle = candles[j];
+if(hasHitOB(obItem, candle)){
+    obItem.endCandle = candle;
+    break;
+}
+        }
+    }
+
+    return ob;
+}
+
+const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' && ob.startCandle.low <= candle.high) || (ob.type === 'low' && ob.startCandle.high >= candle.low);
