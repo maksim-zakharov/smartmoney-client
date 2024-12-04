@@ -378,6 +378,9 @@ export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[]) =
         const openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
 
         const takeProfit = side === 'long' ? openPrice + (max - openPrice) / 2 : openPrice - (openPrice - max) / 2;
+        if(Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1){
+            continue;
+        }
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
             if(side === 'long' && candles[j].low <= stopLoss){
                 positions.push({side, takeProfit, stopLoss,
