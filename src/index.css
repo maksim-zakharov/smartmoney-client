@@ -2,6 +2,15 @@ body {
     margin: 0;
 }
 
+.buy{
+    background-color: rgba(11,162,100,0.4);
+    color: rgb(166,189,213)
+}
+.sell{
+    background-color: rgba(157,43,56,0.4);
+    color: rgb(166,189,213)
+}
+
 .ant-layout-content {
     height: calc(100vh - 36px);
     padding: 24px;

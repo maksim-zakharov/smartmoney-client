@@ -52,10 +52,10 @@ export const DiscrepancyRatingPage = () => {
                         stockPrice,
                         futurePrice,
                         multiple,
-                        diffs: Number(formatter.format(dif)), ema: Number(formatter.format(lastEma)), realDiff: Number(formatter.format(Math.abs(dif - lastEma)))})
+                        diffs: Number(formatter.format(dif)), ema: Number(formatter.format(lastEma)), realDiff: Number(formatter.format(dif - lastEma)), realDiffMod: Number(formatter.format(Math.abs(dif - lastEma)))})
                 }
             }
-            setDataSource(results.sort((a, b) => b.realDiff - a.realDiff));
+            setDataSource(results.sort((a, b) => b.realDiffMod - a.realDiffMod));
         }, 30000);
 
         return () => {
@@ -85,7 +85,7 @@ export const DiscrepancyRatingPage = () => {
             key: 'futurePrice',
         },
         {
-            title: 'Базовое расхождение',
+            title: 'Коэффициент арбитража',
             dataIndex: 'diffs',
             key: 'diffs',
         },
@@ -95,9 +95,9 @@ export const DiscrepancyRatingPage = () => {
             key: 'ema',
         },
         {
-            title: 'Реальное расхождение',
-            dataIndex: 'realDiff',
-            key: 'realDiff',
+            title: 'Разница',
+            dataIndex: 'realDiffMod',
+            key: 'realDiffMod',
         },
         {
             title: 'Ссылка',
@@ -111,6 +111,10 @@ export const DiscrepancyRatingPage = () => {
             }
         },
     ];
+    const rowClassName = (record: any, index: number) => {
+        // Например, подсветим строку, если age == 32
+        return record.realDiffMod >= 0.006 ?  record.realDiff < 0 ? 'sell' : 'buy' : '';
+    };
 
-    return <Table dataSource={dataSource} size="small" columns={columns} rowId="stockSymbol" pagination={{pageSize: dataSource.length}}/>
+    return <Table dataSource={dataSource} rowClassName={rowClassName} size="small" columns={columns} rowId="stockSymbol" pagination={{pageSize: dataSource.length}}/>
 }
