@@ -35,9 +35,10 @@ export const TestPage = () => {
             }
         }
         const recalculatePositions = positions.map((curr) => {
-            const stopLossMargin = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice)) * security?.lotsize
-            curr.quantity = stopLossMargin ? Math.floor(stopMargin / stopLossMargin) : 0;
-            curr.newPnl = curr.pnl * curr.quantity;
+            const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
+            const stopLossMarginPerLot = diff * security?.lotsize
+            curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
+            curr.newPnl = curr.pnl * curr.quantity * security?.lotsize;
 
             return curr;
         });
