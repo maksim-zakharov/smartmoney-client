@@ -381,11 +381,11 @@ export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[]) =
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
             if(side === 'long' && candles[j].low <= stopLoss){
                 positions.push({side, takeProfit, stopLoss,
-                    openPrice,openTime: obItem.endCandle.time, closeTime: candles[j].time, type: 'close', pnl: stopLoss - openPrice});
+                    openPrice,openTime: obItem.endCandle.time, closeTime: candles[j].time,  pnl: stopLoss - openPrice});
                 break;
             } else if(side ==='short' && candles[j].high >= stopLoss){
                 positions.push({side, takeProfit, stopLoss,
-                    openPrice,openTime: obItem.endCandle.time,closeTime: candles[j].time, type: 'close', pnl: openPrice - stopLoss});
+                    openPrice,openTime: obItem.endCandle.time,closeTime: candles[j].time,  pnl: openPrice - stopLoss});
                 break;
             } else if (side === 'long' && candles[j].high >= takeProfit){
                 positions.push({
@@ -395,7 +395,7 @@ export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[]) =
                     openPrice,
                     openTime: obItem.endCandle.time,
                     closeTime: candles[j].time,
-                    type: 'close',
+                    
                     pnl: takeProfit - openPrice
                 });
                 break;
@@ -407,7 +407,7 @@ export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[]) =
                     openPrice,
                     openTime: obItem.endCandle.time,
                     closeTime: candles[j].time,
-                    type: 'close',
+                    
                     pnl: openPrice - takeProfit
                 });
                 break;

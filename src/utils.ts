@@ -33,6 +33,16 @@ export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit
     }
 }
 
+export const refreshToken = () => fetch(`https://oauth.alor.ru/refresh?token=${localStorage.getItem("token")}`, {
+    method: "POST",
+}).then(r => r.json()).then(r => r.AccessToken);
+
+export const getSecurity = (symbol, token) => fetch(`https://api.alor.ru/md/v2/Securities/MOEX/${symbol}`, {
+    headers: {
+        "Authorization": `Bearer ${token}`,
+    }
+}).then(r => r.json())
+
 export function getCommonCandles(stockCandles: HistoryObject[], futuresCandles: HistoryObject[]) {
     // Создаем множества временных меток для акций и фьючерсов
     const stockTimes = new Set(stockCandles.map(candle => candle.time));

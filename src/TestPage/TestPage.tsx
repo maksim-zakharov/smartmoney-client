@@ -1,11 +1,11 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Checkbox, DatePicker, Radio, Select, Slider, Space, TimeRangePickerProps} from "antd";
+import {Checkbox, DatePicker, Input, Radio, Select, Slider, Space, TimeRangePickerProps} from "antd";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./TestChart";
 import {calculateEMA} from "../../symbolFuturePairs";
-import {fetchCandlesFromAlor} from "../utils";
+import {fetchCandlesFromAlor, getSecurity, refreshToken} from "../utils";
 
 const {RangePicker} = DatePicker
 
@@ -22,7 +22,41 @@ export const TestPage = () => {
     const tf = searchParams.get('tf') || '900';
     const fromDate = searchParams.get('fromDate') || Math.floor(new Date('2024-10-01T00:00:00Z').getTime() / 1000);
     const toDate = searchParams.get('toDate') || Math.floor(new Date('2025-10-01T00:00:00Z').getTime() / 1000);
-    const [profit, onProfit] = useState({PnL: 0, profits: 0, losses: 0});
+    const [{positions}, onPositions] = useState({positions: []});
+    const [stopMargin, setStopMargin] = useState(100);
+    const [security, setSecurity] = useState();
+
+    const profit = useMemo(() => {
+        if(!security){
+            return {
+                PnL: 0,
+                profits: 0,
+                losses: 0
+            }
+        }
+        const recalculatePositions = positions.map((curr) => {
+            const stopLossMargin = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice)) * security?.lotsize
+            curr.quantity = stopLossMargin ? Math.floor(stopMargin / stopLossMargin) : 0;
+            curr.newPnl = curr.pnl * curr.quantity;
+
+            return curr;
+        });
+        return {
+            PnL: recalculatePositions.reduce((acc, curr) => acc + curr.newPnl, 0),
+            profits: recalculatePositions.filter(p => p.newPnl > 0).length,
+            losses: recalculatePositions.filter(p => p.newPnl < 0).length
+        };
+    }, [positions, stopMargin, security?.lotsize])
+
+    const [token, setToken] = useState();
+
+    useEffect(() => {
+        localStorage.getItem('token') && refreshToken().then(setToken)
+    }, [])
+
+    useEffect(() => {
+        token && getSecurity(ticker, token).then(setSecurity)
+    }, [ticker, token])
 
     useEffect(() => {
         setEma(calculateEMA(
@@ -107,6 +141,7 @@ export const TestPage = () => {
                 value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                 format="YYYY-MM-DD"
                 onChange={onChangeRangeDates}/>
+            <Input value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
             <Space>
                 <div>Профит: {new Intl.NumberFormat('ru-RU', {
                     style: 'currency',
@@ -132,7 +167,7 @@ export const TestPage = () => {
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
             <Checkbox key="positions" value="positions">Сделки</Checkbox>
         </Checkbox.Group>
-        <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onProfit} />
+        <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
     </>;
 }
 

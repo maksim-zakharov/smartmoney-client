@@ -198,7 +198,7 @@ export const Chart: FC<{
             const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
             const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
             const positions = calculatePositions(orderBlocks, data);
-            onProfit?.({PnL: positions.reduce((acc, curr) => acc + curr.pnl, 0), profits: positions.filter(p => p.pnl > 0).length, losses: positions.filter(p => p.pnl < 0).length})
+            onProfit?.({positions})
 
             const lastCandle = data[data.length - 1];
 
