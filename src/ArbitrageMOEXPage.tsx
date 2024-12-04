@@ -6,33 +6,11 @@ import type { Dayjs } from 'dayjs';
 import {Chart} from "./Chart";
 import {calculateCandle} from "../symbolFuturePairs";
 import moment from "moment";
+import {fetchCandlesFromAlor, getCommonCandles} from "./utils";
 
 const {RangePicker} = DatePicker
 
 const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
-
-// Функция для получения данных из Alor API
-async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate) {
-    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${fromDate}&to=${toDate}`;
-
-    try {
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error("Ошибка при запросе данных");
-        }
-
-        const data = await response.json();
-        return data.history;
-    } catch (error) {
-        console.error("Ошибка получения данных:", error);
-    }
-}
 
 // Функция для расчета справедливой цены фьючерса
 function calculateFairFuturePrice(stockPrice, riskFreeRate, timeToExpiration) {
@@ -68,7 +46,7 @@ export const ArbitrageMOEXPage = () => {
     const tickerStock = searchParams.get('ticker-stock') || 'SBER';
     const tickerFuture = searchParams.get('ticker-future') || 'SBRF-12.24';
     const tf = searchParams.get('tf') || '900';
-    const fromDate = searchParams.get('fromDate') || moment().add(-60, 'day').unix();
+    const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
     const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
 
     useEffect(() => {
@@ -81,13 +59,9 @@ export const ArbitrageMOEXPage = () => {
 
     const data = useMemo(() => {
         if(stockData.length && futureData.length){
-            const stockDataTimeSet = new Set(stockData.map(d => d.time));
-            const filteredFutures = futureData.filter(f => stockDataTimeSet.has(f.time))
-            const filteredFuturesSet = new Set(filteredFutures.map(d => d.time));
+            const {filteredStockCandles, filteredFuturesCandles} = getCommonCandles(stockData, futureData);
 
-            const filteredStocks = stockData.filter(f => filteredFuturesSet.has(f.time))
-
-        return filteredFutures.map((item, index) => calculateCandle(filteredStocks[index], item, Number(multiple))).filter(Boolean)
+        return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, Number(multiple))).filter(Boolean)
         }
         return stockData;
     }, [stockData, futureData, multiple]);

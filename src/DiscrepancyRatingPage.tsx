@@ -3,32 +3,7 @@ import {calculateCandle, calculateEMA, symbolFuturePairs} from "../symbolFutureP
 import {useEffect, useState} from "react";
 import moment from "moment";
 import {Link} from "react-router-dom";
-
-// Функция для получения данных из Alor API
-async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate, limit?) {
-    let url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${fromDate}&to=${toDate}`;
-    if(limit){
-        url += `&limit=${limit}`;
-    }
-
-    try {
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error("Ошибка при запросе данных");
-        }
-
-        const data = await response.json();
-        return data.history;
-    } catch (error) {
-        console.error("Ошибка получения данных:", error);
-    }
-}
+import {calculateMultiple, fetchCandlesFromAlor, getCommonCandles} from "./utils";
 
 export const DiscrepancyRatingPage = () => {
     const tf = '300'
@@ -38,50 +13,25 @@ export const DiscrepancyRatingPage = () => {
     const pairs = symbolFuturePairs;
 
     useEffect(() => {
-        setInterval(async () => {
+        const interval = setInterval(async () => {
             const results = [];
+            const from = moment().add(-30, 'day').unix();
+            const to = moment().add(1, 'day').unix();
+
             for (const pair of pairs) {
-                const candles1 = await fetchCandlesFromAlor(pair.stockSymbol, tf, moment().add(-1, 'week').unix(), moment().add(1, 'day').unix(), 110)
-                const candles2 = await fetchCandlesFromAlor(`${pair.futuresSymbol}-12.24`, tf, moment().add(-1, 'week').unix(), moment().add(1, 'day').unix(), 110)
+                const [candles1, candles2] = await Promise.all([fetchCandlesFromAlor(pair.stockSymbol, tf, from, to), fetchCandlesFromAlor(`${pair.futuresSymbol}-12.24`, tf, from, to)])
 
-                const stockDataTimeSet = new Set(candles1.map(d => d.time));
-                const filteredFutures = candles2.filter(f => stockDataTimeSet.has(f.time))
-                const filteredFuturesSet = new Set(filteredFutures.map(d => d.time));
-
-                const filteredStocks = candles1.filter(f => filteredFuturesSet.has(f.time))
+                const {filteredStockCandles, filteredFuturesCandles} = getCommonCandles(candles1, candles2);
                 
-                if(candles1[candles1.length - 1] && filteredFutures[filteredFutures.length - 1]){
-                    const stockPrice = candles1[candles1.length - 1].close
-                    const futurePrice = filteredFutures[filteredFutures.length - 1].close;
+                if(filteredStockCandles[filteredStockCandles.length - 1] && filteredFuturesCandles[filteredFuturesCandles.length - 1]){
+                    const stockPrice = filteredStockCandles[filteredStockCandles.length - 1].close
+                    const futurePrice = filteredFuturesCandles[filteredFuturesCandles.length - 1].close;
 
+                    const multiple = calculateMultiple(stockPrice, futurePrice);
                     const diffs = stockPrice / futurePrice;
-                    let dif;
-                    let diffsNumber = 1;
-                    if(diffs < 0.00009){
-                        diffsNumber = 100000;
-                        dif= diffs * 100000;
-                    }
-                    else if(diffs < 0.0009){
-                        diffsNumber = 10000;
-                        dif= diffs * 10000;
-                    }
-                    else if(diffs < 0.009){
-                        diffsNumber = 1000;
-                        dif= diffs * 1000;
-                    }
-                    else if(diffs < 0.09){
-                        diffsNumber = 100;
-                        dif= diffs * 100;
-                    }
-                    else if(diffs < 0.9){
-                        diffsNumber = 10;
-                        dif= diffs * 10;
-                    }
-                    else {
-                        dif = diffs
-                    }
+                    let dif= diffs * multiple;
 
-                    const data = filteredFutures.map((item, index) => calculateCandle(filteredStocks[index], item, Number(diffsNumber))).filter(Boolean)
+                    const data = filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, Number(multiple))).filter(Boolean)
 
                     const ema = calculateEMA(
                         data.map((h) => h.close),
@@ -95,13 +45,22 @@ export const DiscrepancyRatingPage = () => {
                         maximumFractionDigits: 5,  // Максимальное количество знаков после запятой
                     });
 
-                    results.push({futuresShortName: pair.futuresShortName, stockSymbol: pair.stockSymbol, futureSymbol: `${pair.futuresSymbol}-12.24`, stockPrice, futurePrice,
-                        diffsNumber,
+                    results.push({
+                        futuresShortName: pair.futuresShortName,
+                        stockSymbol: pair.stockSymbol,
+                        futureSymbol: `${pair.futuresSymbol}-12.24`,
+                        stockPrice,
+                        futurePrice,
+                        multiple,
                         diffs: Number(formatter.format(dif)), ema: Number(formatter.format(lastEma)), realDiff: Number(formatter.format(Math.abs(dif - lastEma)))})
                 }
             }
             setDataSource(results.sort((a, b) => b.realDiff - a.realDiff));
-        }, 15000);
+        }, 30000);
+
+        return () => {
+            clearInterval(interval);
+        }
     }, [])
 
     const columns = [
@@ -146,8 +105,8 @@ export const DiscrepancyRatingPage = () => {
             key: 'diffs',
             render: (_, row) => {
                 return <Space>
-                    <Link to={`/arbitrage-moex?ticker-stock=${row.stockSymbol}&ticker-future=${row.futureSymbol}&multiple=${row.diffsNumber}&tf=${tf}`} target="_blank">Раздвижка</Link>
-                    <a href={`https://www.tradingview.com/chart/?symbol=ALOR%3A${row.stockSymbol}%2FALOR%3A${row.futuresShortName.replace('Z4', 'Z2024')}*${row.diffsNumber}`} target="_blank">TradingView</a>
+                    <Link to={`/arbitrage-moex?ticker-stock=${row.stockSymbol}&ticker-future=${row.futureSymbol}&multiple=${row.multiple}&tf=${tf}`} target="_blank">Раздвижка</Link>
+                    <a href={`https://www.tradingview.com/chart/?symbol=ALOR%3A${row.stockSymbol}%2FALOR%3A${row.futuresShortName.replace('Z4', 'Z2024')}*${row.multiple}`} target="_blank">TradingView</a>
                     </Space>
             }
         },

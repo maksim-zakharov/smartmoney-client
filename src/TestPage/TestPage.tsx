@@ -5,31 +5,9 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./TestChart";
 import {calculateEMA} from "../../symbolFuturePairs";
+import {fetchCandlesFromAlor} from "../utils";
 
 const {RangePicker} = DatePicker
-
-// Функция для получения данных из Alor API
-async function fetchCandlesFromAlor(symbol, tf, fromDate, toDate) {
-    const url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX&from=${fromDate}&to=${toDate}`;
-
-    try {
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error("Ошибка при запросе данных");
-        }
-
-        const data = await response.json();
-        return data.history;
-    } catch (error) {
-        console.error("Ошибка получения данных:", error);
-    }
-}
 
 const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
 
