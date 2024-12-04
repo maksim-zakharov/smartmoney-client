@@ -221,10 +221,10 @@ export const ArbitrageBYBITPage = () => {
                 presets={rangePresets}
                 value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                 format="YYYY-MM-DD"
-                onChange={onChangeRangeDates} />
+                onChange={onChangeRangeDates}/>
             {profit}%
         </Space>
         <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange}/>
-    <Chart data={data} tf={tf} inputTreshold={inputTreshold} onChange={onChangeChart}/>
-    </>
+        <Chart data={data} tf={tf} inputTreshold={inputTreshold} onChange={onChangeChart}/>
+    </>;
 }

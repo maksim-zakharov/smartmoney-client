@@ -819,7 +819,7 @@ const MainPage: React.FC = () => {
                     price: Number(selectedPattern?.orderblockLow)
                 } as Point
 
-                return {leftTop, rightBottom}
+                return {leftTop, rightBottom};
             }
 
             return undefined;

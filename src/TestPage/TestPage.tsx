@@ -104,7 +104,7 @@ export const TestPage = () => {
                 presets={rangePresets}
                 value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                 format="YYYY-MM-DD"
-                onChange={onChangeRangeDates} />
+                onChange={onChangeRangeDates}/>
         </Space>
         <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Checkbox.Group onChange={setCheckboxValues}>
@@ -119,7 +119,7 @@ export const TestPage = () => {
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
         </Checkbox.Group>
         <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
-    </>
+    </>;
 }
 
 export default TestPage;
