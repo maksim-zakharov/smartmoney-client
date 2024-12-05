@@ -266,35 +266,44 @@ export const calculateBreakingBlocks = (crosses: Cross[], candles: HistoryObject
 
 const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar.high && candle.low < bar.low;
 
+const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
+
 const isOrderblock = (candles: HistoryObject[]) => {
     if(candles.length < 3){
         return null;
     }
-    let lastCandle;
-    let lastCandleIndex;
+    let firstImbalanceIndex;
     let lastOrderblockCandle;
     const firstCandle = candles[0];
-    // return null;
 
     for (let i = 1; i < candles.length - 1; i++) {
         if(!isInsideBar(candles[0], candles[i])){
-            lastCandle = candles[i + 1];
-            lastCandleIndex = i + 1;
             lastOrderblockCandle = candles[i-1];
+            firstImbalanceIndex = i - 1;
             break;
         }
     }
 
-    if(!lastCandle){
+    let lastImbalanceCandle;
+    let lastImbalanceIndex;
+    // Берем не только первый имбаланс, а ближайший из 10 свечей
+    for (let i = firstImbalanceIndex; i < candles.length - 1; i++) {
+        if(isImbalance(candles[firstImbalanceIndex], candles[i + 1])){
+            lastImbalanceCandle = candles[i + 1];
+            lastImbalanceIndex = i + 1;
+            break;
+        }
+    }
+
+    if(!lastImbalanceCandle){
         return null;
     }
 
-
-    if(lastCandle.low > firstCandle.high){
-        return {orderblock: {time: firstCandle.time, high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastImbalanceCandle: lastCandle, imbalanceIndex: lastCandleIndex, type: 'low'};
+    if(lastImbalanceCandle.low > firstCandle.high){
+        return {orderblock: {time: firstCandle.time, high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastImbalanceCandle, imbalanceIndex: lastImbalanceIndex, type: 'low'};
     }
-    if(lastCandle.high < firstCandle.low){
-        return {orderblock: {time: firstCandle.time,high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastImbalanceCandle: lastCandle, imbalanceIndex: lastCandleIndex, type: 'high'};
+    if(lastImbalanceCandle.high < firstCandle.low){
+        return {orderblock: {time: firstCandle.time,high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastImbalanceCandle, imbalanceIndex: lastImbalanceIndex, type: 'high'};
     }
     return null;
 }
