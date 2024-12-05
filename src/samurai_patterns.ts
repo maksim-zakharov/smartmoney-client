@@ -300,10 +300,10 @@ const isOrderblock = (candles: HistoryObject[]) => {
     }
 
     if(lastImbalanceCandle.low > firstCandle.high){
-        return {orderblock: {time: firstCandle.time, high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastImbalanceCandle, imbalanceIndex: lastImbalanceIndex, type: 'low'};
+        return {orderblock: {time: firstCandle.time, high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastOrderblockCandle, lastImbalanceCandle, firstImbalanceIndex, imbalanceIndex: lastImbalanceIndex, type: 'low'};
     }
     if(lastImbalanceCandle.high < firstCandle.low){
-        return {orderblock: {time: firstCandle.time,high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastImbalanceCandle, imbalanceIndex: lastImbalanceIndex, type: 'high'};
+        return {orderblock: {time: firstCandle.time,high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastOrderblockCandle, lastImbalanceCandle, firstImbalanceIndex, imbalanceIndex: lastImbalanceIndex, type: 'high'};
     }
     return null;
 }
@@ -313,6 +313,8 @@ export interface OrderBlock {
     time: number;
     imbalanceIndex: number;
     type: 'high' | 'low';
+    lastOrderblockCandle: HistoryObject;
+    lastImbalanceCandle: HistoryObject;
     startCandle: HistoryObject;
     endCandle?: HistoryObject;
     endIndex?: number;
@@ -340,6 +342,9 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 type: imbalance.type,
                 index: trendHighs[i].index,
                 time: trendHighs[i].time,
+                lastOrderblockCandle: imbalance.lastOrderblockCandle,
+                lastImbalanceCandle: imbalance.lastImbalanceCandle,
+                firstImbalanceIndex: imbalance.firstImbalanceIndex,
                 imbalanceIndex: imbalance.imbalanceIndex,
                 startCandle: imbalance.orderblock
             } as any)
@@ -354,6 +359,9 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 type: imbalance.type,
                 index: trendLows[i].index,
                 time: trendLows[i].time,
+                lastOrderblockCandle: imbalance.lastOrderblockCandle,
+                lastImbalanceCandle: imbalance.lastImbalanceCandle,
+                firstImbalanceIndex: imbalance.firstImbalanceIndex,
                 imbalanceIndex: imbalance.imbalanceIndex,
                 startCandle: imbalance.orderblock
             } as any)

@@ -260,6 +260,15 @@ export const Chart: FC<{
                     text: "OB"
                 })));
 
+                orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.lastOrderblockCandle.high, time: orderBlock.lastOrderblockCandle.time * 1000}, rightBottom: {price: orderBlock.lastImbalanceCandle.low, time: (orderBlock.lastImbalanceCandle || lastCandle).time * 1000}}, {
+                    fillColor: 'rgba(179, 199, 219, .2)',
+                    showLabels: false,
+                    borderLeftWidth: 0,
+                    borderRightWidth: 0,
+                    borderWidth: 2,
+                    borderColor: '#222'
+                }));
+
                 orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time * 1000}, rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time * 1000}}, {
                     fillColor: 'rgba(255, 100, 219, 0.2)',
                     showLabels: false,
