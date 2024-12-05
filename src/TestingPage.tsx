@@ -20,18 +20,16 @@ import {TimeframeSelect} from "./TimeframeSelect";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
-import {
-    calculateOB,
-    calculatePositions,
-    calculateStructure,
-    calculateSwings,
-    calculateTrend
-} from "./samurai_patterns";
-import {fetchCandlesFromAlor, getSecurity, refreshToken} from "./utils";
+import {calculateOB, calculatePositions, calculateStructure, calculateSwings, calculateTrend} from "./samurai_patterns";
+import {fetchCandlesFromAlor, getSecurity, persision, refreshToken} from "./utils";
+import {symbolFuturePairs} from "../symbolFuturePairs";
 
 const {RangePicker} = DatePicker;
 
 export const TestingPage = () => {
+    const [loading, setLoading] = useState(true);
+    const [allData, setAllData] = useState({});
+    const [allSecurity, setAllSecurity] = useState({});
     const [data, setData] = useState([]);
     const [tf, onChangeTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
@@ -61,7 +59,49 @@ export const TestingPage = () => {
 
             return curr;
         });
-    }, [data, feePercent, security, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+
+    const allPositions = useMemo(() => {
+        return Object.entries(allData).map(([ticker, data]) => {
+            const {swings: swingsData, highs, lows} = calculateSwings(data);
+            const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
+            const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
+            const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+            return calculatePositions(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent).map((curr) => {
+                const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
+                const stopLossMarginPerLot = diff * (allSecurity[ticker]?.lotsize || 1)
+                curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
+                const openFee = curr.openPrice * curr.quantity * (allSecurity[ticker]?.lotsize || 1) * feePercent / 100;
+                const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * (allSecurity[ticker]?.lotsize || 1) * feePercent / 100;
+                curr.newPnl = curr.pnl * curr.quantity * (allSecurity[ticker]?.lotsize || 1) - closeFee - openFee;
+                curr.fee = openFee + closeFee;
+                curr.ticker = ticker;
+
+                return curr;
+            });
+        }).flat()
+    }, [allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+
+    const fetchAllTickerCandles = async () => {
+        setLoading(true);
+        const result = {};
+        const result1 = {};
+        const stockSymbols = symbolFuturePairs.map(curr => curr.stockSymbol);
+        for (let i = 0; i < stockSymbols.length; i++) {
+            result[stockSymbols[i]] = await fetchCandlesFromAlor(stockSymbols[i], tf, dates[0].unix(), dates[1].unix());
+            if(token)
+            result1[stockSymbols[i]] = await getSecurity(stockSymbols[i], token);
+        }
+        setAllSecurity(result1)
+        setAllData(result)
+        setLoading(false);
+    }
+
+    useEffect(() => {
+        if(isAllTickers){
+            fetchAllTickerCandles();
+        }
+    }, [isAllTickers, tf, dates, token])
 
     const {PnL, profits, losses, fee} = useMemo(() => {
         if(!security){
@@ -72,17 +112,21 @@ export const TestingPage = () => {
                 fee: 0
             }
         }
+
+        const array = isAllTickers? allPositions : positions;
+
         return {
-            PnL: positions.reduce((acc, curr) => acc + curr.newPnl, 0),
-            fee: positions.reduce((acc, curr) => acc + curr.fee, 0),
-            profits: positions.filter(p => p.newPnl > 0).length,
-            losses: positions.filter(p => p.newPnl < 0).length
+            PnL: array.reduce((acc, curr) => acc + curr.newPnl, 0),
+            fee: array.reduce((acc, curr) => acc + curr.fee, 0),
+            profits: array.filter(p => p.newPnl > 0).length,
+            losses: array.filter(p => p.newPnl < 0).length
         };
-    }, [positions, stopMargin, security?.lotsize])
+    }, [isAllTickers, allPositions, positions, security?.lotsize])
 
     useEffect(() => {
-        ticker && fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(setData);
-    }, [tf, ticker, dates]);
+        !isAllTickers && ticker && fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(setData).finally(() =>
+            setLoading(false));
+    }, [isAllTickers, tf, ticker, dates]);
 
     useEffect(() => {
         localStorage.getItem('token') && refreshToken().then(setToken)
@@ -100,6 +144,11 @@ export const TestingPage = () => {
     ];
 
     const oldOneTickerColumns = [
+        isAllTickers && {
+            title: 'Ticker',
+            dataIndex: 'ticker',
+            key: 'ticker',
+        },
         {
             title: 'OpenTime',
             dataIndex: 'openTime',
@@ -121,13 +170,13 @@ export const TestingPage = () => {
             title: 'StopLoss',
             dataIndex: 'stopLoss',
             key: 'stopLoss',
-            render: (val) => moneyFormat(val, 'RUB', security?.minstep, security?.minstep)
+            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep), persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep))
         },
         {
             title: 'TakeProfit',
             dataIndex: 'takeProfit',
             key: 'takeProfit',
-            render: (val) => moneyFormat(val, 'RUB', 2, 2)
+            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep), persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep))
         },
         {
             title: 'Side',
@@ -140,14 +189,14 @@ export const TestingPage = () => {
             key: 'newPnl',
             render: (val) => moneyFormat(val, 'RUB', 2, 2)
         },
-    ];
+    ].filter(Boolean);
 
     const rowClassName = (record: any, index: number) => {
         // Например, подсветим строку, если age == 32
         return record.newPnl < 0 ? 'sell' : 'buy';
     };
 
-    return <div style={{width: 'max-content', minWidth: "1500px"}}>
+    return <div style={{width: 'max-content', minWidth: "1700px"}}>
         <Form layout="vertical">
             <Row gutter={8}>
                 <Col>
@@ -205,7 +254,7 @@ export const TestingPage = () => {
                 </Col>
             </Row>
             <Row gutter={8}>
-                <Col span={12}>
+                <Col span={12} style={{display: 'none'}}>
                     <FormItem label="Old Dobrynia">
                         <Row gutter={8}>
                             <Col span={6}>
@@ -224,7 +273,7 @@ export const TestingPage = () => {
                                         title="Комиссия"
                                         value={moneyFormat(fee, 'RUB', 2, 2)}
                                         precision={2}
-                                        valueStyle={{color: fee > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                                        valueStyle={{color: "rgb(255, 117, 132)"}}
                                     />
                                 </Card>
                             </Col>
@@ -249,7 +298,7 @@ export const TestingPage = () => {
                                 </Card>
                             </Col>
                         </Row>
-                    <Table rowClassName={rowClassName} size="small" columns={oldOneTickerColumns}/>
+                    <Table loading={loading} rowClassName={rowClassName} size="small" columns={oldOneTickerColumns}/>
                     </FormItem>
                 </Col>
                 <Col span={12}>
@@ -271,7 +320,7 @@ export const TestingPage = () => {
                                         title="Комиссия"
                                         value={moneyFormat(fee, 'RUB', 2, 2)}
                                         precision={2}
-                                        valueStyle={{color: fee > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                                        valueStyle={{color: "rgb(255, 117, 132)"}}
                                     />
                                 </Card>
                             </Col>
@@ -279,7 +328,8 @@ export const TestingPage = () => {
                                 <Card bordered={false}>
                                     <Statistic
                                         title="Тейки"
-                                        value={profits}
+                                        value={new Intl.NumberFormat('en-US',
+                                            { notation:'compact' }).format(profits)}
                                         valueStyle={{color: "rgb(44, 232, 156)"}}
                                         suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
                                     />
@@ -289,14 +339,15 @@ export const TestingPage = () => {
                                 <Card bordered={false}>
                                     <Statistic
                                         title="Лоси"
-                                        value={losses}
+                                        value={new Intl.NumberFormat('en-US',
+                                            { notation:'compact' }).format(losses)}
                                         valueStyle={{color: "rgb(255, 117, 132)"}}
                                         suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
                                     />
                                 </Card>
                             </Col>
                         </Row>
-                    <Table rowClassName={rowClassName} size="small" columns={oldOneTickerColumns} dataSource={positions}/>
+                    <Table loading={loading} rowClassName={rowClassName} size="small" columns={oldOneTickerColumns} dataSource={isAllTickers ? allPositions : positions}/>
                     </FormItem>
                 </Col>
             </Row>
