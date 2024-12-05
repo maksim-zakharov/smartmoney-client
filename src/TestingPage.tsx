@@ -48,13 +48,18 @@ export const TestingPage = () => {
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
         const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
         const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+
+        const lotsize = (security?.lotsize || 1)
+
+        const fee = feePercent / 100
+
         return calculatePositions(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent).map((curr) => {
             const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
-            const stopLossMarginPerLot = diff * (security?.lotsize || 1)
+            const stopLossMarginPerLot = diff * lotsize
             curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
-            const openFee = curr.openPrice * curr.quantity * (security?.lotsize || 1) * feePercent / 100;
-            const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * (security?.lotsize || 1) * feePercent / 100;
-            curr.newPnl = curr.pnl * curr.quantity * (security?.lotsize || 1) - closeFee - openFee;
+            const openFee = curr.openPrice * curr.quantity * lotsize * fee;
+            const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize * fee;
+            curr.newPnl = curr.pnl * curr.quantity * lotsize - closeFee - openFee;
             curr.fee = openFee + closeFee;
 
             return curr;
@@ -67,13 +72,18 @@ export const TestingPage = () => {
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
             const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+
+            const lotsize = (allSecurity[ticker]?.lotsize || 1)
+
+            const fee = feePercent / 100
+
             return calculatePositions(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent).map((curr) => {
                 const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
-                const stopLossMarginPerLot = diff * (allSecurity[ticker]?.lotsize || 1)
+                const stopLossMarginPerLot = diff * lotsize
                 curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
-                const openFee = curr.openPrice * curr.quantity * (allSecurity[ticker]?.lotsize || 1) * feePercent / 100;
-                const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * (allSecurity[ticker]?.lotsize || 1) * feePercent / 100;
-                curr.newPnl = curr.pnl * curr.quantity * (allSecurity[ticker]?.lotsize || 1) - closeFee - openFee;
+                const openFee = curr.openPrice * curr.quantity * lotsize * fee;
+                const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize * fee;
+                curr.newPnl = curr.pnl * curr.quantity * lotsize - closeFee - openFee;
                 curr.fee = openFee + closeFee;
                 curr.ticker = ticker;
 
