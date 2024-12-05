@@ -54,22 +54,27 @@ export const TestingPage = () => {
             const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
             const stopLossMarginPerLot = diff * (security?.lotsize || 1)
             curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
-            curr.newPnl = curr.pnl * curr.quantity * (security?.lotsize || 1);
+            const openFee = curr.openPrice * curr.quantity * (security?.lotsize || 1) * feePercent / 100;
+            const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * (security?.lotsize || 1) * feePercent / 100;
+            curr.newPnl = curr.pnl * curr.quantity * (security?.lotsize || 1) - closeFee - openFee;
+            curr.fee = openFee + closeFee;
 
             return curr;
         });
-    }, [data, security, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, feePercent, security, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
-    const {PnL, profits, losses} = useMemo(() => {
+    const {PnL, profits, losses, fee} = useMemo(() => {
         if(!security){
             return {
                 PnL: 0,
                 profits: 0,
-                losses: 0
+                losses: 0,
+                fee: 0
             }
         }
         return {
             PnL: positions.reduce((acc, curr) => acc + curr.newPnl, 0),
+            fee: positions.reduce((acc, curr) => acc + curr.fee, 0),
             profits: positions.filter(p => p.newPnl > 0).length,
             losses: positions.filter(p => p.newPnl < 0).length
         };
@@ -203,7 +208,7 @@ export const TestingPage = () => {
                 <Col span={12}>
                     <FormItem label="Old Dobrynia">
                         <Row gutter={8}>
-                            <Col span={8}>
+                            <Col span={6}>
                                 <Card bordered={false}>
                                     <Statistic
                                         title="Общий финрез"
@@ -213,20 +218,30 @@ export const TestingPage = () => {
                                     />
                                 </Card>
                             </Col>
-                            <Col span={8}>
+                            <Col span={6}>
                                 <Card bordered={false}>
                                     <Statistic
-                                        title="Прибыльных сделок"
+                                        title="Комиссия"
+                                        value={moneyFormat(fee, 'RUB', 2, 2)}
+                                        precision={2}
+                                        valueStyle={{color: fee > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col span={6}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Тейки"
                                         value={profits}
                                         valueStyle={{color: "rgb(44, 232, 156)"}}
                                         suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
                                     />
                                 </Card>
                             </Col>
-                            <Col span={8}>
+                            <Col span={6}>
                                 <Card bordered={false}>
                                     <Statistic
-                                        title="Убыточных сделок"
+                                        title="Лоси"
                                         value={losses}
                                         valueStyle={{color: "rgb(255, 117, 132)"}}
                                         suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
@@ -240,7 +255,7 @@ export const TestingPage = () => {
                 <Col span={12}>
                     <FormItem label="New Samurai">
                         <Row gutter={8}>
-                            <Col span={8}>
+                            <Col span={6}>
                                 <Card bordered={false}>
                                     <Statistic
                                         title="Общий финрез"
@@ -250,20 +265,30 @@ export const TestingPage = () => {
                                     />
                                 </Card>
                             </Col>
-                            <Col span={8}>
+                            <Col span={6}>
                                 <Card bordered={false}>
                                     <Statistic
-                                        title="Прибыльных сделок"
+                                        title="Комиссия"
+                                        value={moneyFormat(fee, 'RUB', 2, 2)}
+                                        precision={2}
+                                        valueStyle={{color: fee > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col span={6}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Тейки"
                                         value={profits}
                                         valueStyle={{color: "rgb(44, 232, 156)"}}
                                         suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
                                     />
                                 </Card>
                             </Col>
-                            <Col span={8}>
+                            <Col span={6}>
                                 <Card bordered={false}>
                                     <Statistic
-                                        title="Убыточных сделок"
+                                        title="Лоси"
                                         value={losses}
                                         valueStyle={{color: "rgb(255, 117, 132)"}}
                                         suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
