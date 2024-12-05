@@ -1,35 +1,91 @@
 import {
+    Card,
     Checkbox,
-    DatePicker,
     Col,
+    DatePicker,
     Form,
     Input,
+    Radio,
     Row,
     Slider,
     Space,
-    Radio,
-    TimeRangePickerProps,
-    Table
+    Statistic,
+    Table,
+    TimeRangePickerProps
 } from "antd";
 import {TickerSelect} from "./TickerSelect";
-import React, {useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import FormItem from "antd/es/form/FormItem";
 import {TimeframeSelect} from "./TimeframeSelect";
+import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
-import type { Dayjs } from 'dayjs';
+import {moneyFormat} from "./MainPage";
+import {
+    calculateOB,
+    calculatePositions,
+    calculateStructure,
+    calculateSwings,
+    calculateTrend
+} from "./samurai_patterns";
+import {fetchCandlesFromAlor, getSecurity, refreshToken} from "./utils";
 
 const {RangePicker} = DatePicker;
 
 export const TestingPage = () => {
+    const [data, setData] = useState([]);
     const [tf, onChangeTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
-    const [ticker, onSelectTicker] = useState<string>();
+    const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("default");
     const [stopMargin, setStopMargin] = useState<number>(50)
     const [feePercent, setFeePercent] = useState<number>(0.04)
     const [baseTakePercent, setBaseTakePercent] = useState<number>(1)
     const [maxTakePercent, setMaxTakePercent] = useState<number>(0.5)
+    const [security, setSecurity] = useState();
+    const [token, setToken] = useState();
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([dayjs('2024-10-01T00:00:00Z'), dayjs('2025-10-01T00:00:00Z')])
+
+    const positions = useMemo(() => {
+        const {swings: swingsData, highs, lows} = calculateSwings(data);
+        const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
+        const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
+        const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+        return calculatePositions(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent).map((curr) => {
+            const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
+            const stopLossMarginPerLot = diff * (security?.lotsize || 1)
+            curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
+            curr.newPnl = curr.pnl * curr.quantity * (security?.lotsize || 1);
+
+            return curr;
+        });
+    }, [data, security, baseTakePercent, maxTakePercent, takeProfitStrategy])
+
+    const {PnL, profits, losses} = useMemo(() => {
+        if(!security){
+            return {
+                PnL: 0,
+                profits: 0,
+                losses: 0
+            }
+        }
+        return {
+            PnL: positions.reduce((acc, curr) => acc + curr.newPnl, 0),
+            profits: positions.filter(p => p.newPnl > 0).length,
+            losses: positions.filter(p => p.newPnl < 0).length
+        };
+    }, [positions, stopMargin, security?.lotsize])
+
+    useEffect(() => {
+        ticker && fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(setData);
+    }, [tf, ticker, dates]);
+
+    useEffect(() => {
+        localStorage.getItem('token') && refreshToken().then(setToken)
+    }, [])
+
+    useEffect(() => {
+        token && getSecurity(ticker, token).then(setSecurity)
+    }, [ticker, token])
 
     const rangePresets: TimeRangePickerProps['presets'] = [
         { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
@@ -40,48 +96,53 @@ export const TestingPage = () => {
 
     const oldOneTickerColumns = [
         {
-            title: 'Name',
-            dataIndex: 'stockSymbol',
-            key: 'stockSymbol',
+            title: 'OpenTime',
+            dataIndex: 'openTime',
+            key: 'openTime',
+            render: (val) => dayjs(val * 1000).format('DD.MM.YYYY HH:mm')
         },
         {
-            title: 'LiqSweepDate',
-            dataIndex: 'stockSymbol',
-            key: 'stockSymbol',
+            title: 'OpenPrice',
+            dataIndex: 'openPrice',
+            key: 'openPrice',
         },
         {
-            title: 'OB_Date',
-            dataIndex: 'stockSymbol',
-            key: 'stockSymbol',
+            title: 'CloseTime',
+            dataIndex: 'closeTime',
+            key: 'closeTime',
+        render: (val) => dayjs(val * 1000).format('DD.MM.YYYY HH:mm')
         },
         {
-            title: 'hitDate',
-            dataIndex: 'stockSymbol',
-            key: 'stockSymbol',
+            title: 'StopLoss',
+            dataIndex: 'stopLoss',
+            key: 'stopLoss',
+            render: (val) => moneyFormat(val, 'RUB', security?.minstep, security?.minstep)
         },
         {
-            title: 'closeDate',
-            dataIndex: 'stockSymbol',
-            key: 'stockSymbol',
+            title: 'TakeProfit',
+            dataIndex: 'takeProfit',
+            key: 'takeProfit',
+            render: (val) => moneyFormat(val, 'RUB', 2, 2)
         },
         {
             title: 'Side',
-            dataIndex: 'stockSymbol',
-            key: 'stockSymbol',
-        },
-        {
-            title: 'TP',
-            dataIndex: 'stockSymbol',
-            key: 'stockSymbol',
+            dataIndex: 'side',
+            key: 'side',
         },
         {
             title: 'PnL',
-            dataIndex: 'stockSymbol',
-            key: 'PnL',
+            dataIndex: 'newPnl',
+            key: 'newPnl',
+            render: (val) => moneyFormat(val, 'RUB', 2, 2)
         },
     ];
 
-    return <div style={{width: 'max-content', minWidth: "1300px"}}>
+    const rowClassName = (record: any, index: number) => {
+        // Например, подсветим строку, если age == 32
+        return record.newPnl < 0 ? 'sell' : 'buy';
+    };
+
+    return <div style={{width: 'max-content', minWidth: "1500px"}}>
         <Form layout="vertical">
             <Row gutter={8}>
                 <Col>
@@ -95,7 +156,7 @@ export const TestingPage = () => {
                 </Col>
                 <Col>
                     <FormItem label="Таймфрейм">
-                        <TimeframeSelect value={tf} onSelect={onChangeTF}/>
+                        <TimeframeSelect value={tf} onChange={onChangeTF}/>
                     </FormItem>
                 </Col>
                 <Col>
@@ -108,7 +169,7 @@ export const TestingPage = () => {
                     </FormItem>
                 </Col>
             </Row>
-            <Row gutter={8}>
+            <Row gutter={8} align="bottom">
                 <Col>
                     <FormItem label="Тейк-профит стратегия">
                         <Radio.Group onChange={e => onChangeTakeProfitStrategy(e.target.value)} value={takeProfitStrategy}>
@@ -127,8 +188,6 @@ export const TestingPage = () => {
                         <Slider value={maxTakePercent} disabled={takeProfitStrategy === "default"} onChange={setMaxTakePercent} min={0.1} step={0.1} max={1}/>
                     </FormItem>
                 </Col>
-            </Row>
-            <Row gutter={8} align="bottom">
                 <Col>
                     <FormItem label="Риск на сделку">
                         <Input value={stopMargin} onChange={e => setStopMargin(Number(e.target.value))}/>
@@ -143,12 +202,76 @@ export const TestingPage = () => {
             <Row gutter={8}>
                 <Col span={12}>
                     <FormItem label="Old Dobrynia">
-                    <Table columns={oldOneTickerColumns}/>
+                        <Row gutter={8}>
+                            <Col span={8}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Общий финрез"
+                                        value={moneyFormat(PnL, 'RUB', 2, 2)}
+                                        precision={2}
+                                        valueStyle={{color: PnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col span={8}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Прибыльных сделок"
+                                        value={profits}
+                                        valueStyle={{color: "rgb(44, 232, 156)"}}
+                                        suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col span={8}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Убыточных сделок"
+                                        value={losses}
+                                        valueStyle={{color: "rgb(255, 117, 132)"}}
+                                        suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
+                                    />
+                                </Card>
+                            </Col>
+                        </Row>
+                    <Table rowClassName={rowClassName} size="small" columns={oldOneTickerColumns}/>
                     </FormItem>
                 </Col>
                 <Col span={12}>
                     <FormItem label="New Samurai">
-                    <Table columns={oldOneTickerColumns}/>
+                        <Row gutter={8}>
+                            <Col span={8}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Общий финрез"
+                                        value={moneyFormat(PnL, 'RUB', 2, 2)}
+                                        precision={2}
+                                        valueStyle={{color: PnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col span={8}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Прибыльных сделок"
+                                        value={profits}
+                                        valueStyle={{color: "rgb(44, 232, 156)"}}
+                                        suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
+                                    />
+                                </Card>
+                            </Col>
+                            <Col span={8}>
+                                <Card bordered={false}>
+                                    <Statistic
+                                        title="Убыточных сделок"
+                                        value={losses}
+                                        valueStyle={{color: "rgb(255, 117, 132)"}}
+                                        suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
+                                    />
+                                </Card>
+                            </Col>
+                        </Row>
+                    <Table rowClassName={rowClassName} size="small" columns={oldOneTickerColumns} dataSource={positions}/>
                     </FormItem>
                 </Col>
             </Row>

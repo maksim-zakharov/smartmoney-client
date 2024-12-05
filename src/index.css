@@ -3,12 +3,16 @@ body {
 }
 
 .buy{
-    background-color: rgba(11,162,100,0.4);
-    color: rgb(166,189,213)
+    /*background-color: rgba(11,162,100,0.4);*/
+    /*color: rgb(166,189,213)*/
+    background-color: #15785566;
+    color: rgb(44, 232, 156);
 }
 .sell{
-    background-color: rgba(157,43,56,0.4);
-    color: rgb(166,189,213)
+    /*background-color: rgba(157,43,56,0.4);*/
+    /*color: rgb(166,189,213)*/
+    background-color: #d1261b66;
+    color: rgb(255, 117, 132);
 }
 
 .ant-layout-content {

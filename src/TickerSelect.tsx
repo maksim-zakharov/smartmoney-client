@@ -4,11 +4,11 @@ import {Select} from "antd";
 const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
 
 interface Props {
-    ticker: string;
+    value: string;
     disabled?: boolean;
     onSelect: (ticker: string) => void;
 }
-export const TickerSelect: FC<Props> = ({disabled, ticker, onSelect}) => {
+export const TickerSelect: FC<Props> = ({disabled, value, onSelect}) => {
     const [securities, setSecurities] = useState([]);
 
     useEffect(() => {
@@ -21,7 +21,7 @@ export const TickerSelect: FC<Props> = ({disabled, ticker, onSelect}) => {
     })), [securities]);
 
     return <Select
-        value={ticker}
+        value={value}
         showSearch
         disabled={disabled}
         placeholder="Введи тикер"
