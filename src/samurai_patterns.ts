@@ -1,4 +1,5 @@
 import {HistoryObject} from "./api.ts";
+import {calculateTakeProfit} from "./utils";
 
 export interface Swing {
     side?: 'high' | 'low',
@@ -365,7 +366,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     return ob;
 };
 
-export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[]) => {
+export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[], maxDiff?: number, multiStop?: number) => {
     const positions = [];
     for (let i = 0; i < ob.length; i++) {
         const obItem = ob[i];
@@ -373,11 +374,17 @@ export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[]) =
             continue;
         }
         const side = obItem.type === 'high' ? 'short' :'long';
-        const max = side === 'long' ? Math.max(...candles.slice(obItem.index, obItem.endIndex).map(c => c.high)) : Math.min(...candles.slice(obItem.index, obItem.endIndex).map(c => c.low));
         const stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
         const openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
 
-        const takeProfit = side === 'long' ? openPrice + (max - openPrice) / 2 : openPrice - (openPrice - max) / 2;
+        const takeProfit = calculateTakeProfit({
+            side,
+            openPrice,
+            stopLoss,
+            maxDiff,
+            multiStop,
+            candles: candles.slice(obItem.index, obItem.endIndex)
+        })
         if(Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1){
             continue;
         }

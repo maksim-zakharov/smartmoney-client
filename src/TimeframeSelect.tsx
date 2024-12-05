@@ -1,0 +1,16 @@
+import React, {FC} from "react";
+import {Radio} from 'antd'
+
+interface Props {
+    value: string;
+    onChange: (value: string) => void;
+}
+export const TimeframeSelect: FC<Props> = ({value, onChange}) => {
+
+    return <Radio.Group value={value} onChange={(e) => onChange(e.target.value)}>
+        <Radio.Button value="300">5M</Radio.Button>
+        <Radio.Button value="900">15M</Radio.Button>
+        <Radio.Button value="1800">30M</Radio.Button>
+        <Radio.Button value="3600">1H</Radio.Button>
+    </Radio.Group>
+}

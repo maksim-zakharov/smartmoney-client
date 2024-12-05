@@ -26,6 +26,8 @@ function capitalizeFirstLetter(str) {
 
 export const Chart: FC<{
     smPatterns?: boolean,
+    maxDiff?: number
+    multiStop?: number
     noDoubleSwing?: boolean,
     swings?: boolean,
     trend?: boolean,
@@ -41,7 +43,7 @@ export const Chart: FC<{
     windowLength: number,
     tf: number,
     onProfit: any
-}> = ({BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -197,7 +199,7 @@ export const Chart: FC<{
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
             const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
-            const positions = calculatePositions(orderBlocks, data);
+            const positions = calculatePositions(orderBlocks, data, maxDiff, multiStop);
             onProfit?.({positions})
 
             const lastCandle = data[data.length - 1];
@@ -560,7 +562,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div

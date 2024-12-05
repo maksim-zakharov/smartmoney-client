@@ -7,6 +7,7 @@ import TestPage from "./TestPage/TestPage.tsx";
 import {ArbitrageMOEXPage} from "./ArbitrageMOEXPage";
 import {ArbitrageBYBITPage} from "./ArbitrageBYBITPage/ArbitrageBYBITPage";
 import {DiscrepancyRatingPage} from "./DiscrepancyRatingPage";
+import {TestingPage} from "./TestingPage";
 
 export default function App() {
     const navigate = useNavigate();
@@ -21,7 +22,8 @@ export default function App() {
         {key: '/test', label: 'BOS/CHoCH', element: <TestPage/>},
         {key: '/arbitrage-moex', label: 'Арбитраж MOEX', element: <ArbitrageMOEXPage/>},
         {key: '/arbitrage-bybit', label: 'Арбитраж BYBIT', element: <ArbitrageBYBITPage/>},
-        {key: '/discrepancy-rating', label: 'Расдвижки', element: <DiscrepancyRatingPage/>}
+        {key: '/discrepancy-rating', label: 'Расдвижки', element: <DiscrepancyRatingPage/>},
+        {key: '/testing', label: 'Тестирование', element: <TestingPage/>}
     ]
 
     function onClick(params){

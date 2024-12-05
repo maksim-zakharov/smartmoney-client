@@ -1,4 +1,3 @@
-
 // Функция для получения данных из Alor API
 import {HistoryObject} from "./api";
 
@@ -80,3 +79,19 @@ export function calculateMultiple(stockPrice: number, futurePrice: number) {
 
     return diffsNumber;
 }
+
+export const calculateTakeProfit = ({
+                                        side,
+                                        openPrice,
+                                        stopLoss,
+                                        candles,
+                                        multiStop = 1,
+    maxDiff = 1
+                                    }: { multiStop?: number, maxDiff?: number, side: 'short' | 'long', openPrice: number, stopLoss: number, candles: HistoryObject[] }): number => {
+    if (maxDiff > 0) {
+        const max = side === 'long' ? Math.max(...candles.map(c => c.high)) : Math.min(...candles.map(c => c.low));
+
+        return side === 'long' ? openPrice + (max - openPrice) *  maxDiff : openPrice - (openPrice - max) * maxDiff;
+    }
+    return side === 'long' ? openPrice + Math.abs(stopLoss - openPrice) * multiStop : openPrice - Math.abs(stopLoss - openPrice) * multiStop;
+};

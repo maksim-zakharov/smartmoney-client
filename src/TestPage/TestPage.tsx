@@ -6,17 +6,18 @@ import type { Dayjs } from 'dayjs';
 import {Chart} from "./TestChart";
 import {calculateEMA} from "../../symbolFuturePairs";
 import {fetchCandlesFromAlor, getSecurity, refreshToken} from "../utils";
+import {TickerSelect} from "../TickerSelect";
+import {TimeframeSelect} from "../TimeframeSelect";
 
 const {RangePicker} = DatePicker
 
-const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
-
 export const TestPage = () => {
-    const [securities, setSecurities] = useState([]);
     const [data, setData] = useState([]);
     const [ema, setEma] = useState([]);
     const [checkboxValues, setCheckboxValues] = useState([]);
     const [windowLength, setWindowLength] = useState(5);
+    const [maxDiff, setMaxDiff] = useState(1);
+    const [multiStop, setMultiStop] = useState(1);
     const [searchParams, setSearchParams] = useSearchParams();
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '900';
@@ -60,15 +61,11 @@ export const TestPage = () => {
     }, [ticker, token])
 
     useEffect(() => {
-        setEma(calculateEMA(
+        data && setEma(calculateEMA(
             data.map((h) => h.close),
             100
         )[1]);
     }, [data])
-
-    useEffect(() => {
-        fetchSecurities().then(setSecurities)
-    }, []);
 
     useEffect(() => {
         fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(setData);
@@ -97,11 +94,6 @@ export const TestPage = () => {
         setSearchParams(searchParams)
     }
 
-    const options = useMemo(() => securities.filter(s => !['Unknown'].includes(s.complexProductCategory) && !['MTQR', 'TQIF', 'ROPD', 'TQIR', 'TQRD', 'TQPI', 'CETS', 'TQTF', 'TQCB', 'TQOB', 'FQBR', 'RFUD'].includes(s.board) && s.currency === 'RUB').sort((a, b) => a.symbol.localeCompare(b.symbol)).map(s => ({
-        label: `${s.shortname} (${s.symbol})`,
-        value: s.symbol
-    })), [securities]);
-
     const onChangeRangeDates = (value: Dayjs[], dateString) => {
         console.log('Selected Time: ', value);
         console.log('Formatted Selected Time: ', dateString);
@@ -120,23 +112,8 @@ export const TestPage = () => {
 
     return <>
         <Space>
-            <Radio.Group value={tf} onChange={(e) => setSize(e.target.value)}>
-                <Radio.Button value="300">5M</Radio.Button>
-                <Radio.Button value="900">15M</Radio.Button>
-                <Radio.Button value="1800">30M</Radio.Button>
-                <Radio.Button value="3600">1H</Radio.Button>
-            </Radio.Group>
-            <Select
-                value={ticker}
-                showSearch
-                placeholder="Введи тикер"
-                onSelect={onSelectTicker}
-                filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                }
-                style={{width: 260}}
-                options={options}
-            />
+            <TimeframeSelect value={tf} onChange={setSize}/>
+            <TickerSelect value={ticker} onSelect={onSelectTicker}/>
             <RangePicker
                 presets={rangePresets}
                 value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
@@ -156,6 +133,8 @@ export const TestPage = () => {
             </Space>
         </Space>
         <Slider defaultValue={windowLength} onChange={setWindowLength}/>
+        <Slider defaultValue={maxDiff} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
+        <Slider defaultValue={multiStop} onChange={setMultiStop} min={1} max={5} step={1}/>
         <Checkbox.Group onChange={setCheckboxValues}>
             <Checkbox key="smPatterns" value="smPatterns">smPatterns</Checkbox>
             <Checkbox key="trend" value="trend">Тренд</Checkbox>
@@ -168,7 +147,7 @@ export const TestPage = () => {
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
             <Checkbox key="positions" value="positions">Сделки</Checkbox>
         </Checkbox.Group>
-        <Chart data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
+        <Chart maxDiff={maxDiff} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
     </>;
 }
 
