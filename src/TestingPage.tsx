@@ -21,7 +21,7 @@ import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
 import {calculateOB, calculatePositions, calculateStructure, calculateSwings, calculateTrend} from "./samurai_patterns";
-import {fetchCandlesFromAlor, getSecurity, persision, refreshToken} from "./utils";
+import {fetchCandlesFromAlor, getSecurity, notTradingTime, persision, refreshToken} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 
 const {RangePicker} = DatePicker;
@@ -98,7 +98,7 @@ export const TestingPage = () => {
         const result1 = {};
         const stockSymbols = symbolFuturePairs.map(curr => curr.stockSymbol);
         for (let i = 0; i < stockSymbols.length; i++) {
-            result[stockSymbols[i]] = await fetchCandlesFromAlor(stockSymbols[i], tf, dates[0].unix(), dates[1].unix());
+            result[stockSymbols[i]] = await fetchCandlesFromAlor(stockSymbols[i], tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle)));
             if(token)
             result1[stockSymbols[i]] = await getSecurity(stockSymbols[i], token);
         }
@@ -134,7 +134,7 @@ export const TestingPage = () => {
     }, [isAllTickers, allPositions, positions, security?.lotsize])
 
     useEffect(() => {
-        !isAllTickers && ticker && fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(setData).finally(() =>
+        !isAllTickers && ticker && fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData).finally(() =>
             setLoading(false));
     }, [isAllTickers, tf, ticker, dates]);
 
