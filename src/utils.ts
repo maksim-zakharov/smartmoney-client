@@ -96,4 +96,4 @@ export const calculateTakeProfit = ({
     return side === 'long' ? openPrice + Math.abs(stopLoss - openPrice) * multiStop : openPrice - Math.abs(stopLoss - openPrice) * multiStop;
 };
 
-export const persision = (num: number) => num.toString().split('.')[1]?.length || 0;
+export const persision = (num: number) => num ? num.toString().split('.')[1]?.length : 0;

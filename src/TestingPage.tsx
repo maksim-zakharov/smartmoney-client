@@ -151,6 +151,8 @@ export const TestingPage = () => {
         { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
         { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
         { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
+        { label: 'Последние 182 дня', value: [dayjs().add(-182, 'd'), dayjs()] },
+        { label: 'Последние 365 дней', value: [dayjs().add(-365, 'd'), dayjs()] },
     ];
 
     const oldOneTickerColumns = [
@@ -244,7 +246,7 @@ export const TestingPage = () => {
                 </Col>
                 <Col>
                     <FormItem label="Базовый коэф. тейк-профита">
-                        <Slider value={baseTakePercent} disabled={takeProfitStrategy === "max"} onChange={setBaseTakePercent} min={1} step={1} max={10}/>
+                        <Slider value={baseTakePercent} disabled={takeProfitStrategy === "max"} onChange={setBaseTakePercent} min={1} step={1} max={20}/>
                     </FormItem>
                 </Col>
                 <Col>
