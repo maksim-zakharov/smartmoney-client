@@ -27,6 +27,7 @@ function capitalizeFirstLetter(str) {
 export const Chart: FC<{
     smPatterns?: boolean,
     excludeIDM?: boolean,
+    imbalances?: boolean,
     maxDiff?: number
     multiStop?: number
     noDoubleSwing?: boolean,
@@ -44,7 +45,7 @@ export const Chart: FC<{
     windowLength: number,
     tf: number,
     onProfit: any
-}> = ({maxDiff,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff,imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -258,7 +259,7 @@ export const Chart: FC<{
                 allMarkers.push(...poses.flat())
             }
 
-            if(showOB || showEndOB){
+            if(showOB || showEndOB || imbalances){
                 allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
                     color: s.type === 'high' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.time * 1000) as Time,
@@ -267,7 +268,7 @@ export const Chart: FC<{
                     text: "OB"
                 })));
 
-                orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.lastOrderblockCandle.high, time: orderBlock.lastOrderblockCandle.time * 1000}, rightBottom: {price: orderBlock.lastImbalanceCandle.low, time: (orderBlock.lastImbalanceCandle || lastCandle).time * 1000}}, {
+                imbalances && orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.lastOrderblockCandle.high, time: orderBlock.lastOrderblockCandle.time * 1000}, rightBottom: {price: orderBlock.lastImbalanceCandle.low, time: (orderBlock.lastImbalanceCandle || lastCandle).time * 1000}}, {
                     fillColor: 'rgba(179, 199, 219, .2)',
                     showLabels: false,
                     borderLeftWidth: 0,
@@ -578,7 +579,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div

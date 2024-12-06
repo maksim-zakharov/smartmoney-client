@@ -81,6 +81,7 @@ export const TestPage = () => {
         BOS: checkboxValues.includes('BOS'),
         showOB: checkboxValues.includes('showOB'),
         showEndOB: checkboxValues.includes('showEndOB'),
+        imbalances: checkboxValues.includes('imbalances'),
         positions: checkboxValues.includes('positions'),
         excludeIDM: checkboxValues.includes('excludeIDM'),
     }), [checkboxValues])
@@ -146,6 +147,7 @@ export const TestPage = () => {
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
             <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
+            <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>
             <Checkbox key="positions" value="positions">Сделки</Checkbox>
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
         </Checkbox.Group>
