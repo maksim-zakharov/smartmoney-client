@@ -78,6 +78,7 @@ export const TestPage = () => {
         noDoubleSwing: checkboxValues.includes('noDoubleSwing'),
         noInternal: checkboxValues.includes('noInternal'),
         smartTrend: checkboxValues.includes('smartTrend'),
+        withTrendConfirm: checkboxValues.includes('withTrendConfirm'),
         BOS: checkboxValues.includes('BOS'),
         showOB: checkboxValues.includes('showOB'),
         showEndOB: checkboxValues.includes('showEndOB'),
@@ -144,6 +145,7 @@ export const TestPage = () => {
             <Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>
             {/*<Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>*/}
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
+            <Checkbox key="withTrendConfirm" value="withTrendConfirm">Тренд с подтверждением</Checkbox>
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
             <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>

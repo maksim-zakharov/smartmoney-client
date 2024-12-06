@@ -41,6 +41,7 @@ export const TestingPage = () => {
     const [tf, onChangeTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
     const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
+    const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("default");
     const [stopMargin, setStopMargin] = useState<number>(50)
@@ -54,12 +55,12 @@ export const TestingPage = () => {
     const positions = useMemo(() => {
         const {swings: swingsData, highs, lows} = calculateSwings(data);
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-        const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
-        let orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+        const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend);
+        let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
         if(excludeIDM){
-            const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
-            const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
-            orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
+            // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
+            // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
+            // orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
         }
 
         const lotsize = (security?.lotsize || 1)
@@ -77,18 +78,18 @@ export const TestingPage = () => {
 
             return curr;
         });
-    }, [data, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
-            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend);
+            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
             if(excludeIDM){
-                const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
-                const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
-                orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
+                // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
+                // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
+                // orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
             }
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
@@ -108,7 +109,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat()
-    }, [excludeIDM, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [excludeIDM, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -265,6 +266,11 @@ export const TestingPage = () => {
                 <Col>
                     <FormItem>
                         <Checkbox value={excludeIDM} onChange={e => setExcludeIDM(e.target.checked)}>Исключить IDM</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={confirmTrend} onChange={e => setConfirmTrend(e.target.checked)}>Подтвержденный тренд</Checkbox>
                     </FormItem>
                 </Col>
             </Row>

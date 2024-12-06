@@ -28,6 +28,7 @@ export const Chart: FC<{
     smPatterns?: boolean,
     excludeIDM?: boolean,
     imbalances?: boolean,
+    withTrendConfirm?: boolean,
     maxDiff?: number
     multiStop?: number
     noDoubleSwing?: boolean,
@@ -45,7 +46,7 @@ export const Chart: FC<{
     windowLength: number,
     tf: number,
     onProfit: any
-}> = ({maxDiff,imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff,withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -197,7 +198,7 @@ export const Chart: FC<{
             let allMarkers = [];
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
+            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm);
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
             let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
@@ -578,7 +579,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div

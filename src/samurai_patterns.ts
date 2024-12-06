@@ -149,7 +149,7 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
     return {structure, highParts, lowParts};
 }
 
-export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
+export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryObject[], withTrendConfirm: boolean = false) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
     let highLows = new Array(candles.length).fill(null);
@@ -173,12 +173,12 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
             continue;
         }
 
-        if (prevHigh.price < currHigh.price && currHigh.index === i) {
+        if (prevHigh.price < currHigh.price && currHigh.index === i && (!withTrendConfirm || prevLow.price < currLow.price)) {
             trend[i] = {time: currHigh.time, trend: 1};
             highLows[i] = {high: currHigh, low: currLow};
         }
 
-        if (prevLow.price > currLow.price && currLow.index === i) {
+        if (prevLow.price > currLow.price && currLow.index === i && (!withTrendConfirm || prevHigh.price > currHigh.price)) {
             trend[i] = {time: currLow.time, trend: -1};
             highLows[i] = {high: currHigh, low: currLow};
         }
