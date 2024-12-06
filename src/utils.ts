@@ -148,7 +148,7 @@ export const calculateMOEXFutureFee = (side: 'buy' | 'sell', security: any, brok
     return exchangeFee * (1 + brokerFee);
 }
 
-export const calculateFutureQuantityByStopMargin  = (side: 'buy' |'sell', security: any, stopMargin: number) => {
-    const margin = side === 'buy'? security.marginbuy : security.marginsell;
-
+export const calculateFutureQuantityByStopMargin  = (stopMargin: number, openPrice: number, stopPrice: number) => {
+    const loss = Math.abs(stopPrice - openPrice);
+    return Math.floor(stopMargin / loss);
 }

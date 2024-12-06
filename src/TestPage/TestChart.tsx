@@ -200,12 +200,11 @@ export const Chart: FC<{
             const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
-            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
-            if(excludeIDM){
-                // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
-                const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
-                orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
-            }
+            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
+            // if(excludeIDM){
+            //     const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
+            //     orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
+            // }
 
             const positions = calculatePositions(orderBlocks, data, maxDiff, multiStop);
             onProfit?.({positions})

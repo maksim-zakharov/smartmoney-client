@@ -316,9 +316,13 @@ export interface OrderBlock {
     lastOrderblockCandle: HistoryObject;
     lastImbalanceCandle: HistoryObject;
     startCandle: HistoryObject;
+    // TODO только для теста
+    canTrade?: boolean;
     endCandle?: HistoryObject;
     endIndex?: number;
 }
+
+const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' && ob.startCandle.low <= candle.high) || (ob.type === 'low' && ob.startCandle.high >= candle.low);
 
 /**
  * OB - строится на структурных точках,
@@ -328,7 +332,7 @@ export interface OrderBlock {
  * и только если следующая свеча после структурной дает имбаланс
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
-export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], trends: Trend[]) => {
+export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], trends: Trend[], excludeIDM: boolean = false) => {
     let ob: OrderBlock [] = [];
     const MAX_CANDLES_COUNT = 10;
 
@@ -378,13 +382,29 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
     ob = ob.sort((a, b) => a.index - b.index);
 
+    // Где начинается позиция TODO для теста, в реальности это точка входа
     for (let i = 0; i < ob.length; i++) {
         const obItem = ob[i];
-        for (let j = obItem.index + obItem.imbalanceIndex; j < candles.length - 1; j++) {
+        const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+        for (let j = startPositionIndex; j < candles.length - 1; j++) {
             const candle = candles[j];
             if (hasHitOB(obItem, candle)) {
+                // debugger
                 obItem.endCandle = candle;
                 obItem.endIndex = j
+                obItem.canTrade = true;
+
+                // торгую или нет. Торгую если есть endIndex и если это не последний хай в структуре
+                // Короче просто исключаем торговлю на первом откате (минусит)
+                if(excludeIDM){
+                    obItem.canTrade = false;
+                    const typeExtremumsArray = obItem.type === 'low' ? lows : highs;
+                    const betweenExtremums = typeExtremumsArray.slice(startPositionIndex, obItem.endIndex + 1);
+                    if(betweenExtremums.some(s => s?.side === obItem.type)){
+                        obItem.canTrade = true;
+                    }
+                }
+
                 break;
             }
         }
@@ -397,7 +417,7 @@ export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[], m
     const positions = [];
     for (let i = 0; i < ob.length; i++) {
         const obItem = ob[i];
-        if(!obItem.endCandle){
+        if(!obItem.endCandle || !obItem.canTrade){
             continue;
         }
         const side = obItem.type === 'high' ? 'short' :'long';
@@ -454,5 +474,3 @@ export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[], m
 
     return positions;
 }
-
-const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' && ob.startCandle.low <= candle.high) || (ob.type === 'low' && ob.startCandle.high >= candle.low);
