@@ -77,7 +77,7 @@ export const TestingPage = () => {
             curr.fee = openFee + closeFee;
 
             return curr;
-        });
+        }).sort((a, b) => b.closeTime - a.closeTime);
     }, [data, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const allPositions = useMemo(() => {
@@ -108,7 +108,7 @@ export const TestingPage = () => {
 
                 return curr;
             });
-        }).flat()
+        }).flat().sort((a, b) => b.closeTime - a.closeTime)
     }, [excludeIDM, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
