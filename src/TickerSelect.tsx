@@ -7,12 +7,13 @@ interface Props {
     value: string;
     disabled?: boolean;
     onSelect: (ticker: string) => void;
+    filterSymbols?: string[]
 }
-export const TickerSelect: FC<Props> = ({disabled, value, onSelect}) => {
+export const TickerSelect: FC<Props> = ({filterSymbols, disabled, value, onSelect}) => {
     const [securities, setSecurities] = useState([]);
 
     useEffect(() => {
-        fetchSecurities().then(setSecurities)
+        fetchSecurities().then(r => filterSymbols ? r.filter(s => filterSymbols?.includes(s.symbol)) : r).then(setSecurities)
     }, []);
 
     const options = useMemo(() => securities.filter(s => !['Unknown'].includes(s.complexProductCategory) && !['MTQR', 'TQIF', 'ROPD', 'TQIR', 'TQRD', 'TQPI', 'CETS', 'TQTF', 'TQCB', 'TQOB', 'FQBR', 'RFUD'].includes(s.board) && s.currency === 'RUB').sort((a, b) => a.symbol.localeCompare(b.symbol)).map(s => ({

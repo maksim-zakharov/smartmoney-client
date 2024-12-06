@@ -126,3 +126,29 @@ export const notTradingTime = (candle: HistoryObject) => {
 
     return false;
 };
+
+export const calculateMOEXFutureFee = (side: 'buy' | 'sell', security: any, brokerFee = 0.5):number => {
+    const cfiCodeExchangeFeeMap = {
+        // Валюта
+        'FFXCSX': 0.00660,
+        // Акции
+        'FFXPSX': 0.01980,
+        // Товарка
+        'FCXCSX': 0.01320
+    }
+
+    const exchangeFeePercent = cfiCodeExchangeFeeMap[security.cfiCode];
+    if(!exchangeFeePercent){
+        return 0;
+    }
+
+    const margin = side === 'buy'? security.marginbuy : security.marginsell;
+    const exchangeFee = margin * exchangeFeePercent;
+
+    return exchangeFee * (1 + brokerFee);
+}
+
+export const calculateFutureQuantityByStopMargin  = (side: 'buy' |'sell', security: any, stopMargin: number) => {
+    const margin = side === 'buy'? security.marginbuy : security.marginsell;
+
+}

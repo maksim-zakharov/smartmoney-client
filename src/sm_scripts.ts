@@ -512,7 +512,7 @@ function DrawText(length: number, candles, x: Structure, cross: Structure, trend
             isCHoCH: isMarkerCHoCH,
             text: isMarkerCHoCH
                 ?
-                'CHoCH'
+                'IDM'
                 : 'BOS', // Текст внутри пузырька
         }
     }

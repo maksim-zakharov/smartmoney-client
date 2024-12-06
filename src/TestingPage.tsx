@@ -20,7 +20,14 @@ import {TimeframeSelect} from "./TimeframeSelect";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
-import {calculateOB, calculatePositions, calculateStructure, calculateSwings, calculateTrend} from "./samurai_patterns";
+import {
+    calculateCrosses,
+    calculateOB,
+    calculatePositions,
+    calculateStructure,
+    calculateSwings,
+    calculateTrend
+} from "./samurai_patterns";
 import {fetchCandlesFromAlor, getSecurity, notTradingTime, persision, refreshToken} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 
@@ -33,11 +40,12 @@ export const TestingPage = () => {
     const [data, setData] = useState([]);
     const [tf, onChangeTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
+    const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("default");
     const [stopMargin, setStopMargin] = useState<number>(50)
     const [feePercent, setFeePercent] = useState<number>(0.04)
-    const [baseTakePercent, setBaseTakePercent] = useState<number>(1)
+    const [baseTakePercent, setBaseTakePercent] = useState<number>(5)
     const [maxTakePercent, setMaxTakePercent] = useState<number>(0.5)
     const [security, setSecurity] = useState();
     const [token, setToken] = useState();
@@ -47,7 +55,12 @@ export const TestingPage = () => {
         const {swings: swingsData, highs, lows} = calculateSwings(data);
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
         const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
-        const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+        let orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+        if(excludeIDM){
+            const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
+            const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
+            orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
+        }
 
         const lotsize = (security?.lotsize || 1)
 
@@ -64,14 +77,19 @@ export const TestingPage = () => {
 
             return curr;
         });
-    }, [data, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
-            const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+            if(excludeIDM){
+                const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
+                const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
+                orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
+            }
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
@@ -90,7 +108,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat()
-    }, [allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [excludeIDM, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -244,6 +262,13 @@ export const TestingPage = () => {
                         </Radio.Group>
                     </FormItem>
                 </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={excludeIDM} onChange={e => setExcludeIDM(e.target.checked)}>Исключить IDM</Checkbox>
+                    </FormItem>
+                </Col>
+            </Row>
+            <Row gutter={8} align="bottom">
                 <Col>
                     <FormItem label="Базовый коэф. тейк-профита">
                         <Slider value={baseTakePercent} disabled={takeProfitStrategy === "max"} onChange={setBaseTakePercent} min={1} step={1} max={20}/>

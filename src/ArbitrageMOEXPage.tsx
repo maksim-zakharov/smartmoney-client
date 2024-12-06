@@ -1,45 +1,78 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {DatePicker, Radio, Select, Space, TimeRangePickerProps} from "antd";
+import {Checkbox, DatePicker, Radio, Select, Slider, Space, TimeRangePickerProps} from "antd";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./Chart";
-import {calculateCandle} from "../symbolFuturePairs";
+import {calculateCandle, symbolFuturePairs} from "../symbolFuturePairs";
 import moment from "moment";
-import {fetchCandlesFromAlor, getCommonCandles} from "./utils";
+import {calculateMultiple, fetchCandlesFromAlor, getCommonCandles} from "./utils";
+import {TickerSelect} from "./TickerSelect";
 
 const {RangePicker} = DatePicker
 
-const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
-
 export const ArbitrageMOEXPage = () => {
-    const [securities, setSecurities] = useState([]);
+    const [chartValues, onChangeChart] = useState({filteredBuyMarkers: [], filteredSellMarkers: []});
+    const [inputTreshold, onChange] = useState(0.006);
     const [stockData, setStockData] = useState([]);
     const [futureData, setFutureData] = useState([]);
     const [searchParams, setSearchParams] = useSearchParams();
-    const multiple = searchParams.get('multiple') || '100';
     const tickerStock = searchParams.get('ticker-stock') || 'SBER';
-    const tickerFuture = searchParams.get('ticker-future') || 'SBRF-12.24';
+    // const tickerFuture = searchParams.get('ticker-future') || 'SBRF-12.24';
     const tf = searchParams.get('tf') || '900';
     const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
     const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
 
+    const tickerFuture = useMemo(() => {
+        const ticker = symbolFuturePairs.find(pair => pair.stockSymbol === tickerStock)?.futuresSymbol;
+        if(ticker){
+            return `${ticker}-12.24`
+        }
+        return ticker;
+    }, [tickerStock]);
+
+
+    const multiple = useMemo(() =>  stockData?.length && futureData?.length ? calculateMultiple(stockData[stockData.length - 1].close, futureData[futureData.length - 1].close) : 0, [futureData, stockData]);
+
+    const stockTickers = useMemo(() => symbolFuturePairs.map(pair => pair.stockSymbol), []);
+
     useEffect(() => {
-        fetchCandlesFromAlor(tickerStock, tf, fromDate, toDate).then(setStockData);
+        tickerStock && fetchCandlesFromAlor(tickerStock, tf, fromDate, toDate).then(setStockData);
     }, [tf, tickerStock, fromDate, toDate]);
 
     useEffect(() => {
-        fetchCandlesFromAlor(tickerFuture, tf, fromDate, toDate).then(setFutureData);
+        tickerFuture && fetchCandlesFromAlor(tickerFuture, tf, fromDate, toDate).then(setFutureData);
     }, [tf, tickerFuture, fromDate, toDate]);
 
+    const commonCandles = useMemo(() => getCommonCandles(stockData, futureData), [stockData, futureData]);
+
     const data = useMemo(() => {
-        if(stockData.length && futureData.length){
+        if(stockData?.length && futureData?.length){
             const {filteredStockCandles, filteredFuturesCandles} = getCommonCandles(stockData, futureData);
 
         return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, Number(multiple))).filter(Boolean)
         }
         return stockData;
     }, [stockData, futureData, multiple]);
+
+    const profit = useMemo(() => {
+        let PnL = 0;
+        for (let i = 0; i < chartValues.filteredBuyMarkers.length; i++) {
+            const marker = chartValues.filteredBuyMarkers[i];
+            const stockCandle = commonCandles.filteredStockCandles[marker.index];
+            PnL += inputTreshold; // (stockCandle.close * inputTreshold);
+        }
+        for (let i = 0; i < chartValues.filteredSellMarkers.length; i++) {
+            const marker = chartValues.filteredSellMarkers[i];
+            const stockCandle = commonCandles.filteredStockCandles[marker.index];
+            PnL += inputTreshold; // (stockCandle.close * inputTreshold);
+        }
+
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,  // Минимальное количество знаков после запятой
+            maximumFractionDigits: 2,  // Максимальное количество знаков после запятой
+        }).format(PnL * 100);
+    }, [chartValues, inputTreshold, commonCandles])
 
     const setSize = (tf: string) => {
         searchParams.set('tf', tf);
@@ -50,19 +83,6 @@ export const ArbitrageMOEXPage = () => {
         searchParams.set(`ticker-${type}`, ticker);
         setSearchParams(searchParams)
     }
-
-    const onSelectMultiple = (ticker) => {
-        searchParams.set(`multiple`, ticker);
-        setSearchParams(searchParams)
-    }
-
-    const options = useMemo(() => securities
-        .filter(s => !['Unknown'].includes(s.complexProductCategory)
-            && !['TQIF', 'ROPD', 'TQIR', 'TQRD', 'TQPI', 'CETS', 'TQTF', 'TQCB', 'TQOB', 'FQBR'].includes(s.board))
-        .sort((a, b) => a.symbol.localeCompare(b.symbol)).map(s => ({
-        label: s.symbol,
-        value: s.symbol
-    })), [securities]);
 
     const onChangeRangeDates = (value: Dayjs[], dateString) => {
         console.log('Selected Time: ', value);
@@ -80,9 +100,6 @@ export const ArbitrageMOEXPage = () => {
         { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
     ];
 
-    useEffect(() => {
-        fetchSecurities().then(setSecurities)
-    }, []);
     return <>
         <Space>
             <Radio.Group value={tf} onChange={(e) => setSize(e.target.value)}>
@@ -93,42 +110,26 @@ export const ArbitrageMOEXPage = () => {
                 <Radio.Button value="14400">4H</Radio.Button>
                 <Radio.Button value="D">D1</Radio.Button>
             </Radio.Group>
-            <Select
-                value={tickerStock}
-                showSearch
-                placeholder="Введи тикер"
-                onSelect={onSelectTicker('stock')}
-                filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                }
-                style={{width: 160}}
-                options={options}
-            />
-            <Select
-                value={tickerFuture}
-                showSearch
-                placeholder="Введи тикер"
-                onSelect={onSelectTicker('future')}
-                filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                }
-                style={{width: 160}}
-                options={options}
-            />
-            <Select
-                value={multiple}
-                onSelect={onSelectMultiple}
-                style={{width: 160}}
-                options={[{label: '1', value: 1,},
-                    {label: '10', value: 10,},
-                    {label: '100', value: 100,}]}
-            />
+            <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')}/>
+            {/*<Select*/}
+            {/*    value={tickerFuture}*/}
+            {/*    showSearch*/}
+            {/*    placeholder="Введи тикер"*/}
+            {/*    onSelect={onSelectTicker('future')}*/}
+            {/*    filterOption={(input, option) =>*/}
+            {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
+            {/*    }*/}
+            {/*    style={{width: 160}}*/}
+            {/*    options={options}*/}
+            {/*/>*/}
             <RangePicker
                 presets={rangePresets}
                 value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                 format="YYYY-MM-DD"
                 onChange={onChangeRangeDates} />
+            {profit}%
         </Space>
-    <Chart data={data} tf={tf}/>
+        <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange}/>
+    <Chart inputTreshold={inputTreshold} data={data} tf={tf} onChange={onChangeChart}/>
     </>
 }

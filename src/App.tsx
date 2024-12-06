@@ -19,7 +19,7 @@ export default function App() {
 
     const menuItems = [
         {key: '/', label: 'Главная', element: <MainPage/>},
-        {key: '/test', label: 'BOS/CHoCH', element: <TestPage/>},
+        {key: '/test', label: 'BOS/IDM', element: <TestPage/>},
         {key: '/arbitrage-moex', label: 'Арбитраж MOEX', element: <ArbitrageMOEXPage/>},
         {key: '/arbitrage-bybit', label: 'Арбитраж BYBIT', element: <ArbitrageBYBITPage/>},
         {key: '/discrepancy-rating', label: 'Расдвижки', element: <DiscrepancyRatingPage/>},

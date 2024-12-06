@@ -13,8 +13,10 @@ function capitalizeFirstLetter(str) {
 
 export const Chart: FC<{
     data: any[],
+    inputTreshold?: number,
     tf: number
-}> = ({data, tf}) => {
+    onChange: (value: any) => any,
+}> = ({data, inputTreshold, tf, onChange}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -159,7 +161,7 @@ export const Chart: FC<{
                 priceLineVisible: false,
             });
 
-            const treshold = 0.007;
+            const treshold = (inputTreshold || 0.007);
 
             const ema = calculateEMA(
                 data.map((h) => h.close),
@@ -178,12 +180,14 @@ export const Chart: FC<{
             });
 
             const sellSeriesData = data
-                .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i] + treshold}));
+                .map((extremum, i) => ({time: extremum.time * 1000, index: i, value: ema[i] + treshold}));
             // @ts-ignore
             sellSeries.setData(sellSeriesData);
 
-            const sellMarkers = sellSeriesData
+            const filteredSellMarkers =sellSeriesData
                 .filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value)
+
+            const sellMarkers = filteredSellMarkers
                 .map((extremum) => ({
                     color: markerColors.bearColor,
                     time: extremum.time as Time,
@@ -198,18 +202,22 @@ export const Chart: FC<{
             });
 
             const buySeriesData = data
-                .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i] - treshold}));
+                .map((extremum, i) => ({time: extremum.time * 1000, index: i, value: ema[i] - treshold}));
             // @ts-ignore
             buySeries.setData(buySeriesData);
 
-            const buyMarkers = buySeriesData
+            const filteredBuyMarkers = buySeriesData
                 .filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value)
+
+            const buyMarkers = filteredBuyMarkers
                 .map((extremum) => ({
                     color: markerColors.bullColor,
                     time: extremum.time as Time,
                     shape: 'circle',
                     position: 'belowBar',
                 }));
+
+            onChange?.({filteredBuyMarkers, filteredSellMarkers})
 
             newSeries.setMarkers([...sellMarkers, ...buyMarkers].sort((a, b) => a.time - b.time) as any[]);
 
@@ -227,7 +235,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [data, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, tf]
+        [inputTreshold, data, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, tf]
     );
 
     return <div

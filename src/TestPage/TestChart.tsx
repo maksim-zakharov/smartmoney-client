@@ -26,6 +26,7 @@ function capitalizeFirstLetter(str) {
 
 export const Chart: FC<{
     smPatterns?: boolean,
+    excludeIDM?: boolean,
     maxDiff?: number
     multiStop?: number
     noDoubleSwing?: boolean,
@@ -43,7 +44,7 @@ export const Chart: FC<{
     windowLength: number,
     tf: number,
     onProfit: any
-}> = ({maxDiff,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -197,8 +198,14 @@ export const Chart: FC<{
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             const {trend: newTrend} = calculateTrend(highParts, lowParts, data);
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
-            const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
-            const orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+            // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
+            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend);
+            if(excludeIDM){
+                // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
+                const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
+                orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
+            }
+
             const positions = calculatePositions(orderBlocks, data, maxDiff, multiStop);
             onProfit?.({positions})
 
@@ -483,13 +490,13 @@ export const Chart: FC<{
             // smPatterns && [...topPlots.filter(Boolean).map(v => ({
             //     ...v,
             //     position: 'aboveBar',
-            //     text: v.isCHoCH ? 'CHoCH' : 'BOS',
+            //     text: v.isCHoCH ? 'IDM' : 'BOS',
             //     color: markerColors.bullColor
             // })),
             //     ...btmPlots.filter(Boolean).map(v => ({
             //         ...v,
             //         position: 'belowBar',
-            //         text: v.isCHoCH ? 'CHoCH' : 'BOS',
+            //         text: v.isCHoCH ? 'IDM' : 'BOS',
             //         color: markerColors.bearColor
             //     }))
             // ].forEach(plot => {
@@ -571,7 +578,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div

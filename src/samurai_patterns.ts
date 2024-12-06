@@ -213,7 +213,7 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
                 textCandle: candles[textIndex],
                 to: {index: i, time: candles[i].time, price: candles[i].close},
                 type: 'low',
-                text: trends[i]?.trend === -1 ? 'BOS' : 'CHoCH'
+                text: trends[i]?.trend === -1 ? 'BOS' : 'IDM'
             });
         }
         else if(lastHigh?.price < candles[i].close && (!lastBOS || lastBOS?.from?.index < lastHigh?.index)){
@@ -224,7 +224,7 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
                 textCandle: candles[textIndex],
                 to: {index: i, time: candles[i].time, price: candles[i].close},
                 type: 'high',
-                text: trends[i]?.trend === 1 ? 'BOS' : 'CHoCH'
+                text: trends[i]?.trend === 1 ? 'BOS' : 'IDM'
             });
         }
 
@@ -329,44 +329,54 @@ export interface OrderBlock {
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
 export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], trends: Trend[]) => {
-    const trendHighs = highs.filter(h => h && trends[h.index]?.trend === -1);
-    const trendLows = lows.filter(l => l && trends[l.index]?.trend === 1);
-
     let ob: OrderBlock [] = [];
+    const MAX_CANDLES_COUNT = 10;
 
-    for (let i = 0; i < trendHighs.length; i++) {
-        const candlesBatch = candles.slice(trendHighs[i].index, trendHighs[i].index + 10);
-        const imbalance = isOrderblock(candlesBatch);
-        if (imbalance?.type === 'high') {
+    for (let i = 0; i < highs.length; i++) {
+        const high = highs[i];
+        const index = high?.index
+        if(!high || trends[index]?.trend !== -1){
+            continue;
+        }
+        const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
+        const orderBlock = isOrderblock(candlesBatch);
+        if (orderBlock?.type === 'high') {
             ob.push({
-                type: imbalance.type,
-                index: trendHighs[i].index,
-                time: trendHighs[i].time,
-                lastOrderblockCandle: imbalance.lastOrderblockCandle,
-                lastImbalanceCandle: imbalance.lastImbalanceCandle,
-                firstImbalanceIndex: imbalance.firstImbalanceIndex,
-                imbalanceIndex: imbalance.imbalanceIndex,
-                startCandle: imbalance.orderblock
+                type: orderBlock.type,
+                index,
+                time: high.time,
+                lastOrderblockCandle: orderBlock.lastOrderblockCandle,
+                lastImbalanceCandle: orderBlock.lastImbalanceCandle,
+                firstImbalanceIndex: orderBlock.firstImbalanceIndex,
+                imbalanceIndex: orderBlock.imbalanceIndex,
+                startCandle: orderBlock.orderblock
             } as any)
         }
     }
 
-    for (let i = 0; i < trendLows.length; i++) {
-        const candlesBatch = candles.slice(trendLows[i].index, trendLows[i].index + 10);
-        const imbalance = isOrderblock(candlesBatch);
-        if (imbalance?.type === 'low') {
+    for (let i = 0; i < lows.length; i++) {
+        const low = lows[i];
+        const index = low?.index
+        if(!lows[i] || trends[index]?.trend !== 1){
+            continue;
+        }
+        const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
+        const orderBlock = isOrderblock(candlesBatch);
+        if (orderBlock?.type === 'low') {
             ob.push({
-                type: imbalance.type,
-                index: trendLows[i].index,
-                time: trendLows[i].time,
-                lastOrderblockCandle: imbalance.lastOrderblockCandle,
-                lastImbalanceCandle: imbalance.lastImbalanceCandle,
-                firstImbalanceIndex: imbalance.firstImbalanceIndex,
-                imbalanceIndex: imbalance.imbalanceIndex,
-                startCandle: imbalance.orderblock
+                type: orderBlock.type,
+                index,
+                time: lows[i].time,
+                lastOrderblockCandle: orderBlock.lastOrderblockCandle,
+                lastImbalanceCandle: orderBlock.lastImbalanceCandle,
+                firstImbalanceIndex: orderBlock.firstImbalanceIndex,
+                imbalanceIndex: orderBlock.imbalanceIndex,
+                startCandle: orderBlock.orderblock
             } as any)
         }
     }
+
+    ob = ob.sort((a, b) => a.index - b.index);
 
     for (let i = 0; i < ob.length; i++) {
         const obItem = ob[i];
