@@ -1,6 +1,8 @@
 // Функция для получения данных из Alor API
 import {HistoryObject} from "./api";
 
+import dayjs from 'dayjs';
+
 export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit?) {
     let url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX`;
     if(limit){
@@ -151,4 +153,100 @@ export const calculateMOEXFutureFee = (side: 'buy' | 'sell', security: any, brok
 export const calculateFutureQuantityByStopMargin  = (stopMargin: number, openPrice: number, stopPrice: number) => {
     const loss = Math.abs(stopPrice - openPrice);
     return Math.floor(stopMargin / loss);
+}
+
+function getDateOnly(dateString) {
+    return dayjs(dateString).format('YYYY-MM-DD'); // Возвращаем дату в формате "год-месяц-день"
+}
+
+export const groupedTrades = trades => trades.reduce((acc, trade) => {
+    const date = getDateOnly(trade.openTime * 1000);
+    if (!acc[date]) {
+        acc[date] = [];
+    }
+    acc[date].push(trade);
+    return acc;
+}, {});
+
+export const calculateDrawdowns = (positions) => {
+
+    const trades = groupedTrades(positions);
+    const allDates = Object.keys(trades).sort();
+    const cumulativePnLs = [];
+    allDates.forEach(date => {
+        let cumulativePnL = 0;
+        // Суммируем PnL для всех сделок этого дня
+        trades[date].forEach(trade => {
+            cumulativePnL += trade.pnl;
+        });
+        cumulativePnLs.push({value: cumulativePnL});
+    });
+    const drawdown = calculateDrawdown(cumulativePnLs)
+return drawdown;
+
+// Массив всех дат в порядке возрастания
+//     const allDates = Object.keys(trades).sort();
+
+// Переменные для накопленного PnL и расчета просадки
+    let cumulativePnL = 0;
+    let maxPnL = 0;
+    const dailyDrawdowns = [];
+
+// Для каждого дня считаем накопленный PnL и просадку
+    allDates.forEach(date => {
+        // Суммируем PnL для всех сделок этого дня
+        trades[date].forEach(trade => {
+            cumulativePnL += trade.pnl;
+        });
+
+        // Вычисляем просадку за период (смотрим на текущий накопленный PnL и максимум за этот период)
+        maxPnL = Math.max(maxPnL, cumulativePnL);
+        const drawdown = cumulativePnL - maxPnL;
+
+        // Сохраняем результаты для этого дня
+        dailyDrawdowns.push({
+            date,
+            cumulativePnL,
+            maxPnL,
+            drawdown
+        });
+    });
+
+    return dailyDrawdowns;
+}
+
+export const calculateDrawdown = (positions: { value: number }[]): number => {
+    if (!positions.length) {
+        return 0;
+    }
+
+    return maxDrawdown_(positions.map(p => p.value), 0, positions.length - 1)[0];
+}
+
+function maxDrawdown_(equityCurve, idxStart, idxEnd) {
+    // Initialisations
+    let highWaterMark = -Infinity;
+    let maxDd = -Infinity;
+    let idxHighWaterMark = -1;
+    let idxStartMaxDd = -1;
+    let idxEndMaxDd = -1;
+
+    // Loop over all the values to compute the maximum drawdown
+    for (let i = idxStart; i < idxEnd + 1; ++i) {
+        if (equityCurve[i] > highWaterMark) {
+            highWaterMark = equityCurve[i];
+            idxHighWaterMark = i;
+        }
+
+        const dd = (highWaterMark - equityCurve[i]) / highWaterMark;
+
+        if (dd > maxDd) {
+            maxDd = dd;
+            idxStartMaxDd = idxHighWaterMark;
+            idxEndMaxDd = i;
+        }
+    }
+
+    // Return the computed values
+    return [maxDd, idxStartMaxDd, idxEndMaxDd];
 }

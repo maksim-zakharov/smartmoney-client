@@ -28,7 +28,7 @@ import {
     calculateSwings,
     calculateTrend
 } from "./samurai_patterns";
-import {fetchCandlesFromAlor, getSecurity, notTradingTime, persision, refreshToken} from "./utils";
+import {calculateDrawdowns, fetchCandlesFromAlor, getSecurity, notTradingTime, persision, refreshToken} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 
 const {RangePicker} = DatePicker;
@@ -125,6 +125,8 @@ export const TestingPage = () => {
             });
         }).flat().sort((a, b) => b.closeTime - a.closeTime)
     }, [excludeIDM, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+
+    const drawdowns = useMemo(() => calculateDrawdowns(positions), [positions]);
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -242,7 +244,7 @@ export const TestingPage = () => {
         return record.newPnl < 0 ? 'sell' : 'buy';
     };
 
-    return <div style={{width: 'max-content', minWidth: "1700px"}}>
+    return <div style={{width: 'max-content', minWidth: "1800px"}}>
         <Form layout="vertical">
             <Row gutter={8}>
                 <Col>
@@ -409,6 +411,17 @@ export const TestingPage = () => {
                                     />
                                 </Card>
                             </Col>
+                            {/*<Col span={6}>*/}
+                            {/*    <Card bordered={false}>*/}
+                            {/*        <Statistic*/}
+                            {/*            title="Просадка"*/}
+                            {/*            value={drawdowns || 0}*/}
+                            {/*            precision={2}*/}
+                            {/*            valueStyle={{color: "rgb(255, 117, 132)"}}*/}
+                            {/*            suffix={`%`}*/}
+                            {/*        />*/}
+                            {/*    </Card>*/}
+                            {/*</Col>*/}
                         </Row>
                     <Table loading={loading} rowClassName={rowClassName} size="small" columns={oldOneTickerColumns} dataSource={isAllTickers ? allPositions : positions}/>
                     </FormItem>
