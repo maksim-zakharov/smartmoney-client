@@ -81,11 +81,12 @@ export const TestingPage = () => {
             curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
             const openFee = curr.openPrice * curr.quantity * lotsize * fee;
             const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize * fee;
-            curr.newPnl = curr.pnl * curr.quantity * lotsize - closeFee - openFee;
+
             curr.fee = openFee + closeFee;
+            curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee;
 
             return curr;
-        }).sort((a, b) => b.closeTime - a.closeTime);
+        }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
     }, [data, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const allPositions = useMemo(() => {
@@ -117,16 +118,14 @@ export const TestingPage = () => {
                 curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
                 const openFee = curr.openPrice * curr.quantity * lotsize * fee;
                 const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize * fee;
-                curr.newPnl = curr.pnl * curr.quantity * lotsize - closeFee - openFee;
                 curr.fee = openFee + closeFee;
+                curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee;
                 curr.ticker = ticker;
 
                 return curr;
             });
-        }).flat().sort((a, b) => b.closeTime - a.closeTime)
+        }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
     }, [excludeIDM, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
-
-    const drawdowns = useMemo(() => calculateDrawdowns(positions), [positions]);
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);

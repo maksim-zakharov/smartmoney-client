@@ -182,7 +182,7 @@ export const calculateDrawdowns = (positions) => {
         cumulativePnLs.push({value: cumulativePnL});
     });
     const drawdown = calculateDrawdown(cumulativePnLs)
-return drawdown;
+    return drawdown;
 
 // Массив всех дат в порядке возрастания
 //     const allDates = Object.keys(trades).sort();
@@ -213,7 +213,7 @@ return drawdown;
     });
 
     return dailyDrawdowns;
-}
+};
 
 export const calculateDrawdown = (positions: { value: number }[]): number => {
     if (!positions.length) {
