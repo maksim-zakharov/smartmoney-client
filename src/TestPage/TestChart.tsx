@@ -261,7 +261,7 @@ export const Chart: FC<{
 
             if(showOB || showEndOB || imbalances){
                 allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
-                    color: s.type === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                    color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.time * 1000) as Time,
                     shape: 'text',
                     position: s.type === 'high' ? 'aboveBar' : 'belowBar',
@@ -278,7 +278,7 @@ export const Chart: FC<{
                 }));
 
                 orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time * 1000}, rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time * 1000}}, {
-                    fillColor: 'rgba(255, 100, 219, .3)',
+                    fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
                     showLabels: false,
                     borderWidth: 0,
                 }));
