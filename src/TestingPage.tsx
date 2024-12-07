@@ -21,9 +21,9 @@ import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
 import {
-    calculateCrosses,
-    calculateOB,
-    calculatePositions,
+    calculateCrosses, calculateFakeout,
+    calculateOB, calculatePositionsByFakeouts,
+    calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
     calculateTrend
@@ -42,6 +42,7 @@ export const TestingPage = () => {
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
     const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
+    const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("default");
     const [stopMargin, setStopMargin] = useState<number>(50)
@@ -67,7 +68,14 @@ export const TestingPage = () => {
 
         const fee = feePercent / 100
 
-        return calculatePositions(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent).map((curr) => {
+        const positions = calculatePositionsByOrderblocks(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+        if(tradeFakeouts){
+            const fakeouts = calculateFakeout(highParts, lowParts, data)
+            const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
+            positions.push(...fakeoutPositions);
+        }
+
+        return positions.map((curr) => {
             const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
             const stopLossMarginPerLot = diff * lotsize
             curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
@@ -78,7 +86,7 @@ export const TestingPage = () => {
 
             return curr;
         }).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -94,9 +102,16 @@ export const TestingPage = () => {
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
-            const fee = feePercent / 100
+            const fee = feePercent / 100;
 
-            return calculatePositions(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent).map((curr) => {
+            const positions = calculatePositionsByOrderblocks(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+            if(tradeFakeouts){
+                const fakeouts = calculateFakeout(highParts, lowParts, data)
+                const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
+                positions.push(...fakeoutPositions);
+            }
+
+            return positions.map((curr) => {
                 const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
                 const stopLossMarginPerLot = diff * lotsize
                 curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
@@ -109,7 +124,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().sort((a, b) => b.closeTime - a.closeTime)
-    }, [excludeIDM, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [excludeIDM, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -271,6 +286,11 @@ export const TestingPage = () => {
                 <Col>
                     <FormItem>
                         <Checkbox value={confirmTrend} onChange={e => setConfirmTrend(e.target.checked)}>Подтвержденный тренд</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Ложные пробои</Checkbox>
                     </FormItem>
                 </Col>
             </Row>

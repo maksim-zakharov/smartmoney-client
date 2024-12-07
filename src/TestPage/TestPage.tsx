@@ -84,6 +84,7 @@ export const TestPage = () => {
         showEndOB: checkboxValues.includes('showEndOB'),
         imbalances: checkboxValues.includes('imbalances'),
         positions: checkboxValues.includes('positions'),
+        tradeFakeouts: checkboxValues.includes('tradeFakeouts'),
         excludeIDM: checkboxValues.includes('excludeIDM'),
         showFakeouts: checkboxValues.includes('showFakeouts'),
     }), [checkboxValues])
@@ -152,6 +153,7 @@ export const TestPage = () => {
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
             <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>
             <Checkbox key="positions" value="positions">Сделки</Checkbox>
+            <Checkbox key="tradeFakeouts" value="tradeFakeouts">Торговать ложные пробои</Checkbox>
             <Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
         </Checkbox.Group>

@@ -11,7 +11,7 @@ import {
 import {calculate} from "../sm_scripts";
 import {
     calculateBreakingBlocks,
-    calculateCrosses, calculateFakeout, calculateOB, calculatePositions,
+    calculateCrosses, calculateFakeout, calculateOB, calculatePositionsByFakeouts, calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
     calculateTrend
@@ -37,6 +37,7 @@ export const Chart: FC<{
     trend?: boolean,
     showOB?: boolean,
     positions?: boolean,
+    tradeFakeouts?: boolean,
     showEndOB?: boolean,
     smartTrend?: boolean,
     noInternal?: boolean,
@@ -47,7 +48,7 @@ export const Chart: FC<{
     windowLength: number,
     tf: number,
     onProfit: any
-}> = ({maxDiff, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -205,7 +206,7 @@ export const Chart: FC<{
             let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
             const fakeouts = calculateFakeout(highParts, lowParts, data)
 
-            showFakeouts&& allMarkers.push(...fakeouts.map(s => ({
+            showFakeouts && allMarkers.push(...fakeouts.map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.time * 1000) as Time,
                 shape: 'text',
@@ -217,7 +218,11 @@ export const Chart: FC<{
             //     orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
             // }
 
-            const positions = calculatePositions(orderBlocks, data, maxDiff, multiStop);
+            const positions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop);
+            if(tradeFakeouts){
+                const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, multiStop);
+                positions.push(...fakeoutPositions);
+            }
             onProfit?.({positions})
 
             const lastCandle = data[data.length - 1];
@@ -234,7 +239,7 @@ export const Chart: FC<{
             }
 
             if(showPositions){
-                const poses = positions.map(s => [{
+                const poses = positions.sort((a, b) => a.openTime - b.openTime).map(s => [{
                     color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.openTime * 1000) as Time,
                     shape: s.side === 'long' ? 'arrowUp' : 'arrowDown',
@@ -589,7 +594,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [showFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [showFakeouts, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
