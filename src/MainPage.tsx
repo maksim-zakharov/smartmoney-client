@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {Card, Col, Layout, Row, Slider, SliderSingleProps, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
+import {Card, Col, Row, Slider, SliderSingleProps, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
 import {useCandlesQuery, usePortfolioQuery} from "./api";
 import {
     ColorType,
@@ -23,9 +23,6 @@ function timeToLocal(originalTime: number) {
 }
 
 const roundTime = (date: any, tf: string, utc: boolean = true) => {
-    // const time = new Date(date).getTime() / 1000;
-    // const diff = time % (Number(tf));
-    // const roundedTime = time - diff;
 
     const timestamp = new Date(date).getTime() / 1000;
 
@@ -36,7 +33,6 @@ const roundTime = (date: any, tf: string, utc: boolean = true) => {
     const roundedTimestamp = Math.floor(timestamp / timeframeMs) * timeframeMs;
 
     return (utc ? timeToLocal(roundedTimestamp) : roundedTimestamp) as UTCTimestamp;
-    // return timeToLocal(roundedTime) as UTCTimestamp;
 };
 
 export const moneyFormat = (
@@ -55,8 +51,6 @@ export const moneyFormat = (
 
     return numberFormat.format(money);
 };
-
-const {Content} = Layout;
 
 export const createRectangle = (_series: ISeriesApi<SeriesType>, orderBlock, options: Partial<RectangleDrawingToolOptions>) => {
     const rectangle = new Rectangle(orderBlock.leftTop, orderBlock.rightBottom, {...options});

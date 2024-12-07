@@ -269,7 +269,7 @@ export const Chart: FC<{
                 })));
 
                 imbalances && orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.lastOrderblockCandle.high, time: orderBlock.lastOrderblockCandle.time * 1000}, rightBottom: {price: orderBlock.lastImbalanceCandle.low, time: (orderBlock.lastImbalanceCandle || lastCandle).time * 1000}}, {
-                    fillColor: 'rgba(179, 199, 219, .2)',
+                    fillColor: 'rgba(179, 199, 219, .3)',
                     showLabels: false,
                     borderLeftWidth: 0,
                     borderRightWidth: 0,
@@ -278,7 +278,7 @@ export const Chart: FC<{
                 }));
 
                 orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time * 1000}, rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time * 1000}}, {
-                    fillColor: 'rgba(255, 100, 219, 0.2)',
+                    fillColor: 'rgba(255, 100, 219, .3)',
                     showLabels: false,
                     borderWidth: 0,
                 }));

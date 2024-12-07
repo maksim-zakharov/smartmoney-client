@@ -6,9 +6,7 @@ import {
     ISeriesPrimitivePaneRenderer,
     ISeriesPrimitivePaneView,
     SeriesAttachedParameter,
-    SeriesDataItemTypeMap,
     SeriesPrimitivePaneViewZOrder,
-    SeriesType,
     Time,
 } from 'lightweight-charts';
 import { PluginBase } from './plugin-base';
@@ -104,7 +102,6 @@ export class SessionHighlighting
     implements ISeriesPrimitive<Time>
 {
     _paneViews: SessionHighlightingPaneView[];
-    _seriesData: SeriesDataItemTypeMap[SeriesType][] = [];
     _backgroundColors: BackgroundData[] = [];
     _options: Required<SessionHighlightingOptions>;
     _highlighter: SessionHighlighter;

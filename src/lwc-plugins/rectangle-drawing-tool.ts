@@ -1,18 +1,13 @@
 import { CanvasRenderingTarget2D } from 'fancy-canvas';
 import {
     Coordinate,
-    IChartApi,
     isBusinessDay,
-    ISeriesApi,
     ISeriesPrimitiveAxisView,
     ISeriesPrimitivePaneRenderer,
     ISeriesPrimitivePaneView,
-    MouseEventParams,
     SeriesPrimitivePaneViewZOrder,
-    SeriesType,
     Time,
 } from 'lightweight-charts';
-import { ensureDefined } from './helpers/assertions';
 import { PluginBase } from './plugin-base';
 import { positionsBox } from './helpers/dimensions/positions';
 
@@ -111,6 +106,10 @@ class RectanglePaneView implements ISeriesPrimitivePaneView {
             this._p2,
             this._source._options
         );
+    }
+
+    zOrder(): SeriesPrimitivePaneViewZOrder {
+        return 'top';
     }
 }
 
@@ -228,10 +227,6 @@ abstract class RectangleAxisView implements ISeriesPrimitiveAxisView {
     }
     backColor() {
         return this._source._options.labelColor;
-    }
-    movePoint(p: Point) {
-        this._p = p;
-        this.update();
     }
 }
 
@@ -353,119 +348,5 @@ export class Rectangle extends PluginBase {
 
     timeAxisPaneViews() {
         return this._timeAxisPaneViews;
-    }
-
-    applyOptions(options: Partial<RectangleDrawingToolOptions>) {
-        this._options = { ...this._options, ...options };
-        this.requestUpdate();
-    }
-}
-
-class PreviewRectangle extends Rectangle {
-    constructor(
-        p1: Point,
-        p2: Point,
-        options: Partial<RectangleDrawingToolOptions> = {}
-    ) {
-        super(p1, p2, options);
-        this._options.fillColor = this._options.previewFillColor;
-    }
-
-    public updateEndPoint(p: Point) {
-        this._p2 = p;
-        this._paneViews[0].update();
-        this._timeAxisViews[1].movePoint(p);
-        this._priceAxisViews[1].movePoint(p);
-        this.requestUpdate();
-    }
-}
-
-export class RectangleDrawingTool {
-    private _chart: IChartApi | undefined;
-    private _series: ISeriesApi<SeriesType> | undefined;
-    private _defaultOptions: Partial<RectangleDrawingToolOptions>;
-    private _rectangles: Rectangle[];
-    private _previewRectangle: PreviewRectangle | undefined = undefined;
-    private _points: Point[] = [];
-    private _drawing: boolean = true;
-    private _toolbarButton: HTMLDivElement | undefined;
-
-    constructor(
-        chart: IChartApi,
-        series: ISeriesApi<SeriesType>,
-        options: Partial<RectangleDrawingToolOptions>,
-        anchors: {leftTop: Point, rightBottom: Point}
-    ) {
-        this._chart = chart;
-        this._series = series;
-        this._defaultOptions = options;
-        this._rectangles = [];
-
-
-        this._addPoint(anchors.leftTop);
-        this._addPoint(anchors.rightBottom);
-
-        this._chart.subscribeClick(this._clickHandler);
-        this._chart.subscribeCrosshairMove(this._moveHandler);
-    }
-
-    private _clickHandler = (param: MouseEventParams) => this._onClick(param);
-    private _moveHandler = (param: MouseEventParams) => this._onMouseMove(param);
-
-    private _onClick(param: MouseEventParams) {
-        if (!this._drawing || !param.point || !param.time || !this._series) return;
-        const price = this._series.coordinateToPrice(param.point.y);
-        if (price === null) {
-            return;
-        }
-        this._addPoint({
-            time: param.time,
-            price,
-        });
-    }
-
-    private _onMouseMove(param: MouseEventParams) {
-        if (!this._drawing || !param.point || !param.time || !this._series) return;
-        const price = this._series.coordinateToPrice(param.point.y);
-        if (price === null) {
-            return;
-        }
-        if (this._previewRectangle) {
-            this._previewRectangle.updateEndPoint({
-                time: param.time,
-                price,
-            });
-        }
-    }
-
-    private _addPoint(p: Point) {
-        this._points.push(p);
-        if (this._points.length >= 2) {
-            this._addNewRectangle(this._points[0], this._points[1]);
-            this._removePreviewRectangle();
-        }
-        if (this._points.length === 1) {
-            this._addPreviewRectangle(this._points[0]);
-        }
-    }
-
-    private _addNewRectangle(p1: Point, p2: Point) {
-        const rectangle = new Rectangle(p1, p2, { ...this._defaultOptions });
-        this._rectangles.push(rectangle);
-        ensureDefined(this._series).attachPrimitive(rectangle);
-    }
-
-    private _addPreviewRectangle(p: Point) {
-        this._previewRectangle = new PreviewRectangle(p, p, {
-            ...this._defaultOptions,
-        });
-        ensureDefined(this._series).attachPrimitive(this._previewRectangle);
-    }
-
-    private _removePreviewRectangle() {
-        if (this._previewRectangle) {
-            ensureDefined(this._series).detachPrimitive(this._previewRectangle);
-            this._previewRectangle = undefined;
-        }
     }
 }
