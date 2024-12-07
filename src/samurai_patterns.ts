@@ -475,7 +475,26 @@ export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[], m
     return positions;
 }
 
-// Прошлый хай пробит, но пробит только хвостом и закрытие было под прошлым хаем
+export const isWickCandle = (candle: HistoryObject, type: 'high' | 'low', wickRatio = 2) => {
+    const body = Math.abs(candle.open - candle.close);
+    const bodyHigh = Math.max(candle.open, candle.close)
+    const bodyLow = Math.min(candle.open, candle.close)
+    const topWick = candle.high - bodyHigh;
+    const bottomWick = bodyLow - candle.low;
+
+    const bodyWickRatio = body / wickRatio;
+
+    const hasWick = 'high' ?  bodyWickRatio <= topWick : bodyWickRatio <= bottomWick
+
+    return hasWick && (type === 'high' ? topWick > bottomWick : bottomWick > topWick);
+}
+/**
+ * Прошлый хай пробит, но пробит только хвостом и закрытие было под прошлым хаем
+ * @link https://smart-money.trading/smart-money-concept/#%D0%9B%D0%BE%D0%B6%D0%BD%D1%8B%D0%B9_%D0%BF%D1%80%D0%BE%D0%B1%D0%BE%D0%B9_%E2%80%93_%D0%BF%D0%B0%D1%82%D1%82%D0%B5%D1%80%D0%BD_SFP
+ * @param highs
+ * @param lows
+ * @param candles
+ */
 export const calculateFakeout = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
     const fakeouts = [];
 
@@ -488,7 +507,7 @@ export const calculateFakeout = (highs: Swing[], lows: Swing[], candles: History
         if(lastHigh){
             const lastCandle = candles[lastHigh.index];
             const currCandle = candles[currHigh.index];
-            if(currCandle.high > lastCandle.high && currCandle.close < lastCandle.high){
+            if(currCandle.high > lastCandle.high && currCandle.close < lastCandle.high && isWickCandle(currCandle, 'high')){
                 fakeouts.push(currHigh)
             }
         }
@@ -504,7 +523,7 @@ export const calculateFakeout = (highs: Swing[], lows: Swing[], candles: History
         if(lastLow){
             const lastCandle = candles[lastLow.index];
             const currCandle = candles[currHigh.index];
-            if(currCandle.low < lastCandle.low && currCandle.close > lastCandle.low){
+            if(currCandle.low < lastCandle.low && currCandle.close > lastCandle.low && isWickCandle(currCandle, 'low')){
                 fakeouts.push(currHigh)
             }
         }

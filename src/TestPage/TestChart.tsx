@@ -210,7 +210,7 @@ export const Chart: FC<{
                 time: (s.time * 1000) as Time,
                 shape: 'text',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: "FK"
+                text: "SFP"
             })));
             // if(excludeIDM){
             //     const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
