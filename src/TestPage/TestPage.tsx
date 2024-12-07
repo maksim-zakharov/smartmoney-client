@@ -85,6 +85,7 @@ export const TestPage = () => {
         imbalances: checkboxValues.includes('imbalances'),
         positions: checkboxValues.includes('positions'),
         excludeIDM: checkboxValues.includes('excludeIDM'),
+        showFakeouts: checkboxValues.includes('showFakeouts'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -151,6 +152,7 @@ export const TestPage = () => {
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
             <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>
             <Checkbox key="positions" value="positions">Сделки</Checkbox>
+            <Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
         </Checkbox.Group>
         <Chart maxDiff={maxDiff} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />

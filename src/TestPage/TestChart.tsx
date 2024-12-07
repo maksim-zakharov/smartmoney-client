@@ -11,7 +11,7 @@ import {
 import {calculate} from "../sm_scripts";
 import {
     calculateBreakingBlocks,
-    calculateCrosses, calculateOB, calculatePositions,
+    calculateCrosses, calculateFakeout, calculateOB, calculatePositions,
     calculateStructure,
     calculateSwings,
     calculateTrend
@@ -25,6 +25,7 @@ function capitalizeFirstLetter(str) {
 }
 
 export const Chart: FC<{
+    showFakeouts?: boolean,
     smPatterns?: boolean,
     excludeIDM?: boolean,
     imbalances?: boolean,
@@ -46,7 +47,7 @@ export const Chart: FC<{
     windowLength: number,
     tf: number,
     onProfit: any
-}> = ({maxDiff,withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -202,6 +203,15 @@ export const Chart: FC<{
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
             let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
+            const fakeouts = calculateFakeout(highParts, lowParts, data)
+
+            showFakeouts&& allMarkers.push(...fakeouts.map(s => ({
+                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time * 1000) as Time,
+                shape: 'text',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                text: "FK"
+            })));
             // if(excludeIDM){
             //     const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
             //     orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
@@ -579,7 +589,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [showFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div

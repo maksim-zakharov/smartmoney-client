@@ -474,3 +474,42 @@ export const calculatePositions = (ob: OrderBlock[], candles: HistoryObject[], m
 
     return positions;
 }
+
+// Прошлый хай пробит, но пробит только хвостом и закрытие было под прошлым хаем
+export const calculateFakeout = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
+    const fakeouts = [];
+
+    let lastHigh;
+    for (let i = 0; i < highs.length; i++) {
+        if(!highs[i]){
+            continue;
+        }
+        const currHigh = highs[i];
+        if(lastHigh){
+            const lastCandle = candles[lastHigh.index];
+            const currCandle = candles[currHigh.index];
+            if(currCandle.high > lastCandle.high && currCandle.close < lastCandle.high){
+                fakeouts.push(currHigh)
+            }
+        }
+        lastHigh = highs[i];
+    }
+
+    let lastLow;
+    for (let i = 0; i < lows.length; i++) {
+        if(!lows[i]){
+            continue;
+        }
+        const currHigh = lows[i];
+        if(lastLow){
+            const lastCandle = candles[lastLow.index];
+            const currCandle = candles[currHigh.index];
+            if(currCandle.low < lastCandle.low && currCandle.close > lastCandle.low){
+                fakeouts.push(currHigh)
+            }
+        }
+        lastLow = lows[i];
+    }
+
+    return fakeouts
+}
