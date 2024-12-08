@@ -6,6 +6,11 @@ export const symbolFuturePairs = [
         "futuresShortName": "SZZ4",
         "stockSymbol": "SGZH"
     },
+{
+        "futuresSymbol": "SI",
+        "futuresShortName": "SIZ4",
+        "stockSymbol": "USDRUBF"
+    },
     {
         "futuresSymbol": "SBRF",
         "futuresShortName": "SRZ4",
