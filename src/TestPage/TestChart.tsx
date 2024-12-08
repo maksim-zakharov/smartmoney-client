@@ -5,7 +5,7 @@ import {
     CrosshairMode,
     isBusinessDay,
     isUTCTimestamp,
-    LineStyle,
+    LineStyle, SeriesMarker,
     Time
 } from "lightweight-charts";
 import {calculate} from "../sm_scripts";
@@ -25,6 +25,7 @@ function capitalizeFirstLetter(str) {
 }
 
 export const Chart: FC<{
+    markers: SeriesMarker<any>[],
     showFakeouts?: boolean,
     smPatterns?: boolean,
     excludeIDM?: boolean,
@@ -50,7 +51,7 @@ export const Chart: FC<{
     tf: number,
     trend: Trend[],
     onProfit: any
-}> = ({maxDiff, trend, excludeTrendSFP, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff, markers, trend, excludeTrendSFP, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -134,7 +135,7 @@ export const Chart: FC<{
                     textColor: color
                 },
                 width: chartContainerRef.current.clientWidth,
-                height: chartContainerRef.current.height || 600,
+                height: chartContainerRef.current.height || 500,
             });
 
             const markerColors = {
@@ -195,11 +196,11 @@ export const Chart: FC<{
             const {
                 topPlots,
                 btmPlots,
-                markers,
+                markers: oldMarkers,
                 itrend
             } = calculate(data, markerColors, windowLength);
 
-            let allMarkers = [];
+            let allMarkers = markers ? [...markers] : [];
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
@@ -378,29 +379,6 @@ export const Chart: FC<{
                 // }
             })
 
-            if (noDoubleSwing) {
-                // allMarkers.push(...structure.filter(Boolean).map(s => ({
-                //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                //     time: (s.time * 1000) as Time,
-                //     shape: 'circle',
-                //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                //     // text: marker.text
-                // })));
-                allMarkers.push(...lowParts.filter(Boolean).map(s => ({
-                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                    time: (s.time * 1000) as Time,
-                    shape: 'circle',
-                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                    // text: marker.text
-                })));
-                allMarkers.push(...highParts.filter(Boolean).map(s => ({
-                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                    time: (s.time * 1000) as Time,
-                    shape: 'circle',
-                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                    // text: marker.text
-                })));
-            }
             if (swings) {
 
                 allMarkers.push(...swingsData.filter(Boolean).map(s => ({
@@ -549,7 +527,7 @@ export const Chart: FC<{
             // })
 
             let idms = []
-            smPatterns && markers.forEach(marker => {
+            smPatterns && oldMarkers.forEach(marker => {
                 const lineSeries = chart.addLineSeries({
                     color: marker.color, // Цвет линии
                     priceLineVisible: false,
@@ -597,7 +575,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [showFakeouts, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [showFakeouts, markers, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div

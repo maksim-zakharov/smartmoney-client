@@ -262,24 +262,41 @@ export const fillTrendByMinorData = (newTrend: Trend[], trendData: HistoryObject
     if(!data.length){
         return [];
     }
-    let lastTrendIndex = newTrend.findIndex(Boolean)
+    // let lastTrendIndex = newTrend.findIndex(Boolean)
+    // if(lastTrendIndex < 0){
+    //     return [];
+    // }
+    // const modifiedTrend = [];
+    //
+    // for (let i = 0; i < data.length; i++) {
+    //     let lastTrend = newTrend[lastTrendIndex];
+    //     let lastTrendCandle = trendData[lastTrendIndex];
+    //     if(!lastTrendCandle){
+    //         modifiedTrend.push(modifiedTrend[modifiedTrend.length - 1]);
+    //         continue;
+    //     }
+    //     modifiedTrend.push(lastTrend);
+    //     if(lastTrendCandle.time < data[i].time){
+    //         lastTrendIndex++;
+    //         lastTrendCandle = trendData[lastTrendIndex];
+    //         lastTrend = newTrend[lastTrendIndex]
+    //     }
+    // }
+
+    let lastTrendIndex = newTrend.findIndex(Boolean);
     if(lastTrendIndex < 0){
         return [];
     }
     const modifiedTrend = [];
 
-    for (let i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length-1; i++) {
         let lastTrend = newTrend[lastTrendIndex];
         let lastTrendCandle = trendData[lastTrendIndex];
-        if(!lastTrendCandle){
-            modifiedTrend.push(modifiedTrend[modifiedTrend.length - 1]);
-            continue;
-        }
-        modifiedTrend.push(lastTrend);
-        if(lastTrendCandle.time < data[i].time){
+        modifiedTrend.push(lastTrend ?? modifiedTrend[modifiedTrend.length - 1]);
+        if (lastTrendCandle && lastTrendCandle.time < data[i].time) {
             lastTrendIndex++;
             lastTrendCandle = trendData[lastTrendIndex];
-            lastTrend = newTrend[lastTrendIndex]
+            lastTrend = newTrend[lastTrendIndex];
         }
     }
 

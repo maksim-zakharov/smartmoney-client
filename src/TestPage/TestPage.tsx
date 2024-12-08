@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Checkbox, DatePicker, Input, Radio, Select, Slider, Space, TimeRangePickerProps} from "antd";
+import {Checkbox, DatePicker, Divider, Input, Radio, Select, Slider, Space, TimeRangePickerProps} from "antd";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./TestChart";
@@ -9,8 +9,16 @@ import {fetchCandlesFromAlor, fillTrendByMinorData, getSecurity, refreshToken} f
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
 import {calculateStructure, calculateSwings, calculateTrend, Trend} from "../samurai_patterns";
+import {Time} from "lightweight-charts";
 
 const {RangePicker} = DatePicker
+
+
+
+const markerColors = {
+    bearColor: "rgb(157, 43, 56)",
+    bullColor: "rgb(20, 131, 92)"
+}
 
 export const TestPage = () => {
     const [data, setData] = useState([]);
@@ -128,39 +136,80 @@ export const TestPage = () => {
         { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
     ];
 
+    const {structure, highParts, lowParts} = useMemo(() => {
+    if(tf === trendTF){
+        if(!data.length){
+            return {structure: [], highParts: [], lowParts: []};
+        }
+        const {swings: swingsData, highs, lows} = calculateSwings(data);
+        return calculateStructure(highs, lows, data);
+    } else {
+        if (!trendData.length) {
+            return {structure: [], highParts: [], lowParts: []};
+        }
+        const {swings: swingsData, highs, lows} = calculateSwings(trendData);
+        return calculateStructure(highs, lows, trendData);
+    }
+    } ,[tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, trendData])
+
     const trend: Trend[] = useMemo(() => {
         if(tf === trendTF){
             if(!data.length){
                 return [];
             }
-            const {swings: swingsData, highs, lows} = calculateSwings(data);
-            const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             const trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP).trend;
             return trend;
         } else {
             if(!trendData.length){
                 return [];
             }
-            const {swings: swingsData, highs, lows} = calculateSwings(trendData);
-            const {structure, highParts, lowParts} = calculateStructure(highs, lows, trendData);
             let newTrend = calculateTrend(highParts, lowParts, trendData, config.withTrendConfirm, config.excludeTrendSFP).trend;
 
             newTrend = fillTrendByMinorData(newTrend, trendData, data)
 
             return newTrend;
         }
-    }, [tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, trendData]);
+    }, [tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, trendData, highParts, lowParts]);
+
+    const markers = useMemo(() => {
+        const allMarkers = [];
+        if(config.noDoubleSwing){
+            allMarkers.push(...lowParts.filter(Boolean).map(s => ({
+                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time * 1000) as Time,
+                shape: 'circle',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                // text: marker.text
+            })));
+            allMarkers.push(...highParts.filter(Boolean).map(s => ({
+                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time * 1000) as Time,
+                shape: 'circle',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                // text: marker.text
+            })))
+        }
+
+        return allMarkers;
+    }, [lowParts, highParts, config.noDoubleSwing]);
 
     return <>
+        <Divider plain orientation="left">Общее</Divider>
         <Space>
-            <TimeframeSelect value={tf} onChange={setSize}/>
-            <TimeframeSelect value={trendTF} onChange={setTrendSize}/>
             <TickerSelect value={ticker} onSelect={onSelectTicker}/>
             <RangePicker
                 presets={rangePresets}
                 value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                 format="YYYY-MM-DD"
                 onChange={onChangeRangeDates}/>
+        </Space>
+        <Divider plain orientation="left">Тренд</Divider>
+        <Space>
+            <TimeframeSelect value={trendTF} onChange={setTrendSize}/>
+        </Space>
+        <Divider plain orientation="left">Инструмент</Divider>
+        <Space>
+            <TimeframeSelect value={tf} onChange={setSize}/>
             <Input value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
             <Space>
                 <div>Профит: {new Intl.NumberFormat('ru-RU', {
@@ -195,7 +244,7 @@ export const TestPage = () => {
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
         </Checkbox.Group>
-        <Chart maxDiff={maxDiff} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
+        <Chart maxDiff={maxDiff} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
     </>;
 }
 
