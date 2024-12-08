@@ -16,8 +16,8 @@ export const TestPage = () => {
     const [ema, setEma] = useState([]);
     const [checkboxValues, setCheckboxValues] = useState([]);
     const [windowLength, setWindowLength] = useState(5);
-    const [maxDiff, setMaxDiff] = useState(1);
-    const [multiStop, setMultiStop] = useState(1);
+    const [maxDiff, setMaxDiff] = useState(0);
+    const [multiStop, setMultiStop] = useState(5);
     const [searchParams, setSearchParams] = useSearchParams();
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '900';
@@ -87,6 +87,7 @@ export const TestPage = () => {
         tradeFakeouts: checkboxValues.includes('tradeFakeouts'),
         excludeIDM: checkboxValues.includes('excludeIDM'),
         showFakeouts: checkboxValues.includes('showFakeouts'),
+        excludeTrendSFP: checkboxValues.includes('excludeTrendSFP'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -156,6 +157,7 @@ export const TestPage = () => {
             <Checkbox key="tradeFakeouts" value="tradeFakeouts">Торговать ложные пробои</Checkbox>
             <Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
+            <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
         </Checkbox.Group>
         <Chart maxDiff={maxDiff} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
     </>;

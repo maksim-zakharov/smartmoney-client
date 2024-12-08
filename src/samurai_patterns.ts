@@ -149,7 +149,7 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
     return {structure, highParts, lowParts};
 }
 
-export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryObject[], withTrendConfirm: boolean = false) => {
+export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryObject[], withTrendConfirm: boolean = false, ignoreSFP: boolean = false) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
     let highLows = new Array(candles.length).fill(null);
@@ -173,12 +173,18 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
             continue;
         }
 
-        if (prevHigh.price < currHigh.price && currHigh.index === i && (!withTrendConfirm || prevLow.price < currLow.price)) {
+        const currHighCandle = candles[currHigh.index];
+        const currLowCandle = candles[currLow.index];
+
+        const noUpperSFP = (!ignoreSFP || prevHigh.price < currHigh.price && prevHigh.price < currHighCandle.close);
+        const noDownSFP = (!ignoreSFP || prevLow.price > currLow.price && prevLow.price > currLowCandle.close);
+
+        if (prevHigh.price < currHigh.price && currHigh.index === i && (!withTrendConfirm || prevLow.price < currLow.price) && noUpperSFP) {
             trend[i] = {time: currHigh.time, trend: 1};
             highLows[i] = {high: currHigh, low: currLow};
         }
 
-        if (prevLow.price > currLow.price && currLow.index === i && (!withTrendConfirm || prevHigh.price > currHigh.price)) {
+        if (prevLow.price > currLow.price && currLow.index === i && (!withTrendConfirm || prevHigh.price > currHigh.price) && noDownSFP) {
             trend[i] = {time: currLow.time, trend: -1};
             highLows[i] = {high: currHigh, low: currLow};
         }
@@ -484,7 +490,7 @@ export const isWickCandle = (candle: HistoryObject, type: 'high' | 'low', wickRa
 
     const bodyWickRatio = body / wickRatio;
 
-    const hasWick = 'high' ?  bodyWickRatio <= topWick : bodyWickRatio <= bottomWick
+    const hasWick = type === 'high' ?  bodyWickRatio <= topWick : bodyWickRatio <= bottomWick
 
     return hasWick && (type === 'high' ? topWick > bottomWick : bottomWick > topWick);
 }

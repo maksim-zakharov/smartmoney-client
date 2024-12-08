@@ -43,6 +43,7 @@ export const TestingPage = () => {
     const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
     const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
+    const [excludeTrendSFP, setExcludeTrendSFP] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("default");
     const [stopMargin, setStopMargin] = useState<number>(50)
@@ -56,7 +57,7 @@ export const TestingPage = () => {
     const positions = useMemo(() => {
         const {swings: swingsData, highs, lows} = calculateSwings(data);
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-        const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend);
+        const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
         let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
         if(excludeIDM){
             // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
@@ -87,13 +88,13 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend);
+            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
             let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
             if(excludeIDM){
                 // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
@@ -125,7 +126,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
-    }, [excludeIDM, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [excludeIDM, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -292,6 +293,11 @@ export const TestingPage = () => {
                 <Col>
                     <FormItem>
                         <Checkbox value={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Ложные пробои</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={excludeTrendSFP} onChange={e => setExcludeTrendSFP(e.target.checked)}>Исключить Fake BOS</Checkbox>
                     </FormItem>
                 </Col>
             </Row>

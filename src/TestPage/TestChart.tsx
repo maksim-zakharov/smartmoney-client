@@ -38,6 +38,7 @@ export const Chart: FC<{
     showOB?: boolean,
     positions?: boolean,
     tradeFakeouts?: boolean,
+    excludeTrendSFP?: boolean,
     showEndOB?: boolean,
     smartTrend?: boolean,
     noInternal?: boolean,
@@ -48,7 +49,7 @@ export const Chart: FC<{
     windowLength: number,
     tf: number,
     onProfit: any
-}> = ({maxDiff, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff,excludeTrendSFP, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -200,7 +201,7 @@ export const Chart: FC<{
             let allMarkers = [];
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm);
+            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
             let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
@@ -594,7 +595,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [showFakeouts, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [showFakeouts, excludeTrendSFP, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
