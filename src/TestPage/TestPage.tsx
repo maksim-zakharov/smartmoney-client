@@ -8,7 +8,7 @@ import {calculateEMA} from "../../symbolFuturePairs";
 import {fetchCandlesFromAlor, fillTrendByMinorData, getSecurity, refreshToken} from "../utils";
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
-import {calculateStructure, calculateSwings, calculateTrend, Trend} from "../samurai_patterns";
+import {calculateFakeout, calculateStructure, calculateSwings, calculateTrend, Trend} from "../samurai_patterns";
 import {Time} from "lightweight-charts";
 
 const {RangePicker} = DatePicker
@@ -171,6 +171,13 @@ export const TestPage = () => {
         }
     }, [tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, trendData, highParts, lowParts]);
 
+    const fakeouts = useMemo(() => {
+        if(tf === trendTF){
+           return  calculateFakeout(highParts, lowParts, data)
+        }
+        return  calculateFakeout(highParts, lowParts, trendData)
+    }, [tf, trendTF, highParts, lowParts, data, trendData]);
+
     const markers = useMemo(() => {
         const allMarkers = [];
         if(config.noDoubleSwing){
@@ -190,8 +197,18 @@ export const TestPage = () => {
             })))
         }
 
+        if(config.showFakeouts){
+            allMarkers.push(...fakeouts.map(s => ({
+                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time * 1000) as Time,
+                shape: 'text',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                text: "SFP"
+            })))
+        }
+
         return allMarkers;
-    }, [lowParts, highParts, config.noDoubleSwing]);
+    }, [lowParts, highParts, config.noDoubleSwing, fakeouts, config.showFakeouts]);
 
     return <>
         <Divider plain orientation="left">Общее</Divider>

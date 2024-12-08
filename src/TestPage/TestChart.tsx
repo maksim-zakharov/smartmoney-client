@@ -210,13 +210,6 @@ export const Chart: FC<{
             let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
             const fakeouts = calculateFakeout(highParts, lowParts, data)
 
-            showFakeouts && allMarkers.push(...fakeouts.map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time * 1000) as Time,
-                shape: 'text',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: "SFP"
-            })));
             // if(excludeIDM){
             //     const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
             //     orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
