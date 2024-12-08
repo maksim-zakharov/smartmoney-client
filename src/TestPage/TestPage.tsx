@@ -203,7 +203,7 @@ export const TestPage = () => {
                 format="YYYY-MM-DD"
                 onChange={onChangeRangeDates}/>
         </Space>
-        <Divider plain orientation="left">Тренд</Divider>
+        <Divider plain orientation="left">Структура</Divider>
         <Space>
             <TimeframeSelect value={trendTF} onChange={setTrendSize}/>
         </Space>

@@ -289,7 +289,7 @@ export const fillTrendByMinorData = (newTrend: Trend[], trendData: HistoryObject
     }
     const modifiedTrend = [];
 
-    for (let i = 0; i < data.length-1; i++) {
+    for (let i = 0; i < data.length; i++) {
         let lastTrend = newTrend[lastTrendIndex];
         let lastTrendCandle = trendData[lastTrendIndex];
         modifiedTrend.push(lastTrend ?? modifiedTrend[modifiedTrend.length - 1]);
