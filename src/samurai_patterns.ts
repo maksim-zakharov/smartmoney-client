@@ -11,6 +11,7 @@ export interface Swing {
 export interface Trend{
     time: number;
     trend: number;
+    index: number;
 }
 
 export const calculateSwings = (candles: HistoryObject[]) => {
@@ -108,7 +109,6 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
             }, currStruct.index + 1);
 
             const lowest = candles[index];
-            console.log('low', index);
             structure[i + 1].index = index;
             structure[i + 1].price = lowest.low;
             structure[i + 1].time = lowest.time;
@@ -180,17 +180,17 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
         const noDownSFP = (!ignoreSFP || prevLow.price > currLow.price && prevLow.price > currLowCandle.close);
 
         if (prevHigh.price < currHigh.price && currHigh.index === i && (!withTrendConfirm || prevLow.price < currLow.price) && noUpperSFP) {
-            trend[i] = {time: currHigh.time, trend: 1};
+            trend[i] = {time: currHigh.time, trend: 1, index: currHigh.index};
             highLows[i] = {high: currHigh, low: currLow};
         }
 
         if (prevLow.price > currLow.price && currLow.index === i && (!withTrendConfirm || prevHigh.price > currHigh.price) && noDownSFP) {
-            trend[i] = {time: currLow.time, trend: -1};
+            trend[i] = {time: currLow.time, trend: -1, index: currLow.index};
             highLows[i] = {high: currHigh, low: currLow};
         }
 
         if(!trend[i] && trend[i-1]) {
-            trend[i] = {time: candles[i].time, trend: trend[i-1].trend};
+            trend[i] = {time: candles[i].time, trend: trend[i-1].trend, index: trend[i-1].index};
         }
     }
 

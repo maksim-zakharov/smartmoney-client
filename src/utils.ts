@@ -2,6 +2,7 @@
 import {HistoryObject} from "./api";
 
 import dayjs from 'dayjs';
+import {Trend} from "./samurai_patterns";
 
 export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit?) {
     let url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX`;
@@ -249,4 +250,38 @@ function maxDrawdown_(equityCurve, idxStart, idxEnd) {
 
     // Return the computed values
     return [maxDd, idxStartMaxDd, idxEndMaxDd];
+}
+
+export const fillTrendByMinorData = (newTrend: Trend[], trendData: HistoryObject[], data: HistoryObject[]) => {
+    if(!newTrend.length){
+        return [];
+    }
+    if(!trendData.length){
+        return [];
+    }
+    if(!data.length){
+        return [];
+    }
+    let lastTrendIndex = newTrend.findIndex(Boolean)
+    if(lastTrendIndex < 0){
+        return [];
+    }
+    const modifiedTrend = [];
+
+    for (let i = 0; i < data.length; i++) {
+        let lastTrend = newTrend[lastTrendIndex];
+        let lastTrendCandle = trendData[lastTrendIndex];
+        if(!lastTrendCandle){
+            modifiedTrend.push(modifiedTrend[modifiedTrend.length - 1]);
+            continue;
+        }
+        modifiedTrend.push(lastTrend);
+        if(lastTrendCandle.time < data[i].time){
+            lastTrendIndex++;
+            lastTrendCandle = trendData[lastTrendIndex];
+            lastTrend = newTrend[lastTrendIndex]
+        }
+    }
+
+    return modifiedTrend;
 }

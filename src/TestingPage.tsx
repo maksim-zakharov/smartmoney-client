@@ -2,7 +2,7 @@ import {
     Card,
     Checkbox,
     Col,
-    DatePicker,
+    DatePicker, Divider,
     Form,
     Input,
     Radio,
@@ -38,7 +38,9 @@ export const TestingPage = () => {
     const [allData, setAllData] = useState({});
     const [allSecurity, setAllSecurity] = useState({});
     const [data, setData] = useState([]);
+    const [trendData, setTrendData] = useState([]);
     const [tf, onChangeTF] = useState<string>('300');
+    const [trendTF, onChangeTrendTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
     const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
@@ -54,11 +56,52 @@ export const TestingPage = () => {
     const [token, setToken] = useState();
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([dayjs('2024-10-01T00:00:00Z'), dayjs('2025-10-01T00:00:00Z')])
 
+    const trend = useMemo(() => {
+        if(tf === trendTF){
+            if(!data.length){
+                return [];
+            }
+            const {swings: swingsData, highs, lows} = calculateSwings(data);
+            const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
+            const trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
+            return trend;
+        } else {
+            if(!trendData.length){
+                return [];
+            }
+            const {swings: swingsData, highs, lows} = calculateSwings(trendData);
+            const {structure, highParts, lowParts} = calculateStructure(highs, lows, trendData);
+            const newTrend = calculateTrend(highParts, lowParts, trendData, confirmTrend, excludeTrendSFP).trend;
+            if(!newTrend.length){
+                return [];
+            }
+            let lastTrendIndex = newTrend.findIndex(Boolean)
+            if(lastTrendIndex < 0){
+                return [];
+            }
+            let lastTrend = newTrend[lastTrendIndex];
+            let lastTrendCandle = trendData[lastTrendIndex];
+            for (let i = 0; i < data.length; i++) {
+                if(!lastTrendCandle){
+                    break;
+                }
+                if(lastTrendCandle.time >= data[i].time){
+                    newTrend.splice(i, 0, lastTrend);
+                    i++;
+                } else {
+                    lastTrendIndex++;
+                    lastTrendCandle = trendData[lastTrendIndex];
+                }
+            }
+            return newTrend;
+        }
+    }, [tf, trendTF, data, confirmTrend, excludeTrendSFP, trendData]);
+
     const positions = useMemo(() => {
         const {swings: swingsData, highs, lows} = calculateSwings(data);
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-        const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
-        let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
+        // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
+        let orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM);
         if(excludeIDM){
             // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
@@ -88,7 +131,7 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, trend, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -170,9 +213,17 @@ export const TestingPage = () => {
     }, [isAllTickers, allPositions, positions, security?.lotsize])
 
     useEffect(() => {
-        !isAllTickers && ticker && fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData).finally(() =>
-            setLoading(false));
-    }, [isAllTickers, tf, ticker, dates]);
+        if(!isAllTickers && ticker){
+
+            if(trendTF === tf){
+                fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData).finally(() =>
+                    setLoading(false));
+            } else {
+                fetchCandlesFromAlor(ticker, trendTF, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setTrendData).finally(() =>
+                    setLoading(false))
+            }
+        }
+    }, [isAllTickers, trendTF, tf, ticker, dates]);
 
     useEffect(() => {
         localStorage.getItem('token') && refreshToken().then(setToken)
@@ -246,6 +297,7 @@ export const TestingPage = () => {
 
     return <div style={{width: 'max-content', minWidth: "1800px"}}>
         <Form layout="vertical">
+            <Divider plain orientation="left">Инструмент</Divider>
             <Row gutter={8}>
                 <Col>
                     <FormItem label="Тикер">
@@ -273,43 +325,59 @@ export const TestingPage = () => {
             </Row>
             <Row gutter={8} align="bottom">
                 <Col>
+                    <FormItem>
+                        <Checkbox value={excludeIDM} onChange={e => setExcludeIDM(e.target.checked)}>Исключить
+                            IDM</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Ложные
+                            пробои</Checkbox>
+                    </FormItem>
+                </Col>
+            </Row>
+            <Divider plain orientation="left">Тренд</Divider>
+            <Row gutter={8} align="bottom">
+                <Col>
+                    <FormItem label="Таймфрейм">
+                        <TimeframeSelect value={trendTF} onChange={onChangeTrendTF}/>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={confirmTrend} onChange={e => setConfirmTrend(e.target.checked)}>Подтвержденный
+                            тренд</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={excludeTrendSFP} onChange={e => setExcludeTrendSFP(e.target.checked)}>Исключить
+                            Fake BOS</Checkbox>
+                    </FormItem>
+                </Col>
+            </Row>
+            <Divider plain orientation="left">Риски и комиссии</Divider>
+            <Row gutter={8} align="bottom">
+                <Col>
                     <FormItem label="Тейк-профит стратегия">
-                        <Radio.Group onChange={e => onChangeTakeProfitStrategy(e.target.value)} value={takeProfitStrategy}>
+                        <Radio.Group onChange={e => onChangeTakeProfitStrategy(e.target.value)}
+                                     value={takeProfitStrategy}>
                             <Radio value="default">Стоп-лосс</Radio>
                             <Radio value="max">Экстремум</Radio>
                         </Radio.Group>
                     </FormItem>
                 </Col>
                 <Col>
-                    <FormItem>
-                        <Checkbox value={excludeIDM} onChange={e => setExcludeIDM(e.target.checked)}>Исключить IDM</Checkbox>
-                    </FormItem>
-                </Col>
-                <Col>
-                    <FormItem>
-                        <Checkbox value={confirmTrend} onChange={e => setConfirmTrend(e.target.checked)}>Подтвержденный тренд</Checkbox>
-                    </FormItem>
-                </Col>
-                <Col>
-                    <FormItem>
-                        <Checkbox value={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Ложные пробои</Checkbox>
-                    </FormItem>
-                </Col>
-                <Col>
-                    <FormItem>
-                        <Checkbox value={excludeTrendSFP} onChange={e => setExcludeTrendSFP(e.target.checked)}>Исключить Fake BOS</Checkbox>
-                    </FormItem>
-                </Col>
-            </Row>
-            <Row gutter={8} align="bottom">
-                <Col>
                     <FormItem label="Базовый коэф. тейк-профита">
-                        <Slider value={baseTakePercent} disabled={takeProfitStrategy === "max"} onChange={setBaseTakePercent} min={1} step={1} max={20}/>
+                        <Slider value={baseTakePercent} disabled={takeProfitStrategy === "max"}
+                                onChange={setBaseTakePercent} min={1} step={1} max={20}/>
                     </FormItem>
                 </Col>
                 <Col>
                     <FormItem label="Max коэф. тейк-профита">
-                        <Slider value={maxTakePercent} disabled={takeProfitStrategy === "default"} onChange={setMaxTakePercent} min={0.1} step={0.1} max={1}/>
+                        <Slider value={maxTakePercent} disabled={takeProfitStrategy === "default"}
+                                onChange={setMaxTakePercent} min={0.1} step={0.1} max={1}/>
                     </FormItem>
                 </Col>
                 <Col>
@@ -368,7 +436,8 @@ export const TestingPage = () => {
                                 </Card>
                             </Col>
                         </Row>
-                    <Table loading={loading} rowClassName={rowClassName} size="small" columns={oldOneTickerColumns}/>
+                        <Table loading={loading} rowClassName={rowClassName} size="small"
+                               columns={oldOneTickerColumns}/>
                     </FormItem>
                 </Col>
                 <Col span={12}>
@@ -399,7 +468,7 @@ export const TestingPage = () => {
                                     <Statistic
                                         title="Тейки"
                                         value={new Intl.NumberFormat('en-US',
-                                            { notation:'compact' }).format(profits)}
+                                            {notation: 'compact'}).format(profits)}
                                         valueStyle={{color: "rgb(44, 232, 156)"}}
                                         suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
                                     />
@@ -410,7 +479,7 @@ export const TestingPage = () => {
                                     <Statistic
                                         title="Лоси"
                                         value={new Intl.NumberFormat('en-US',
-                                            { notation:'compact' }).format(losses)}
+                                            {notation: 'compact'}).format(losses)}
                                         valueStyle={{color: "rgb(255, 117, 132)"}}
                                         suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
                                     />
@@ -428,7 +497,8 @@ export const TestingPage = () => {
                             {/*    </Card>*/}
                             {/*</Col>*/}
                         </Row>
-                    <Table loading={loading} rowClassName={rowClassName} size="small" columns={oldOneTickerColumns} dataSource={isAllTickers ? allPositions : positions}/>
+                        <Table loading={loading} rowClassName={rowClassName} size="small" columns={oldOneTickerColumns}
+                               dataSource={isAllTickers ? allPositions : positions}/>
                     </FormItem>
                 </Col>
             </Row>

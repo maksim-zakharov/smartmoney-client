@@ -14,7 +14,7 @@ import {
     calculateCrosses, calculateFakeout, calculateOB, calculatePositionsByFakeouts, calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
-    calculateTrend
+    calculateTrend, Trend
 } from "../samurai_patterns";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 import moment from 'moment';
@@ -34,7 +34,7 @@ export const Chart: FC<{
     multiStop?: number
     noDoubleSwing?: boolean,
     swings?: boolean,
-    trend?: boolean,
+    oldTrend?: boolean,
     showOB?: boolean,
     positions?: boolean,
     tradeFakeouts?: boolean,
@@ -48,8 +48,9 @@ export const Chart: FC<{
     withBug,
     windowLength: number,
     tf: number,
+    trend: Trend[],
     onProfit: any
-}> = ({maxDiff,excludeTrendSFP, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff, trend, excludeTrendSFP, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -201,7 +202,8 @@ export const Chart: FC<{
             let allMarkers = [];
             const {swings: swingsData, highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
+            // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
+            const newTrend = trend;
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
             let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
@@ -466,7 +468,7 @@ export const Chart: FC<{
                 newSeries.attachPrimitive(sessionHighlighting);
             }
 
-            if (trend) {
+            if (oldTrend) {
 
                 function getDate(time: Time): Date {
                     if (isUTCTimestamp(time)) {
@@ -595,7 +597,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [showFakeouts, excludeTrendSFP, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, trend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [showFakeouts, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
