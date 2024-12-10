@@ -13,7 +13,7 @@ import {
     UTCTimestamp
 } from "lightweight-charts";
 import moment from "moment";
-import {useSearchParams} from "react-router-dom";
+import {Link, useSearchParams} from "react-router-dom";
 import {Point, Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
 
@@ -499,6 +499,12 @@ const MainPage: React.FC = () => {
                     const PnL = side === 'buy' ? openPrice - takeProfit : takeProfit - openPrice;
 
                     return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%) (${moneyFormat(PnL * (accTradesOrdernoQtyMap[row.limitTrade?.orderno] || row.limitTrade?.qtyUnits), 'RUB', 2, 2)})`;
+                }
+            },
+            {
+                title: "Действия",
+                render: (value, row) => {
+                    return <Link to={`/test?ticker=${row.ticker}&trendTF=300&tf=300`} target="_blank">Тестер</Link>;
                 }
             }
             // {
