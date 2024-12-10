@@ -634,9 +634,6 @@ const MainPage: React.FC = () => {
                 title: "Вход",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
-                onCell: (row, index) => ({
-                    colSpan: row.type === 'summary' ? 3 : 1,
-                }),
                 render: (value, row) => row?.type !== 'summary' ? value?.price || "-" : ""
             },
             {
@@ -645,7 +642,7 @@ const MainPage: React.FC = () => {
                 key: "limitTrade",
                 // colSpan: 2,
                 onCell: (row, index) => ({
-                    colSpan: row.type === 'summary' ? 0 : 1,
+                    colSpan: row.type === 'summary' ? 4 : 1,
                 }),
                 render: (value, row) => {
                     if (row?.type !== 'summary') {
