@@ -634,6 +634,9 @@ const MainPage: React.FC = () => {
                 title: "Вход",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
+                onCell: (row, index) => ({
+                    colSpan: row.type === 'summary' ? 5 : 1,
+                }),
                 render: (value, row) => row?.type !== 'summary' ? value?.price || "-" : ""
             },
             {
@@ -642,7 +645,7 @@ const MainPage: React.FC = () => {
                 key: "limitTrade",
                 // colSpan: 2,
                 onCell: (row, index) => ({
-                    colSpan: row.type === 'summary' ? 3 : 1,
+                    colSpan: row.type === 'summary' ? 0 : 1,
                 }),
                 render: (value, row) => {
                     if (row?.type !== 'summary') {
@@ -688,6 +691,9 @@ const MainPage: React.FC = () => {
                 title: "Тейк цена",
                 dataIndex: "takeProfitTrade",
                 key: "takeProfitTrade",
+                onCell: (row, index) => ({
+                    colSpan: row.type === 'summary' ? 0 : 1,
+                }),
                 render: (value, row) => {
                     if (row.type === 'summary') {
                         return '';
@@ -716,7 +722,7 @@ const MainPage: React.FC = () => {
             {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`} target="_blank">Тестер</Link>;
+                    return row?.type !== 'summary' ? <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`} target="_blank">Тестер</Link> : '';
                 }
             }
         ];
