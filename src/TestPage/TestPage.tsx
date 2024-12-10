@@ -10,10 +10,7 @@ import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
 import {calculateFakeout, calculateStructure, calculateSwings, calculateTrend, Trend} from "../samurai_patterns";
 import {Time} from "lightweight-charts";
-
-const {RangePicker} = DatePicker
-
-
+import {DatesPicker} from "../DatesPicker";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -32,8 +29,8 @@ export const TestPage = () => {
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '900';
     const trendTF = searchParams.get('trendTF') || '900';
-    const fromDate = searchParams.get('fromDate') || Math.floor(new Date('2024-10-01T00:00:00Z').getTime() / 1000);
-    const toDate = searchParams.get('toDate') || Math.floor(new Date('2025-10-01T00:00:00Z').getTime() / 1000);
+    const fromDate = searchParams.get('fromDate') || dayjs('2024-10-01T00:00:00Z').startOf('day').unix();
+    const toDate = searchParams.get('toDate') || dayjs('2025-10-01T00:00:00Z').endOf('day').unix();
     const [{positions}, onPositions] = useState({positions: []});
     const [stopMargin, setStopMargin] = useState(100);
     const [security, setSecurity] = useState();
@@ -124,17 +121,10 @@ export const TestPage = () => {
         console.log('Selected Time: ', value);
         console.log('Formatted Selected Time: ', dateString);
 
-        searchParams.set('fromDate', value[0].unix());
-        searchParams.set('toDate', value[1].unix());
+        searchParams.set('fromDate', value[0].startOf('day').unix());
+        searchParams.set('toDate', value[1].endOf('day').unix());
         setSearchParams(searchParams);
     }
-
-    const rangePresets: TimeRangePickerProps['presets'] = [
-        { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
-        { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
-        { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
-        { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
-    ];
 
     const {structure, highParts, lowParts} = useMemo(() => {
     if(tf === trendTF){
@@ -214,11 +204,7 @@ export const TestPage = () => {
         <Divider plain orientation="left">Общее</Divider>
         <Space>
             <TickerSelect value={ticker} onSelect={onSelectTicker}/>
-            <RangePicker
-                presets={rangePresets}
-                value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-                format="YYYY-MM-DD"
-                onChange={onChangeRangeDates}/>
+            <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates}/>
         </Space>
         <Divider plain orientation="left">Структура</Divider>
         <Space>
