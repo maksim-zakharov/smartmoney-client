@@ -996,7 +996,7 @@ const MainPage: React.FC = () => {
                         </Card>
                     </Col>
                 </Row>
-                <div style={{display: 'grid', gridTemplateColumns: 'auto 1100px', gap: '8px'}}>
+                <div style={{display: 'grid', gridTemplateColumns: 'auto 1300px', gap: '8px'}}>
                     <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
                                     markers={markers}
                                     orderBlock={orderBlock}
