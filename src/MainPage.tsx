@@ -504,7 +504,7 @@ const MainPage: React.FC = () => {
             {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&trendTF=300&tf=300`} target="_blank">Тестер</Link>;
+                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`} target="_blank">Тестер</Link>;
                 }
             }
             // {
