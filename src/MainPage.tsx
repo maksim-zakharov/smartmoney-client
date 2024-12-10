@@ -586,6 +586,12 @@ const MainPage: React.FC = () => {
                 dataIndex: "takeProfit",
                 key: "takeProfit",
                 render: (value) => value?.stopPrice || "-"
+            },
+            {
+                title: "Действия",
+                render: (value, row) => {
+                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`} target="_blank">Тестер</Link>;
+                }
             }
             // {
             //   title: "takeProfitTime",
@@ -707,6 +713,12 @@ const MainPage: React.FC = () => {
                 align: "right",
                 render: (value, row) => row.PnL ? moneyFormat(row.PnL, "RUB", 2, 2) : "-"
             },
+            {
+                title: "Действия",
+                render: (value, row) => {
+                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`} target="_blank">Тестер</Link>;
+                }
+            }
         ];
 
         function onSelect(record: any): void {
