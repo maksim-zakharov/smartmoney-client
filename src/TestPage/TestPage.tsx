@@ -24,7 +24,7 @@ export const TestPage = () => {
     const [data, setData] = useState([]);
     const [trendData, setTrendData] = useState([]);
     const [ema, setEma] = useState([]);
-    const [checkboxValues, setCheckboxValues] = useState([]);
+    const [checkboxValues, setCheckboxValues] = useState(['positions', 'showEndOB']);
     const [windowLength, setWindowLength] = useState(5);
     const [maxDiff, setMaxDiff] = useState(0);
     const [multiStop, setMultiStop] = useState(5);
