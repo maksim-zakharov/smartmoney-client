@@ -928,27 +928,27 @@ const MainPage: React.FC = () => {
         });
 
         const filteredHistory = history.filter(c => moment(c.limitTrade?.date).unix() >= fromDate && moment(c.limitTrade?.date).unix() <= toDate);
-        const totalPnL = useMemo(() => filteredHistory.filter(p => p.PnL).reduce((acc, curr) => {
+        const totalPnL = filteredHistory.filter(p => p.PnL).reduce((acc, curr) => {
             if (!acc[curr.timeframe]) {
                 acc[curr.timeframe] = 0;
             }
             acc[curr.timeframe] += curr.PnL;
             return acc;
-        }, {}), [filteredHistory])
-        const losses = useMemo(() => filteredHistory.filter(p => p.PnL < 0).reduce((acc, curr) => {
+        }, {})
+        const losses = filteredHistory.filter(p => p.PnL < 0).reduce((acc, curr) => {
             if (!acc[curr.timeframe]) {
                 acc[curr.timeframe] = 0;
             }
             acc[curr.timeframe]++;
             return acc;
-        }, {}), [filteredHistory])
-        const profits = useMemo(() => filteredHistory.filter(p => p.PnL > 0).reduce((acc, curr) => {
+        }, {})
+        const profits = filteredHistory.filter(p => p.PnL > 0).reduce((acc, curr) => {
             if (!acc[curr.timeframe]) {
                 acc[curr.timeframe] = 0;
             }
             acc[curr.timeframe]++;
             return acc;
-        }, {}), [filteredHistory])
+        }, {})
 
         const timeframes = useMemo(() => new Array(new Set(filteredHistory.map(p => p.timeframe))), [filteredHistory]);
 
