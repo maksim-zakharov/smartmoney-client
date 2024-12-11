@@ -950,7 +950,7 @@ const MainPage: React.FC = () => {
             return acc;
         }, {}), [filteredHistory])
 
-        const timeframes = useMemo(() => Array.from(new Set(filteredHistory.map(p => p.timeframe))).sort((a, b) => a - b), [filteredHistory]);
+        const timeframes = useMemo(() => Array.from(new Set(filteredHistory.filter(p => p.timeframe).map(p => p.timeframe))).sort((a, b) => a - b), [filteredHistory]);
 
         const emas = [{
             array: data.ema20, color: 'rgba(255, 0, 0, 0.65)', title: 'ema20'
