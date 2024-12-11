@@ -504,7 +504,8 @@ const MainPage: React.FC = () => {
             {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`} target="_blank">Тестер</Link>;
+                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`}
+                                 target="_blank">Тестер</Link>;
                 }
             }
             // {
@@ -590,7 +591,8 @@ const MainPage: React.FC = () => {
             {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`} target="_blank">Тестер</Link>;
+                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`}
+                                 target="_blank">Тестер</Link>;
                 }
             }
             // {
@@ -719,7 +721,9 @@ const MainPage: React.FC = () => {
             {
                 title: "Действия",
                 render: (value, row) => {
-                    return row?.type !== 'summary' ? <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`} target="_blank">Тестер</Link> : '';
+                    return row?.type !== 'summary' ?
+                        <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`}
+                              target="_blank">Тестер</Link> : '';
                 }
             }
         ];
@@ -924,11 +928,29 @@ const MainPage: React.FC = () => {
         });
 
         const filteredHistory = history.filter(c => moment(c.limitTrade?.date).unix() >= fromDate && moment(c.limitTrade?.date).unix() <= toDate);
-        const totalPnL = filteredHistory.filter(p => p.PnL).reduce((acc, curr) => acc + curr.PnL, 0); // useMemo(() => history.filter(p => p.PnL && !blacklist[getPatternKey(p)]).reduce((acc, curr) => acc + curr.PnL, 0), [history, blacklist]);
-        const losses = filteredHistory.filter(p => p.PnL < 0).length
-        // useMemo(() => history.filter(p => p.PnL < 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
-        const profits = filteredHistory.filter(p => p.PnL > 0).length
-        // useMemo(() => history.filter(p => p.PnL > 0 && !blacklist[getPatternKey(p)]).length, [history, blacklist]);
+        const totalPnL = useMemo(() => filteredHistory.filter(p => p.PnL).reduce((acc, curr) => {
+            if (!acc[curr.timeframe]) {
+                acc[curr.timeframe] = 0;
+            }
+            acc[curr.timeframe] += curr.PnL;
+            return acc;
+        }, {}), [filteredHistory])
+        const losses = useMemo(() => filteredHistory.filter(p => p.PnL < 0).reduce((acc, curr) => {
+            if (!acc[curr.timeframe]) {
+                acc[curr.timeframe] = 0;
+            }
+            acc[curr.timeframe]++;
+            return acc;
+        }, {}), [filteredHistory])
+        const profits = useMemo(() => filteredHistory.filter(p => p.PnL > 0).reduce((acc, curr) => {
+            if (!acc[curr.timeframe]) {
+                acc[curr.timeframe] = 0;
+            }
+            acc[curr.timeframe]++;
+            return acc;
+        }, {}), [filteredHistory])
+
+        const timeframes = useMemo(() => new Array(new Set(filteredHistory.map(p => p.timeframe))), [filteredHistory]);
 
         const emas = [{
             array: data.ema20, color: 'rgba(255, 0, 0, 0.65)', title: 'ema20'
@@ -964,38 +986,40 @@ const MainPage: React.FC = () => {
                             tooltip={{formatter: val => moment(val * 1000).format('YYYY-MM-DD')}}
                             min={min} step={60 * 60 * 24} max={moment().unix()}/>
                 </div>
-                <Row gutter={8}>
-                    <Col span={8}>
-                        <Card bordered={false}>
-                            <Statistic
-                                title="Общий финрез"
-                                value={moneyFormat(totalPnL, 'RUB', 2, 2)}
-                                precision={2}
-                                valueStyle={{color: totalPnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
-                            />
-                        </Card>
-                    </Col>
-                    <Col span={8}>
-                        <Card bordered={false}>
-                            <Statistic
-                                title="Прибыльных сделок"
-                                value={profits}
-                                valueStyle={{color: "rgb(44, 232, 156)"}}
-                                suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
-                            />
-                        </Card>
-                    </Col>
-                    <Col span={8}>
-                        <Card bordered={false}>
-                            <Statistic
-                                title="Убыточных сделок"
-                                value={losses}
-                                valueStyle={{color: "rgb(255, 117, 132)"}}
-                                suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
-                            />
-                        </Card>
-                    </Col>
-                </Row>
+                {timeframes.map(tf =>
+                    <Row gutter={8}>
+                        <Col span={8}>
+                            <Card bordered={false}>
+                                <Statistic
+                                    title="Общий финрез"
+                                    value={moneyFormat(totalPnL[tf], 'RUB', 2, 2)}
+                                    precision={2}
+                                    valueStyle={{color: totalPnL[tf] > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                                />
+                            </Card>
+                        </Col>
+                        <Col span={8}>
+                            <Card bordered={false}>
+                                <Statistic
+                                    title="Прибыльных сделок"
+                                    value={profits[tf]}
+                                    valueStyle={{color: "rgb(44, 232, 156)"}}
+                                    suffix={`(${!profits[tf] ? 0 : (profits[tf] * 100 / (profits[tf] + losses[tf])).toFixed(2)})%`}
+                                />
+                            </Card>
+                        </Col>
+                        <Col span={8}>
+                            <Card bordered={false}>
+                                <Statistic
+                                    title="Убыточных сделок"
+                                    value={losses[tf]}
+                                    valueStyle={{color: "rgb(255, 117, 132)"}}
+                                    suffix={`(${!losses[tf] ? 0 : (losses[tf] * 100 / (profits[tf] + losses[tf])).toFixed(2)})%`}
+                                />
+                            </Card>
+                        </Col>
+                    </Row>
+                )}
                 <div style={{display: 'grid', gridTemplateColumns: 'auto 1300px', gap: '8px'}}>
                     <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
                                     markers={markers}
