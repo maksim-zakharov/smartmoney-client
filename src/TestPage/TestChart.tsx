@@ -150,6 +150,13 @@ export const Chart: FC<{
                 borderUpColor: "rgb(11, 176, 109)",
                 wickUpColor: "rgb(11, 176, 109)",
                 wickDownColor: "rgb(213, 54, 69)",
+                // ... {
+                //     upColor: '#00A127',
+                //     downColor: '#E31C1C',
+                //     wickUpColor: '#00A127',
+                //     wickDownColor: '#E31C1C',
+                //     borderVisible: false,
+                // },
                 lastValueVisible: false,
                 priceLineVisible: false,
             });
