@@ -928,29 +928,29 @@ const MainPage: React.FC = () => {
         });
 
         const filteredHistory = history.filter(c => moment(c.limitTrade?.date).unix() >= fromDate && moment(c.limitTrade?.date).unix() <= toDate);
-        const totalPnL = filteredHistory.filter(p => p.PnL).reduce((acc, curr) => {
+        const totalPnL = useMemo(() => filteredHistory.filter(p => p.PnL).reduce((acc, curr) => {
             if (!acc[curr.timeframe]) {
                 acc[curr.timeframe] = 0;
             }
             acc[curr.timeframe] += curr.PnL;
             return acc;
-        }, {})
-        const losses = filteredHistory.filter(p => p.PnL < 0).reduce((acc, curr) => {
+        }, {}), [filteredHistory])
+        const losses = useMemo(() => filteredHistory.filter(p => p.PnL < 0).reduce((acc, curr) => {
             if (!acc[curr.timeframe]) {
                 acc[curr.timeframe] = 0;
             }
             acc[curr.timeframe]++;
             return acc;
-        }, {})
-        const profits = filteredHistory.filter(p => p.PnL > 0).reduce((acc, curr) => {
+        }, {}), [filteredHistory])
+        const profits = useMemo(() => filteredHistory.filter(p => p.PnL > 0).reduce((acc, curr) => {
             if (!acc[curr.timeframe]) {
                 acc[curr.timeframe] = 0;
             }
             acc[curr.timeframe]++;
             return acc;
-        }, {})
+        }, {}), [filteredHistory])
 
-        const timeframes = useMemo(() => new Array(new Set(filteredHistory.map(p => p.timeframe))), [filteredHistory]);
+        const timeframes = useMemo(() => Array.from(new Set(filteredHistory.map(p => p.timeframe))).sort((a, b) => a - b), [filteredHistory]);
 
         const emas = [{
             array: data.ema20, color: 'rgba(255, 0, 0, 0.65)', title: 'ema20'
@@ -978,6 +978,12 @@ const MainPage: React.FC = () => {
 
         betweedDates.forEach(date => marks[date.unix()] = date.format('YYYY-MM-DD'))
 
+    const timeframeLabelMap = {
+            300: 'M5',
+        900: 'M15',
+        1800: 'M30'
+    }
+
         return (
             <Space direction="vertical" style={{width: '100%'}}>
                 <div style={{margin: '0 40px'}}>
@@ -991,7 +997,7 @@ const MainPage: React.FC = () => {
                         <Col span={8}>
                             <Card bordered={false}>
                                 <Statistic
-                                    title="Общий финрез"
+                                    title={`Общий финрез ${timeframeLabelMap[tf]}`}
                                     value={moneyFormat(totalPnL[tf], 'RUB', 2, 2)}
                                     precision={2}
                                     valueStyle={{color: totalPnL[tf] > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
@@ -1001,20 +1007,20 @@ const MainPage: React.FC = () => {
                         <Col span={8}>
                             <Card bordered={false}>
                                 <Statistic
-                                    title="Прибыльных сделок"
+                                    title={`Прибыльных сделок ${timeframeLabelMap[tf]}`}
                                     value={profits[tf]}
                                     valueStyle={{color: "rgb(44, 232, 156)"}}
-                                    suffix={`(${!profits[tf] ? 0 : (profits[tf] * 100 / (profits[tf] + losses[tf])).toFixed(2)})%`}
+                                    suffix={`(${!profits[tf] ? 0 : (profits[tf] * 100 / ((profits[tf] || 0) + (losses[tf] || 0))).toFixed(2)})%`}
                                 />
                             </Card>
                         </Col>
                         <Col span={8}>
                             <Card bordered={false}>
                                 <Statistic
-                                    title="Убыточных сделок"
+                                    title={`Убыточных сделок ${timeframeLabelMap[tf]}`}
                                     value={losses[tf]}
                                     valueStyle={{color: "rgb(255, 117, 132)"}}
-                                    suffix={`(${!losses[tf] ? 0 : (losses[tf] * 100 / (profits[tf] + losses[tf])).toFixed(2)})%`}
+                                    suffix={`(${!losses[tf] ? 0 : (losses[tf] * 100 / ((profits[tf] || 0) + (losses[tf] || 0))).toFixed(2)})%`}
                                 />
                             </Card>
                         </Col>

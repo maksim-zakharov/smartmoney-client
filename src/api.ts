@@ -14,7 +14,7 @@ export const api = createApi({
     "User"
   ],
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NODE_ENV !== 'production' ? "http://51.250.81.175:3000" : undefined
+    baseUrl: process.env.NODE_ENV !== 'production' ? "http://91.236.198.2:3000" : undefined
   }),
   endpoints: (builder) => ({
     candles: builder.query<{candles: HistoryObject[]}, any>({
