@@ -1,5 +1,6 @@
 import {HistoryObject} from "./api.ts";
 import {calculateTakeProfit} from "./utils";
+import moment from "moment";
 
 export interface Swing {
     side?: 'high' | 'low',
@@ -240,7 +241,7 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
     return {structure, highParts, lowParts};
 }
 
-export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryObject[], withTrendConfirm: boolean = false, ignoreSFP: boolean = false) => {
+export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryObject[], withTrendConfirm: boolean = false, ignoreSFP: boolean = false, ignoreWick: boolean = false) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
     let highLows = new Array(candles.length).fill(null);
@@ -270,12 +271,15 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
         const noUpperSFP = (!ignoreSFP || prevHigh.price < currHigh.price && prevHigh.price < currHighCandle.close);
         const noDownSFP = (!ignoreSFP || prevLow.price > currLow.price && prevLow.price > currLowCandle.close);
 
-        if (prevHigh.price < currHigh.price && currHigh.index === i && (!withTrendConfirm || prevLow.price < currLow.price) && noUpperSFP) {
+        const noUpperWick = (!ignoreWick || prevHigh.price < currHigh.price && prevHigh.price < currHighCandle.close);
+        const noDownWick = (!ignoreWick || candles[prevHigh.index].low > candles[currLow.index].close);
+
+        if (prevHigh.price < currHigh.price && currHigh.index === i && (!withTrendConfirm || prevLow.price < currLow.price) && noUpperSFP && noUpperWick) {
             trend[i] = {time: currHigh.time, trend: 1, index: currHigh.index};
             highLows[i] = {high: currHigh, low: currLow};
         }
-
-        if (prevLow.price > currLow.price && currLow.index === i && (!withTrendConfirm || prevHigh.price > currHigh.price) && noDownSFP) {
+        if (prevLow.price > currLow.price && currLow.index === i && (!withTrendConfirm || prevHigh.price > currHigh.price) && noDownSFP && noDownWick) {
+            debugger
             trend[i] = {time: currLow.time, trend: -1, index: currLow.index};
             highLows[i] = {high: currHigh, low: currLow};
         }

@@ -108,6 +108,7 @@ export const TestPage = () => {
         excludeIDM: checkboxValues.includes('excludeIDM'),
         showFakeouts: checkboxValues.includes('showFakeouts'),
         excludeTrendSFP: checkboxValues.includes('excludeTrendSFP'),
+        excludeWick: checkboxValues.includes('excludeWick'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -163,19 +164,19 @@ export const TestPage = () => {
             if(!data.length){
                 return [];
             }
-            const trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP).trend;
+            const trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
             return trend;
         } else {
             if(!trendData.length){
                 return [];
             }
-            let newTrend = calculateTrend(highParts, lowParts, trendData, config.withTrendConfirm, config.excludeTrendSFP).trend;
+            let newTrend = calculateTrend(highParts, lowParts, trendData, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
 
             newTrend = fillTrendByMinorData(newTrend, trendData, data)
 
             return newTrend;
         }
-    }, [tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, trendData, highParts, lowParts]);
+    }, [tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick, trendData, highParts, lowParts]);
 
     const fakeouts = useMemo(() => {
         if(tf === trendTF){
@@ -290,6 +291,7 @@ export const TestPage = () => {
             <Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
+            <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
         </Checkbox.Group>
         <Chart maxDiff={maxDiff} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
     </>;
