@@ -56,22 +56,102 @@ export const calculateSwings = (candles: HistoryObject[]) => {
     return {swings, highs, lows};
 }
 
+export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
+    const swings: (Swing | null)[] = [];
+    const highs: (Swing | null)[] = [];
+    const lows: (Swing | null)[] = [];
+
+    let lastLowIndex = null;
+    let lastHighIndex = null;
+
+    for (let i = 0; i < candles.length; i++) {
+        if(i === 0) {
+            highs.push(null);
+            lows.push(null);
+            continue;
+        }
+        const prevLow = lows[i - 1];
+        const prevHigh = highs[i - 1];
+
+        const prevCandle = candles[i - 1];
+        const currentCandle = candles[i];
+        // Ищем перехай или перелоу
+
+        const high: Swing = {
+            side: 'high',
+            time: currentCandle.time,
+            price: currentCandle.high,
+            index: i
+        }
+        const crossHigh = (!lastLowIndex || !lastHighIndex) || lastHighIndex < lastLowIndex || currentCandle.high > highs[lastHighIndex].price
+        const existHigh = currentCandle.high > prevCandle.high && crossHigh ? high : null;
+
+        const low: Swing = {
+            side: 'low',
+            time: currentCandle.time,
+            price: currentCandle.low,
+            index: i
+        }
+        const crossLow = (!lastLowIndex || !lastHighIndex) || lastHighIndex > lastLowIndex || currentCandle.low < lows[lastLowIndex].price
+        const existLow = currentCandle.low < prevCandle.low && crossLow ? low : null;
+
+        highs.push(existHigh);
+        lows.push(existLow);
+
+        // Должно происходить до crossLow
+        if(existHigh && prevHigh){
+            highs[i - 1] = null;
+            swings[i - 1] = null;
+        }
+        if(existLow && prevLow){
+            lows[i - 1] = null;
+            swings[i - 1] = null;
+        }
+
+        if(existLow && lastLowIndex && lastHighIndex < lastLowIndex && lows[lastLowIndex]?.price > existLow.price){
+            lows[lastLowIndex] = null;
+        }
+
+        if(existHigh && lastHighIndex && lastHighIndex > lastLowIndex && highs[lastHighIndex]?.price < existHigh.price){
+            highs[lastHighIndex] = null;
+        }
+
+        if(existHigh){
+            lastHighIndex = i;
+            // lastLowIndex = null;
+        }
+        if(existLow){
+            lastLowIndex = i;
+            // lastHighIndex = null;
+        }
+
+        if (existHigh)
+            swings.push(existHigh)
+        if (existLow)
+            swings.push(existLow)
+        if (!existHigh && !existLow)
+            swings.push(null)
+    }
+
+    return {swings, highs, lows};
+}
+
 export const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
     let structure: Swing[] = [];
 
     for (let i = 0; i < candles.length; i++) {
         if (highs[i]) {
             if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'low') {
-                structure.push(highs[i]);
+                structure.push({...highs[i]});
             } else if (structure[structure.length - 1].price <= highs[i].price) {
-                structure[structure.length - 1] = highs[i];
+                structure[structure.length - 1] = {...highs[i]};
             }
         }
         if (lows[i]) {
             if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'high') {
-                structure.push(lows[i]);
+                structure.push({...lows[i]});
             } else if (structure[structure.length - 1].price >= lows[i].price) {
-                structure[structure.length - 1] = lows[i];
+                structure[structure.length - 1] = {...lows[i]};
             }
         }
     }
@@ -109,9 +189,11 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
             }, currStruct.index + 1);
 
             const lowest = candles[index];
-            structure[i + 1].index = index;
-            structure[i + 1].price = lowest.low;
-            structure[i + 1].time = lowest.time;
+            if(lowest){
+                structure[i + 1].index = index;
+                structure[i + 1].price = lowest.low;
+                structure[i + 1].time = lowest.time;
+            }
         }
         if(nextStruct.side === 'high'){
             const batch = highs.slice(currStruct.index + 1, nextStruct.index + 2);
@@ -123,9 +205,11 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
             }, currStruct.index + 1);
 
             const lowest = candles[index];
-            structure[i + 1].index = index;
-            structure[i + 1].price = lowest.high;
-            structure[i + 1].time = lowest.time;
+            if(lowest){
+                structure[i + 1].index = index;
+                structure[i + 1].price = lowest.high;
+                structure[i + 1].time = lowest.time;
+            }
         }
     }
 

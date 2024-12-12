@@ -1,14 +1,21 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {Checkbox, DatePicker, Divider, Input, Radio, Select, Slider, Space, TimeRangePickerProps} from "antd";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./TestChart";
 import {calculateEMA} from "../../symbolFuturePairs";
-import {fetchCandlesFromAlor, fillTrendByMinorData, getSecurity, refreshToken} from "../utils";
+import {fetchCandlesFromAlor, fillTrendByMinorData, getSecurity, notTradingTime, refreshToken} from "../utils";
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
-import {calculateFakeout, calculateStructure, calculateSwings, calculateTrend, Trend} from "../samurai_patterns";
+import {
+    calculateFakeout,
+    calculateStructure,
+    calculateSwings,
+    calculateTrend,
+    khrustikCalculateSwings,
+    Trend
+} from "../samurai_patterns";
 import {Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 
@@ -18,6 +25,7 @@ const markerColors = {
 }
 
 export const TestPage = () => {
+    const [swipType, setSwipType] = useState('samurai');
     const [data, setData] = useState([]);
     const [trendData, setTrendData] = useState([]);
     const [ema, setEma] = useState([]);
@@ -77,9 +85,9 @@ export const TestPage = () => {
 
     useEffect(() => {
         if(tf === trendTF){
-            fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(setData);
+            fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
         } else {
-            Promise.all([fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(setData), fetchCandlesFromAlor(ticker, trendTF, fromDate, toDate).then(setTrendData)])
+            Promise.all([fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData), fetchCandlesFromAlor(ticker, trendTF, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setTrendData)])
         }
     }, [tf, trendTF, ticker, fromDate, toDate]);
 
@@ -126,21 +134,29 @@ export const TestPage = () => {
         setSearchParams(searchParams);
     }
 
+    const swipCallback = useCallback(swipType === 'samurai' ? calculateSwings : khrustikCalculateSwings, [swipType]);
+
+    const swings = useMemo(() => {
+        if(tf === trendTF){
+            return swipCallback(data);
+        } else {
+            return swipCallback(trendData);
+        }
+    } ,[swipCallback, tf, trendTF, data, trendData])
+
     const {structure, highParts, lowParts} = useMemo(() => {
     if(tf === trendTF){
         if(!data.length){
             return {structure: [], highParts: [], lowParts: []};
         }
-        const {swings: swingsData, highs, lows} = calculateSwings(data);
-        return calculateStructure(highs, lows, data);
+        return calculateStructure(swings.highs, swings.lows, data);
     } else {
         if (!trendData.length) {
             return {structure: [], highParts: [], lowParts: []};
         }
-        const {swings: swingsData, highs, lows} = calculateSwings(trendData);
-        return calculateStructure(highs, lows, trendData);
+        return calculateStructure(swings.highs, swings.lows, trendData);
     }
-    } ,[tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, trendData])
+    } ,[tf, trendTF, swings])
 
     const trend: Trend[] = useMemo(() => {
         if(tf === trendTF){
@@ -170,6 +186,22 @@ export const TestPage = () => {
 
     const markers = useMemo(() => {
         const allMarkers = [];
+        if(config.swings){
+            allMarkers.push(...swings.highs.filter(Boolean).map(s => ({
+                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time * 1000) as Time,
+                shape: 'circle',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                // text: marker.text
+            })));
+            allMarkers.push(...swings.lows.filter(Boolean).map(s => ({
+                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time * 1000) as Time,
+                shape: 'circle',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                // text: marker.text
+            })));
+        }
         if(config.noDoubleSwing){
             allMarkers.push(...lowParts.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
@@ -198,7 +230,7 @@ export const TestPage = () => {
         }
 
         return allMarkers;
-    }, [lowParts, highParts, config.noDoubleSwing, fakeouts, config.showFakeouts]);
+    }, [swings, lowParts, highParts, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
 
     return <>
         <Divider plain orientation="left">Общее</Divider>
@@ -208,6 +240,11 @@ export const TestPage = () => {
         </Space>
         <Divider plain orientation="left">Структура</Divider>
         <Space>
+            <Radio.Group onChange={e => setSwipType(e.target.value)}
+                         value={swipType}>
+                <Radio value="samurai">Свипы по самураю</Radio>
+                <Radio value="khrustik">Свипы по хрустику</Radio>
+            </Radio.Group>
             <TimeframeSelect value={trendTF} onChange={setTrendSize}/>
         </Space>
         <Divider plain orientation="left">Инструмент</Divider>

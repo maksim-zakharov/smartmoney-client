@@ -10,11 +10,10 @@ import {
 } from "lightweight-charts";
 import {calculate} from "../sm_scripts";
 import {
-    calculateBreakingBlocks,
     calculateCrosses, calculateFakeout, calculateOB, calculatePositionsByFakeouts, calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
-    calculateTrend, Trend
+    Trend
 } from "../samurai_patterns";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 import moment from 'moment';
@@ -208,7 +207,7 @@ export const Chart: FC<{
             } = calculate(data, markerColors, windowLength);
 
             let allMarkers = markers ? [...markers] : [];
-            const {swings: swingsData, highs, lows} = calculateSwings(data);
+            const {highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
             const newTrend = trend;
@@ -378,17 +377,6 @@ export const Chart: FC<{
                 //     })
                 // }
             })
-
-            if (swings) {
-
-                allMarkers.push(...swingsData.filter(Boolean).map(s => ({
-                    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                    time: (s.time * 1000) as Time,
-                    shape: 'circle',
-                    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                    // text: marker.text
-                })));
-            }
 
             if(noInternal){
 
