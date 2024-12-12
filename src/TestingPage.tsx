@@ -14,26 +14,27 @@ import {
     TimeRangePickerProps
 } from "antd";
 import {TickerSelect} from "./TickerSelect";
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import FormItem from "antd/es/form/FormItem";
 import {TimeframeSelect} from "./TimeframeSelect";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
 import {
-    calculateCrosses, calculateFakeout,
+    calculateFakeout,
     calculateOB, calculatePositionsByFakeouts,
     calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
-    calculateTrend
+    calculateTrend, khrustikCalculateSwings
 } from "./samurai_patterns";
-import {calculateDrawdowns, fetchCandlesFromAlor, getSecurity, notTradingTime, persision, refreshToken} from "./utils";
+import {fetchCandlesFromAlor, getSecurity, notTradingTime, persision, refreshToken} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 
 const {RangePicker} = DatePicker;
 
 export const TestingPage = () => {
+    const [swipType, setSwipType] = useState('samurai');
     const [loading, setLoading] = useState(true);
     const [allData, setAllData] = useState({});
     const [allSecurity, setAllSecurity] = useState({});
@@ -42,10 +43,12 @@ export const TestingPage = () => {
     const [tf, onChangeTF] = useState<string>('300');
     const [trendTF, onChangeTrendTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
+    const [withMove, setWithMove] = useState<boolean>(false);
     const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
     const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
     const [excludeTrendSFP, setExcludeTrendSFP] = useState<boolean>(false);
+    const [excludeWick, setExcludeWick] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("default");
     const [stopMargin, setStopMargin] = useState<number>(50)
@@ -56,22 +59,38 @@ export const TestingPage = () => {
     const [token, setToken] = useState();
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([dayjs('2024-10-01T00:00:00Z'), dayjs('2025-10-01T00:00:00Z')])
 
+    const swipCallback = useCallback(swipType === 'samurai' ? calculateSwings : khrustikCalculateSwings, [swipType]);
+
+    const swings = useMemo(() => {
+        if(tf === trendTF){
+            if(!data.length){
+                return [];
+            }
+            return swipCallback(data);
+        } else {
+            if(!trendData.length){
+                return [];
+            }
+            return swipCallback(trendData);
+        }
+    } ,[swipCallback, tf, trendTF, data, trendData])
+
     const trend = useMemo(() => {
         if(tf === trendTF){
             if(!data.length){
                 return [];
             }
-            const {swings: swingsData, highs, lows} = calculateSwings(data);
+            const {swings: swingsData, highs, lows} = swings;
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
+            const trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP, excludeWick).trend;
             return trend;
         } else {
             if(!trendData.length){
                 return [];
             }
-            const {swings: swingsData, highs, lows} = calculateSwings(trendData);
+            const {swings: swingsData, highs, lows} = swings;
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, trendData);
-            const newTrend = calculateTrend(highParts, lowParts, trendData, confirmTrend, excludeTrendSFP).trend;
+            const newTrend = calculateTrend(highParts, lowParts, trendData, confirmTrend, excludeTrendSFP, excludeWick).trend;
             if(!newTrend.length){
                 return [];
             }
@@ -95,13 +114,13 @@ export const TestingPage = () => {
             }
             return newTrend;
         }
-    }, [tf, trendTF, data, confirmTrend, excludeTrendSFP, trendData]);
+    }, [tf, trendTF, swings, confirmTrend, excludeWick, excludeTrendSFP]);
 
     const positions = useMemo(() => {
         const {swings: swingsData, highs, lows} = calculateSwings(data);
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
         // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
-        let orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM);
+        let orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
         if(excludeIDM){
             // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
@@ -131,14 +150,14 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, trend, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, trend, withMove, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            const {swings: swingsData, highs, lows} = calculateSwings(data);
+            const {swings: swingsData, highs, lows} = swipCallback(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
-            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
+            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP, excludeWick);
+            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
             if(excludeIDM){
                 // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
                 // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
@@ -169,7 +188,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
-    }, [excludeIDM, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [swipCallback, withMove, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -354,6 +373,25 @@ export const TestingPage = () => {
                     <FormItem>
                         <Checkbox value={excludeTrendSFP} onChange={e => setExcludeTrendSFP(e.target.checked)}>Исключить
                             Fake BOS</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={excludeWick} onChange={e => setExcludeWick(e.target.checked)}>Игнорировать пробитие фитилем</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={withMove} onChange={e => setWithMove(e.target.checked)}>Двигать ОБ к имбалансу</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Radio.Group onChange={e => setSwipType(e.target.value)}
+                                     value={swipType}>
+                            <Radio value="samurai">Свипы по самураю</Radio>
+                            <Radio value="khrustik">Свипы по хрустику</Radio>
+                        </Radio.Group>
                     </FormItem>
                 </Col>
             </Row>

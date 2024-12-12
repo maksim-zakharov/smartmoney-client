@@ -1,6 +1,5 @@
 import {HistoryObject} from "./api.ts";
 import {calculateTakeProfit} from "./utils";
-import moment from "moment";
 
 export interface Swing {
     side?: 'high' | 'low',
@@ -71,8 +70,6 @@ export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
         if (i === 0) {
             continue;
         }
-        const prevLow = lows[i - 1];
-        const prevHigh = highs[i - 1];
         const prevCandle = candles[i - 1];
         const currentCandle = candles[i];
         // Ищем перехай или перелоу
@@ -369,37 +366,49 @@ const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high >
 
 const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
 
-const isOrderblock = (candles: HistoryObject[]) => {
+const isOrderblock = (candles: HistoryObject[], withMove: boolean = false) => {
     if(candles.length < 3){
         return null;
     }
     let firstImbalanceIndex;
-    let lastOrderblockCandle;
-    const firstCandle = candles[0];
+    let firstCandle = candles[0];
 
-    for (let i = 1; i < candles.length - 1; i++) {
-        if(!isInsideBar(candles[0], candles[i])){
-            lastOrderblockCandle = candles[i-1];
+    for (let i = 1; i < candles.length; i++) {
+        if(!isInsideBar(firstCandle, candles[i])){
             firstImbalanceIndex = i - 1;
             break;
         }
     }
 
-    let lastImbalanceCandle;
     let lastImbalanceIndex;
-    // Берем не только первый имбаланс, а ближайший из 10 свечей
-    for (let i = firstImbalanceIndex; i < candles.length - 1; i++) {
-        if(isImbalance(candles[firstImbalanceIndex], candles[i + 1])){
-            lastImbalanceCandle = candles[i + 1];
-            lastImbalanceIndex = i + 1;
-            break;
+    if(withMove){
+        debugger
+        // Берем не только первый имбаланс, а ближайший из 10 свечей
+        for (let i = firstImbalanceIndex; i < candles.length - 2; i++) {
+            if(isImbalance(candles[i], candles[i + 2])){
+                firstCandle = candles[i]
+                firstImbalanceIndex = i;
+
+                lastImbalanceIndex = i + 2;
+                break;
+            }
+        }
+    }else {
+        // Берем не только первый имбаланс, а ближайший из 10 свечей
+        for (let i = firstImbalanceIndex; i < candles.length - 1; i++) {
+            if (isImbalance(candles[firstImbalanceIndex], candles[i + 1])) {
+                lastImbalanceIndex = i + 1;
+                break;
+            }
         }
     }
 
+    let lastImbalanceCandle = candles[lastImbalanceIndex];
     if(!lastImbalanceCandle){
         return null;
     }
 
+    let lastOrderblockCandle = candles[firstImbalanceIndex];
     if(lastImbalanceCandle.low > firstCandle.high){
         return {orderblock: {time: firstCandle.time, high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastOrderblockCandle, lastImbalanceCandle, firstImbalanceIndex, imbalanceIndex: lastImbalanceIndex, type: 'low'};
     }
@@ -433,7 +442,7 @@ const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' 
  * и только если следующая свеча после структурной дает имбаланс
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
-export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], trends: Trend[], excludeIDM: boolean = false) => {
+export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], trends: Trend[], excludeIDM: boolean = false, withMove: boolean = false) => {
     let ob: OrderBlock [] = [];
     const MAX_CANDLES_COUNT = 10;
 
@@ -444,12 +453,12 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             continue;
         }
         const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
-        const orderBlock = isOrderblock(candlesBatch);
+        const orderBlock = isOrderblock(candlesBatch, withMove);
         if (orderBlock?.type === 'high') {
             ob.push({
                 type: orderBlock.type,
                 index,
-                time: high.time,
+                time: orderBlock.orderblock.time,
                 lastOrderblockCandle: orderBlock.lastOrderblockCandle,
                 lastImbalanceCandle: orderBlock.lastImbalanceCandle,
                 firstImbalanceIndex: orderBlock.firstImbalanceIndex,
@@ -466,12 +475,12 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             continue;
         }
         const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
-        const orderBlock = isOrderblock(candlesBatch);
+        const orderBlock = isOrderblock(candlesBatch, withMove);
         if (orderBlock?.type === 'low') {
             ob.push({
                 type: orderBlock.type,
                 index,
-                time: lows[i].time,
+                time: orderBlock.orderblock.time,
                 lastOrderblockCandle: orderBlock.lastOrderblockCandle,
                 lastImbalanceCandle: orderBlock.lastImbalanceCandle,
                 firstImbalanceIndex: orderBlock.firstImbalanceIndex,

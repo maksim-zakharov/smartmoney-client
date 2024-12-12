@@ -109,6 +109,7 @@ export const TestPage = () => {
         showFakeouts: checkboxValues.includes('showFakeouts'),
         excludeTrendSFP: checkboxValues.includes('excludeTrendSFP'),
         excludeWick: checkboxValues.includes('excludeWick'),
+        withMove: checkboxValues.includes('withMove'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -292,6 +293,7 @@ export const TestPage = () => {
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
+            <Checkbox key="withMove" value="withMove">Двигать ОБ к имбалансу</Checkbox>
         </Checkbox.Group>
         <Chart maxDiff={maxDiff} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
     </>;

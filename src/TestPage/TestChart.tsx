@@ -42,6 +42,7 @@ export const Chart: FC<{
     showEndOB?: boolean,
     smartTrend?: boolean,
     noInternal?: boolean,
+    withMove?: boolean,
     BOS?: boolean,
     data: any[],
     ema: any[],
@@ -50,7 +51,7 @@ export const Chart: FC<{
     tf: number,
     trend: Trend[],
     onProfit: any
-}> = ({maxDiff, markers, trend, excludeTrendSFP, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff, markers, trend, excludeTrendSFP, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,withMove, excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -213,7 +214,7 @@ export const Chart: FC<{
             const newTrend = trend;
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
-            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM);
+            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
             const fakeouts = calculateFakeout(highParts, lowParts, data)
 
             // if(excludeIDM){
@@ -563,7 +564,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [showFakeouts, markers, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [showFakeouts, withMove, markers, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
