@@ -91,17 +91,6 @@ export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
         const existSH = currentCandle.high > prevCandle.high ? high : null;
         const existSL = currentCandle.low < prevCandle.low ? low : null;
 
-        // Если текущий хай выше предыдущего хая и между хаями не было перелоя - удалять прошлый хай
-
-//         if(i >= 22 && existSH && existSL){
-// debugger
-//             // continue;
-//         }
-        if(i >= 39 && existSH && existSL){
-            debugger
-            // continue;
-        }
-
         if(existSH?.index !== existSL?.index){
             // Есть ли несколько вершин подряд
             if (existSH && lastHighIndex > lastLowIndex) {
