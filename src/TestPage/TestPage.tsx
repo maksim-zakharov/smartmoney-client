@@ -187,6 +187,13 @@ export const TestPage = () => {
     const markers = useMemo(() => {
         const allMarkers = [];
         if(config.swings){
+            // allMarkers.push(...swings.swings.filter(Boolean).map(s => ({
+            //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+            //     time: (s.time * 1000) as Time,
+            //     shape: 'circle',
+            //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+            //     // text: marker.text
+            // })));
             allMarkers.push(...swings.highs.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.time * 1000) as Time,
