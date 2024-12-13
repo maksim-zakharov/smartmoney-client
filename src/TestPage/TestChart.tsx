@@ -31,12 +31,13 @@ export const Chart: FC<{
     maxDiff?: number
     multiStop?: number
     oldTrend?: boolean,
-    positions?: boolean,
+    positions?: any[],
     tradeFakeouts?: boolean,
     excludeTrendSFP?: boolean,
     smartTrend?: boolean,
     noInternal?: boolean,
     withMove?: boolean,
+    showPositions?: boolean,
     BOS?: boolean,
     data: any[],
     ema: any[],
@@ -47,7 +48,7 @@ export const Chart: FC<{
     orderBlocks: OrderBlock[],
     rectangles: any[],
     onProfit: any
-}> = ({maxDiff, markers, rectangles, orderBlocks, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm,withMove, excludeIDM,multiStop, BOS,positions: showPositions, onProfit, oldTrend, noInternal, smartTrend, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff, markers, rectangles, orderBlocks, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm,withMove, excludeIDM,multiStop, BOS, showPositions, positions, onProfit, oldTrend, noInternal, smartTrend, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -215,22 +216,14 @@ export const Chart: FC<{
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
             // let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
-            const fakeouts = calculateFakeout(highParts, lowParts, data)
 
             // if(excludeIDM){
             //     const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
             //     orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
             // }
 
-            const positions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop);
-            if(tradeFakeouts){
-                const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, multiStop);
-                positions.push(...fakeoutPositions);
-            }
-            onProfit?.({positions})
-
             if(showPositions){
-                const poses = positions.sort((a, b) => a.openTime - b.openTime).map(s => [{
+                const poses = positions.map(s => [{
                     color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.openTime * 1000) as Time,
                     shape: s.side === 'long' ? 'arrowUp' : 'arrowDown',
@@ -526,7 +519,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [orderBlocks, rectangles, withMove, markers, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, excludeIDM, multiStop, maxDiff, showPositions, BOS, oldTrend, noInternal, smartTrend, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [orderBlocks, rectangles, withMove, markers, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, excludeIDM, multiStop, maxDiff, positions, showPositions, BOS, oldTrend, noInternal, smartTrend, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div

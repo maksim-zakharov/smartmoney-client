@@ -10,7 +10,7 @@ import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
 import {
     calculateFakeout,
-    calculateOB,
+    calculateOB, calculatePositionsByFakeouts, calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
     calculateTrend,
@@ -31,7 +31,7 @@ export const TestPage = () => {
     const [data, setData] = useState([]);
     const [trendData, setTrendData] = useState([]);
     const [ema, setEma] = useState([]);
-    const [checkboxValues, setCheckboxValues] = useState(['positions', 'showEndOB']);
+    const [checkboxValues, setCheckboxValues] = useState(['showPositions', 'showEndOB']);
     const [windowLength, setWindowLength] = useState(5);
     const [maxDiff, setMaxDiff] = useState(0);
     const [multiStop, setMultiStop] = useState(5);
@@ -105,7 +105,7 @@ export const TestPage = () => {
         showOB: checkboxValues.includes('showOB'),
         showEndOB: checkboxValues.includes('showEndOB'),
         imbalances: checkboxValues.includes('imbalances'),
-        positions: checkboxValues.includes('positions'),
+        showPositions: checkboxValues.includes('showPositions'),
         tradeFakeouts: checkboxValues.includes('tradeFakeouts'),
         excludeIDM: checkboxValues.includes('excludeIDM'),
         showFakeouts: checkboxValues.includes('showFakeouts'),
@@ -291,6 +291,15 @@ export const TestPage = () => {
         return allMarkers;
     }, [swings, lowParts, highParts, orderBlocks, config.showOB, config.showEndOB, config.imbalances, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
 
+    const _positions = useMemo(() => {
+        const positions = calculatePositionsByOrderblocks(orderBlocks, _data, maxDiff, multiStop);
+        if(config.tradeFakeouts){
+            const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, _data, multiStop);
+            positions.push(...fakeoutPositions);
+        }
+        return positions.sort((a, b) => a.openTime - b.openTime);
+    }, [orderBlocks, fakeouts, _data, maxDiff, multiStop, config.tradeFakeouts]);
+
     return <>
         <Divider plain orientation="left">Общее</Divider>
         <Space>
@@ -342,14 +351,14 @@ export const TestPage = () => {
             <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
             <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>
-            <Checkbox key="positions" value="positions">Сделки</Checkbox>
+            <Checkbox key="showPositions" value="showPositions">Сделки</Checkbox>
             <Checkbox key="tradeFakeouts" value="tradeFakeouts">Торговать ложные пробои</Checkbox>
             <Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
         </Checkbox.Group>
-        <Chart maxDiff={maxDiff} rectangles={rectangles} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
+        <Chart maxDiff={maxDiff} positions={_positions} rectangles={rectangles} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
     </>;
 }
 
