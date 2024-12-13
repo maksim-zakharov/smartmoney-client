@@ -1,8 +1,8 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Checkbox, DatePicker, Divider, Input, Radio, Select, Slider, Space, TimeRangePickerProps} from "antd";
+import {Checkbox, Divider, Input, Radio, Slider, Space} from "antd";
+import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
-import type { Dayjs } from 'dayjs';
 import {Chart} from "./TestChart";
 import {calculateEMA} from "../../symbolFuturePairs";
 import {fetchCandlesFromAlor, fillTrendByMinorData, getSecurity, notTradingTime, refreshToken} from "../utils";
@@ -10,6 +10,7 @@ import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
 import {
     calculateFakeout,
+    calculateOB,
     calculateStructure,
     calculateSwings,
     calculateTrend,
@@ -26,6 +27,7 @@ const markerColors = {
 
 export const TestPage = () => {
     const [swipType, setSwipType] = useState('samurai');
+    const [obType, setOBType] = useState('samurai');
     const [data, setData] = useState([]);
     const [trendData, setTrendData] = useState([]);
     const [ema, setEma] = useState([]);
@@ -138,35 +140,24 @@ export const TestPage = () => {
 
     const swipCallback = useCallback(swipType === 'samurai' ? calculateSwings : khrustikCalculateSwings, [swipType]);
 
-    const swings = useMemo(() => {
+    const _data = useMemo(() => {
         if(tf === trendTF){
-            return swipCallback(data);
+            return data;
         } else {
-            return swipCallback(trendData);
+            return trendData;
         }
-    } ,[swipCallback, tf, trendTF, data, trendData])
+    } ,[tf, trendTF, data, trendData])
 
-    const {structure, highParts, lowParts} = useMemo(() => {
-    if(tf === trendTF){
-        if(!data.length){
-            return {structure: [], highParts: [], lowParts: []};
-        }
-        return calculateStructure(swings.highs, swings.lows, data);
-    } else {
-        if (!trendData.length) {
-            return {structure: [], highParts: [], lowParts: []};
-        }
-        return calculateStructure(swings.highs, swings.lows, trendData);
-    }
-    } ,[tf, trendTF, swings])
+    const swings = useMemo(() => swipCallback(_data) ,[swipCallback, _data])
+
+    const {structure, highParts, lowParts} = useMemo(() => calculateStructure(swings.highs, swings.lows, _data) ,[_data, swings])
 
     const trend: Trend[] = useMemo(() => {
         if(tf === trendTF){
             if(!data.length){
                 return [];
             }
-            const trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
-            return trend;
+            return calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
         } else {
             if(!trendData.length){
                 return [];
@@ -179,15 +170,74 @@ export const TestPage = () => {
         }
     }, [tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick, trendData, highParts, lowParts]);
 
-    const fakeouts = useMemo(() => {
-        if(tf === trendTF){
-           return  calculateFakeout(highParts, lowParts, data)
+    const orderBlocks = useMemo(() => calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai') ,[highParts, lowParts, _data, trend, config.excludeIDM, obType])
+
+    const fakeouts = useMemo(() => calculateFakeout(highParts, lowParts, _data), [highParts, lowParts, _data]);
+
+    const rectangles = useMemo(() => {
+        const lastCandle = _data[_data.length - 1];
+        const _rectangles = [];
+        if(config.showOB || config.showEndOB || config.imbalances){
+            const checkShow = (ob) => {
+                let result = false;
+                if(config.showOB && !Boolean(ob.endCandle)){
+                    result = true;
+                }
+                if(config.showEndOB && Boolean(ob.endCandle)){
+                    result = true;
+                }
+                return result;
+            }
+            config.imbalances && _rectangles.push(...orderBlocks.filter(checkShow).map(orderBlock => ({
+                leftTop: {
+                    price: orderBlock.lastOrderblockCandle.high,
+                    time: orderBlock.lastOrderblockCandle.time * 1000
+                },
+                rightBottom: {
+                    price: orderBlock.lastImbalanceCandle.low,
+                    time: (orderBlock.lastImbalanceCandle || lastCandle).time * 1000
+                },
+                options: {
+                    fillColor: 'rgba(179, 199, 219, .3)',
+                    showLabels: false,
+                    borderLeftWidth: 0,
+                    borderRightWidth: 0,
+                    borderWidth: 2,
+                    borderColor: '#222'
+                }
+            })));
+            _rectangles.push(...orderBlocks.filter(checkShow).map(orderBlock => ({leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time * 1000}, rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time * 1000},
+                options: {
+                    fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
+                    showLabels: false,
+                    borderWidth: 0,
+                }})));
         }
-        return  calculateFakeout(highParts, lowParts, trendData)
-    }, [tf, trendTF, highParts, lowParts, data, trendData]);
+
+        return _rectangles;
+    }, [orderBlocks, config.imbalances, config.showOB, config.showEndOB, config.imbalances, _data])
 
     const markers = useMemo(() => {
         const allMarkers = [];
+        if(config.showOB || config.showEndOB || config.imbalances) {
+            const checkShow = (ob) => {
+                let result = false;
+                if(config.showOB && !Boolean(ob.endCandle)){
+                    result = true;
+                }
+                if(config.showEndOB && Boolean(ob.endCandle)){
+                    result = true;
+                }
+                return result;
+            }
+            allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
+                color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time * 1000) as Time,
+                shape: 'text',
+                position: s.type === 'high' ? 'aboveBar' : 'belowBar',
+                text: "OB"
+            })));
+        }
         if(config.swings){
             // allMarkers.push(...swings.swings.filter(Boolean).map(s => ({
             //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
@@ -239,7 +289,7 @@ export const TestPage = () => {
         }
 
         return allMarkers;
-    }, [swings, lowParts, highParts, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
+    }, [swings, lowParts, highParts, orderBlocks, config.showOB, config.showEndOB, config.imbalances, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
 
     return <>
         <Divider plain orientation="left">Общее</Divider>
@@ -253,6 +303,11 @@ export const TestPage = () => {
                          value={swipType}>
                 <Radio value="samurai">Свипы по самураю</Radio>
                 <Radio value="khrustik">Свипы по хрустику</Radio>
+            </Radio.Group>
+            <Radio.Group onChange={e => setOBType(e.target.value)}
+                         value={obType}>
+                <Radio value="samurai">ОБ по самураю</Radio>
+                <Radio value="dobrinya">ОБ по добрыне</Radio>
             </Radio.Group>
             <TimeframeSelect value={trendTF} onChange={setTrendSize}/>
         </Space>
@@ -293,9 +348,8 @@ export const TestPage = () => {
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
-            <Checkbox key="withMove" value="withMove">Двигать ОБ к имбалансу</Checkbox>
         </Checkbox.Group>
-        <Chart maxDiff={maxDiff} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
+        <Chart maxDiff={maxDiff} rectangles={rectangles} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
     </>;
 }
 

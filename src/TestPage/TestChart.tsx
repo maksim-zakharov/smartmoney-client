@@ -10,9 +10,9 @@ import {
 } from "lightweight-charts";
 import {calculate} from "../sm_scripts";
 import {
-    calculateCrosses, calculateFakeout, calculateOB, calculatePositionsByFakeouts, calculatePositionsByOrderblocks,
+    calculateCrosses, calculateFakeout, calculatePositionsByFakeouts, calculatePositionsByOrderblocks,
     calculateStructure,
-    calculateSwings,
+    calculateSwings, OrderBlock,
     Trend
 } from "../samurai_patterns";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
@@ -25,21 +25,15 @@ function capitalizeFirstLetter(str) {
 
 export const Chart: FC<{
     markers: SeriesMarker<any>[],
-    showFakeouts?: boolean,
     smPatterns?: boolean,
     excludeIDM?: boolean,
-    imbalances?: boolean,
     withTrendConfirm?: boolean,
     maxDiff?: number
     multiStop?: number
-    noDoubleSwing?: boolean,
-    swings?: boolean,
     oldTrend?: boolean,
-    showOB?: boolean,
     positions?: boolean,
     tradeFakeouts?: boolean,
     excludeTrendSFP?: boolean,
-    showEndOB?: boolean,
     smartTrend?: boolean,
     noInternal?: boolean,
     withMove?: boolean,
@@ -50,8 +44,10 @@ export const Chart: FC<{
     windowLength: number,
     tf: number,
     trend: Trend[],
+    orderBlocks: OrderBlock[],
+    rectangles: any[],
     onProfit: any
-}> = ({maxDiff, markers, trend, excludeTrendSFP, tradeFakeouts, showFakeouts, withTrendConfirm, imbalances,withMove, excludeIDM,multiStop, BOS,positions: showPositions, onProfit, showEndOB, showOB, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, tf, ema, windowLength}) => {
+}> = ({maxDiff, markers, rectangles, orderBlocks, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm,withMove, excludeIDM,multiStop, BOS,positions: showPositions, onProfit, oldTrend, noInternal, smartTrend, smPatterns, data, tf, ema, windowLength}) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -208,13 +204,17 @@ export const Chart: FC<{
             } = calculate(data, markerColors, windowLength);
 
             let allMarkers = markers ? [...markers] : [];
+
+            let allRectangles = rectangles ? [...rectangles] : [];
+            allRectangles.forEach(rectangle => createRectangle(newSeries, {leftTop: rectangle.leftTop, rightBottom: rectangle.rightBottom}, rectangle.options))
+
             const {highs, lows} = calculateSwings(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
             const newTrend = trend;
             const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
-            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
+            // let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
             const fakeouts = calculateFakeout(highParts, lowParts, data)
 
             // if(excludeIDM){
@@ -228,19 +228,6 @@ export const Chart: FC<{
                 positions.push(...fakeoutPositions);
             }
             onProfit?.({positions})
-
-            const lastCandle = data[data.length - 1];
-
-            const checkShow = (ob) => {
-                let result = false;
-                if(showOB && !Boolean(ob.endCandle)){
-                    result = true;
-                }
-                if(showEndOB && Boolean(ob.endCandle)){
-                    result = true;
-                }
-                return result;
-            }
 
             if(showPositions){
                 const poses = positions.sort((a, b) => a.openTime - b.openTime).map(s => [{
@@ -276,31 +263,6 @@ export const Chart: FC<{
                 })
 
                 allMarkers.push(...poses.flat())
-            }
-
-            if(showOB || showEndOB || imbalances){
-                allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
-                    color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
-                    time: (s.time * 1000) as Time,
-                    shape: 'text',
-                    position: s.type === 'high' ? 'aboveBar' : 'belowBar',
-                    text: "OB"
-                })));
-
-                imbalances && orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.lastOrderblockCandle.high, time: orderBlock.lastOrderblockCandle.time * 1000}, rightBottom: {price: orderBlock.lastImbalanceCandle.low, time: (orderBlock.lastImbalanceCandle || lastCandle).time * 1000}}, {
-                    fillColor: 'rgba(179, 199, 219, .3)',
-                    showLabels: false,
-                    borderLeftWidth: 0,
-                    borderRightWidth: 0,
-                    borderWidth: 2,
-                    borderColor: '#222'
-                }));
-
-                orderBlocks.filter(checkShow).forEach(orderBlock => createRectangle(newSeries, {leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time * 1000}, rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time * 1000}}, {
-                    fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
-                    showLabels: false,
-                    borderWidth: 0,
-                }));
             }
 
 //             breakingBlocks.filter(Boolean).forEach(marker => {
@@ -564,7 +526,7 @@ export const Chart: FC<{
                 chart.remove();
             };
         },
-        [showFakeouts, withMove, markers, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, imbalances, excludeIDM, multiStop, maxDiff, showPositions, showOB, showEndOB, BOS, oldTrend, noInternal, smartTrend, noDoubleSwing, swings, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [orderBlocks, rectangles, withMove, markers, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, excludeIDM, multiStop, maxDiff, showPositions, BOS, oldTrend, noInternal, smartTrend, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
     );
 
     return <div
