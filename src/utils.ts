@@ -610,15 +610,23 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
                 volumeSeriesApi?.setData([]);
                 emaSeriesApi?.setData([]);
             } else {
-                seriesApi?.setData(data.map(t => ({...t})) as SeriesDataItemTypeMap[T][]);
-                volumeSeriesApi?.setData(data.map((d: any) => ({
+                const timeScale = chartApi.timeScale();
+
+                const timeRange = timeScale.getVisibleRange();
+
+                const { from, to } = timeRange;
+
+                // @ts-ignore
+                const filtered = data.filter(({ time }) => time >= from && time <= to)
+                seriesApi?.setData(filtered.map(t => ({...t})) as SeriesDataItemTypeMap[T][]);
+                volumeSeriesApi?.setData(filtered.map((d: any) => ({
                     ...d,
                     // time: d.time * 1000,
                     value: d.volume,
                     color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
                 })));
                 // @ts-ignore
-                emaSeriesApi?.setData(data
+                emaSeriesApi?.setData(filtered
                     .map((extremum, i) => ({time: extremum.time, value: ema[i]})));
             }
             console.log('setData')
@@ -631,7 +639,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
                 emaSeriesApi?.setData([]);
             }
         }
-    }, [data, seriesApi, volumeSeriesApi, emaSeriesApi]);
+    }, [data, seriesApi, volumeSeriesApi, emaSeriesApi, chartApi]);
 
     return seriesApi;
 };

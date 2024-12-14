@@ -191,7 +191,7 @@ export const TestPage = () => {
             profits: recalculatePositions.filter(p => p.newPnl > 0).length,
             losses: recalculatePositions.filter(p => p.newPnl < 0).length
         };
-    }, [stopMargin, security?.lotsize])
+    }, [stopMargin, security?.lotsize, positions])
 
     const {
         topPlots,
