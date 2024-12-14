@@ -473,6 +473,8 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
     const [_primitives, setPrimitives] = useState([]);
     const [_lineSerieses, setLineSerieses] = useState([]);
     const [seriesApi, setSeriesApi] = useState<ISeriesApi<SeriesType>>();
+    const [volumeSeriesApi, setVolumeSeriesApi] = useState<ISeriesApi<SeriesType>>();
+    const [emaSeriesApi, setEmaSeriesApi] = useState<ISeriesApi<SeriesType>>();
     const seriesOptions = useMemo(() => Object.assign(defaultSeriesOptions[seriesType], options), [options]);
 
     useEffect(() => {
@@ -504,26 +506,17 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
                     bottom: 0,
                 },
             });
-            volumeSeries?.setData(data.map((d: any) => ({
-                ...d,
-                // time: d.time * 1000,
-                value: d.volume,
-                color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
-            })));
+            setVolumeSeriesApi(volumeSeries)
         }
 
         if(showEMA){
-
             const emaSeries = createSeries(chartApi, 'Line', {
                 color: "rgb(255, 186, 102)",
                 lineWidth: 1,
                 priceLineVisible: false,
                 // crossHairMarkerVisible: false
             });
-            const emaSeriesData = data
-                .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i]}));
-            // @ts-ignore
-            emaSeries.setData(emaSeriesData);
+            setEmaSeriesApi(emaSeries);
         }
 
         if (priceLines) {
@@ -531,7 +524,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
         }
 
         setSeriesApi(series);
-    }, [chartApi, data, showVolume, showEMA, priceLines]);
+    }, [chartApi, showVolume, showEMA, priceLines]);
 
     useEffect(() => {
         if (seriesApi && chartApi) {
@@ -563,7 +556,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
                 seriesApi._internal__series._private__primitives = [];
             }
         }
-    }, [primitives, chartApi, seriesApi]);
+    }, [primitives, seriesApi]);
 
     useEffect(() => {
         if (chartApi) {
@@ -611,15 +604,34 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
     }, [seriesOptions, seriesApi]);
 
     useEffect(() => {
-        if (seriesApi && chartApi) {
+        if (seriesApi) {
             if (!data?.length) {
                 seriesApi.setData([]);
+                volumeSeriesApi?.setData([]);
+                emaSeriesApi?.setData([]);
             } else {
                 seriesApi?.setData(data.map(t => ({...t})) as SeriesDataItemTypeMap[T][]);
+                volumeSeriesApi?.setData(data.map((d: any) => ({
+                    ...d,
+                    // time: d.time * 1000,
+                    value: d.volume,
+                    color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
+                })));
+                // @ts-ignore
+                emaSeriesApi?.setData(data
+                    .map((extremum, i) => ({time: extremum.time, value: ema[i]})));
             }
             console.log('setData')
         }
-    }, [data, seriesApi]);
+
+        return () => {
+            if(seriesApi){
+                seriesApi.setData([]);
+                volumeSeriesApi?.setData([]);
+                emaSeriesApi?.setData([]);
+            }
+        }
+    }, [data, seriesApi, volumeSeriesApi, emaSeriesApi]);
 
     return seriesApi;
 };

@@ -67,13 +67,6 @@ export const TestPage = () => {
     }, [ticker, token])
 
     useEffect(() => {
-        data && setEma(calculateEMA(
-            data.map((h) => h.close),
-            100
-        )[1]);
-    }, [data])
-
-    useEffect(() => {
         if(tf === trendTF){
             fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
         } else {
@@ -136,29 +129,33 @@ export const TestPage = () => {
         }
     } ,[tf, trendTF, data, trendData])
 
+    useEffect(() => {
+        _data && setEma(calculateEMA(
+            _data.map((h) => h.close),
+            100
+        )[1]);
+    }, [_data])
+
     const swings = useMemo(() => swipCallback(_data) ,[swipCallback, _data])
 
     const {structure, highParts, lowParts} = useMemo(() => calculateStructure(swings.highs, swings.lows, _data) ,[_data, swings])
 
     const trend: Trend[] = useMemo(() => {
+        if(!_data.length){
+            return [];
+        }
         if(tf === trendTF){
-            if(!data.length){
-                return [];
-            }
-            return calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            return calculateTrend(highParts, lowParts, _data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
         } else {
-            if(!trendData.length){
-                return [];
-            }
-            let newTrend = calculateTrend(highParts, lowParts, trendData, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            let newTrend = calculateTrend(highParts, lowParts, _data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
 
-            newTrend = fillTrendByMinorData(newTrend, trendData, data)
+            newTrend = fillTrendByMinorData(newTrend, trendData, _data)
 
             return newTrend;
         }
-    }, [tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick, trendData, highParts, lowParts]);
+    }, [tf, trendTF, _data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick, trendData, highParts, lowParts]);
 
-    const boses = useMemo(() => calculateCrosses(highParts, lowParts, data, trend).boses, [highParts, lowParts, data, trend]);
+    const boses = useMemo(() => calculateCrosses(highParts, lowParts, _data, trend).boses, [highParts, lowParts, _data, trend]);
 
     const orderBlocks = useMemo(() => calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai') ,[highParts, lowParts, _data, trend, config.excludeIDM, obType])
 
@@ -201,7 +198,7 @@ export const TestPage = () => {
         btmPlots,
         markers: oldMarkers,
         itrend
-    } = useMemo(() => calculate(data, markerColors, windowLength), [_data, markerColors, windowLength]);
+    } = useMemo(() => calculate(_data, markerColors, windowLength), [_data, markerColors, windowLength]);
 
     const primitives = useMemo(() => {
         const lastCandle = _data[_data.length - 1];
@@ -293,7 +290,7 @@ export const TestPage = () => {
 
         if (config.oldTrend) {
             const sessionHighlighter = (time: Time) => {
-                const index = data.findIndex(c => c.time * 1000 === time);
+                const index = _data.findIndex(c => c.time * 1000 === time);
                 if (itrend._data[index] > 0) {
                     return 'rgba(20, 131, 92, 0.4)';
                 }
@@ -572,7 +569,7 @@ export const TestPage = () => {
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
         </Checkbox.Group>
-        <Chart maxDiff={maxDiff} lineSerieses={lineSerieses} primitives={primitives} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
+        <Chart maxDiff={maxDiff} lineSerieses={lineSerieses} primitives={primitives} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={_data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>;
 }
 
