@@ -138,7 +138,13 @@ export const Chart: FC<{
     const series = useSeriesApi({
         chartApi,
         showVolume: true,
-        seriesType: 'Candlestick', data, lineSerieses, priceLines: [], markers, primitives, options
+        seriesType: 'Candlestick',
+        data,
+        lineSerieses,
+        priceLines: [],
+        markers,
+        primitives,
+        options
     })
 
     useEffect(

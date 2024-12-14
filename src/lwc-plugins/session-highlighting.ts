@@ -129,6 +129,25 @@ export class SessionHighlighting
         this.dataUpdated('full');
     }
 
+    detached() {
+        try {
+
+            if(this.series){
+                this._backgroundColors = this.series.data().map((dataPoint, index) => {
+                    return {
+                        time: dataPoint.time,
+                        color: 'rgba(0, 0, 0, 0)',
+                    };
+                });
+                this.updateAllViews();
+                this._paneViews.forEach(pw => pw.renderer());
+            }
+        } catch (e){
+
+        }
+        super.detached();
+    }
+
     dataUpdated(_scope: DataChangedScope) {
         // plugin base has fired a data changed event
         // TODO: only update the last value if the scope is 'update'

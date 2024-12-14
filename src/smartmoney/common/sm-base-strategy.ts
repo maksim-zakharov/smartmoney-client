@@ -18,7 +18,7 @@ export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle
 export const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
 
 export interface SmBaseStrategy {
-    name: string;
+    readonly _name: string;
     /**
      * свинги
      * тренд
@@ -30,6 +30,8 @@ export interface SmBaseStrategy {
      * Breaking block
      * Mitigation Block
      */
+
+    get name();
 
     calculateSwings(candles: HistoryObject[]): {highs : Swing[], lows: Swing[], swings?: Swing[]}
 

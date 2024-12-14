@@ -334,7 +334,7 @@ export const getVisibleMarkers = (chartApi: IChartApi, markers: SeriesMarker<Tim
         }
 
         const { from, to } = timeRange;
-        const visibleMarkers = markers?.filter(({ time }) => time >= from && time <= to);
+        const visibleMarkers = markers?.filter(({ time }) => time >= from && time <= to).sort((a, b) => a.time - b.time);
 
         return visibleMarkers as SeriesMarker<Time>[];
     } catch (e) {
@@ -471,11 +471,12 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
     showEMA?: boolean
 }) => {
     const [_primitives, setPrimitives] = useState([]);
+    const [_lineSerieses, setLineSerieses] = useState([]);
     const [seriesApi, setSeriesApi] = useState<ISeriesApi<SeriesType>>();
     const seriesOptions = useMemo(() => Object.assign(defaultSeriesOptions[seriesType], options), [options]);
 
     useEffect(() => {
-        if (!chartApi || !data?.length) {
+        if (!chartApi || !data?.length || seriesApi) {
             return;
         }
 
@@ -524,51 +525,55 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
             emaSeries.setData(emaSeriesData);
         }
 
-        // series.setData(data.map(t => ({...t, time: t.time * 1000})));
-
-        setSeriesApi(series);
-
         if (priceLines) {
             priceLines.forEach((priceLine) => series.createPriceLine(priceLine));
         }
-    }, [chartApi, data, showVolume, showEMA]);
+
+        setSeriesApi(series);
+    }, [chartApi, data, showVolume, showEMA, priceLines]);
 
     useEffect(() => {
         if (seriesApi && chartApi) {
             if (!markers?.length) {
-                return seriesApi.setMarkers([]);
+                seriesApi.setMarkers([]);
+            } else {
+                const visibleMarkers = getVisibleMarkers(chartApi, markers);
+
+                seriesApi.setMarkers(visibleMarkers);
             }
-
-            const visibleMarkers = getVisibleMarkers(chartApi, markers);
-
-            seriesApi.setMarkers(visibleMarkers);
         }
     }, [markers, seriesApi, chartApi]);
 
     useEffect(() => {
         if (seriesApi && primitives?.length) {
-            setPrimitives(primitives.map(primitive => ensureDefined(seriesApi).attachPrimitive(primitive)))
+            setPrimitives(primitives.map(primitive => {
+                ensureDefined(seriesApi).attachPrimitive(primitive)
+                return primitive;
+            }))
         }
 
         return () => {
-            _primitives?.forEach(primitive => primitive && ensureDefined(seriesApi).detachPrimitive(primitive));
+            _primitives?.forEach(primitive => ensureDefined(seriesApi).detachPrimitive(primitive));
         }
-    }, [primitives, seriesApi]);
+    }, [primitives, seriesApi, options]);
 
     useEffect(() => {
-        if (seriesApi && chartApi) {
-            if (!lineSerieses?.length) {
-                return;
+        if (chartApi) {
+            if (lineSerieses?.length){
+                setLineSerieses(lineSerieses.map(lineSeriese => {
+                    const ls = createSeries(chartApi, 'Line', lineSeriese.options)
+
+                    lineSeriese.data && ls.setData(lineSeriese.data);
+                    lineSeriese.markers && ls.setMarkers(lineSeriese.markers);
+
+                    return ls;
+                }));
+            } else {
+                _lineSerieses?.forEach(primitive =>  ensureDefined(chartApi).removeSeries(primitive));
+                setLineSerieses([]);
             }
-
-            lineSerieses.forEach(lineSeriese => {
-                const ls = createSeries(chartApi, 'Line', lineSeriese.options)
-
-                lineSeriese.data && ls.setData(lineSeriese.data);
-                lineSeriese.markers && ls.setMarkers(lineSeriese.markers);
-            });
         }
-    }, [lineSerieses, seriesApi, chartApi]);
+    }, [lineSerieses, chartApi]);
 
     useEffect(() => {
         if (seriesApi) {
@@ -579,12 +584,12 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
     useEffect(() => {
         if (seriesApi && chartApi) {
             if (!data?.length) {
-                return seriesApi.setData([]);
+                seriesApi.setData([]);
+            } else {
+                seriesApi?.setData(data.map(t => ({...t})) as SeriesDataItemTypeMap[T][]);
             }
-
-            seriesApi?.setData(data.map(t => ({...t})) as SeriesDataItemTypeMap[T][]);
         }
-    }, [data]);
+    }, [data, seriesApi]);
 
     return seriesApi;
 };

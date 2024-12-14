@@ -250,7 +250,6 @@ export const TestPage = () => {
         }
 
         if (config.smartTrend) {
-
             const sessionHighlighter = (time: Time, index) => {
                 let tr = trend[index]; // .find(c => (c?.time * 1000) >= (time as number));
 
@@ -283,7 +282,6 @@ export const TestPage = () => {
             const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
             _primitives.push(sessionHighlighting);
         }
-
 
         if (config.oldTrend) {
             const sessionHighlighter = (time: Time) => {
@@ -516,8 +514,6 @@ export const TestPage = () => {
         }
         return _lineSerieses;
     }, [poses, config.showPositions, config.BOS, boses]);
-
-    const BoundaryChart = withErrorBoundary(Chart);
 
     return <>
         <Divider plain orientation="left">Общее</Divider>
