@@ -577,9 +577,29 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
                     return ls;
                 }));
             } else {
-                _lineSerieses?.forEach(primitive =>  ensureDefined(chartApi).removeSeries(primitive));
+                if(chartApi){
+                    _lineSerieses?.forEach(primitive => {
+                        try {
+                            chartApi.removeSeries(primitive)
+                        }catch (e) {
+
+                        }
+                    });
+                }
             }
             console.log('setLineSerieses')
+        }
+
+        return () => {
+            if(chartApi){
+                _lineSerieses?.forEach(primitive => {
+                    try {
+                        chartApi.removeSeries(primitive)
+                    }catch (e) {
+
+                    }
+                });
+            }
         }
     }, [lineSerieses, chartApi]);
 

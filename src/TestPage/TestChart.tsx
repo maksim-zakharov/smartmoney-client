@@ -27,7 +27,6 @@ export const Chart: FC<{
     maxDiff?: number;
     multiStop?: number;
     oldTrend?: boolean,
-    positions?: any[],
     tradeFakeouts?: boolean,
     excludeTrendSFP?: boolean,
     noInternal?: boolean,
@@ -38,7 +37,6 @@ export const Chart: FC<{
     windowLength: number,
     orderBlocks: OrderBlock[],
     primitives: any[],
-    onProfit: any;
 }> = ({
           maxDiff,
           lineSerieses,
@@ -51,7 +49,6 @@ export const Chart: FC<{
           withMove,
           excludeIDM,
           multiStop,
-          positions,
           oldTrend,
           noInternal,
           smPatterns,
@@ -251,7 +248,7 @@ export const Chart: FC<{
             //     }])
             // })
         },
-        [series, chartApi, orderBlocks, withMove, markers, excludeTrendSFP, tradeFakeouts, withTrendConfirm, excludeIDM, multiStop, maxDiff, positions, oldTrend, noInternal, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength]
+        [series, chartApi, orderBlocks, withMove, markers, excludeTrendSFP, tradeFakeouts, withTrendConfirm, excludeIDM, multiStop, maxDiff, oldTrend, noInternal, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength]
     );
 
     return <div

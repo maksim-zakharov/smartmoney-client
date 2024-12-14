@@ -53,32 +53,8 @@ export const TestPage = () => {
     const trendTF = searchParams.get('trendTF') || '900';
     const fromDate = searchParams.get('fromDate') || dayjs('2024-10-01T00:00:00Z').startOf('day').unix();
     const toDate = searchParams.get('toDate') || dayjs('2025-10-01T00:00:00Z').endOf('day').unix();
-    const [{positions}, onPositions] = useState({positions: []});
     const [stopMargin, setStopMargin] = useState(100);
     const [security, setSecurity] = useState();
-
-    const profit = useMemo(() => {
-        if(!security){
-            return {
-                PnL: 0,
-                profits: 0,
-                losses: 0
-            }
-        }
-        const recalculatePositions = positions.map((curr) => {
-            const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
-            const stopLossMarginPerLot = diff * security?.lotsize
-            curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
-            curr.newPnl = curr.pnl * curr.quantity * security?.lotsize;
-
-            return curr;
-        });
-        return {
-            PnL: recalculatePositions.reduce((acc, curr) => acc + curr.newPnl, 0),
-            profits: recalculatePositions.filter(p => p.newPnl > 0).length,
-            losses: recalculatePositions.filter(p => p.newPnl < 0).length
-        };
-    }, [positions, stopMargin, security?.lotsize])
 
     const [token, setToken] = useState();
 
@@ -187,6 +163,38 @@ export const TestPage = () => {
     const orderBlocks = useMemo(() => calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai') ,[highParts, lowParts, _data, trend, config.excludeIDM, obType])
 
     const fakeouts = useMemo(() => calculateFakeout(highParts, lowParts, _data), [highParts, lowParts, _data]);
+
+    const positions = useMemo(() => {
+        const positions = calculatePositionsByOrderblocks(orderBlocks, _data, maxDiff, multiStop);
+        if(config.tradeFakeouts){
+            const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, _data, multiStop);
+            positions.push(...fakeoutPositions);
+        }
+        return positions.sort((a, b) => a.openTime - b.openTime);
+    }, [orderBlocks, fakeouts, _data, maxDiff, multiStop, config.tradeFakeouts]);
+
+    const profit = useMemo(() => {
+        if(!security){
+            return {
+                PnL: 0,
+                profits: 0,
+                losses: 0
+            }
+        }
+        const recalculatePositions = positions.map((curr) => {
+            const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
+            const stopLossMarginPerLot = diff * security?.lotsize
+            curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
+            curr.newPnl = curr.pnl * curr.quantity * security?.lotsize;
+
+            return curr;
+        });
+        return {
+            PnL: recalculatePositions.reduce((acc, curr) => acc + curr.newPnl, 0),
+            profits: recalculatePositions.filter(p => p.newPnl > 0).length,
+            losses: recalculatePositions.filter(p => p.newPnl < 0).length
+        };
+    }, [stopMargin, security?.lotsize])
 
     const {
         topPlots,
@@ -405,15 +413,6 @@ export const TestPage = () => {
         return allMarkers;
     }, [swings, lowParts, poses, highParts, orderBlocks, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
 
-    const _positions = useMemo(() => {
-        const positions = calculatePositionsByOrderblocks(orderBlocks, _data, maxDiff, multiStop);
-        if(config.tradeFakeouts){
-            const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, _data, multiStop);
-            positions.push(...fakeoutPositions);
-        }
-        return positions.sort((a, b) => a.openTime - b.openTime);
-    }, [orderBlocks, fakeouts, _data, maxDiff, multiStop, config.tradeFakeouts]);
-
     const lineSerieses = useMemo(() => {
         const _lineSerieses = [];
         if(config.showPositions){
@@ -573,7 +572,7 @@ export const TestPage = () => {
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
         </Checkbox.Group>
-        <Chart maxDiff={maxDiff} lineSerieses={lineSerieses} positions={_positions} primitives={primitives} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
+        <Chart maxDiff={maxDiff} lineSerieses={lineSerieses} primitives={primitives} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
     </>;
 }
 

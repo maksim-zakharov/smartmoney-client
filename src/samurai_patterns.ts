@@ -381,7 +381,6 @@ const isOrderblock = (candles: HistoryObject[], withMove: boolean = false) => {
 
     let lastImbalanceIndex;
     if(withMove){
-        debugger
         // Берем не только первый имбаланс, а ближайший из 10 свечей
         for (let i = firstImbalanceIndex; i < candles.length - 2; i++) {
             if(isImbalance(candles[i], candles[i + 2])){
