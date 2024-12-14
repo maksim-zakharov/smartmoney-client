@@ -51,10 +51,10 @@ export const moneyFormat = (
 
     return numberFormat.format(money);
 };
-
 export const createRectangle = (_series: ISeriesApi<SeriesType>, orderBlock, options: Partial<RectangleDrawingToolOptions>) => {
     const rectangle = new Rectangle(orderBlock.leftTop, orderBlock.rightBottom, {...options});
     ensureDefined(_series).attachPrimitive(rectangle);
+    return rectangle;
 }
 
 export const ChartComponent = props => {

@@ -276,7 +276,6 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
             highLows[i] = {high: currHigh, low: currLow};
         }
         if (prevLow.price > currLow.price && currLow.index === i && (!withTrendConfirm || prevHigh.price > currHigh.price) && noDownSFP && noDownWick) {
-            debugger
             trend[i] = {time: currLow.time, trend: -1, index: currLow.index};
             highLows[i] = {high: currHigh, low: currLow};
         }

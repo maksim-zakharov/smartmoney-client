@@ -5,10 +5,19 @@ import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
 import {calculateEMA} from "../../symbolFuturePairs";
-import {fetchCandlesFromAlor, fillTrendByMinorData, getSecurity, notTradingTime, refreshToken} from "../utils";
+import {
+    createRectangle2,
+    createSeries,
+    fetchCandlesFromAlor,
+    fillTrendByMinorData,
+    getSecurity,
+    notTradingTime,
+    refreshToken
+} from "../utils";
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
 import {
+    calculateCrosses,
     calculateFakeout,
     calculateOB, calculatePositionsByFakeouts, calculatePositionsByOrderblocks,
     calculateStructure,
@@ -17,8 +26,11 @@ import {
     khrustikCalculateSwings,
     Trend
 } from "../samurai_patterns";
-import {Time} from "lightweight-charts";
+import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
+import {withErrorBoundary} from "../ErrorBoundary";
+import {calculate} from "../sm_scripts";
+import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -170,13 +182,22 @@ export const TestPage = () => {
         }
     }, [tf, trendTF, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick, trendData, highParts, lowParts]);
 
+    const boses = useMemo(() => calculateCrosses(highParts, lowParts, data, trend).boses, [highParts, lowParts, data, trend]);
+
     const orderBlocks = useMemo(() => calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai') ,[highParts, lowParts, _data, trend, config.excludeIDM, obType])
 
     const fakeouts = useMemo(() => calculateFakeout(highParts, lowParts, _data), [highParts, lowParts, _data]);
 
-    const rectangles = useMemo(() => {
+    const {
+        topPlots,
+        btmPlots,
+        markers: oldMarkers,
+        itrend
+    } = useMemo(() => calculate(data, markerColors, windowLength), [_data, markerColors, windowLength]);
+
+    const primitives = useMemo(() => {
         const lastCandle = _data[_data.length - 1];
-        const _rectangles = [];
+        const _primitives = [];
         if(config.showOB || config.showEndOB || config.imbalances){
             const checkShow = (ob) => {
                 let result = false;
@@ -188,34 +209,125 @@ export const TestPage = () => {
                 }
                 return result;
             }
-            config.imbalances && _rectangles.push(...orderBlocks.filter(checkShow).map(orderBlock => ({
-                leftTop: {
-                    price: orderBlock.lastOrderblockCandle.high,
-                    time: orderBlock.lastOrderblockCandle.time * 1000
-                },
-                rightBottom: {
-                    price: orderBlock.lastImbalanceCandle.low,
-                    time: (orderBlock.lastImbalanceCandle || lastCandle).time * 1000
-                },
-                options: {
+            if(config.imbalances){
+                _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock => createRectangle2({
+                    leftTop: {
+                        price: orderBlock.lastOrderblockCandle.high,
+                        time: orderBlock.lastOrderblockCandle.time
+                    },
+                    rightBottom: {
+                        price: orderBlock.lastImbalanceCandle.low,
+                        time: (orderBlock.lastImbalanceCandle || lastCandle).time
+                    }
+                }, {
                     fillColor: 'rgba(179, 199, 219, .3)',
                     showLabels: false,
                     borderLeftWidth: 0,
                     borderRightWidth: 0,
                     borderWidth: 2,
                     borderColor: '#222'
-                }
-            })));
-            _rectangles.push(...orderBlocks.filter(checkShow).map(orderBlock => ({leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time * 1000}, rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time * 1000},
-                options: {
-                    fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
-                    showLabels: false,
-                    borderWidth: 0,
-                }})));
+                })));
+            }
+            _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock =>
+                createRectangle2({
+                        leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
+                        rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
+                    },
+                    {
+                        fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
+                        showLabels: false,
+                        borderWidth: 0,
+                    })));
+        }
+        function getDate(time: Time): Date {
+            if (isUTCTimestamp(time)) {
+                return new Date(time);
+            } else if (isBusinessDay(time)) {
+                return new Date(time.year, time.month, time.day);
+            } else {
+                return new Date(time);
+            }
         }
 
-        return _rectangles;
-    }, [orderBlocks, config.imbalances, config.showOB, config.showEndOB, config.imbalances, _data])
+        if (config.smartTrend) {
+
+            const sessionHighlighter = (time: Time, index) => {
+                let tr = trend[index]; // .find(c => (c?.time * 1000) >= (time as number));
+
+                // let tr = newTrend.find(c => (c?.time * 1000) >= (time as number));
+                let _trend = tr?.trend;
+                if (!tr) {
+                    // tr = newTrend.findLast(c => (c?.time * 1000) <= (time as number));
+                    // trend = tr.trend * -1;
+                }
+                if (!_trend) {
+                    // debugger
+                    return 'gray';
+                }
+                if (_trend > 0) {
+                    return 'rgba(20, 131, 92, 0.4)';
+                }
+                if (_trend < 0) {
+                    return 'rgba(157, 43, 56, 0.4)';
+                }
+
+                const date = getDate(time);
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    // Weekend 🏖️
+                    return 'rgba(255, 152, 1, 0.08)'
+                }
+                return 'rgba(41, 98, 255, 0.08)';
+            };
+
+            const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
+            _primitives.push(sessionHighlighting);
+        }
+
+
+        if (config.oldTrend) {
+            const sessionHighlighter = (time: Time) => {
+                const index = data.findIndex(c => c.time * 1000 === time);
+                if (itrend._data[index] > 0) {
+                    return 'rgba(20, 131, 92, 0.4)';
+                }
+                if (itrend._data[index] < 0) {
+                    return 'rgba(157, 43, 56, 0.4)';
+                }
+                if (itrend._data[index] === 0) {
+                    return 'gray';
+                }
+
+                const date = getDate(time);
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    // Weekend 🏖️
+                    return 'rgba(255, 152, 1, 0.08)'
+                }
+                return 'rgba(41, 98, 255, 0.08)';
+            };
+
+            const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
+            _primitives.push(sessionHighlighting);
+        }
+
+        return _primitives;
+    }, [orderBlocks, config.oldTrend, config.smartTrend, itrend, trend, config.imbalances, config.showOB, config.showEndOB, config.imbalances, _data])
+
+    const poses = useMemo(() => positions.map(s => [{
+        color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
+        time: (s.openTime) as Time,
+        shape: s.side === 'long' ? 'arrowUp' : 'arrowDown',
+        position: s.side === 'short' ? 'aboveBar' : 'belowBar',
+        price: s.openPrice,
+        pnl: s.pnl,
+    }, {
+        color: s.side === 'short' ? markerColors.bullColor : markerColors.bearColor,
+        time: (s.closeTime) as Time,
+        shape: s.side === 'short' ? 'arrowUp' : 'arrowDown',
+        position: s.side === (s.pnl > 0 ? 'long' : 'short') ? 'aboveBar' : 'belowBar',
+        price: s.pnl > 0 ? s.takeProfit : s.stopLoss,
+    }]), [positions]);
 
     const markers = useMemo(() => {
         const allMarkers = [];
@@ -232,7 +344,7 @@ export const TestPage = () => {
             }
             allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
                 color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time * 1000) as Time,
+                time: (s.time) as Time,
                 shape: 'text',
                 position: s.type === 'high' ? 'aboveBar' : 'belowBar',
                 text: "OB"
@@ -241,21 +353,21 @@ export const TestPage = () => {
         if(config.swings){
             // allMarkers.push(...swings.swings.filter(Boolean).map(s => ({
             //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            //     time: (s.time * 1000) as Time,
+            //     time: (s.time) as Time,
             //     shape: 'circle',
             //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
             //     // text: marker.text
             // })));
             allMarkers.push(...swings.highs.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time * 1000) as Time,
+                time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                 // text: marker.text
             })));
             allMarkers.push(...swings.lows.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time * 1000) as Time,
+                time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                 // text: marker.text
@@ -264,14 +376,14 @@ export const TestPage = () => {
         if(config.noDoubleSwing){
             allMarkers.push(...lowParts.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time * 1000) as Time,
+                time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                 // text: marker.text
             })));
             allMarkers.push(...highParts.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time * 1000) as Time,
+                time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                 // text: marker.text
@@ -281,15 +393,19 @@ export const TestPage = () => {
         if(config.showFakeouts){
             allMarkers.push(...fakeouts.map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time * 1000) as Time,
+                time: (s.time) as Time,
                 shape: 'text',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                 text: "SFP"
             })))
         }
 
+        if(config.showPositions){
+            allMarkers.push(...poses.flat())
+        }
+
         return allMarkers;
-    }, [swings, lowParts, highParts, orderBlocks, config.showOB, config.showEndOB, config.imbalances, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
+    }, [swings, lowParts, poses, highParts, orderBlocks, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
 
     const _positions = useMemo(() => {
         const positions = calculatePositionsByOrderblocks(orderBlocks, _data, maxDiff, multiStop);
@@ -299,6 +415,109 @@ export const TestPage = () => {
         }
         return positions.sort((a, b) => a.openTime - b.openTime);
     }, [orderBlocks, fakeouts, _data, maxDiff, multiStop, config.tradeFakeouts]);
+
+    const lineSerieses = useMemo(() => {
+        const _lineSerieses = [];
+        if(config.showPositions){
+            _lineSerieses.push(...poses.map(([open, close]) => ({
+                options: {
+                    color: open.pnl > 0 ? markerColors.bullColor : markerColors.bearColor, // Цвет линии
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    lineWidth: 1,
+                    lineStyle: LineStyle.LargeDashed,
+                },
+                data: [
+                    {time: open.time as Time, value: open.price}, // начальная точка между свечками
+                    {time: close.time as Time, value: close.price}, // конечная точка между свечками
+                ]
+            })));
+        }
+        let idms = []
+        if(config.smPatterns){
+            _lineSerieses.push(...oldMarkers.map(marker => ({
+                options: {
+                    color: marker.color, // Цвет линии
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    lineWidth: 1,
+                    lineStyle: LineStyle.LargeDashed,
+                },
+                data: [
+                    {time: marker.fromTime, value: marker.value}, // начальная точка между свечками
+                    {time: marker.textTime, value: marker.value}, // начальная точка между свечками
+                    {time: marker.toTime, value: marker.value}, // конечная точка между свечками
+                ],
+                markers: [{
+                    color: marker.color,
+                    time: marker.textTime,
+                    shape: marker.shape,
+                    position: marker.position,
+                    text: marker.text
+                }]
+
+                // if (marker.idmIndex) {
+                //     idms.push({
+                //         color: marker.color,
+                //         time: data[marker.idmIndex].time * 1000,
+                //         shape: 'text',
+                //         position: marker.position,
+                //         text: 'IDM'
+                //     })
+                // }
+
+                // smPatterns && allMarkers.push(...idms);
+            })   ))
+        }
+        if(config.BOS){
+            _lineSerieses.push(...boses.filter(Boolean).map(marker => {
+                const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
+                const options = {
+                    color, // Цвет линии
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    lineWidth: 1,
+                    lineStyle: LineStyle.LargeDashed,
+                };
+                let data = [];
+                let markers = [];
+// 5. Устанавливаем данные для линии
+                if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
+                    data = [
+                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+                    ];
+                } else
+                    data = [
+                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                        {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
+                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+                    ].sort((a, b) => a.time - b.time);
+
+                markers = [{
+                    color,
+                    time: (marker.textCandle.time) as Time,
+                    shape: 'text',
+                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
+                    text: marker.text
+                }]
+
+                // if (marker.idmIndex) {
+                //     crossesMarkers.push({
+                //         color: marker.color,
+                //         time: data[marker.idmIndex].time,
+                //         shape: 'text',
+                //         position: marker.position,
+                //         text: 'IDM'
+                //     })
+                // }
+                return {options, data, markers}
+            }));
+        }
+        return _lineSerieses;
+    }, [poses, config.showPositions, config.BOS, boses]);
+
+    const BoundaryChart = withErrorBoundary(Chart);
 
     return <>
         <Divider plain orientation="left">Общее</Divider>
@@ -358,7 +577,7 @@ export const TestPage = () => {
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
         </Checkbox.Group>
-        <Chart maxDiff={maxDiff} positions={_positions} rectangles={rectangles} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
+        <Chart maxDiff={maxDiff} lineSerieses={lineSerieses} positions={_positions} primitives={primitives} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} onProfit={onPositions} />
     </>;
 }
 

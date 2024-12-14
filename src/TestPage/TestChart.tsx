@@ -1,23 +1,14 @@
 import React, {FC, useEffect, useRef} from "react";
 import {
     ColorType,
-    createChart,
-    CrosshairMode,
-    isBusinessDay,
-    isUTCTimestamp,
-    LineStyle, SeriesMarker,
-    Time
+    CrosshairMode, LineData,
+    SeriesMarker, SeriesOptionsMap, Time
 } from "lightweight-charts";
-import {calculate} from "../sm_scripts";
 import {
-    calculateCrosses, calculateFakeout, calculatePositionsByFakeouts, calculatePositionsByOrderblocks,
-    calculateStructure,
-    calculateSwings, OrderBlock,
-    Trend
+    OrderBlock
 } from "../samurai_patterns";
-import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 import moment from 'moment';
-import {createRectangle} from "../MainPage";
+import {useChartApi, useSeriesApi} from "../utils";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -25,30 +16,49 @@ function capitalizeFirstLetter(str) {
 
 export const Chart: FC<{
     markers: SeriesMarker<any>[],
+    lineSerieses: {
+        options: SeriesOptionsMap['Line'],
+        data?: LineData<Time>[],
+        markers?: SeriesMarker<Time>[]
+    }[],
     smPatterns?: boolean,
     excludeIDM?: boolean,
     withTrendConfirm?: boolean,
-    maxDiff?: number
-    multiStop?: number
+    maxDiff?: number;
+    multiStop?: number;
     oldTrend?: boolean,
     positions?: any[],
     tradeFakeouts?: boolean,
     excludeTrendSFP?: boolean,
-    smartTrend?: boolean,
     noInternal?: boolean,
     withMove?: boolean,
-    showPositions?: boolean,
-    BOS?: boolean,
     data: any[],
     ema: any[],
     withBug,
     windowLength: number,
-    tf: number,
-    trend: Trend[],
     orderBlocks: OrderBlock[],
-    rectangles: any[],
-    onProfit: any
-}> = ({maxDiff, markers, rectangles, orderBlocks, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm,withMove, excludeIDM,multiStop, BOS, showPositions, positions, onProfit, oldTrend, noInternal, smartTrend, smPatterns, data, tf, ema, windowLength}) => {
+    primitives: any[],
+    onProfit: any;
+}> = ({
+          maxDiff,
+          lineSerieses,
+          markers,
+                              primitives,
+          orderBlocks,
+          excludeTrendSFP,
+          tradeFakeouts,
+          withTrendConfirm,
+          withMove,
+          excludeIDM,
+          multiStop,
+          positions,
+          oldTrend,
+          noInternal,
+          smPatterns,
+          data,
+          ema,
+          windowLength
+      }) => {
 
     const {
         backgroundColor = "rgb(30,44,57)",
@@ -69,151 +79,75 @@ export const Chart: FC<{
 
     const chartContainerRef = useRef<any>();
 
+    const options = {
+        crosshair: {
+            mode: CrosshairMode.Normal,
+        },
+        localization: {
+            locale: "ru-RU",
+            // priceFormatter,
+            timeFormatter: function (businessDayOrTimestamp) {
+
+                // if (LightweightCharts.isBusinessDay(businessDayOrTimestamp)) {
+                //     return 'Format for business day';
+                // }
+
+                return moment.unix(businessDayOrTimestamp).format('MMM D, YYYY HH:mm');
+            }
+        },
+        timeScale: {
+            rightOffset: 10,  // это создаст отступ на 10 временных единиц вправо
+            tickMarkFormatter: (time, tickMarkType, locale) => {
+                const date = new Date(time * 1000); // Переводим время в миллисекунды
+
+                // Если это первый день месяца
+                if (date.getDate() === 1) {
+                    return capitalizeFirstLetter(date.toLocaleString(locale, {month: 'long'})).slice(0, 3); // Название месяца
+                }
+
+                // Часы (для секций 12 и 18 часов)
+                const hours = date.getHours();
+                if (hours >= 0 && hours <= 10) {
+                    return date.toLocaleString(locale, {day: 'numeric'});
+                }
+
+                // Дата (день месяца)
+                return `${hours}:00`;
+            },
+        },
+        grid: {
+            vertLines: {
+                color: borderColor
+            },
+
+            horzLines: {
+                color: borderColor
+            }
+        },
+        layout: {
+            // Фон
+            background: {type: ColorType.Solid, color: "rgb(30,44,57)"},
+            textColor: color
+        },
+        width: chartContainerRef.current?.clientWidth,
+        height: chartContainerRef.current?.height || 500,
+    }
+
+    const chartApi = useChartApi(chartContainerRef.current!, options)
+
+    const series = useSeriesApi({
+        chartApi,
+        showVolume: true,
+        seriesType: 'Candlestick', data, lineSerieses, priceLines: [], markers, primitives, options
+    })
+
     useEffect(
         () => {
-            if (!data?.length) return;
-
-            const handleResize = () => {
-                chart.applyOptions({width: chartContainerRef.current.clientWidth});
-            };
-
-            const chart = createChart(chartContainerRef.current, {
-                crosshair: {
-                    mode: CrosshairMode.Normal,
-                },
-                localization: {
-                    locale: "ru-RU",
-                    // priceFormatter,
-                    timeFormatter: function (businessDayOrTimestamp) {
-
-                        // if (LightweightCharts.isBusinessDay(businessDayOrTimestamp)) {
-                        //     return 'Format for business day';
-                        // }
-
-                        return moment.unix(businessDayOrTimestamp / 1000).format('MMM D, YYYY HH:mm');
-                    }
-                },
-                timeScale: {
-                    rightOffset: 10,  // это создаст отступ на 10 временных единиц вправо
-                    tickMarkFormatter: (time, tickMarkType, locale) => {
-                        const date = new Date(time); // Переводим время в миллисекунды
-
-                        // Если это первый день месяца
-                        if (date.getDate() === 1) {
-                            return capitalizeFirstLetter(date.toLocaleString(locale, {month: 'long'})).slice(0, 3); // Название месяца
-                        }
-
-                        // Часы (для секций 12 и 18 часов)
-                        const hours = date.getHours();
-                        if (hours >= 0 && hours <= 10) {
-                            return date.toLocaleString(locale, {day: 'numeric'});
-                        }
-
-                        // Дата (день месяца)
-                        return `${hours}:00`;
-                    },
-                    // tickMarkFormatter: (time, tickMarkType, locale) => {
-                    //     // Преобразуем время в формат, используя moment.js
-                    //     return moment.unix(time / 1000).format('HH:mm'); // Измените формат, если нужно
-                    // },
-                },
-                grid: {
-                    vertLines: {
-                        color: borderColor
-                    },
-
-                    horzLines: {
-                        color: borderColor
-                    }
-                },
-                layout: {
-                    // Фон
-                    background: {type: ColorType.Solid, color: "rgb(30,44,57)"},
-                    textColor: color
-                },
-                width: chartContainerRef.current.clientWidth,
-                height: chartContainerRef.current.height || 500,
-            });
-
-            const markerColors = {
-                bearColor: "rgb(157, 43, 56)",
-                bullColor: "rgb(20, 131, 92)"
+            if (!series || !data?.length) {
+                return;
             }
 
-            const newSeries = chart.addCandlestickSeries({
-                downColor: markerColors.bearColor,
-                borderDownColor: "rgb(213, 54, 69)",
-                upColor: markerColors.bullColor,
-                borderUpColor: "rgb(11, 176, 109)",
-                wickUpColor: "rgb(11, 176, 109)",
-                wickDownColor: "rgb(213, 54, 69)",
-                // ... {
-                //     upColor: '#00A127',
-                //     downColor: '#E31C1C',
-                //     wickUpColor: '#00A127',
-                //     wickDownColor: '#E31C1C',
-                //     borderVisible: false,
-                // },
-                lastValueVisible: false,
-                priceLineVisible: false,
-            });
-            newSeries.priceScale().applyOptions({
-                scaleMargins: {
-                    top: 0.05, // highest point of the series will be 10% away from the top
-                    bottom: 0.2, // lowest point will be 40% away from the bottom
-                },
-            });
-
-            const volumeSeries = chart.addHistogramSeries({
-                priceFormat: {
-                    type: 'volume',
-                },
-                priceScaleId: '', // set as an overlay by setting a blank priceScaleId
-            });
-            volumeSeries.priceScale().applyOptions({
-                // set the positioning of the volume series
-                scaleMargins: {
-                    top: 0.7, // highest point of the series will be 70% away from the top
-                    bottom: 0,
-                },
-            });
-            volumeSeries?.setData(data.map((d: any) => ({
-                ...d,
-                time: d.time * 1000,
-                value: d.volume,
-                color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
-            })));
-
-            newSeries.setData(data.map(t => ({...t, time: t.time * 1000})));
-
-            const emaSeries = chart.addLineSeries({
-                color: "rgb(255, 186, 102)",
-                lineWidth: 1,
-                priceLineVisible: false,
-                // crossHairMarkerVisible: false
-            });
-            const emaSeriesData = data
-                .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i]}));
-            // @ts-ignore
-            emaSeries.setData(emaSeriesData);
-
-            const {
-                topPlots,
-                btmPlots,
-                markers: oldMarkers,
-                itrend
-            } = calculate(data, markerColors, windowLength);
-
-            let allMarkers = markers ? [...markers] : [];
-
-            let allRectangles = rectangles ? [...rectangles] : [];
-            allRectangles.forEach(rectangle => createRectangle(newSeries, {leftTop: rectangle.leftTop, rightBottom: rectangle.rightBottom}, rectangle.options))
-
-            const {highs, lows} = calculateSwings(data);
-            const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
-            const newTrend = trend;
-            const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
             // let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
 
@@ -221,42 +155,6 @@ export const Chart: FC<{
             //     const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
             //     orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
             // }
-
-            if(showPositions){
-                const poses = positions.map(s => [{
-                    color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
-                    time: (s.openTime * 1000) as Time,
-                    shape: s.side === 'long' ? 'arrowUp' : 'arrowDown',
-                    position: s.side === 'short' ? 'aboveBar' : 'belowBar',
-                    price: s.openPrice,
-                    pnl: s.pnl,
-                }, {
-                    color: s.side === 'short' ? markerColors.bullColor : markerColors.bearColor,
-                    time: (s.closeTime * 1000) as Time,
-                    shape: s.side === 'short' ? 'arrowUp' : 'arrowDown',
-                    position: s.side === (s.pnl > 0 ? 'long' : 'short') ? 'aboveBar' : 'belowBar',
-                    price: s.pnl > 0 ? s.takeProfit : s.stopLoss,
-                }])
-
-
-                poses.forEach(([open , close]) => {
-                    const lineSeries = chart.addLineSeries({
-                        color: open.pnl > 0 ? markerColors.bullColor : markerColors.bearColor, // Цвет линии
-                        priceLineVisible: false,
-                        lastValueVisible: false,
-                        lineWidth: 1,
-                        lineStyle: LineStyle.LargeDashed,
-                    });
-                    lineSeries.setData([
-                        {time: open.time as Time, value: open.price}, // начальная точка между свечками
-                        {time: close.time as Time, value: close.price}, // конечная точка между свечками
-                    ])
-
-                    // lineSeries.setMarkers([open, close])
-                })
-
-                allMarkers.push(...poses.flat())
-            }
 
 //             breakingBlocks.filter(Boolean).forEach(marker => {
 //                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
@@ -293,48 +191,7 @@ export const Chart: FC<{
 //                 // }
 //             })
 
-            BOS && boses.filter(Boolean).forEach(marker => {
-                const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
-                const lineSeries = chart.addLineSeries({
-                    color, // Цвет линии
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                    lineWidth: 1,
-                    lineStyle: LineStyle.LargeDashed,
-                });
-// 5. Устанавливаем данные для линии
-                if(marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time){
-                    lineSeries.setData([
-                        {time: marker.from.time * 1000 as Time, value: marker.from.price}, // начальная точка между свечками
-                        {time: marker.to.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
-                    ]);
-                } else
-                    lineSeries.setData([
-                        {time: marker.from.time * 1000 as Time, value: marker.from.price}, // начальная точка между свечками
-                        {time: marker.textCandle.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
-                        {time: marker.to.time * 1000 as Time, value: marker.from.price}, // конечная точка между свечками
-                    ].sort((a, b) => a.time - b.time));
-
-                lineSeries.setMarkers([{
-                    color,
-                    time: (marker.textCandle.time * 1000) as Time,
-                    shape: 'text',
-                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-                    text: marker.text
-                }] as any)
-
-                // if (marker.idmIndex) {
-                //     crossesMarkers.push({
-                //         color: marker.color,
-                //         time: data[marker.idmIndex].time * 1000,
-                //         shape: 'text',
-                //         position: marker.position,
-                //         text: 'IDM'
-                //     })
-                // }
-            })
-
-            if(noInternal){
+            if (noInternal) {
 
                 // allMarkers.push(...filteredExtremums.filter(Boolean).map(s => ({
                 //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
@@ -343,88 +200,6 @@ export const Chart: FC<{
                 //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                 //     // text: marker.text
                 // })));
-            }
-
-            if (smartTrend) {
-
-                function getDate(time: Time): Date {
-                    if (isUTCTimestamp(time)) {
-                        return new Date(time);
-                    } else if (isBusinessDay(time)) {
-                        return new Date(time.year, time.month, time.day);
-                    } else {
-                        return new Date(time);
-                    }
-                }
-
-                const sessionHighlighter = (time: Time, index) => {
-                    let tr = newTrend[index]; // .find(c => (c?.time * 1000) >= (time as number));
-
-                    // let tr = newTrend.find(c => (c?.time * 1000) >= (time as number));
-                    let trend = tr?.trend;
-                    if (!tr) {
-                        // tr = newTrend.findLast(c => (c?.time * 1000) <= (time as number));
-                        // trend = tr.trend * -1;
-                    }
-                    if (!trend) {
-                        // debugger
-                        return 'gray';
-                    }
-                    if (trend > 0) {
-                        return 'rgba(20, 131, 92, 0.4)';
-                    }
-                    if (trend < 0) {
-                        return 'rgba(157, 43, 56, 0.4)';
-                    }
-
-                    const date = getDate(time);
-                    const dayOfWeek = date.getDay();
-                    if (dayOfWeek === 0 || dayOfWeek === 6) {
-                        // Weekend 🏖️
-                        return 'rgba(255, 152, 1, 0.08)'
-                    }
-                    return 'rgba(41, 98, 255, 0.08)';
-                };
-
-                const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
-                newSeries.attachPrimitive(sessionHighlighting);
-            }
-
-            if (oldTrend) {
-
-                function getDate(time: Time): Date {
-                    if (isUTCTimestamp(time)) {
-                        return new Date(time);
-                    } else if (isBusinessDay(time)) {
-                        return new Date(time.year, time.month, time.day);
-                    } else {
-                        return new Date(time);
-                    }
-                }
-
-                const sessionHighlighter = (time: Time) => {
-                    const index = data.findIndex(c => c.time * 1000 === time);
-                    if (itrend._data[index] > 0) {
-                        return 'rgba(20, 131, 92, 0.4)';
-                    }
-                    if (itrend._data[index] < 0) {
-                        return 'rgba(157, 43, 56, 0.4)';
-                    }
-                    if (itrend._data[index] === 0) {
-                        return 'gray';
-                    }
-
-                    const date = getDate(time);
-                    const dayOfWeek = date.getDay();
-                    if (dayOfWeek === 0 || dayOfWeek === 6) {
-                        // Weekend 🏖️
-                        return 'rgba(255, 152, 1, 0.08)'
-                    }
-                    return 'rgba(41, 98, 255, 0.08)';
-                };
-
-                const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
-                newSeries.attachPrimitive(sessionHighlighting);
             }
 
 
@@ -469,60 +244,11 @@ export const Chart: FC<{
             //         text: plot.text
             //     }])
             // })
-
-            let idms = []
-            smPatterns && oldMarkers.forEach(marker => {
-                const lineSeries = chart.addLineSeries({
-                    color: marker.color, // Цвет линии
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                    lineWidth: 1,
-                    lineStyle: LineStyle.LargeDashed,
-                });
-                // debugger
-
-// 5. Устанавливаем данные для линии
-                lineSeries.setData([
-                    {time: marker.fromTime, value: marker.value}, // начальная точка между свечками
-                    {time: marker.textTime, value: marker.value}, // начальная точка между свечками
-                    {time: marker.toTime, value: marker.value}, // конечная точка между свечками
-                ]);
-
-                lineSeries.setMarkers([{
-                    color: marker.color,
-                    time: marker.textTime,
-                    shape: marker.shape,
-                    position: marker.position,
-                    text: marker.text
-                }])
-
-                if (marker.idmIndex) {
-                    idms.push({
-                        color: marker.color,
-                        time: data[marker.idmIndex].time * 1000,
-                        shape: 'text',
-                        position: marker.position,
-                        text: 'IDM'
-                    })
-                }
-            })
-
-            smPatterns && allMarkers.push(...idms);
-
-            newSeries.setMarkers(allMarkers.sort((a: any, b: any) => a.time - b.time));
-
-            window.addEventListener("resize", handleResize);
-
-            return () => {
-                window.removeEventListener("resize", handleResize);
-
-                chart.remove();
-            };
         },
-        [orderBlocks, rectangles, withMove, markers, trend, excludeTrendSFP, tradeFakeouts, withTrendConfirm, excludeIDM, multiStop, maxDiff, positions, showPositions, BOS, oldTrend, noInternal, smartTrend, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength, tf]
+        [series, chartApi, orderBlocks, withMove, markers, excludeTrendSFP, tradeFakeouts, withTrendConfirm, excludeIDM, multiStop, maxDiff, positions, oldTrend, noInternal, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength]
     );
 
     return <div
         ref={chartContainerRef}
     />
-}
+};

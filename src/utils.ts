@@ -3,6 +3,22 @@ import {HistoryObject} from "./api";
 
 import dayjs from 'dayjs';
 import {Trend} from "./samurai_patterns";
+import {
+    AreaSeriesPartialOptions, BarSeriesPartialOptions, CandlestickSeriesPartialOptions,
+    ChartOptions,
+    createChart,
+    DeepPartial, HistogramSeriesPartialOptions,
+    IChartApi, ISeriesApi, ISeriesPrimitive, LineData, LineSeriesPartialOptions, PriceLineOptions,
+    SeriesDataItemTypeMap,
+    SeriesMarker, SeriesOptionsMap,
+    SeriesType,
+    Time
+} from "lightweight-charts";
+import {Options} from "@vitejs/plugin-react";
+import {useEffect, useMemo, useState} from "react";
+import {createRectangle} from "./MainPage";
+import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
+import {ensureDefined} from "./lwc-plugins/helpers/assertions";
 
 export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit?) {
     let url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX`;
@@ -302,3 +318,275 @@ export const fillTrendByMinorData = (newTrend: Trend[], trendData: HistoryObject
 
     return modifiedTrend;
 }
+
+export const getVisibleMarkers = (chartApi: IChartApi, markers: SeriesMarker<Time>[]) => {
+    const timeScale = chartApi.timeScale();
+
+    try {
+        const timeRange = timeScale.getVisibleRange();
+
+        if (!timeRange) {
+            return [];
+        }
+
+        if (!markers?.length) {
+            return [];
+        }
+
+        const { from, to } = timeRange;
+        const visibleMarkers = markers?.filter(({ time }) => time >= from && time <= to);
+
+        return visibleMarkers as SeriesMarker<Time>[];
+    } catch (e) {
+        return [];
+    }
+};
+
+function exhaustiveCheck(_: never) {}
+
+export const createSeries = <T extends SeriesType>(chartApi: IChartApi, seriesType: T, options?: Options[T]) => {
+    switch (seriesType) {
+        case 'Area':
+            return chartApi.addAreaSeries(options);
+        case 'Bar':
+            return chartApi.addBarSeries(options);
+        case 'Candlestick':
+            return chartApi.addCandlestickSeries(options);
+        case 'Histogram':
+            return chartApi.addHistogramSeries(options);
+        case 'Line':
+            return chartApi.addLineSeries(options);
+        default:
+            exhaustiveCheck(seriesType);
+
+            throw new Error();
+    }
+};
+
+
+export const useChartApi = (element?: HTMLElement, options: DeepPartial<ChartOptions> = {}) => {
+    const [chartApi, setChartApi] = useState<IChartApi>();
+
+    useEffect(() => {
+        if (!element || chartApi) {
+            return;
+        }
+        const _chartApi =
+            Object.assign(createChart(element, options), {
+                getContainer: () => element,
+            })
+
+        setChartApi(_chartApi);
+
+        const handleResize = () => {
+            _chartApi?.applyOptions({width: element.clientWidth});
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+            window.removeEventListener("resize", handleResize);
+
+            // _chartApi?.remove();
+        };
+    }, [chartApi, element]);
+
+    useEffect(() => {
+        if (chartApi) {
+            chartApi.applyOptions(options);
+        }
+    }, Object.values(options));
+
+    return chartApi;
+};
+
+const markerColors = {
+    bearColor: "rgb(157, 43, 56)",
+    bullColor: "rgb(20, 131, 92)"
+}
+
+const defaultSeriesOptions = {
+    Area: {
+        backgroundColor: "white",
+        lineColor: "#2962FF",
+        textColor: "black",
+        areaTopColor: "#2962FF",
+        areaBottomColor: "rgba(41, 98, 255, 0.28)",
+        topColor: 'rgba(51, 51, 51, 0.1)',
+        bottomColor: 'rgba(51, 51, 51, 0)',
+        lineWidth: 2,
+    } as AreaSeriesPartialOptions,
+    Bar: {
+        upColor: markerColors.bullColor,
+        downColor: markerColors.bearColor,
+    } as BarSeriesPartialOptions,
+    Candlestick: {
+        downColor: markerColors.bearColor,
+        borderDownColor: "rgb(213, 54, 69)",
+        upColor: markerColors.bullColor,
+        borderUpColor: "rgb(11, 176, 109)",
+        wickUpColor: "rgb(11, 176, 109)",
+        wickDownColor: "rgb(213, 54, 69)",
+        // ... {
+        //     upColor: '#00A127',
+        //     downColor: '#E31C1C',
+        //     wickUpColor: '#00A127',
+        //     wickDownColor: '#E31C1C',
+        //     borderVisible: false,
+        // },
+        lastValueVisible: false,
+        priceLineVisible: false,
+    } as CandlestickSeriesPartialOptions,
+    Histogram: {} as HistogramSeriesPartialOptions,
+    Line: {
+        priceLineColor: "#2962FF",
+    } as LineSeriesPartialOptions,
+} as const;
+
+export const useSeriesApi = <T extends SeriesType>({chartApi,
+    seriesType,
+    data,
+    priceLines,
+                                                       lineSerieses,
+    markers,
+                                                       primitives,
+                                                       showVolume,
+                                                       showEMA,
+    options
+}: {
+    chartApi: IChartApi | undefined,
+    seriesType: T,
+    data: SeriesDataItemTypeMap<T>[],
+    lineSerieses: {
+        options: SeriesOptionsMap['Line'],
+        data?: LineData<Time>[],
+        markers?: SeriesMarker<Time>[]
+    }[],
+    priceLines
+? : PriceLineOptions[],
+    markers ? : SeriesMarker < Time > [],
+    primitives?: any[],
+    options ? : Options[T],
+    showVolume?: boolean,
+    showEMA?: boolean
+}) => {
+    const [_primitives, setPrimitives] = useState([]);
+    const [seriesApi, setSeriesApi] = useState<ISeriesApi<SeriesType>>();
+    const seriesOptions = useMemo(() => Object.assign(defaultSeriesOptions[seriesType], options), [options]);
+
+    useEffect(() => {
+        if (!chartApi || !data?.length) {
+            return;
+        }
+
+        const series = createSeries(chartApi, seriesType, seriesOptions);
+
+        series.priceScale().applyOptions({
+            scaleMargins: {
+                top: 0.05, // highest point of the series will be 10% away from the top
+                bottom: 0.2, // lowest point will be 40% away from the bottom
+            },
+        });
+
+        if(showVolume){
+            const volumeSeries = createSeries(chartApi, 'Histogram', {
+                priceFormat: {
+                    type: 'volume',
+                },
+                priceScaleId: '', // set as an overlay by setting a blank priceScaleId
+            });
+            volumeSeries.priceScale().applyOptions({
+                // set the positioning of the volume series
+                scaleMargins: {
+                    top: 0.7, // highest point of the series will be 70% away from the top
+                    bottom: 0,
+                },
+            });
+            volumeSeries?.setData(data.map((d: any) => ({
+                ...d,
+                // time: d.time * 1000,
+                value: d.volume,
+                color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
+            })));
+        }
+
+        if(showEMA){
+
+            const emaSeries = createSeries(chartApi, 'Line', {
+                color: "rgb(255, 186, 102)",
+                lineWidth: 1,
+                priceLineVisible: false,
+                // crossHairMarkerVisible: false
+            });
+            const emaSeriesData = data
+                .map((extremum, i) => ({time: extremum.time * 1000, value: ema[i]}));
+            // @ts-ignore
+            emaSeries.setData(emaSeriesData);
+        }
+
+        // series.setData(data.map(t => ({...t, time: t.time * 1000})));
+
+        setSeriesApi(series);
+
+        if (priceLines) {
+            priceLines.forEach((priceLine) => series.createPriceLine(priceLine));
+        }
+    }, [chartApi, data, showVolume, showEMA]);
+
+    useEffect(() => {
+        if (seriesApi && chartApi) {
+            if (!markers?.length) {
+                return seriesApi.setMarkers([]);
+            }
+
+            const visibleMarkers = getVisibleMarkers(chartApi, markers);
+
+            seriesApi.setMarkers(visibleMarkers);
+        }
+    }, [markers, seriesApi, chartApi]);
+
+    useEffect(() => {
+        if (seriesApi && primitives?.length) {
+            setPrimitives(primitives.map(primitive => ensureDefined(seriesApi).attachPrimitive(primitive)))
+        }
+
+        return () => {
+            _primitives?.forEach(primitive => primitive && ensureDefined(seriesApi).detachPrimitive(primitive));
+        }
+    }, [primitives, seriesApi]);
+
+    useEffect(() => {
+        if (seriesApi && chartApi) {
+            if (!lineSerieses?.length) {
+                return;
+            }
+
+            lineSerieses.forEach(lineSeriese => {
+                const ls = createSeries(chartApi, 'Line', lineSeriese.options)
+
+                lineSeriese.data && ls.setData(lineSeriese.data);
+                lineSeriese.markers && ls.setMarkers(lineSeriese.markers);
+            });
+        }
+    }, [lineSerieses, seriesApi, chartApi]);
+
+    useEffect(() => {
+        if (seriesApi) {
+            seriesApi.applyOptions(seriesOptions);
+        }
+    }, [seriesOptions, seriesApi]);
+
+    useEffect(() => {
+        if (seriesApi && chartApi) {
+            if (!data?.length) {
+                return seriesApi.setData([]);
+            }
+
+            seriesApi?.setData(data.map(t => ({...t})) as SeriesDataItemTypeMap[T][]);
+        }
+    }, [data]);
+
+    return seriesApi;
+};
+
+export const createRectangle2 = (orderBlock, options: Partial<RectangleDrawingToolOptions>) => new Rectangle(orderBlock.leftTop, orderBlock.rightBottom, {...options})
