@@ -479,6 +479,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
         if (!chartApi || !data?.length || seriesApi) {
             return;
         }
+        console.log('createSeries')
 
         const series = createSeries(chartApi, seriesType, seriesOptions);
 
@@ -541,21 +542,28 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
 
                 seriesApi.setMarkers(visibleMarkers);
             }
+            console.log('setMarkers')
         }
     }, [markers, seriesApi, chartApi]);
 
     useEffect(() => {
-        if (seriesApi && primitives?.length) {
+        if (seriesApi && primitives) {
             setPrimitives(primitives.map(primitive => {
                 ensureDefined(seriesApi).attachPrimitive(primitive)
                 return primitive;
-            }))
+            }));
+            console.log('setPrimitives')
         }
 
         return () => {
             _primitives?.forEach(primitive => ensureDefined(seriesApi).detachPrimitive(primitive));
+            // @ts-ignore
+            if(seriesApi?._internal__series){
+                // @ts-ignore
+                seriesApi._internal__series._private__primitives = [];
+            }
         }
-    }, [primitives, seriesApi, options]);
+    }, [primitives, chartApi, seriesApi]);
 
     useEffect(() => {
         if (chartApi) {
@@ -570,14 +578,15 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
                 }));
             } else {
                 _lineSerieses?.forEach(primitive =>  ensureDefined(chartApi).removeSeries(primitive));
-                setLineSerieses([]);
             }
+            console.log('setLineSerieses')
         }
     }, [lineSerieses, chartApi]);
 
     useEffect(() => {
         if (seriesApi) {
             seriesApi.applyOptions(seriesOptions);
+            console.log('applyOptions')
         }
     }, [seriesOptions, seriesApi]);
 
@@ -588,6 +597,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
             } else {
                 seriesApi?.setData(data.map(t => ({...t})) as SeriesDataItemTypeMap[T][]);
             }
+            console.log('setData')
         }
     }, [data, seriesApi]);
 
