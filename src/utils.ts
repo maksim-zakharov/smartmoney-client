@@ -558,8 +558,21 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
         }
     }, [primitives, seriesApi]);
 
+    const removeLineSeries = () => {
+        if(chartApi) {
+            _lineSerieses?.forEach(primitive => {
+                try {
+                    chartApi.removeSeries(primitive)
+                } catch (e) {
+
+                }
+            });
+        }
+    }
+
     useEffect(() => {
         if (chartApi) {
+            removeLineSeries();
             if (lineSerieses?.length){
                 setLineSerieses(lineSerieses.map(lineSeriese => {
                     const ls = createSeries(chartApi, 'Line', lineSeriese.options)
@@ -569,31 +582,11 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
 
                     return ls;
                 }));
-            } else {
-                if(chartApi){
-                    _lineSerieses?.forEach(primitive => {
-                        try {
-                            chartApi.removeSeries(primitive)
-                        }catch (e) {
-
-                        }
-                    });
-                }
             }
             console.log('setLineSerieses')
         }
 
-        return () => {
-            if(chartApi){
-                _lineSerieses?.forEach(primitive => {
-                    try {
-                        chartApi.removeSeries(primitive)
-                    }catch (e) {
-
-                    }
-                });
-            }
-        }
+        return removeLineSeries
     }, [lineSerieses, chartApi]);
 
     useEffect(() => {
