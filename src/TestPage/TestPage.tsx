@@ -141,7 +141,7 @@ export const TestPage = () => {
             trend = fillTrendByMinorData(trend, trendData, data)
         }
 
-        const boses = structureType === 'tradinghub' ? tradinghubCalculateCrosses(highs, lows, _data).boses : calculateCrosses(highParts, lowParts, _data, trend).boses;
+        const boses = structureType === 'tradinghub' ? tradinghubCalculateCrosses(highs, lows, _data, trend).boses : calculateCrosses(highParts, lowParts, _data, trend).boses;
         const orderBlocks = calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai');
         const fakeouts = calculateFakeout(highParts, lowParts, _data)
 

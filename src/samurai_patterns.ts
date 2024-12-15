@@ -422,7 +422,7 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
     return {boses};
 }
 
-export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
+export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candles: HistoryObject[], trends: Trend[]) => {
     let boses: Cross[] = [];
 
     const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high'? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
