@@ -6,6 +6,7 @@ interface Props {
     onChange: (value: string) => void;
 }
 export const TimeframeSelect: FC<Props> = ({value, onChange}) => <Radio.Group value={value} onChange={(e) => onChange(e.target.value)}>
+    <Radio.Button value="60">1M</Radio.Button>
     <Radio.Button value="300">5M</Radio.Button>
     <Radio.Button value="900">15M</Radio.Button>
     <Radio.Button value="1800">30M</Radio.Button>

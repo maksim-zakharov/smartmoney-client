@@ -8,6 +8,7 @@ import {calculateCandle, symbolFuturePairs} from "../symbolFuturePairs";
 import moment from "moment";
 import {calculateMultiple, fetchCandlesFromAlor, getCommonCandles} from "./utils";
 import {TickerSelect} from "./TickerSelect";
+import {TimeframeSelect} from "./TimeframeSelect";
 
 const {RangePicker} = DatePicker
 
@@ -102,14 +103,7 @@ export const ArbitrageMOEXPage = () => {
 
     return <>
         <Space>
-            <Radio.Group value={tf} onChange={(e) => setSize(e.target.value)}>
-                <Radio.Button value="300">5M</Radio.Button>
-                <Radio.Button value="900">15M</Radio.Button>
-                <Radio.Button value="1800">30M</Radio.Button>
-                <Radio.Button value="3600">1H</Radio.Button>
-                <Radio.Button value="14400">4H</Radio.Button>
-                <Radio.Button value="D">D1</Radio.Button>
-            </Radio.Group>
+            <TimeframeSelect  value={tf} onChange={setSize}/>
             <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')}/>
             {/*<Select*/}
             {/*    value={tickerFuture}*/}

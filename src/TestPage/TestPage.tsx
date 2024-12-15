@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {Checkbox, Divider, Input, Radio, Slider, Space} from "antd";
 import type {Dayjs} from 'dayjs';
@@ -7,7 +7,6 @@ import {Chart} from "./TestChart";
 import {calculateEMA} from "../../symbolFuturePairs";
 import {
     createRectangle2,
-    createSeries,
     fetchCandlesFromAlor,
     fillTrendByMinorData,
     getSecurity,
@@ -24,11 +23,9 @@ import {
     calculateSwings,
     calculateTrend,
     khrustikCalculateSwings,
-    Trend
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
-import {withErrorBoundary} from "../ErrorBoundary";
 import {calculate} from "../sm_scripts";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 
