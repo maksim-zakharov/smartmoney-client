@@ -1,17 +1,19 @@
 import React, {FC, useEffect, useRef} from "react";
 import {
-    ColorType,
-    CrosshairMode, LineData,
-    SeriesMarker, SeriesOptionsMap, Time
+    ColorType, createChart,
+    CrosshairMode, LineData, SeriesMarker, SeriesOptionsMap, Time
 } from "lightweight-charts";
-import {
-    OrderBlock
-} from "../samurai_patterns";
 import moment from 'moment';
-import {useChartApi, useSeriesApi} from "../utils";
+import {createSeries, defaultSeriesOptions, getVisibleMarkers} from "../utils";
+import {ensureDefined} from "../lwc-plugins/helpers/assertions";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
+}
+
+const markerColors = {
+    bearColor: "rgb(157, 43, 56)",
+    bullColor: "rgb(20, 131, 92)"
 }
 
 export const Chart: FC<{
@@ -105,20 +107,91 @@ export const Chart: FC<{
         height: chartContainerRef.current?.height || 500,
     }
 
-    const chartApi = useChartApi(chartContainerRef.current!, options)
+    useEffect(() => {
+        if (!chartContainerRef.current) {
+            return;
+        }
+        const chartApi = createChart(chartContainerRef.current, options)
 
-    useSeriesApi({
-        chartApi,
-        showVolume: true,
-        seriesType: 'Candlestick',
-        data,
-        ema,
-        lineSerieses,
-        priceLines: [],
-        markers,
-        primitives,
-        options
-    })
+        const series = createSeries(chartApi, 'Candlestick', defaultSeriesOptions['Candlestick']);
+
+        series.priceScale().applyOptions({
+            scaleMargins: {
+                top: 0.05, // highest point of the series will be 10% away from the top
+                bottom: 0.2, // lowest point will be 40% away from the bottom
+            },
+        });
+        series?.setData(data);
+
+        const volumeSeries = createSeries(chartApi, 'Histogram', {
+            priceFormat: {
+                type: 'volume',
+            },
+            priceScaleId: '', // set as an overlay by setting a blank priceScaleId
+        });
+        volumeSeries.priceScale().applyOptions({
+            // set the positioning of the volume series
+            scaleMargins: {
+                top: 0.7, // highest point of the series will be 70% away from the top
+                bottom: 0,
+            },
+        });
+        volumeSeries?.setData(data.map((d: any) => ({
+            ...d,
+            // time: d.time * 1000,
+            value: d.volume,
+            color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
+        })));
+
+        const emaSeries = createSeries(chartApi, 'Line', {
+            color: "rgb(255, 186, 102)",
+            lineWidth: 1,
+            priceLineVisible: false,
+            // crossHairMarkerVisible: false
+        });
+        emaSeries?.setData(data
+            .map((extremum, i) => ({time: extremum.time, value: ema[i]})));
+
+        const visibleMarkers = getVisibleMarkers(chartApi, markers);
+
+        series.setMarkers(visibleMarkers);
+
+        primitives.forEach(primitive => ensureDefined(series).attachPrimitive(primitive))
+
+        lineSerieses.forEach(lineSeriese => {
+            const ls = createSeries(chartApi, 'Line', lineSeriese.options)
+
+            lineSeriese.data && ls.setData(lineSeriese.data);
+            lineSeriese.markers && ls.setMarkers(lineSeriese.markers);
+        })
+
+        const handleResize = () => {
+            chartApi?.applyOptions({width: chartContainerRef.current.clientWidth});
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+            window.removeEventListener("resize", handleResize);
+
+            chartApi?.remove();
+        };
+    }, [chartContainerRef.current, data, markers, primitives, ema, lineSerieses]);
+
+    // const chartApi = useChartApi(chartContainerRef.current!, options)
+
+    // useSeriesApi({
+    //     chartApi,
+    //     showVolume: true,
+    //     seriesType: 'Candlestick',
+    //     data,
+    //     ema,
+    //     lineSerieses,
+    //     priceLines: [],
+    //     markers,
+    //     primitives,
+    //     options
+    // })
 
     return <div
         ref={chartContainerRef}

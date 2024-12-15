@@ -371,10 +371,7 @@ export const useChartApi = (element?: HTMLElement, options: DeepPartial<ChartOpt
         if (!element || chartApi) {
             return;
         }
-        const _chartApi =
-            Object.assign(createChart(element, options), {
-                getContainer: () => element,
-            })
+        const _chartApi = createChart(element, options)
 
         setChartApi(_chartApi);
 
@@ -405,7 +402,7 @@ const markerColors = {
     bullColor: "rgb(20, 131, 92)"
 }
 
-const defaultSeriesOptions = {
+export const defaultSeriesOptions = {
     Area: {
         backgroundColor: "white",
         lineColor: "#2962FF",
