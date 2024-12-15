@@ -22,7 +22,7 @@ import {
     calculateStructure,
     calculateSwings,
     calculateTrend,
-    khrustikCalculateSwings, tradinghubCalculateSwings,
+    khrustikCalculateSwings, tradinghubCalculateCrosses, tradinghubCalculateSwings,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
@@ -35,11 +35,12 @@ const markerColors = {
 }
 
 export const TestPage = () => {
-    const [swipType, setSwipType] = useState('samurai');
+    const [swipType, setSwipType] = useState('tradinghub');
+    const [structureType, setStructureType] = useState('tradinghub');
     const [obType, setOBType] = useState('samurai');
     const [data, setData] = useState([]);
     const [trendData, setTrendData] = useState([]);
-    const [checkboxValues, setCheckboxValues] = useState(['showPositions', 'showEndOB']);
+    const [checkboxValues, setCheckboxValues] = useState(['BOS', 'swings']);
     const [windowLength, setWindowLength] = useState(5);
     const [maxDiff, setMaxDiff] = useState(0);
     const [multiStop, setMultiStop] = useState(5);
@@ -140,7 +141,7 @@ export const TestPage = () => {
             trend = fillTrendByMinorData(trend, trendData, data)
         }
 
-        const boses = calculateCrosses(highParts, lowParts, _data, trend).boses
+        const boses = structureType === 'tradinghub' ? tradinghubCalculateCrosses(highs, lows, _data).boses : calculateCrosses(highParts, lowParts, _data, trend).boses;
         const orderBlocks = calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai');
         const fakeouts = calculateFakeout(highParts, lowParts, _data)
 
@@ -151,7 +152,7 @@ export const TestPage = () => {
         }
 
         return {_data, ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [swipType, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, trendData, maxDiff, multiStop])
+    }, [swipType, structureType, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, trendData, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
@@ -607,6 +608,11 @@ export const TestPage = () => {
                 <Radio value="tradinghub">Свипы по tradinghub</Radio>
                 <Radio value="samurai">Свипы по самураю</Radio>
                 <Radio value="khrustik">Свипы по хрустику</Radio>
+            </Radio.Group>
+            <Radio.Group onChange={e => setStructureType(e.target.value)}
+                         value={structureType}>
+                <Radio value="tradinghub">Босы по tradinghub</Radio>
+                <Radio value="samurai">Босы по самураю</Radio>
             </Radio.Group>
             <Radio.Group onChange={e => setOBType(e.target.value)}
                          value={obType}>

@@ -91,7 +91,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
         const swing: Swing = {
             side: (isValidPullback || '') as any,
             time: currentCandle.time,
-            price: currentCandle.high,
+            price: isValidPullback === 'high' ? currentCandle.high : currentCandle.low,
             index: i
         }
         highs[i] = isValidPullback === 'high' ? swing : null;
@@ -377,7 +377,7 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
 export interface Cross {
     from: Swing,
     textCandle: HistoryObject,
-    to: Swing,
+    to?: Swing,
     type: 'low' | 'high',
     text: string
 }
@@ -420,6 +420,84 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
     }
 
     return {boses};
+}
+
+export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
+    let boses: Cross[] = [];
+
+    const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high'? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
+
+    const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
+
+    for (let i = 0; i < candles.length; i++) {
+        if(!highs[i] && !lows[i]){
+            continue;
+        }
+
+        if(highs[i]){
+            const from = highs[i];
+            let to;
+            let liquidityCandle = candles[i];
+            for (let j = i + 1; j < candles.length; j++) {
+                const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[j]);
+                if(!isTakenOutLiquidity){
+                    continue;
+                }
+                const isClose = hasClose('high', liquidityCandle, candles[j]);
+                if(isClose){
+                    to = {index: j, time: candles[j].time, price: candles[j].close};
+                    break;
+                } else {
+                    liquidityCandle = candles[j];
+                }
+            }
+            if(!to){
+                continue;
+            }
+            const diff = to.index - i;
+            const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
+            boses.push({
+                from,
+                to,
+                textCandle: candles[textIndex],
+                type: 'high',
+                text: 'BOS'
+            })
+        } else if(lows[i]){
+            const from = lows[i];
+            let to;
+            let liquidityCandle = candles[i];
+            for (let j = i + 1; j < candles.length; j++) {
+                const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[j]);
+                if(!isTakenOutLiquidity){
+                    continue;
+                }
+                const isClose = hasClose('low', liquidityCandle, candles[j]);
+                if(isClose){
+                    to = {index: j, time: candles[j].time, price: candles[j].close};
+                    break;
+                } else {
+                    liquidityCandle = candles[j];
+                }
+            }
+            if(!to){
+                continue;
+            }
+            const diff = to.index - i;
+            const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
+            boses.push({
+                from,
+                to,
+                textCandle: candles[textIndex],
+                type: 'low',
+                text: 'BOS'
+            })
+        }
+    }
+
+    const sorted = boses.sort((a, b) => a.from.index - b.from.index);
+
+    return {boses: sorted};
 }
 
 export const calculateBreakingBlocks = (crosses: Cross[], candles: HistoryObject[]) => {
