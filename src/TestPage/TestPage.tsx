@@ -174,6 +174,106 @@ export const TestPage = () => {
         };
     }, [stopMargin, security?.lotsize, positions])
 
+
+
+    // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
+    // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
+    // let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
+
+    // if(excludeIDM){
+    //     const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
+    //     orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
+    // }
+
+//             breakingBlocks.filter(Boolean).forEach(marker => {
+//                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
+//                 const lineSeries = chart.addLineSeries({
+//                     color, // Цвет линии
+//                     priceLineVisible: false,
+//                     lastValueVisible: false,
+//                     lineWidth: 1,
+//                     lineStyle: LineStyle.LargeDashed,
+//                 });
+// // 5. Устанавливаем данные для линии
+//                 lineSeries.setData([
+//                     {time: marker.fromTime * 1000 as Time, value: marker.price}, // начальная точка между свечками
+//                     {time: marker.textCandle.time * 1000 as Time, value: marker.price}, // конечная точка между свечками
+//                     {time: marker.toTime * 1000 as Time, value: marker.price}, // конечная точка между свечками
+//                 ]);
+//
+//                 lineSeries.setMarkers([{
+//                     color,
+//                     time: (marker.textCandle.time * 1000) as Time,
+//                     shape: 'text',
+//                     position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
+//                     text: marker.text
+//                 }] as any)
+//
+//                 // if (marker.idmIndex) {
+//                 //     crossesMarkers.push({
+//                 //         color: marker.color,
+//                 //         time: data[marker.idmIndex].time * 1000,
+//                 //         shape: 'text',
+//                 //         position: marker.position,
+//                 //         text: 'IDM'
+//                 //     })
+//                 // }
+//             })
+
+    // if (noInternal) {
+
+        // allMarkers.push(...filteredExtremums.filter(Boolean).map(s => ({
+        //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+        //     time: (s.time * 1000) as Time,
+        //     shape: 'circle',
+        //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+        //     // text: marker.text
+        // })));
+    // }
+
+
+    // smPatterns && [...topPlots.filter(Boolean).map(v => ({
+    //     ...v,
+    //     position: 'aboveBar',
+    //     text: v.isCHoCH ? 'IDM' : 'BOS',
+    //     color: markerColors.bullColor
+    // })),
+    //     ...btmPlots.filter(Boolean).map(v => ({
+    //         ...v,
+    //         position: 'belowBar',
+    //         text: v.isCHoCH ? 'IDM' : 'BOS',
+    //         color: markerColors.bearColor
+    //     }))
+    // ].forEach(plot => {
+    //     const lineSeries = chart.addLineSeries({
+    //         color: plot.color, // Цвет линии
+    //         priceLineVisible: false,
+    //         lastValueVisible: false,
+    //         lineWidth: 1,
+    //         lineStyle: LineStyle.LargeDashed,
+    //     });
+    //
+    //     const textIndex = plot.to - Math.floor((plot.to - plot.from) / 2);
+    //
+    //     const fromCandle = data[plot.from];
+    //     const toCandle = data[plot.to];
+    //     const textCandle = data[textIndex];
+    //
+    //     lineSeries.setData([
+    //         {time: fromCandle.time * 1000, value: plot.price}, // начальная точка между свечками
+    //         {time: textCandle.time * 1000, value: plot.price}, // начальная точка между свечками
+    //         {time: toCandle.time * 1000, value: plot.price}, // конечная точка между свечками
+    //     ]);
+    //
+    //     lineSeries.setMarkers([{
+    //         color: plot.color,
+    //         time: textCandle.time * 1000,
+    //         shape: 'text',
+    //         position: plot.position,
+    //         text: plot.text
+    //     }])
+    // })
+
     const {
         topPlots,
         btmPlots,
@@ -550,7 +650,7 @@ export const TestPage = () => {
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
         </Checkbox.Group>
-        <Chart maxDiff={maxDiff} lineSerieses={lineSerieses} primitives={primitives} orderBlocks={orderBlocks} markers={markers} trend={trend} multiStop={multiStop} data={_data} ema={ema} windowLength={windowLength} tf={Number(tf)} {...config} />
+        <Chart lineSerieses={lineSerieses} primitives={primitives} markers={markers} data={_data} ema={ema} />
     </>;
 }
 

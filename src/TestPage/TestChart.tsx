@@ -21,40 +21,15 @@ export const Chart: FC<{
         data?: LineData<Time>[],
         markers?: SeriesMarker<Time>[]
     }[],
-    smPatterns?: boolean,
-    excludeIDM?: boolean,
-    withTrendConfirm?: boolean,
-    maxDiff?: number;
-    multiStop?: number;
-    oldTrend?: boolean,
-    tradeFakeouts?: boolean,
-    excludeTrendSFP?: boolean,
-    noInternal?: boolean,
-    withMove?: boolean,
+    primitives: any[],
     data: any[],
     ema: any[],
-    withBug,
-    windowLength: number,
-    orderBlocks: OrderBlock[],
-    primitives: any[],
 }> = ({
-          maxDiff,
           lineSerieses,
           markers,
                               primitives,
-          orderBlocks,
-          excludeTrendSFP,
-          tradeFakeouts,
-          withTrendConfirm,
-          withMove,
-          excludeIDM,
-          multiStop,
-          oldTrend,
-          noInternal,
-          smPatterns,
           data,
           ema,
-          windowLength
       }) => {
 
     const {
@@ -132,124 +107,18 @@ export const Chart: FC<{
 
     const chartApi = useChartApi(chartContainerRef.current!, options)
 
-    const series = useSeriesApi({
+    useSeriesApi({
         chartApi,
         showVolume: true,
         seriesType: 'Candlestick',
         data,
+        ema,
         lineSerieses,
         priceLines: [],
         markers,
         primitives,
         options
     })
-
-    useEffect(
-        () => {
-            if (!series || !data?.length) {
-                return;
-            }
-
-            // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
-            // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
-            // let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
-
-            // if(excludeIDM){
-            //     const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
-            //     orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
-            // }
-
-//             breakingBlocks.filter(Boolean).forEach(marker => {
-//                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
-//                 const lineSeries = chart.addLineSeries({
-//                     color, // Цвет линии
-//                     priceLineVisible: false,
-//                     lastValueVisible: false,
-//                     lineWidth: 1,
-//                     lineStyle: LineStyle.LargeDashed,
-//                 });
-// // 5. Устанавливаем данные для линии
-//                 lineSeries.setData([
-//                     {time: marker.fromTime * 1000 as Time, value: marker.price}, // начальная точка между свечками
-//                     {time: marker.textCandle.time * 1000 as Time, value: marker.price}, // конечная точка между свечками
-//                     {time: marker.toTime * 1000 as Time, value: marker.price}, // конечная точка между свечками
-//                 ]);
-//
-//                 lineSeries.setMarkers([{
-//                     color,
-//                     time: (marker.textCandle.time * 1000) as Time,
-//                     shape: 'text',
-//                     position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-//                     text: marker.text
-//                 }] as any)
-//
-//                 // if (marker.idmIndex) {
-//                 //     crossesMarkers.push({
-//                 //         color: marker.color,
-//                 //         time: data[marker.idmIndex].time * 1000,
-//                 //         shape: 'text',
-//                 //         position: marker.position,
-//                 //         text: 'IDM'
-//                 //     })
-//                 // }
-//             })
-
-            if (noInternal) {
-
-                // allMarkers.push(...filteredExtremums.filter(Boolean).map(s => ({
-                //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                //     time: (s.time * 1000) as Time,
-                //     shape: 'circle',
-                //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                //     // text: marker.text
-                // })));
-            }
-
-
-            // smPatterns && [...topPlots.filter(Boolean).map(v => ({
-            //     ...v,
-            //     position: 'aboveBar',
-            //     text: v.isCHoCH ? 'IDM' : 'BOS',
-            //     color: markerColors.bullColor
-            // })),
-            //     ...btmPlots.filter(Boolean).map(v => ({
-            //         ...v,
-            //         position: 'belowBar',
-            //         text: v.isCHoCH ? 'IDM' : 'BOS',
-            //         color: markerColors.bearColor
-            //     }))
-            // ].forEach(plot => {
-            //     const lineSeries = chart.addLineSeries({
-            //         color: plot.color, // Цвет линии
-            //         priceLineVisible: false,
-            //         lastValueVisible: false,
-            //         lineWidth: 1,
-            //         lineStyle: LineStyle.LargeDashed,
-            //     });
-            //
-            //     const textIndex = plot.to - Math.floor((plot.to - plot.from) / 2);
-            //
-            //     const fromCandle = data[plot.from];
-            //     const toCandle = data[plot.to];
-            //     const textCandle = data[textIndex];
-            //
-            //     lineSeries.setData([
-            //         {time: fromCandle.time * 1000, value: plot.price}, // начальная точка между свечками
-            //         {time: textCandle.time * 1000, value: plot.price}, // начальная точка между свечками
-            //         {time: toCandle.time * 1000, value: plot.price}, // конечная точка между свечками
-            //     ]);
-            //
-            //     lineSeries.setMarkers([{
-            //         color: plot.color,
-            //         time: textCandle.time * 1000,
-            //         shape: 'text',
-            //         position: plot.position,
-            //         text: plot.text
-            //     }])
-            // })
-        },
-        [series, chartApi, orderBlocks, withMove, markers, excludeTrendSFP, tradeFakeouts, withTrendConfirm, excludeIDM, multiStop, maxDiff, oldTrend, noInternal, smPatterns, data, ema, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, windowLength]
-    );
 
     return <div
         ref={chartContainerRef}

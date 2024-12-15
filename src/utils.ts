@@ -443,30 +443,32 @@ const defaultSeriesOptions = {
     } as LineSeriesPartialOptions,
 } as const;
 
-export const useSeriesApi = <T extends SeriesType>({chartApi,
-    seriesType,
-    data,
-    priceLines,
+export const useSeriesApi = <T extends SeriesType>({
+                                                       chartApi,
+                                                       seriesType,
+                                                       data,
+                                                       priceLines,
                                                        lineSerieses,
-    markers,
+                                                       markers,
                                                        primitives,
                                                        showVolume,
                                                        showEMA,
-    options
-}: {
+                                                       ema,
+                                                       options
+                                                   }: {
     chartApi: IChartApi | undefined,
     seriesType: T,
     data: SeriesDataItemTypeMap<T>[],
+    ema?: number[],
     lineSerieses: {
         options: SeriesOptionsMap['Line'],
         data?: LineData<Time>[],
         markers?: SeriesMarker<Time>[]
     }[],
-    priceLines
-? : PriceLineOptions[],
-    markers ? : SeriesMarker < Time > [],
+    priceLines?: PriceLineOptions[],
+    markers?: SeriesMarker<Time> [],
     primitives?: any[],
-    options ? : Options[T],
+    options?: Options[T],
     showVolume?: boolean,
     showEMA?: boolean
 }) => {
@@ -492,7 +494,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
             },
         });
 
-        if(showVolume){
+        if (showVolume) {
             const volumeSeries = createSeries(chartApi, 'Histogram', {
                 priceFormat: {
                     type: 'volume',
@@ -509,7 +511,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
             setVolumeSeriesApi(volumeSeries)
         }
 
-        if(showEMA){
+        if (showEMA) {
             const emaSeries = createSeries(chartApi, 'Line', {
                 color: "rgb(255, 186, 102)",
                 lineWidth: 1,
@@ -551,7 +553,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
         return () => {
             _primitives?.forEach(primitive => ensureDefined(seriesApi).detachPrimitive(primitive));
             // @ts-ignore
-            if(seriesApi?._internal__series){
+            if (seriesApi?._internal__series) {
                 // @ts-ignore
                 seriesApi._internal__series._private__primitives = [];
             }
@@ -559,7 +561,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
     }, [primitives, seriesApi]);
 
     const removeLineSeries = () => {
-        if(chartApi) {
+        if (chartApi) {
             _lineSerieses?.forEach(primitive => {
                 try {
                     chartApi.removeSeries(primitive)
@@ -571,9 +573,9 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
     }
 
     useEffect(() => {
-        if (chartApi) {
+        if (chartApi && seriesApi) {
             removeLineSeries();
-            if (lineSerieses?.length){
+            if (lineSerieses?.length) {
                 setLineSerieses(lineSerieses.map(lineSeriese => {
                     const ls = createSeries(chartApi, 'Line', lineSeriese.options)
 
@@ -587,7 +589,7 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
         }
 
         return removeLineSeries
-    }, [lineSerieses, chartApi]);
+    }, [lineSerieses, chartApi, seriesApi]);
 
     useEffect(() => {
         if (seriesApi) {
@@ -603,36 +605,28 @@ export const useSeriesApi = <T extends SeriesType>({chartApi,
                 volumeSeriesApi?.setData([]);
                 emaSeriesApi?.setData([]);
             } else {
-                const timeScale = chartApi.timeScale();
-
-                const timeRange = timeScale.getVisibleRange();
-
-                const { from, to } = timeRange;
-
-                // @ts-ignore
-                const filtered = data.filter(({ time }) => time >= from && time <= to)
-                seriesApi?.setData(filtered.map(t => ({...t})) as SeriesDataItemTypeMap[T][]);
-                volumeSeriesApi?.setData(filtered.map((d: any) => ({
+                seriesApi?.setData(data.map(t => ({...t})) as SeriesDataItemTypeMap[T][]);
+                volumeSeriesApi?.setData(data.map((d: any) => ({
                     ...d,
                     // time: d.time * 1000,
                     value: d.volume,
                     color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
                 })));
                 // @ts-ignore
-                emaSeriesApi?.setData(filtered
+                emaSeriesApi?.setData(data
                     .map((extremum, i) => ({time: extremum.time, value: ema[i]})));
             }
             console.log('setData')
         }
 
         return () => {
-            if(seriesApi){
+            if (seriesApi) {
                 seriesApi.setData([]);
                 volumeSeriesApi?.setData([]);
                 emaSeriesApi?.setData([]);
             }
         }
-    }, [data, seriesApi, volumeSeriesApi, emaSeriesApi, chartApi]);
+    }, [data, seriesApi, volumeSeriesApi, emaSeriesApi, ema]);
 
     return seriesApi;
 };
