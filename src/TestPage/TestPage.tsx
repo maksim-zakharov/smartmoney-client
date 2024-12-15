@@ -42,7 +42,6 @@ export const TestPage = () => {
     const [obType, setOBType] = useState('samurai');
     const [data, setData] = useState([]);
     const [trendData, setTrendData] = useState([]);
-    const [ema, setEma] = useState([]);
     const [checkboxValues, setCheckboxValues] = useState(['showPositions', 'showEndOB']);
     const [windowLength, setWindowLength] = useState(5);
     const [maxDiff, setMaxDiff] = useState(0);
@@ -118,57 +117,39 @@ export const TestPage = () => {
         searchParams.set('toDate', value[1].endOf('day').unix());
         setSearchParams(searchParams);
     }
-
-    const swipCallback = useCallback(swipType === 'samurai' ? calculateSwings : khrustikCalculateSwings, [swipType]);
-
-    const _data = useMemo(() => {
-        if(tf === trendTF){
-            return data;
-        } else {
-            return trendData;
-        }
-    } ,[tf, trendTF, data, trendData])
-
-    useEffect(() => {
-        _data && setEma(calculateEMA(
+    
+    const {ema, swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions, _data} = useMemo(() => {
+        const swipCallback = swipType === 'samurai' ? calculateSwings : khrustikCalculateSwings;
+        const _data =tf === trendTF ? data : trendData;
+        const ema = calculateEMA(
             _data.map((h) => h.close),
             100
-        )[1]);
-    }, [_data])
+        )[1];
 
-    const swings = useMemo(() => swipCallback(_data) ,[swipCallback, _data])
+        const swings =swipCallback(_data);
+        const {structure, highParts, lowParts} = calculateStructure(swings.highs, swings.lows, _data)
 
-    const {structure, highParts, lowParts} = useMemo(() => calculateStructure(swings.highs, swings.lows, _data) ,[_data, swings])
-
-    const trend: Trend[] = useMemo(() => {
-        if(!_data.length){
-            return [];
-        }
+        let trend = [];
         if(tf === trendTF){
-            return calculateTrend(highParts, lowParts, _data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
         } else {
-            let newTrend = calculateTrend(highParts, lowParts, _data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
 
-            newTrend = fillTrendByMinorData(newTrend, trendData, _data)
-
-            return newTrend;
+            trend = fillTrendByMinorData(trend, trendData, data)
         }
-    }, [tf, trendTF, _data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick, trendData, highParts, lowParts]);
 
-    const boses = useMemo(() => calculateCrosses(highParts, lowParts, _data, trend).boses, [highParts, lowParts, _data, trend]);
+        const boses = calculateCrosses(highParts, lowParts, _data, trend).boses
+        const orderBlocks = calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai');
+        const fakeouts = calculateFakeout(highParts, lowParts, _data)
 
-    const orderBlocks = useMemo(() => calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai') ,[highParts, lowParts, _data, trend, config.excludeIDM, obType])
-
-    const fakeouts = useMemo(() => calculateFakeout(highParts, lowParts, _data), [highParts, lowParts, _data]);
-
-    const positions = useMemo(() => {
         const positions = calculatePositionsByOrderblocks(orderBlocks, _data, maxDiff, multiStop);
         if(config.tradeFakeouts){
             const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, _data, multiStop);
             positions.push(...fakeoutPositions);
         }
-        return positions.sort((a, b) => a.openTime - b.openTime);
-    }, [orderBlocks, fakeouts, _data, maxDiff, multiStop, config.tradeFakeouts]);
+
+        return {_data, ema, swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
+    }, [swipType, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, trendData, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
