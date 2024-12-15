@@ -504,20 +504,20 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
 
             return a.from.side === 'high' ? a.from.price - b.from.price : b.from.price - a.from.price; // b.from.index - a.from.index; // b.from.price - a.from.price;
     });
-    for (let i = 1; i < sorted.length; i++) {
-        const prevBos = sorted[i - 1];
-        const currBos = sorted[i];
-        if(prevBos.to.index === currBos.to.index){
-            // TODO тут либо i - 1 либо i
-            sorted[i - 1] = null
-            sorted.splice(i - 1, 1);
-            i--;
-        } else if(prevBos.from.index > currBos.from.index && prevBos.to.index < currBos.to.index) {
-            sorted[i - 1] = null
-            sorted.splice(i - 1, 1);
-            i--;
-        }
-    }
+    // for (let i = 1; i < sorted.length; i++) {
+    //     const prevBos = sorted[i - 1];
+    //     const currBos = sorted[i];
+    //     if(prevBos.to.index === currBos.to.index){
+    //         // TODO тут либо i - 1 либо i
+    //         sorted[i - 1] = null
+    //         sorted.splice(i - 1, 1);
+    //         i--;
+    //     } else if(prevBos.from.index > currBos.from.index && prevBos.to.index < currBos.to.index) {
+    //         sorted[i - 1] = null
+    //         sorted.splice(i - 1, 1);
+    //         i--;
+    //     }
+    // }
     // // Дублирую костыль
     // for (let i = 1; i < sorted.length; i++) {
     //     const prevBos = sorted[i - 1];
