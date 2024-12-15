@@ -640,7 +640,7 @@ export const TestPage = () => {
         <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Slider defaultValue={maxDiff} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
         <Slider defaultValue={multiStop} onChange={setMultiStop} min={1} max={5} step={1}/>
-        <Checkbox.Group onChange={setCheckboxValues}>
+        <Checkbox.Group onChange={setCheckboxValues} value={checkboxValues}>
             <Checkbox key="smPatterns" value="smPatterns">smPatterns</Checkbox>
             <Checkbox key="oldTrend" value="oldTrend">Тренд</Checkbox>
             <Checkbox key="swings" value="swings">Swings</Checkbox>

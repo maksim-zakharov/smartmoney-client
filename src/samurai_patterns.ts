@@ -495,15 +495,15 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
         }
     }
 
-    const sorted = boses.sort((a, b) => {
-        if(a.type !== b.type)
-        return a.type.localeCompare(b.type);
-
-        if(a.to.index !== b.to.index)
-            return a.to.index - b.to.index;
-
-            return a.from.side === 'high' ? a.from.price - b.from.price : b.from.price - a.from.price; // b.from.index - a.from.index; // b.from.price - a.from.price;
-    });
+    // const sorted = boses.sort((a, b) => {
+    //     if(a.type !== b.type)
+    //     return a.type.localeCompare(b.type);
+    //
+    //     if(a.to.index !== b.to.index)
+    //         return a.to.index - b.to.index;
+    //
+    //         return a.from.side === 'high' ? a.from.price - b.from.price : b.from.price - a.from.price; // b.from.index - a.from.index; // b.from.price - a.from.price;
+    // });
     // for (let i = 1; i < sorted.length; i++) {
     //     const prevBos = sorted[i - 1];
     //     const currBos = sorted[i];
@@ -549,7 +549,7 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
     //     }
     // }
 
-    return {boses: sorted.filter(Boolean)};
+    return {boses};
 }
 
 export const calculateBreakingBlocks = (crosses: Cross[], candles: HistoryObject[]) => {
