@@ -22,7 +22,7 @@ import {
     calculateStructure,
     calculateSwings,
     calculateTrend,
-    khrustikCalculateSwings,
+    khrustikCalculateSwings, tradinghubCalculateSwings,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
@@ -116,15 +116,20 @@ export const TestPage = () => {
     }
     
     const {ema, swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions, _data} = useMemo(() => {
-        const swipCallback = swipType === 'samurai' ? calculateSwings : khrustikCalculateSwings;
+        const swipsMap = {
+            'samurai':calculateSwings,
+            'khrustik': khrustikCalculateSwings,
+            'tradinghub' : tradinghubCalculateSwings
+        }
+        const swipCallback = swipsMap[swipType]  || calculateSwings;
         const _data =tf === trendTF ? data : trendData;
         const ema = calculateEMA(
             _data.map((h) => h.close),
             100
         )[1];
 
-        const swings =swipCallback(_data);
-        const {structure, highParts, lowParts} = calculateStructure(swings.highs, swings.lows, _data)
+        const {highs, lows} =swipCallback(_data);
+        const {structure, highParts, lowParts} = calculateStructure(highs, lows, _data)
 
         let trend = [];
         if(tf === trendTF){
@@ -145,7 +150,7 @@ export const TestPage = () => {
             positions.push(...fakeoutPositions);
         }
 
-        return {_data, ema, swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
+        return {_data, ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
     }, [swipType, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, trendData, maxDiff, multiStop])
 
     const profit = useMemo(() => {
@@ -599,6 +604,7 @@ export const TestPage = () => {
         <Space>
             <Radio.Group onChange={e => setSwipType(e.target.value)}
                          value={swipType}>
+                <Radio value="tradinghub">Свипы по tradinghub</Radio>
                 <Radio value="samurai">Свипы по самураю</Radio>
                 <Radio value="khrustik">Свипы по хрустику</Radio>
             </Radio.Group>

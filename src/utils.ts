@@ -16,7 +16,6 @@ import {
 } from "lightweight-charts";
 import {Options} from "@vitejs/plugin-react";
 import {useEffect, useMemo, useState} from "react";
-import {createRectangle} from "./MainPage";
 import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
 
@@ -139,9 +138,9 @@ export const notTradingTime = (candle: HistoryObject) => {
 
     // Открытие вечерней сессии
     // хз удалять ли
-    // if (hours === 19 && minutes === 0) {
-    //   return true;
-    // }
+    if (hours === 19 && minutes === 0) {
+      return true;
+    }
 
     return false;
 };

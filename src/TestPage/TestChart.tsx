@@ -152,9 +152,9 @@ export const Chart: FC<{
         emaSeries?.setData(data
             .map((extremum, i) => ({time: extremum.time, value: ema[i]})));
 
-        const visibleMarkers = getVisibleMarkers(chartApi, markers);
+        // const visibleMarkers = getVisibleMarkers(chartApi, markers);
 
-        series.setMarkers(visibleMarkers);
+        series.setMarkers(markers.sort((a, b) => a.time - b.time));
 
         primitives.forEach(primitive => ensureDefined(series).attachPrimitive(primitive))
 

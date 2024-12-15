@@ -56,6 +56,91 @@ export const calculateSwings = (candles: HistoryObject[]) => {
     return {swings, highs, lows};
 }
 
+export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
+    const swings: (Swing | null)[] = new Array(candles.length).fill(null);
+    const highs: (Swing | null)[] = new Array(candles.length).fill(null);
+    const lows: (Swing | null)[] = new Array(candles.length).fill(null);
+
+    const hasValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject) => {
+        if(leftCandle.high <= currentCandle.high && nextCandle.high < currentCandle.high && nextCandle.low <= currentCandle.low){
+            return 'high'
+        }
+        if(leftCandle.low >= currentCandle.low && nextCandle.low > currentCandle.low && nextCandle.high >= currentCandle.high){
+            return 'low'
+        }
+        return '';
+    };
+
+    let prevCandleIndex = 0
+    for (let i = 1; i < candles.length - 1; i++) {
+        const prevCandle = candles[prevCandleIndex];
+        const currentCandle = candles[i];
+        if(isInsideBar(prevCandle, currentCandle)){
+            continue;
+        }
+        let nextIndex = i + 1;
+        let nextCandle = candles[nextIndex];
+        for (; nextIndex < candles.length - 1; nextIndex++) {
+            nextCandle = candles[nextIndex]
+            if(!isInsideBar(currentCandle, nextCandle)){
+                break;
+            }
+        }
+        let diff = nextIndex - i - 1;
+        const isValidPullback = hasValidPullback(prevCandle, currentCandle, nextCandle)
+        const swing: Swing = {
+            side: (isValidPullback || '') as any,
+            time: currentCandle.time,
+            price: currentCandle.high,
+            index: i
+        }
+        highs[i] = isValidPullback === 'high' ? swing : null;
+        lows[i] = isValidPullback === 'low' ? swing : null;
+        swings[i] = isValidPullback? swing : null;
+        if(isValidPullback){
+            // debugger
+            console.log(isValidPullback);
+        }
+        prevCandleIndex = i;
+        i+=diff;
+    }
+
+    let lastSwingIndex = -1;
+    // фильтруем вершины подряд
+    for (let i = 0; i < swings.length; i++) {
+        if(!swings[i]){
+            continue;
+        }
+        const swing = swings[i];
+        if(lastSwingIndex === - 1 || swing.side !== swings[lastSwingIndex]?.side){
+            lastSwingIndex = i;
+            continue;
+        }
+        if(swing.side === 'high'){
+            if(swing.price > swings[lastSwingIndex]?.price){
+                swings[lastSwingIndex] = null;
+                highs[lastSwingIndex] = null;
+                lastSwingIndex = i;
+            } else {
+                swings[i] = null;
+                highs[i] = null;
+            }
+        }
+        if(swing.side === 'low'){
+            if(swing.price < swings[lastSwingIndex]?.price){
+                swings[lastSwingIndex] = null;
+                lows[lastSwingIndex] = null;
+                lastSwingIndex = i;
+            } else {
+                swings[i] = null;
+                lows[i] = null;
+            }
+        }
+    }
+
+    return {swings, highs, lows};
+}
+
 export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
     const swings: (Swing | null)[] = new Array(candles.length).fill(null);
     const highs: (Swing | null)[] = new Array(candles.length).fill(null);
@@ -183,6 +268,7 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
     for (let i = 0; i < structure.length - 1; i++) {
         const currStruct = structure[i];
         const nextStruct = structure[i + 1];
+
 
         if(nextStruct.side === 'low'){
             const batch = lows.slice(currStruct.index + 1, nextStruct.index + 2);
