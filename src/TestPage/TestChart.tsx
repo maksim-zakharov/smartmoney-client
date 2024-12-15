@@ -6,6 +6,7 @@ import {
 import moment from 'moment';
 import {createSeries, defaultSeriesOptions, getVisibleMarkers} from "../utils";
 import {ensureDefined} from "../lwc-plugins/helpers/assertions";
+import {isInsideBar} from "../smartmoney/common/sm-base-strategy";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
@@ -23,12 +24,14 @@ export const Chart: FC<{
         data?: LineData<Time>[],
         markers?: SeriesMarker<Time>[]
     }[],
+    hideInternalCandles?: boolean,
     primitives: any[],
     data: any[],
     ema: any[],
 }> = ({
           lineSerieses,
           markers,
+                              hideInternalCandles,
                               primitives,
           data,
           ema,
@@ -121,6 +124,26 @@ export const Chart: FC<{
                 bottom: 0.2, // lowest point will be 40% away from the bottom
             },
         });
+
+        if(hideInternalCandles){
+            for (let i = 0; i < data.length; i++) {
+                const currentCandle = data[i];
+                let nextIndex = i + 1;
+                let nextCandle = data[nextIndex];
+                for (; nextIndex < data.length - 1; nextIndex++) {
+                    nextCandle = data[nextIndex]
+                    if(isInsideBar(currentCandle, nextCandle)){
+                        data[nextIndex].borderColor = "rgba(44,60,75, 1)";
+                        data[nextIndex].wickColor = "rgba(44,60,75, 1)";
+                        data[nextIndex].color = 'rgba(0, 0, 0, 0)';
+                        continue;
+                    }
+                    break;
+                }
+                let diff = nextIndex - i - 1;
+                i+=diff;
+            }
+        }
         series?.setData(data);
 
         const volumeSeries = createSeries(chartApi, 'Histogram', {
@@ -176,7 +199,7 @@ export const Chart: FC<{
 
             chartApi?.remove();
         };
-    }, [chartContainerRef.current, data, markers, primitives, ema, lineSerieses]);
+    }, [chartContainerRef.current, data, markers, primitives, ema, lineSerieses, hideInternalCandles]);
 
     // const chartApi = useChartApi(chartContainerRef.current!, options)
 

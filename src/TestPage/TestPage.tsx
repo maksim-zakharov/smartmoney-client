@@ -653,7 +653,7 @@ export const TestPage = () => {
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
         </Checkbox.Group>
-        <Chart lineSerieses={lineSerieses} primitives={primitives} markers={markers} data={_data} ema={ema} />
+        <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers} data={_data} ema={ema} />
     </>;
 }
 
