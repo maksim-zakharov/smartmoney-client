@@ -498,16 +498,24 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
     const sorted = boses.sort((a, b) => {
         if(a.type !== b.type)
         return a.type.localeCompare(b.type);
+
         if(a.to.index !== b.to.index)
             return a.to.index - b.to.index;
 
-            return a.from.index - b.from.index;
+            return b.from.index - a.from.index;
     });
     for (let i = 1; i < sorted.length; i++) {
         const prevBos = sorted[i - 1];
         const currBos = sorted[i];
         if(prevBos.to.index === currBos.to.index){
+            // TODO тут либо i - 1 либо i
             sorted[i - 1] = null
+            sorted.splice(i - 1, 1);
+            i--;
+        } else if(prevBos.from.index > currBos.from.index && prevBos.to.index < currBos.to.index) {
+            sorted[i - 1] = null
+            sorted.splice(i - 1, 1);
+            i--;
         }
     }
 
