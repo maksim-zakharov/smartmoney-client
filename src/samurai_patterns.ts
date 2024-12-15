@@ -6,6 +6,7 @@ export interface Swing {
     time: number;
     price: number;
     index: number;
+    text?: string;
 }
 
 export interface Trend{
@@ -374,6 +375,104 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
     return {trend};
 }
 
+export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject[]) => {
+    const trend: Trend[] = new Array(candles.length).fill(null);
+    let highestHigh = null;
+    let lowestLow = null;
+
+    let lastHighestHigh = null;
+    let lastLowestLow = null;
+
+    let prevHigh = null;
+    let prevLow = null;
+    let lastHigh = null;
+    let lastLow = null;
+    for (let i = 0; i < swings.length; i++) {
+        if(lastLowestLow && candles[i].close < lastLowestLow.price){
+            trend[i] = {time: candles[i].time, trend: -1, index: i};
+            lastHighestHigh = highestHigh ?? lastHighestHigh;
+            if(lastHighestHigh){
+                lastHighestHigh.text = 'HH';
+            }
+            lastLowestLow = null;
+            highestHigh = null;
+            lowestLow = null;
+            continue;
+        } else  if(!lastLowestLow && lowestLow && candles[i].close < lowestLow.price){
+            trend[i] = {time: candles[i].time, trend: -1, index: i};
+            lastHighestHigh = highestHigh ?? lastHighestHigh;
+            highestHigh = null;
+            lowestLow = null;
+            continue;
+        }
+
+        if(lastHighestHigh && candles[i].close > lastHighestHigh.price){
+            trend[i] = {time: candles[i].time, trend: 1, index: i};
+            lastLowestLow = lowestLow ?? lastLowestLow;
+            if(lastLowestLow){
+                lastLowestLow.text = 'LL';
+            }
+            lastHighestHigh = null;
+            lowestLow = null;
+            highestHigh = null;
+            continue;
+        } else  if(!lastHighestHigh && highestHigh && candles[i].close > highestHigh.price){
+            trend[i] = {time: candles[i].time, trend: 1, index: i};
+            lastLowestLow = lowestLow ?? lastLowestLow;
+            lowestLow = null;
+            highestHigh = null;
+            continue;
+        }
+        if(!swings[i]){
+            trend[i] = i > 0 ? trend[i - 1] : trend[i];
+            continue;
+        }
+        // Если еще пусто
+        highestHigh = !highestHigh && swings[i].side === 'high' ? swings[i] : highestHigh;
+        lowestLow = !lowestLow && swings[i].side === 'low' ? swings[i] : lowestLow;
+
+        // Если уже не пусто - проверяем перехай
+        if(swings[i].side === 'high'){
+            if(swings[i].price > highestHigh.price){
+                delete highestHigh.text;
+                swings[i].text = 'HH';
+                highestHigh = swings[i];
+                // lowestLow = null;
+            } else if(swings[i].price < highestHigh.price){
+                delete swings[i].text;
+                highestHigh.text = 'HH';
+            }
+        }
+        if(swings[i].side === 'low'){
+            if(swings[i].price < lowestLow.price){
+                delete lowestLow.text;
+                swings[i].text = 'LL';
+                lowestLow = swings[i];
+                // highestHigh = null;
+            } else if(swings[i].price > lowestLow.price){
+                delete swings[i].text;
+                lowestLow.text = 'LL';
+            }
+        }
+
+        prevHigh = swings[i].side === 'high' && lastHigh && lastHigh.index < swings[i]?.index ? lastHigh : prevHigh;
+        prevLow = swings[i].side === 'low' && lastLow && lastLow.index < swings[i]?.index ? lastLow : prevLow;
+
+        lastHigh = swings[i].side === 'high' ? swings[i] : lastHigh;
+        lastLow = swings[i].side === 'low' ? swings[i] : lastLow;
+
+        if(swings[i].side === 'high' && prevHigh){
+            trend[i] = !lastHighestHigh && lastHigh.price > prevHigh.price ? {time: swings[i].time, trend: 1, index: swings[i].index} : trend[i - 1];
+        }
+
+        if(swings[i].side === 'low' && prevLow){
+            trend[i] = !lastLowestLow && lastLow.price < prevLow.price ? {time: swings[i].time, trend: -1, index: swings[i].index} : trend[i - 1];
+        }
+    }
+
+    return trend;
+}
+
 export interface Cross {
     from: Swing,
     textCandle: HistoryObject,
@@ -446,6 +545,9 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
             let liquidityCandle = candles[i];
             let text = '';
             for (let j = i + 1; j < candles.length; j++) {
+                if(trends[j]?.trend !== trends[i]?.trend){
+                    break;
+                }
                 const isClose = hasClose('high', liquidityCandle, candles[j]);
                 if(isClose){
                     break;
@@ -458,6 +560,9 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
                 text = 'EQH';
             }
             for (let j = i + 1; j < candles.length; j++) {
+                if(trends[j]?.trend !== trends[i]?.trend){
+                    break;
+                }
                 const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[j]);
                 if(!isTakenOutLiquidity){
                     continue;
@@ -476,6 +581,7 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
+            if(text !== 'BOS' || trends[i]?.trend === 1)
             boses.push({
                 from,
                 to,
@@ -489,6 +595,9 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
             let liquidityCandle = candles[i];
             let text = '';
             for (let j = i + 1; j < candles.length; j++) {
+                if(trends[j]?.trend !== trends[i]?.trend){
+                    break;
+                }
                 const isClose = hasClose('low', liquidityCandle, candles[j]);
                 if(isClose){
                     break;
@@ -501,6 +610,9 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
                 text = 'EQL';
             }
             for (let j = i + 1; j < candles.length; j++) {
+                if(trends[j]?.trend !== trends[i]?.trend){
+                    break;
+                }
                 const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[j]);
                 if(!isTakenOutLiquidity){
                     continue;
@@ -519,6 +631,7 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
+            if(text !== 'BOS' || trends[i]?.trend === -1)
             boses.push({
                 from,
                 to,
@@ -530,7 +643,7 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
     }
 
     // отфильтровать eql eqh
-    const sorted = boses.sort((a, b) => {
+    let sorted = boses.sort((a, b) => {
             if(a.type !== b.type)
             return a.type.localeCompare(b.type);
         if(a.text !== b.text)
@@ -548,6 +661,8 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
                         i--;
             }
     }
+
+    sorted = sorted.sort((a, b) => a.from.index - b.from.index);
 
     // const sorted = boses.sort((a, b) => {
     //     if(a.type !== b.type)

@@ -22,7 +22,7 @@ import {
     calculateStructure,
     calculateSwings,
     calculateTrend,
-    khrustikCalculateSwings, tradinghubCalculateCrosses, tradinghubCalculateSwings,
+    khrustikCalculateSwings, tradinghubCalculateCrosses, tradinghubCalculateSwings, tradinghubCalculateTrend,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
@@ -35,6 +35,7 @@ const markerColors = {
 }
 
 export const TestPage = () => {
+    const [trandsType, setTrandsType] = useState('tradinghub');
     const [swipType, setSwipType] = useState('tradinghub');
     const [structureType, setStructureType] = useState('tradinghub');
     const [obType, setOBType] = useState('samurai');
@@ -129,14 +130,14 @@ export const TestPage = () => {
             100
         )[1];
 
-        const {highs, lows} =swipCallback(_data);
+        const {highs, lows, swings: _swings} =swipCallback(_data);
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, _data)
 
         let trend = [];
         if(tf === trendTF){
-            trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            trend = trandsType === 'tradinghub' ?  tradinghubCalculateTrend(_swings, _data) : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
         } else {
-            trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            trend = trandsType === 'tradinghub' ?  tradinghubCalculateTrend(_swings, _data) : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
 
             trend = fillTrendByMinorData(trend, trendData, data)
         }
@@ -152,7 +153,7 @@ export const TestPage = () => {
         }
 
         return {_data, ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [swipType, structureType, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, trendData, maxDiff, multiStop])
+    }, [swipType, trandsType, structureType, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, trendData, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
@@ -450,14 +451,14 @@ export const TestPage = () => {
                 time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                // text: marker.text
+                text: s.text
             })));
             allMarkers.push(...swings.lows.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                // text: marker.text
+                text: s.text
             })));
         }
         if(config.noDoubleSwing){
@@ -608,6 +609,12 @@ export const TestPage = () => {
                 <Radio value="tradinghub">Свипы по tradinghub</Radio>
                 <Radio value="samurai">Свипы по самураю</Radio>
                 <Radio value="khrustik">Свипы по хрустику</Radio>
+            </Radio.Group>
+            <Radio.Group onChange={e => setTrandsType(e.target.value)}
+                         value={trandsType}>
+                <Radio value="tradinghub">Тренд по tradinghub</Radio>
+                <Radio value="samurai">Тренд по самураю</Radio>
+                <Radio value="khrustik">Тренд по хрустику</Radio>
             </Radio.Group>
             <Radio.Group onChange={e => setStructureType(e.target.value)}
                          value={structureType}>
