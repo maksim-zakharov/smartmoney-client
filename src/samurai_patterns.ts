@@ -378,7 +378,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     const trend: Trend[] = new Array(candles.length).fill(null);
     let boses: Cross[] = new Array(candles.length).fill(null);
 
-    const confirmIDM = (idm: Swing, boss: Swing) => candles.findIndex((c, index) => idm.index < index && index > boss.index && ((idm.side === 'high' && idm.price < c.close) || (idm.side === 'low' && idm.price > c.close)))
+    const confirmIDM = (idm: Swing, boss: Swing) => candles.findIndex((c, index) => idm.index < index && index > boss.index && ((idm.side === 'high' && idm.price < c.high) || (idm.side === 'low' && idm.price > c.low)))
 
     let lastLow = null;
     let lowestLow = null;
@@ -540,8 +540,6 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
                     text
                 }
         } else if(swings[i].side === 'low'){
-            debugger
-
             const from = swings[i];
             let to;
             let liquidityCandle = candles[i];
@@ -576,6 +574,50 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
                     type: 'low',
                     text
                 }
+        }
+    }
+
+    let lastHighBOS = null;
+    let lastLowBOS = null;
+    for (let i = 0; i < boses.length; i++) {
+
+        if(lastHighBOS && lastHighBOS.to.index === i){
+            // debugger
+            lastHighBOS = null;
+        }
+        if(!boses[i]){
+            continue;
+        }
+
+        if(boses[i].type === 'high'){
+            if(!lastHighBOS){
+                lastHighBOS = boses[i];
+            } else if(lastHighBOS.from.index < boses[i].from.index) {
+                // debugger
+                boses[i] = null;
+            } else {
+                lastHighBOS = null;
+            }
+            continue;
+        } else if (boses[i].type === 'low'){
+            if(!lastLowBOS){
+                lastLowBOS = boses[i];
+            } else if(lastLowBOS.from.index < boses[i].from.index) {
+                boses[i] = null;
+            }
+            continue;
+        }
+    }
+
+    const onlyBOSes = boses.filter(bos => bos?.text === 'BOS');
+    for (let i = 0; i < onlyBOSes.length; i++) {
+        const curBos = onlyBOSes[i];
+        const nextBos = onlyBOSes[i + 1];
+
+        const to = !nextBos ? trend.length : nextBos.to.index;
+        for (let j = curBos.to.index; j < to; j++) {
+            const type = curBos.type;
+            trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
         }
     }
 
