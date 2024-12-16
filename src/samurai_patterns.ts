@@ -374,11 +374,156 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
 
     return {trend};
 }
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
+    const trend: Trend[] = new Array(candles.length).fill(null);
+    let boses: Cross[] = new Array(candles.length).fill(null);
+
+    /**
+     * Как формируется BOS
+     * Есть лой, хай, лой пробили (это был iDM)
+     * Далее ищим лойный лой - это будет лой структуры
+     * Далее ждем когда перекроет хайный хай (он же бос)
+     * и тогда сформированы хай и лой
+     */
+
+    if(swings.length){
+        // boses[39] = {
+        //     from: swings[39],
+        //     text: 'IDM',
+        //     type: 'high',
+        //     textCandle: swings[50],
+        //     to: swings[68],
+        // } as Cross
+        // boses[46] = {
+        //     from: swings[46],
+        //     text: 'BOS',
+        //     type: 'low',
+        //     textCandle: swings[50],
+        //     to: swings[91],
+        // } as Cross
+        //
+        // swings[46].text = 'LL'
+        // swings[68].text = 'HH'
+        //
+        //
+        // boses[92] = {
+        //     from: swings[92],
+        //     text: 'IDM',
+        //     type: 'high',
+        //     textCandle: swings[102],
+        //     to: swings[112],
+        // } as Cross
+        // boses[96] = {
+        //     from: swings[96],
+        //     text: 'BOS',
+        //     type: 'low',
+        //     textCandle: swings[102],
+        //     to: {price: candles[candles.length - 1].low, index: candles.length - 1, time: candles[candles.length - 1].time},
+        // } as Cross
+        //
+        // swings[96].text = 'LL'
+        // swings[112].text = 'HH'
+    }
+
+    const confirmIDM = (idm: Swing, boss: Swing) => candles.findIndex((c, index) => idm.index < index && index > boss.index && ((idm.side === 'high' && idm.price < c.close) || (idm.side === 'low' && idm.price > c.close)))
+
+    let lastLow = null;
+    let lowestLow = null;
+    let lowestIDM = null;
+    let lastLowIDM = null;
+
+    let lastHigh = null;
+    let highestHigh = null;
+    let highestIDM = null;
+    let lastHighIDM = null;
+    for (let i = 0; i < swings.length; i++) {
+        if(!swings[i]){
+            continue;
+        }
+
+        lastHigh = swings[i].side === 'high'? swings[i] : lastHigh;
+        lastLow = swings[i].side === 'low'? swings[i] : lastLow;
+
+        // дефолтно lowestLow
+        lowestLow = !lowestLow || swings[i].side === 'low' ? swings[i] : lowestLow;
+        // lowestIDM = lastHigh && lowestLow && lastHigh.index < lowestLow.index ? lastHigh : lowestIDM;
+
+        highestHigh = !highestHigh || swings[i].side === 'high' ? swings[i] : highestHigh;
+        // highestIDM = lastLow && highestHigh && lastLow.index < highestHigh.index ? lastLow : highestIDM;
+
+        if(swings[i].side === 'low' && lastLow && lastLow.price > swings[i].price){
+            lowestLow = lastLow;
+        }
+
+        const isConfirmLL = lastHigh && lowestLow && lastHigh.index < lowestLow.index ? confirmIDM(lastHigh, lowestLow) : -1;
+        if(isConfirmLL > -1){
+            const candle = candles[isConfirmLL];
+            const diff = isConfirmLL - lastHigh.index;
+            const from = lastHigh;
+            const textIndex = diff >= 4 ? lastHigh.index - Math.floor((lastHigh.index - isConfirmLL) / 2) : isConfirmLL;
+            const to = {index: isConfirmLL, side: 'high', price: lastHigh.price, time: candle.time}
+            const isInsideIDM = lastHighIDM && lastHighIDM.from.index < from.index && lastHighIDM.to.index > to.index
+
+            if(isInsideIDM && lastHighIDM){
+                boses[lastHighIDM.from.index] = null;
+                const index = swings.findIndex((_, index) => Boolean(_) && lastHighIDM.from.index < index && index < from.index)
+
+                index > -1 && delete swings[index].text;
+            }
+
+            boses[lastHigh.index] = {
+                type: 'high',
+                text: 'IDM',
+                from: lastHigh,
+                textCandle: candles[textIndex],
+                to
+            } as Cross
+            lastHighIDM = boses[lastHigh.index];
+            lowestLow.text = 'LL';
+            lowestLow = null;
+
+            // if(isInsideIDM){
+            //     debugger
+            //     delete lastHighIDM.from.text;
+            // }
+            // lowestLow.text = 'LL';
+            // lowestLow = null;
+            // lastLow = null;
+        }
+
+        // const isConfirmHH = lastLow && highestHigh && lastLow.index < highestHigh.index ? confirmIDM(lastLow, highestHigh) : -1;
+        // if(isConfirmHH > -1){
+        //     const candle = candles[isConfirmHH];
+        //     const diff = isConfirmHH - i;
+        //     const textIndex = diff >= 4 ? i - Math.floor((i - isConfirmHH) / 2) : isConfirmHH;
+        //     boses[i] = {
+        //         type: 'low',
+        //         text: 'IDM',
+        //         from: lastLow,
+        //         textCandle: candles[textIndex],
+        //         to: {index: isConfirmHH, side: 'low', price: lastLow.price, time: candle.time}
+        //     } as Cross
+        //     highestHigh.text = 'HH';
+        //     highestHigh = null;
+        //     // lastHigh = null;
+        // }
+    }
+
+    return {trend, boses};
+}
 
 export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
     let highestHigh = null;
     let lowestLow = null;
+    /**
+     * Есть хаи и лои
+     * 1. Находим первый хай и лой
+     * 2. Если новый хай выше - создаем хаяныйхай
+     * 3. Если новый лой ниже - создаем лойный лой
+     * 4. Если обновили лой а последний экстремум - хайный хай - у нас новый лой. Если последний экстремум - лойный лой - обновляем лой
+     * 5. Если обновили хай а последний экстремум - лойный лой - у нас новый хай. Если последний экстремум - хайный хай - обновляем хай
+     */
 
     let lastHighestHigh = null;
     let lastLowestLow = null;

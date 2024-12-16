@@ -18,11 +18,17 @@ import {TimeframeSelect} from "../TimeframeSelect";
 import {
     calculateCrosses,
     calculateFakeout,
-    calculateOB, calculatePositionsByFakeouts, calculatePositionsByOrderblocks,
+    calculateOB,
+    calculatePositionsByFakeouts,
+    calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
     calculateTrend,
-    khrustikCalculateSwings, tradinghubCalculateCrosses, tradinghubCalculateSwings, tradinghubCalculateTrend,
+    khrustikCalculateSwings,
+    tradinghubCalculateCrosses,
+    tradinghubCalculateSwings,
+    tradinghubCalculateTrend,
+    tradinghubCalculateTrendNew,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
@@ -134,15 +140,16 @@ export const TestPage = () => {
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, _data)
 
         let trend = [];
+        const {trend: thTrend, boses: thBoses} = tradinghubCalculateTrendNew(_swings, _data);
         if(tf === trendTF){
-            trend = trandsType === 'tradinghub' ?  tradinghubCalculateTrend(_swings, _data) : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            trend = trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
         } else {
-            trend = trandsType === 'tradinghub' ?  tradinghubCalculateTrend(_swings, _data) : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            trend = trandsType === 'tradinghub' ?  thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
 
             trend = fillTrendByMinorData(trend, trendData, data)
         }
 
-        const boses = structureType === 'tradinghub' ? tradinghubCalculateCrosses(highs, lows, _data, trend).boses : calculateCrosses(highParts, lowParts, _data, trend).boses;
+        const boses = structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, _data, trend).boses;
         const orderBlocks = calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai');
         const fakeouts = calculateFakeout(highParts, lowParts, _data)
 

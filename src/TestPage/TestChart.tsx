@@ -184,7 +184,7 @@ export const Chart: FC<{
         lineSerieses.forEach(lineSeriese => {
             const ls = createSeries(chartApi, 'Line', lineSeriese.options)
 
-            lineSeriese.data && ls.setData(lineSeriese.data);
+            lineSeriese.data && ls.setData(lineSeriese.data.sort((a,b) => a.time - b.time));
             lineSeriese.markers && ls.setMarkers(lineSeriese.markers);
         })
 
