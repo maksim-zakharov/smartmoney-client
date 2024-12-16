@@ -136,11 +136,14 @@ export const TestPage = () => {
             100
         )[1];
 
-        const {highs, lows, swings: _swings} =swipCallback(_data);
+        let {highs, lows, swings: _swings} =swipCallback(_data);
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, _data)
 
         let trend = [];
-        const {trend: thTrend, boses: thBoses} = tradinghubCalculateTrendNew(_swings, _data);
+        const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, _data);
+        _swings = thSwings;
+        highs = thSwings.filter(t => t?.side === 'high');
+        lows = thSwings.filter(t => t?.side === 'low');
         if(tf === trendTF){
             trend = trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
         } else {
