@@ -436,9 +436,6 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             let liquidityCandle = candles[i];
             let text = '';
             for (let j = i + 1; j < candles.length; j++) {
-                // if(trends[j]?.trend !== trends[i]?.trend){
-                //     break;
-                // }
                 const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[j]);
                 if(!isTakenOutLiquidity){
                     continue;
@@ -457,7 +454,7 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if(text)// || trends[i]?.trend === 1)
+            if(text)
                 boses[i] = {
                     from,
                     to,
@@ -471,9 +468,6 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             let liquidityCandle = candles[i];
             let text = '';
             for (let j = i + 1; j < candles.length; j++) {
-                // if(trends[j]?.trend !== trends[i]?.trend){
-                //     break;
-                // }
                 const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[j]);
                 if(!isTakenOutLiquidity){
                     continue;
@@ -492,7 +486,7 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if(text) //  || trends[i]?.trend === -1)
+            if(text)
                 boses[i] ={
                     from,
                     to,
@@ -684,7 +678,8 @@ const deleteEmptySwings = (swings: Swing[]) => {
 const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
-    const onlyBOSes = boses.filter(bos => bos?.text === 'BOS');
+    // const onlyBOSes = boses.filter(bos => bos?.text === 'BOS');
+    const onlyBOSes = boses.filter(bos => bos?.text === 'IDM');
     for (let i = 0; i < onlyBOSes.length; i++) {
         const curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
