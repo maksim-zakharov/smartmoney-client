@@ -624,7 +624,7 @@ const drawIDM = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
         }
 
         // Ждем cross
-        if(lastLL && confirmedHigh && candles[i].high > confirmedHigh.price) {
+        if(lastLL && confirmedHigh && candles[i] && candles[i].high > confirmedHigh.price) {
             const candle = candles[i];
             const from = confirmedHigh;
             const diff = i - from.index;
@@ -642,7 +642,7 @@ const drawIDM = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             // confirmedLow = null;
         }
 
-        if(lastHH && confirmedLow && candles[i].low < confirmedLow.price) {
+        if(lastHH && confirmedLow && candles[i] && candles[i].low < confirmedLow.price) {
             const candle = candles[i];
             const from = confirmedLow;
             const diff = i - from.index;

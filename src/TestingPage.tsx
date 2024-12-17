@@ -21,20 +21,28 @@ import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
 import {
+    calculateCrosses,
     calculateFakeout,
     calculateOB, calculatePositionsByFakeouts,
     calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
-    calculateTrend, khrustikCalculateSwings
+    calculateTrend, khrustikCalculateSwings, tradinghubCalculateSwings, tradinghubCalculateTrendNew
 } from "./samurai_patterns";
-import {fetchCandlesFromAlor, getSecurity, notTradingTime, persision, refreshToken} from "./utils";
+import {
+    fetchCandlesFromAlor,
+    fillTrendByMinorData,
+    getSecurity,
+    notTradingTime,
+    persision,
+    refreshToken
+} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 
 const {RangePicker} = DatePicker;
 
 export const TestingPage = () => {
-    const [swipType, setSwipType] = useState('samurai');
+    const [swipType, setSwipType] = useState('tradinghub');
     const [loading, setLoading] = useState(true);
     const [allData, setAllData] = useState({});
     const [allSecurity, setAllSecurity] = useState({});
@@ -59,7 +67,15 @@ export const TestingPage = () => {
     const [token, setToken] = useState();
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([dayjs('2024-10-01T00:00:00Z'), dayjs('2025-10-01T00:00:00Z')])
 
-    const swipCallback = useCallback(swipType === 'samurai' ? calculateSwings : khrustikCalculateSwings, [swipType]);
+    const swipCallback = useCallback((...args) => {
+        const swipsMap = {
+            'samurai':calculateSwings,
+            'khrustik': khrustikCalculateSwings,
+            'tradinghub' : tradinghubCalculateSwings
+        }
+        const swipCallback = swipsMap[swipType]  || calculateSwings;
+        return swipCallback(...args)
+    }, [swipType]);
 
     const swings = useMemo(() => {
         if(tf === trendTF){
@@ -80,9 +96,15 @@ export const TestingPage = () => {
             if(!data.length){
                 return [];
             }
-            const {swings: swingsData, highs, lows} = swings;
+            let {swings: swingsData, highs, lows} = swings;
+            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data);
+            swingsData = thSwings;
+            highs = thSwings.filter(t => t?.side === 'high');
+            lows = thSwings.filter(t => t?.side === 'low');
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
             const trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP, excludeWick).trend;
+            return thTrend;
+
             return trend;
         } else {
             if(!trendData.length){
@@ -117,10 +139,24 @@ export const TestingPage = () => {
     }, [tf, trendTF, swings, confirmTrend, excludeWick, excludeTrendSFP]);
 
     const positions = useMemo(() => {
-        const {swings: swingsData, highs, lows} = calculateSwings(data);
+        let {swings: swingsData, highs, lows} = swipCallback(data);
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
+
+        let trend = [];
+        const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data);
+        swingsData = thSwings;
+        highs = thSwings.filter(t => t?.side === 'high');
+        lows = thSwings.filter(t => t?.side === 'low');
+        if(tf === trendTF){
+            trend = thTrend; // trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+        } else {
+            trend = thTrend; // trandsType === 'tradinghub' ?  thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+
+            trend = fillTrendByMinorData(trend, trendData, data)
+        }
         // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
-        let orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
+        const boses = thBoses; // structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, _data, trend).boses;
+        let orderBlocks = calculateOB(highParts, lowParts, data, thTrend, excludeIDM, withMove);
         if(excludeIDM){
             // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
@@ -154,10 +190,25 @@ export const TestingPage = () => {
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            const {swings: swingsData, highs, lows} = swipCallback(data);
+            let {swings: swingsData, highs, lows} = swipCallback(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP, excludeWick);
-            let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
+            let trend = [];
+            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data);
+            swingsData = thSwings;
+            highs = thSwings.filter(t => t?.side === 'high');
+            lows = thSwings.filter(t => t?.side === 'low');
+            if(tf === trendTF){
+                trend = thTrend; // trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            } else {
+                trend = thTrend; // trandsType === 'tradinghub' ?  thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+
+                trend = fillTrendByMinorData(trend, trendData, data)
+            }
+            // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
+            const boses = thBoses; // structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, _data, trend).boses;
+
+            // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP, excludeWick);
+            let orderBlocks = calculateOB(highParts, lowParts, data, thTrend, excludeIDM, withMove);
             if(excludeIDM){
                 // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
                 // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
@@ -389,6 +440,7 @@ export const TestingPage = () => {
                     <FormItem>
                         <Radio.Group onChange={e => setSwipType(e.target.value)}
                                      value={swipType}>
+                            <Radio value="tradinghub">Свипы по tradinghub</Radio>
                             <Radio value="samurai">Свипы по самураю</Radio>
                             <Radio value="khrustik">Свипы по хрустику</Radio>
                         </Radio.Group>
