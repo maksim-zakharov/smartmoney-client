@@ -699,6 +699,17 @@ const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
     return trend;
 }
 
+const deleteNonConfirmed = (swings: Swing[], boses: Cross[]) => {
+    const bosExtremumIdx = new Set(boses.map(b => b?.extremum?.index));
+    for (let i = 0; i < swings.length; i++) {
+        if(swings[i] && !bosExtremumIdx.has(swings[i].index)){
+            swings[i] = null;
+        }
+    }
+
+    return {swings, boses}
+}
+
 export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
     let boses = markHHLL(candles, swings)
     boses = drawIDM(candles, swings, boses);
@@ -711,8 +722,12 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     // boses = drawBOS(candles, swings, boses);
 
     const withoutInternal = deleteInternalStructures(swings, boses);
-    // boses = withoutInternal.boses;
-    // swings = withoutInternal.swings;
+    boses = withoutInternal.boses;
+    swings = withoutInternal.swings;
+
+    const withoutNonConfirmed = deleteNonConfirmed(swings, boses);
+    boses = withoutNonConfirmed.boses;
+    swings = withoutNonConfirmed.swings;
 
     const trend = drawTrend(candles, boses);
 
