@@ -632,9 +632,25 @@ const drawIDM = (candles: HistoryObject[], swings: Swing[]) => {
     return boses;
 }
 
-export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
+const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
+    const onlyBOSes = boses.filter(bos => bos?.text === 'BOS');
+    for (let i = 0; i < onlyBOSes.length; i++) {
+        const curBos = onlyBOSes[i];
+        const nextBos = onlyBOSes[i + 1];
+
+        const to = !nextBos ? trend.length : nextBos.to.index;
+        for (let j = curBos.to.index; j < to; j++) {
+            const type = curBos.type;
+            trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
+        }
+    }
+
+    return trend;
+}
+
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
     let boses = drawIDM(candles, swings);
 
     const confirmed = removeDuplicates(swings, boses);
@@ -647,17 +663,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     boses = withoutInternal.boses;
     swings = withoutInternal.swings;
 
-    // const onlyBOSes = boses.filter(bos => bos?.text === 'BOS');
-    // for (let i = 0; i < onlyBOSes.length; i++) {
-    //     const curBos = onlyBOSes[i];
-    //     const nextBos = onlyBOSes[i + 1];
-    //
-    //     const to = !nextBos ? trend.length : nextBos.to.index;
-    //     for (let j = curBos.to.index; j < to; j++) {
-    //         const type = curBos.type;
-    //         trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
-    //     }
-    // }
+    const trend = drawTrend(candles, boses);
 
     return {trend, boses, swings};
 }
