@@ -569,17 +569,28 @@ const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
             lowestLow = swings[i];
         }
 
-        // Заполняем перехай или перелой // TODO не правильно считает
-        if(swings[i] && swings[i].side === 'high' && lastHigh && lastHigh.price < swings[i].price){
+        // Если нисходящий тренд - передвигаем хай, но ХХ не записываем
+        if(swings[i] && swings[i].side === 'high' && lastHigh && lastHigh.price > swings[i].price){
             highestHigh = swings[i];
-            lowestLow.text = 'LL';
         }
-        if(swings[i] && swings[i].side === 'low' && lastLow && lastLow.price > swings[i].price){
+        // Если тренд восходящий - просто двигаем лой и не перезаписываем ЛЛ
+        if(swings[i] && swings[i].side === 'low' && lastLow && lastLow.price < swings[i].price){
             lowestLow = swings[i];
-            highestHigh.text = 'HH';
         }
 
-        // Последние хаи или лои
+        // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
+        if(swings[i] && swings[i].side === 'high' && lastHigh && lastHigh.price < swings[i].price){
+            delete highestHigh.text
+            highestHigh = swings[i];
+            highestHigh.text = 'HH';
+        }
+        // Если тренд нисходящий - перезаписываем каждый ЛЛ и прошлый удаляем
+        if(swings[i] && swings[i].side === 'low' && lastLow && lastLow.price > swings[i].price){
+            delete lowestLow.text
+            lowestLow = swings[i];
+            lowestLow.text = 'LL';
+        }
+
         lastHigh = swings[i] && swings[i].side === 'high'? swings[i] : lastHigh;
         lastLow = swings[i] && swings[i].side === 'low'? swings[i] : lastLow;
     }
@@ -589,77 +600,85 @@ const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
 
 const drawIDM = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
 
-    let lastLow = null;
-    let lowestLow = null;
-    let lastLowIDM = null;
+    let lastHH = null;
+    let lastLL = null;
 
     let lastHigh = null;
-    let highestHigh = null;
-    let lastHighIDM = null;
+    let lastLow = null;
+
+    let confirmedHigh = null
+    let confirmedLow = null;
 
     for (let i = 0; i < swings.length; i++) {
-        const isConfirmHH = lastLow && highestHigh && lastLow.index < highestHigh.index;
-        const lowCrosses = lastLow && lastLow.price > candles[i].low;
+        /**
+         * Если появляется LL - я фиксирую lasthigh
+         * lasthigh обнвляется если он пересекается либо если обновляется HH
+         */
 
-        const isConfirmLL = lastHigh && lowestLow && lastHigh.index < lowestLow.index;
-        const highCrosses = lastHigh && lastHigh.price < candles[i].high;
+        lastHigh = swings[i] && swings[i].side === 'high'? swings[i] : lastHigh;
+        lastLow = swings[i] && swings[i].side === 'low'? swings[i] : lastLow;
 
-        // if(isConfirmHH && lowCrosses){
-        //     const candle = candles[i];
-        //     const from = lastLow;
-        //     const diff = i - from.index;
-        //     const textIndex = diff >= 3 ? from.index - Math.floor((from.index - i) / 2) : i;
-        //     const to = {index: i, side: 'low', price: from.price, time: candle.time}
-        //     const isInsideIDM = lastLowIDM && lastLowIDM.from.index < from.index && lastLowIDM.to.index > to.index
-        //
-        //     if(isInsideIDM && lastLowIDM){
-        //         boses[lastLowIDM.from.index] = null;
-        //         const index = swings.findIndex((_, index) => Boolean(_) && lastLowIDM.from.index < index && index < from.index)
-        //
-        //         index > -1 && delete swings[index].text;
-        //     }
-        //
-        //     boses[from.index] = {
-        //         type: 'low',
-        //         text: 'IDM',
-        //         from,
-        //         textCandle: candles[textIndex],
-        //         to
-        //     } as Cross
-        //     lastLowIDM = boses[from.index];
-        //     highestHigh.text = 'HH';
-        //     highestHigh = null;
-        // }
-        //
-        // if(isConfirmLL && highCrosses){
-        //     const candle = candles[i];
-        //     const from = lastHigh;
-        //     const diff = i - from.index;
-        //     const textIndex = diff >= 3 ? from.index - Math.floor((from.index - i) / 2) : i;
-        //     const to = {index: isConfirmLL, side: 'high', price: from.price, time: candle.time}
-        //     const isInsideIDM = lastHighIDM && lastHighIDM.from.index < from.index && lastHighIDM.to.index > to.index
-        //
-        //     if(isInsideIDM && lastHighIDM){
-        //         boses[lastHighIDM.from.index] = null;
-        //         const index = swings.findIndex((_, index) => Boolean(_) && lastHighIDM.from.index < index && index < from.index)
-        //
-        //         index > -1 && delete swings[index].text;
-        //     }
-        //
-        //     boses[from.index] = {
-        //         type: 'high',
-        //         text: 'IDM',
-        //         from,
-        //         textCandle: candles[textIndex],
-        //         to
-        //     } as Cross
-        //     lastHighIDM = boses[from.index];
-        //     lowestLow.text = 'LL';
-        //     lowestLow = null;
-        // }
+        if(swings[i] && swings[i].text === 'HH'){
+            confirmedLow = lastLow;
+            lastHH = swings[i];
+            confirmedHigh = null;
+        }
+        if(swings[i] && swings[i].text === 'LL'){
+            confirmedHigh = lastHigh;
+            lastLL = swings[i];
+            confirmedLow = null;
+        }
+
+        // Ждем cross
+        if(lastLL && confirmedHigh && candles[i].high > confirmedHigh.price) {
+            const candle = candles[i];
+            const from = confirmedHigh;
+            const diff = i - from.index;
+            const textIndex = diff >= 3 ? from.index - Math.floor((from.index - i) / 2) : i;
+            const to = {index: i, side: 'high', price: from.price, time: candle.time}
+            boses[from.index] = {
+                type: 'high',
+                text: 'IDM',
+                from,
+                textCandle: candles[textIndex],
+                to,
+                extremum: lastLL
+            } as Cross
+            confirmedHigh = null;
+            // confirmedLow = null;
+        }
+
+        if(lastHH && confirmedLow && candles[i].low < confirmedLow.price) {
+            const candle = candles[i];
+            const from = confirmedLow;
+            const diff = i - from.index;
+            const textIndex = diff >= 3 ? from.index - Math.floor((from.index - i) / 2) : i;
+            const to = {index: i, side: 'low', price: from.price, time: candle.time}
+            boses[from.index] = {
+                type: 'low',
+                text: 'IDM',
+                from,
+                textCandle: candles[textIndex],
+                to,
+                extremum: lastHH
+            } as Cross
+            // confirmedHigh = null;
+            confirmedLow = null;
+        }
     }
 
     return boses;
+}
+
+const deleteEmptySwings = (swings: Swing[]) => {
+    for (let i = 0; i < swings.length; i++) {
+        if(!swings[i]?.text){
+            swings[i] = null;
+            continue;
+        }
+    }
+
+    return swings;
 }
 
 const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
@@ -682,22 +701,23 @@ const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
 
 export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
     let boses = markHHLL(candles, swings)
-     boses = drawIDM(candles, swings, boses);
+    boses = drawIDM(candles, swings, boses);
+    swings = deleteEmptySwings(swings);
 
-    // const confirmed = removeDuplicates(swings, boses);
-    // boses = confirmed.boses;
-    // swings = confirmed.swings;
+    const confirmed = removeDuplicates(swings, boses);
+    boses = confirmed.boses;
+    swings = confirmed.swings;
 
     // boses = drawBOS(candles, swings, boses);
 
-    // const withoutInternal = deleteInternalStructures(swings, boses);
+    const withoutInternal = deleteInternalStructures(swings, boses);
     // boses = withoutInternal.boses;
     // swings = withoutInternal.swings;
 
     const trend = drawTrend(candles, boses);
 
     return {trend, boses, swings};
-}
+};
 
 export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
@@ -809,6 +829,7 @@ export interface Cross {
     from: Swing,
     textCandle: HistoryObject,
     to?: Swing,
+    extremum?: Swing,
     type: 'low' | 'high',
     text: string
 }
