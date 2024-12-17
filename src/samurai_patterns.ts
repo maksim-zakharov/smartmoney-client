@@ -542,9 +542,52 @@ const deleteInternalStructures = (swings: Swing[], boses: Cross[]) => {
     return {swings, boses};
 }
 
-const drawIDM = (candles: HistoryObject[], swings: Swing[]) => {
+const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     let boses: Cross[] = new Array(candles.length).fill(null);
-    const confirmIDM = (idm: Swing, boss: Swing) => candles.findIndex((c, index) => idm.index < index && index > boss.index && ((idm.side === 'high' && idm.price < c.high) || (idm.side === 'low' && idm.price > c.low)))
+
+    let lastLow = null;
+    let lowestLow = null;
+
+    let lastHigh = null;
+    let highestHigh = null;
+
+    for (let i = 0; i < swings.length; i++) {
+
+        /**
+         * Варианты HH LL
+         * 1) Пока не определены, определяем первый хай и лой
+         * 2) Определены, (сужение): Если некст хай ниже ХХ или некст лой выше ЛЛ - ХХ и ЛЛ остаются
+         * 3) Определены, тренд: хай выше ХХ - обновляем ХХ, обнуляем ЛЛ. лой ниже ЛЛ - обновляем ЛЛ, обнуляем ХХ.
+         */
+
+        // Заполняем если пусто (п.1)
+        if(!highestHigh && swings[i] && swings[i].side === 'high'){
+            highestHigh = swings[i];
+        }
+
+        if(!lowestLow && swings[i] && swings[i].side === 'low'){
+            lowestLow = swings[i];
+        }
+
+        // Заполняем перехай или перелой // TODO не правильно считает
+        if(swings[i] && swings[i].side === 'high' && lastHigh && lastHigh.price < swings[i].price){
+            highestHigh = swings[i];
+            lowestLow.text = 'LL';
+        }
+        if(swings[i] && swings[i].side === 'low' && lastLow && lastLow.price > swings[i].price){
+            lowestLow = swings[i];
+            highestHigh.text = 'HH';
+        }
+
+        // Последние хаи или лои
+        lastHigh = swings[i] && swings[i].side === 'high'? swings[i] : lastHigh;
+        lastLow = swings[i] && swings[i].side === 'low'? swings[i] : lastLow;
+    }
+
+    return boses;
+}
+
+const drawIDM = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
 
     let lastLow = null;
     let lowestLow = null;
@@ -555,78 +598,65 @@ const drawIDM = (candles: HistoryObject[], swings: Swing[]) => {
     let lastHighIDM = null;
 
     for (let i = 0; i < swings.length; i++) {
-        if(!swings[i]){
-            continue;
-        }
+        const isConfirmHH = lastLow && highestHigh && lastLow.index < highestHigh.index;
+        const lowCrosses = lastLow && lastLow.price > candles[i].low;
 
-        lastHigh = swings[i].side === 'high'? swings[i] : lastHigh;
-        lastLow = swings[i].side === 'low'? swings[i] : lastLow;
+        const isConfirmLL = lastHigh && lowestLow && lastHigh.index < lowestLow.index;
+        const highCrosses = lastHigh && lastHigh.price < candles[i].high;
 
-        highestHigh = !highestHigh || swings[i].side === 'high' ? swings[i] : highestHigh;
-        lowestLow = !lowestLow || swings[i].side === 'low' ? swings[i] : lowestLow;
-
-        if(swings[i].side === 'high' && lastHigh && lastHigh.price < swings[i].price){
-            highestHigh = lastHigh;
-        }
-        if(swings[i].side === 'low' && lastLow && lastLow.price > swings[i].price){
-            lowestLow = lastLow;
-        }
-
-        const isConfirmLL = lastHigh && lowestLow && lastHigh.index < lowestLow.index ? confirmIDM(lastHigh, lowestLow) : -1;
-        if(isConfirmLL > -1){
-            const candle = candles[isConfirmLL];
-            const diff = isConfirmLL - lastHigh.index;
-            const from = lastHigh;
-            const textIndex = diff >= 4 ? lastHigh.index - Math.floor((lastHigh.index - isConfirmLL) / 2) : isConfirmLL;
-            const to = {index: isConfirmLL, side: 'high', price: lastHigh.price, time: candle.time}
-            const isInsideIDM = lastHighIDM && lastHighIDM.from.index < from.index && lastHighIDM.to.index > to.index
-
-            if(isInsideIDM && lastHighIDM){
-                boses[lastHighIDM.from.index] = null;
-                const index = swings.findIndex((_, index) => Boolean(_) && lastHighIDM.from.index < index && index < from.index)
-
-                index > -1 && delete swings[index].text;
-            }
-
-            boses[lastHigh.index] = {
-                type: 'high',
-                text: 'IDM',
-                from: lastHigh,
-                textCandle: candles[textIndex],
-                to
-            } as Cross
-            lastHighIDM = boses[lastHigh.index];
-            lowestLow.text = 'LL';
-            lowestLow = null;
-        }
-
-        const isConfirmHH = lastLow && highestHigh && lastLow.index < highestHigh.index ? confirmIDM(lastLow, highestHigh) : -1;
-        if(isConfirmHH > -1){
-            const candle = candles[isConfirmHH];
-            const diff = isConfirmHH - lastLow.index;
-            const from = lastLow;
-            const textIndex = diff >= 4 ? lastLow.index - Math.floor((lastLow.index - isConfirmHH) / 2) : isConfirmHH;
-            const to = {index: isConfirmHH, side: 'low', price: lastLow.price, time: candle.time}
-            const isInsideIDM = lastLowIDM && lastLowIDM.from.index < from.index && lastLowIDM.to.index > to.index
-
-            if(isInsideIDM && lastLowIDM){
-                boses[lastLowIDM.from.index] = null;
-                const index = swings.findIndex((_, index) => Boolean(_) && lastLowIDM.from.index < index && index < from.index)
-
-                index > -1 && delete swings[index].text;
-            }
-
-            boses[lastLow.index] = {
-                type: 'low',
-                text: 'IDM',
-                from: lastLow,
-                textCandle: candles[textIndex],
-                to
-            } as Cross
-            lastLowIDM = boses[lastLow.index];
-            highestHigh.text = 'HH';
-            highestHigh = null;
-        }
+        // if(isConfirmHH && lowCrosses){
+        //     const candle = candles[i];
+        //     const from = lastLow;
+        //     const diff = i - from.index;
+        //     const textIndex = diff >= 3 ? from.index - Math.floor((from.index - i) / 2) : i;
+        //     const to = {index: i, side: 'low', price: from.price, time: candle.time}
+        //     const isInsideIDM = lastLowIDM && lastLowIDM.from.index < from.index && lastLowIDM.to.index > to.index
+        //
+        //     if(isInsideIDM && lastLowIDM){
+        //         boses[lastLowIDM.from.index] = null;
+        //         const index = swings.findIndex((_, index) => Boolean(_) && lastLowIDM.from.index < index && index < from.index)
+        //
+        //         index > -1 && delete swings[index].text;
+        //     }
+        //
+        //     boses[from.index] = {
+        //         type: 'low',
+        //         text: 'IDM',
+        //         from,
+        //         textCandle: candles[textIndex],
+        //         to
+        //     } as Cross
+        //     lastLowIDM = boses[from.index];
+        //     highestHigh.text = 'HH';
+        //     highestHigh = null;
+        // }
+        //
+        // if(isConfirmLL && highCrosses){
+        //     const candle = candles[i];
+        //     const from = lastHigh;
+        //     const diff = i - from.index;
+        //     const textIndex = diff >= 3 ? from.index - Math.floor((from.index - i) / 2) : i;
+        //     const to = {index: isConfirmLL, side: 'high', price: from.price, time: candle.time}
+        //     const isInsideIDM = lastHighIDM && lastHighIDM.from.index < from.index && lastHighIDM.to.index > to.index
+        //
+        //     if(isInsideIDM && lastHighIDM){
+        //         boses[lastHighIDM.from.index] = null;
+        //         const index = swings.findIndex((_, index) => Boolean(_) && lastHighIDM.from.index < index && index < from.index)
+        //
+        //         index > -1 && delete swings[index].text;
+        //     }
+        //
+        //     boses[from.index] = {
+        //         type: 'high',
+        //         text: 'IDM',
+        //         from,
+        //         textCandle: candles[textIndex],
+        //         to
+        //     } as Cross
+        //     lastHighIDM = boses[from.index];
+        //     lowestLow.text = 'LL';
+        //     lowestLow = null;
+        // }
     }
 
     return boses;
@@ -651,17 +681,18 @@ const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
 }
 
 export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
-    let boses = drawIDM(candles, swings);
+    let boses = markHHLL(candles, swings)
+     boses = drawIDM(candles, swings, boses);
 
-    const confirmed = removeDuplicates(swings, boses);
-    boses = confirmed.boses;
-    swings = confirmed.swings;
+    // const confirmed = removeDuplicates(swings, boses);
+    // boses = confirmed.boses;
+    // swings = confirmed.swings;
 
-    boses = drawBOS(candles, swings, boses);
+    // boses = drawBOS(candles, swings, boses);
 
-    const withoutInternal = deleteInternalStructures(swings, boses);
-    boses = withoutInternal.boses;
-    swings = withoutInternal.swings;
+    // const withoutInternal = deleteInternalStructures(swings, boses);
+    // boses = withoutInternal.boses;
+    // swings = withoutInternal.swings;
 
     const trend = drawTrend(candles, boses);
 
