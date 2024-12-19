@@ -536,6 +536,52 @@ const deleteInternalStructures = (swings: Swing[], boses: Cross[]) => {
     return {swings, boses};
 }
 
+const removeIDM = (boses: Cross[], trend: Trend[]) => {
+    const IDM = boses.filter(b => b?.text === 'IDM');
+    for (let i = 0; i < IDM.length; i++) {
+        const idmtrend = IDM[i].type === 'high' ? 1 : -1;
+        if(trend[IDM[i].from.index] && idmtrend === trend[IDM[i].from.index].trend){
+            boses[IDM[i].from.index] = null;
+        }
+    }
+
+    return boses;
+}
+
+const deleteExternalStructures = (swings: Swing[], boses: Cross[]) => {
+    let lastHighExternalBOS = null;
+    const highs = boses.filter(b => b?.type === 'high' && ['BOS', 'CHoCH'].includes(b?.text));
+    for (let i = 0; i < highs.length; i++) {
+        const currBos = highs[i];
+
+        if(!lastHighExternalBOS){
+            lastHighExternalBOS = currBos;
+            continue;
+        }
+        if(lastHighExternalBOS.from.index < currBos.from.index && lastHighExternalBOS.to.index >= currBos.to.index){
+            boses[lastHighExternalBOS.from.index] = null;
+        }
+        lastHighExternalBOS = currBos;
+    }
+
+    let lastLowExternalBOS = null;
+    const lows = boses.filter(b => b?.type === 'low' && ['BOS', 'CHoCH'].includes(b?.text));
+    for (let i = 0; i < lows.length; i++) {
+        const currBos = lows[i];
+
+        if(!lastLowExternalBOS){
+            lastLowExternalBOS = currBos;
+            continue;
+        }
+        if(lastLowExternalBOS.from.index < currBos.from.index && lastLowExternalBOS.to.index >= currBos.to.index){
+            boses[lastLowExternalBOS.from.index] = null;
+        }
+        lastLowExternalBOS = currBos;
+    }
+
+    return {swings, boses};
+}
+
 const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     let boses: Cross[] = new Array(candles.length).fill(null);
 
@@ -678,8 +724,8 @@ const deleteEmptySwings = (swings: Swing[]) => {
 const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
-    // const onlyBOSes = boses.filter(bos => bos?.text === 'BOS');
-    const onlyBOSes = boses.filter(bos => bos?.text === 'IDM');
+    const onlyBOSes = boses.filter(bos => bos?.text === 'BOS');
+    // const onlyBOSes = boses.filter(bos => bos?.text === 'IDM');
     for (let i = 0; i < onlyBOSes.length; i++) {
         const curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
@@ -689,9 +735,39 @@ const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
             const type = curBos.type;
             trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
         }
+
+        if(nextBos && curBos.type !== nextBos.type){
+            curBos.text = 'CHoCH'
+        }
     }
 
-    return trend;
+    // let lastBOSIndex = null;
+    // for (let i = 0; i < boses.length; i++) {
+    //     if(!boses[i]?.text || !['CHoCH', 'BOS'].includes(boses[i]?.text)){
+    //         // trend[i] = trend[i - 1];
+    //         continue;
+    //     }
+    //
+    //     let lastBOS = lastBOSIndex ? boses[lastBOSIndex] : null;
+    //
+    //     let curBos = boses[i];
+    //     if(curBos && lastBOS && curBos.type !== lastBOS.type){
+    //         boses[lastBOSIndex].text = 'CHoCH'
+    //     }
+    //     lastBOSIndex = i;
+    //
+    //     // const index = curBos.to.index;
+    //     // trend[index] = {time: candles[index].time, trend: curBos.type === 'high' ? 1 : -1, index}
+    //
+    //
+    //     const to = curBos.to.index;
+    //     for (let j = curBos.to.index; j < to; j++) {
+    //         const type = curBos.type;
+    //         trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
+    //     }
+    // }
+
+    return {trend, boses};
 }
 
 const deleteNonConfirmed = (swings: Swing[], boses: Cross[]) => {
@@ -710,12 +786,6 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     boses = drawIDM(candles, swings, boses);
     swings = deleteEmptySwings(swings);
 
-    const confirmed = removeDuplicates(swings, boses);
-    boses = confirmed.boses;
-    swings = confirmed.swings;
-
-    // boses = drawBOS(candles, swings, boses);
-
     const withoutInternal = deleteInternalStructures(swings, boses);
     boses = withoutInternal.boses;
     swings = withoutInternal.swings;
@@ -724,7 +794,21 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     boses = withoutNonConfirmed.boses;
     swings = withoutNonConfirmed.swings;
 
-    const trend = drawTrend(candles, boses);
+    const confirmed = removeDuplicates(swings, boses);
+    boses = confirmed.boses;
+    swings = confirmed.swings;
+
+    boses = drawBOS(candles, swings, boses);
+
+    const withoutExternal = deleteExternalStructures(swings, boses);
+    boses = withoutExternal.boses;
+    swings = withoutExternal.swings;
+
+    const withTrend = drawTrend(candles, boses);
+    const trend = withTrend.trend
+    boses = withTrend.boses;
+
+    boses = removeIDM(boses, trend)
 
     return {trend, boses, swings};
 };
