@@ -725,7 +725,6 @@ const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
     const onlyBOSes = boses.filter(bos => bos?.text === 'BOS');
-    // const onlyBOSes = boses.filter(bos => bos?.text === 'IDM');
     for (let i = 0; i < onlyBOSes.length; i++) {
         const curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
@@ -740,32 +739,6 @@ const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
             curBos.text = 'CHoCH'
         }
     }
-
-    // let lastBOSIndex = null;
-    // for (let i = 0; i < boses.length; i++) {
-    //     if(!boses[i]?.text || !['CHoCH', 'BOS'].includes(boses[i]?.text)){
-    //         // trend[i] = trend[i - 1];
-    //         continue;
-    //     }
-    //
-    //     let lastBOS = lastBOSIndex ? boses[lastBOSIndex] : null;
-    //
-    //     let curBos = boses[i];
-    //     if(curBos && lastBOS && curBos.type !== lastBOS.type){
-    //         boses[lastBOSIndex].text = 'CHoCH'
-    //     }
-    //     lastBOSIndex = i;
-    //
-    //     // const index = curBos.to.index;
-    //     // trend[index] = {time: candles[index].time, trend: curBos.type === 'high' ? 1 : -1, index}
-    //
-    //
-    //     const to = curBos.to.index;
-    //     for (let j = curBos.to.index; j < to; j++) {
-    //         const type = curBos.type;
-    //         trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
-    //     }
-    // }
 
     return {trend, boses};
 }

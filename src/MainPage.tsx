@@ -962,7 +962,7 @@ const MainPage: React.FC = () => {
             array: data.ema200, color: 'rgba(0, 0, 255, 0.65)', title: 'ema200'
         }];
 
-        const minDate = moment('2024-10-10T00:00:00.000Z');
+        const minDate = moment('2024-12-19T00:00:00.000Z');
         const min = minDate.unix()
         const max = moment().unix()
 
