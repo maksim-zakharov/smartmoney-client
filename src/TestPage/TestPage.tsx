@@ -25,9 +25,7 @@ import {
     calculateSwings,
     calculateTrend,
     khrustikCalculateSwings,
-    tradinghubCalculateCrosses,
     tradinghubCalculateSwings,
-    tradinghubCalculateTrend,
     tradinghubCalculateTrendNew,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";

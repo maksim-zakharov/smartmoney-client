@@ -184,7 +184,28 @@ export const Chart: FC<{
         lineSerieses.forEach(lineSeriese => {
             const ls = createSeries(chartApi, 'Line', lineSeriese.options)
 
-            lineSeriese.data && ls.setData(lineSeriese.data.sort((a,b) => a.time - b.time));
+            const sortedData = lineSeriese.data.sort((a,b) => a.time - b.time);
+
+            function uniqueBy<T>(selector: (val: T) => T[keyof T], sortedData: T[]){
+                let time;
+                for (let i = 0; i < sortedData.length; i++) {
+                    const item = sortedData[i];
+                    if(!time){
+                        time = selector(item);
+                        continue;
+                    } else {
+                        if(time === selector(item)){
+                            sortedData.splice(i, 1);
+                        }
+                        time = selector(item);
+                    }
+                }
+                return sortedData;
+            }
+
+            const unique = uniqueBy(v => v.time, sortedData);
+
+            lineSeriese.data && ls.setData(unique);
             lineSeriese.markers && ls.setMarkers(lineSeriese.markers);
         })
 

@@ -23,7 +23,7 @@ import {moneyFormat} from "./MainPage";
 import {
     calculateCrosses,
     calculateFakeout,
-    calculateOB, calculatePositionsByFakeouts,
+    calculateOB, calculatePositionsByFakeouts, calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
@@ -55,6 +55,7 @@ export const TestingPage = () => {
     const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
     const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
+    const [tradeIFC, setTradeIFC] = useState<boolean>(false);
     const [excludeTrendSFP, setExcludeTrendSFP] = useState<boolean>(false);
     const [excludeWick, setExcludeWick] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
@@ -174,6 +175,11 @@ export const TestingPage = () => {
             positions.push(...fakeoutPositions);
         }
 
+        if(tradeIFC){
+            const fakeoutPositions = calculatePositionsByIFC(data, thSwings,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+            positions.push(...fakeoutPositions);
+        }
+
         return positions.map((curr) => {
             const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
             const stopLossMarginPerLot = diff * lotsize
@@ -186,7 +192,7 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, trend, withMove, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, tradeIFC, trend, withMove, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -226,6 +232,11 @@ export const TestingPage = () => {
                 positions.push(...fakeoutPositions);
             }
 
+            if(tradeIFC){
+                const fakeoutPositions = calculatePositionsByIFC(data, thSwings,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+                positions.push(...fakeoutPositions);
+            }
+
             return positions.map((curr) => {
                 const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
                 const stopLossMarginPerLot = diff * lotsize
@@ -239,7 +250,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
-    }, [swipCallback, withMove, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [swipCallback, tradeIFC, withMove, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -402,8 +413,13 @@ export const TestingPage = () => {
                 </Col>
                 <Col>
                     <FormItem>
-                        <Checkbox value={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Ложные
+                        <Checkbox value={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Торговать Ложные
                             пробои</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox value={tradeIFC} onChange={e => setTradeIFC(e.target.checked)}>Торговать IFC</Checkbox>
                     </FormItem>
                 </Col>
             </Row>
