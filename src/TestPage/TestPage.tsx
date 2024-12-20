@@ -19,7 +19,7 @@ import {
     calculateCrosses,
     calculateFakeout,
     calculateOB,
-    calculatePositionsByFakeouts,
+    calculatePositionsByFakeouts, calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
@@ -92,6 +92,7 @@ export const TestPage = () => {
         imbalances: checkboxValues.includes('imbalances'),
         showPositions: checkboxValues.includes('showPositions'),
         tradeFakeouts: checkboxValues.includes('tradeFakeouts'),
+        tradeIFC: checkboxValues.includes('tradeIFC'),
         excludeIDM: checkboxValues.includes('excludeIDM'),
         showFakeouts: checkboxValues.includes('showFakeouts'),
         excludeTrendSFP: checkboxValues.includes('excludeTrendSFP'),
@@ -161,9 +162,13 @@ export const TestPage = () => {
             const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, _data, multiStop);
             positions.push(...fakeoutPositions);
         }
+        if(config.tradeIFC){
+            const fakeoutPositions = calculatePositionsByIFC(_data, thSwings, maxDiff, multiStop);
+            positions.push(...fakeoutPositions);
+        }
 
         return {_data, ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [swipType, trandsType, structureType, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, trendData, maxDiff, multiStop])
+    }, [swipType, trandsType, structureType, config.tradeIFC, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, trendData, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
@@ -656,7 +661,7 @@ export const TestPage = () => {
         </Space>
         <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Slider defaultValue={maxDiff} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
-        <Slider defaultValue={multiStop} onChange={setMultiStop} min={1} max={5} step={1}/>
+        <Slider defaultValue={multiStop} onChange={setMultiStop} min={1} max={10} step={1}/>
         <Checkbox.Group onChange={setCheckboxValues} value={checkboxValues}>
             <Checkbox key="smPatterns" value="smPatterns">smPatterns</Checkbox>
             <Checkbox key="oldTrend" value="oldTrend">Тренд</Checkbox>
@@ -671,6 +676,7 @@ export const TestPage = () => {
             <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>
             <Checkbox key="showPositions" value="showPositions">Сделки</Checkbox>
             <Checkbox key="tradeFakeouts" value="tradeFakeouts">Торговать ложные пробои</Checkbox>
+            <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
