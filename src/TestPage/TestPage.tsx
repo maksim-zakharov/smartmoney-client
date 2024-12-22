@@ -86,6 +86,7 @@ export const TestPage = () => {
         showPositions: checkboxValues.includes('showPositions'),
         tradeFakeouts: checkboxValues.includes('tradeFakeouts'),
         tradeIFC: checkboxValues.includes('tradeIFC'),
+        limitOrderTrade: checkboxValues.includes('limitOrderTrade'),
         tradeOB: checkboxValues.includes('tradeOB'),
         excludeIDM: checkboxValues.includes('excludeIDM'),
         showFakeouts: checkboxValues.includes('showFakeouts'),
@@ -158,7 +159,7 @@ export const TestPage = () => {
         const positions = [];
 
         if(config.tradeOB){
-            const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop);
+            const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop, config.limitOrderTrade);
             positions.push(...fakeoutPositions);
         }
         if(config.tradeFakeouts){
@@ -171,7 +172,7 @@ export const TestPage = () => {
         }
 
         return { ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [swipType, trandsType, structureType, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, maxDiff, multiStop])
+    }, [swipType, trandsType, structureType, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
@@ -709,6 +710,7 @@ export const TestPage = () => {
             <Checkbox key="showPositions" value="showPositions">Сделки</Checkbox>
             <Checkbox key="tradeFakeouts" value="tradeFakeouts">Торговать ложные пробои</Checkbox>
             <Checkbox key="tradeOB" value="tradeOB">Торговать OB</Checkbox>
+            <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>

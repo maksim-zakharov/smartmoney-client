@@ -832,6 +832,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             trend[i] = {time: candles[i].time, trend: 1, index: i};
             if(i > 0 && trend[i-1] && trend[i].trend !==trend[i-1].trend){
                 boses[from.index].text = 'CHoCH';
+                // orderBlocks = orderBlocks.map(ob => ob?.endIndex >= i ? null : ob);
             }
 
             lastLowIDM = lastLow;
@@ -840,7 +841,6 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             let lowest;
             for (let j = 0; j < batch.length; j++) {
                 if(!lowest){
-                    // lowestLow && delete lowestLow.text;
                     lowest = batch[j];
                     swings[lowest.index].text = 'LL';
                     lowestLow = swings[lowest.index];
@@ -854,9 +854,6 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
 
             highestHigh = null;
             lastHigh = null;
-
-            // lowestLow = null;
-            // lastLow = null;
         }
         // Ловим бос для перелоя
         if(lowestLow && candles[i].close < lowestLow.price){
@@ -877,6 +874,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             trend[i] = {time: candles[i].time, trend: -1, index: i};
             if(i > 0 && trend[i-1] && trend[i].trend !==trend[i-1].trend){
                 boses[from.index].text = 'CHoCH';
+                // orderBlocks = orderBlocks.map(ob => ob?.endIndex >= i ? null : ob);
             }
 
             lastHighIDM = lastHigh;
@@ -885,7 +883,6 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             let lowest;
             for (let j = 0; j < batch.length; j++) {
                 if(!lowest){
-                    // highestHigh && delete highestHigh.text;
                     lowest = batch[j];
                     swings[lowest.index].text = 'HH';
                     highestHigh = swings[lowest.index];
@@ -899,9 +896,6 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
 
             lowestLow = null;
             lastLow = null;
-
-            // lastHigh = null;
-            // highestHigh = null;
         }
         if(lastHighIDM && candles[i].high >= lastHighIDM.price){
             const from = lastHighIDM;
@@ -989,21 +983,9 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                 for (let j = startPositionIndex; j < candles.length - 1; j++) {
                     const candle = candles[j];
                     if (hasHitOB(obItem, candle)) {
-                        // debugger
                         obItem.endCandle = candle;
                         obItem.endIndex = j
                         obItem.canTrade = true;
-
-                        // торгую или нет. Торгую если есть endIndex и если это не последний хай в структуре
-                        // Короче просто исключаем торговлю на первом откате (минусит)
-                        if(false){ // excludeIDM){
-                            obItem.canTrade = false;
-                            const typeExtremumsArray = [];
-                            const betweenExtremums = typeExtremumsArray.slice(startPositionIndex, obItem.endIndex + 1);
-                            if(betweenExtremums.some(s => s?.side === obItem.type)){
-                                obItem.canTrade = true;
-                            }
-                        }
 
                         break;
                     }
@@ -1037,17 +1019,6 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                         obItem.endIndex = j
                         obItem.canTrade = true;
 
-                        // торгую или нет. Торгую если есть endIndex и если это не последний хай в структуре
-                        // Короче просто исключаем торговлю на первом откате (минусит)
-                        if(false){ // excludeIDM){
-                            obItem.canTrade = false;
-                            const typeExtremumsArray = [];
-                            const betweenExtremums = typeExtremumsArray.slice(startPositionIndex, obItem.endIndex + 1);
-                            if(betweenExtremums.some(s => s?.side === obItem.type)){
-                                obItem.canTrade = true;
-                            }
-                        }
-
                         break;
                     }
                 }
@@ -1065,56 +1036,14 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                 highestHigh = lastHigh;
                 highestHigh.text = 'HH'
             }
-            // else if (lastHigh.price > highestHigh.price){
-            //     delete highestHigh.text;
-            //     highestHigh = lastHigh;
-            //     highestHigh.text = 'HH'
-            // }
         }
         if(lastLow){
             if(!lowestLow){
                 lowestLow = lastLow;
                 lowestLow.text = 'LL'
             }
-            // else if (lastLow.price < lowestLow.price){
-            //     delete lowestLow.text;
-            //     lowestLow = lastLow;
-            //     lowestLow.text = 'LL'
-            // }
         }
     }
-
-
-
-
-    // boses = drawIDM(candles, swings, boses);
-    // swings = deleteEmptySwings(swings);
-    //
-    // const withoutInternal = deleteInternalStructures(swings, boses);
-    // boses = withoutInternal.boses;
-    // swings = withoutInternal.swings;
-    //
-    // const withoutNonConfirmed = deleteNonConfirmed(swings, boses);
-    // boses = withoutNonConfirmed.boses;
-    // swings = withoutNonConfirmed.swings;
-    //
-    // const confirmed = removeDuplicates(swings, boses);
-    // boses = confirmed.boses;
-    // swings = confirmed.swings;
-    //
-    // boses = drawBOS(candles, swings, boses);
-    //
-    // const withoutExternal = deleteExternalStructures(swings, boses);
-    // boses = withoutExternal.boses;
-    // swings = withoutExternal.swings;
-    //
-    // const withTrend = drawTrend(candles, boses);
-    // const trend = withTrend.trend
-    // boses = withTrend.boses;
-    //
-    // boses = removeIDM(boses, trend)
-    //
-    // swings = markIFC(candles, swings)
 
     // Удаляем ОБ если он рисуется на той же свече что и прошлый ОБ
     const notEmptyOrderblocks = orderBlocks.filter(Boolean)
@@ -1767,7 +1696,7 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
     return positions;
 }
 
-export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: HistoryObject[], maxDiff?: number, multiStop?: number) => {
+export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: HistoryObject[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true) => {
     const positions = [];
     for (let i = 0; i < ob.length; i++) {
         const obItem = ob[i];
@@ -1789,6 +1718,14 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
         if(Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1){
             continue;
         }
+
+        if(!limitOrder && side === 'short' && candles[obItem.endIndex].close >= openPrice){
+            continue;
+        }
+        if(!limitOrder && side === 'long' && candles[obItem.endIndex].close <= openPrice){
+            continue;
+        }
+
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
             if(side === 'long' && candles[j].low <= stopLoss){
                 positions.push({side, takeProfit, stopLoss,
