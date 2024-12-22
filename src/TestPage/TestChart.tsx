@@ -4,7 +4,7 @@ import {
     CrosshairMode, LineData, SeriesMarker, SeriesOptionsMap, Time
 } from "lightweight-charts";
 import moment from 'moment';
-import {createSeries, defaultSeriesOptions, getVisibleMarkers} from "../utils";
+import {createSeries, defaultSeriesOptions, getVisibleMarkers, uniqueBy} from "../utils";
 import {ensureDefined} from "../lwc-plugins/helpers/assertions";
 import {isInsideBar} from "../smartmoney/common/sm-base-strategy";
 
@@ -185,23 +185,6 @@ export const Chart: FC<{
             const ls = createSeries(chartApi, 'Line', lineSeriese.options)
 
             const sortedData = lineSeriese.data.sort((a,b) => a.time - b.time);
-
-            function uniqueBy<T>(selector: (val: T) => T[keyof T], sortedData: T[]){
-                let time;
-                for (let i = 0; i < sortedData.length; i++) {
-                    const item = sortedData[i];
-                    if(!time){
-                        time = selector(item);
-                        continue;
-                    } else {
-                        if(time === selector(item)){
-                            sortedData.splice(i, 1);
-                        }
-                        time = selector(item);
-                    }
-                }
-                return sortedData;
-            }
 
             const unique = uniqueBy(v => v.time, sortedData);
 

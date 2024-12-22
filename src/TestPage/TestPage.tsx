@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Checkbox, Divider, Input, Radio, Slider, Space} from "antd";
+import {Checkbox, Divider, Form, Input, Radio, Slider, SliderSingleProps, Space} from "antd";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
@@ -44,15 +44,13 @@ export const TestPage = () => {
     const [structureType, setStructureType] = useState('tradinghub');
     const [obType, setOBType] = useState('samurai');
     const [data, setData] = useState([]);
-    const [trendData, setTrendData] = useState([]);
-    const [checkboxValues, setCheckboxValues] = useState(['BOS', 'swings']);
+    const [checkboxValues, setCheckboxValues] = useState(['tradeOB', 'BOS', 'swings']);
     const [windowLength, setWindowLength] = useState(5);
     const [maxDiff, setMaxDiff] = useState(0);
     const [multiStop, setMultiStop] = useState(5);
     const [searchParams, setSearchParams] = useSearchParams();
     const ticker = searchParams.get('ticker') || 'MTLR';
-    const tf = searchParams.get('tf') || '900';
-    const trendTF = searchParams.get('trendTF') || '900';
+    const tf = searchParams.get('tf') || '300';
     const fromDate = searchParams.get('fromDate') || dayjs('2024-10-01T00:00:00Z').startOf('day').unix();
     const toDate = searchParams.get('toDate') || dayjs('2025-10-01T00:00:00Z').endOf('day').unix();
     const [stopMargin, setStopMargin] = useState(100);
@@ -69,12 +67,9 @@ export const TestPage = () => {
     }, [ticker, token])
 
     useEffect(() => {
-        if(tf === trendTF){
             fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
-        } else {
-            Promise.all([fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData), fetchCandlesFromAlor(ticker, trendTF, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setTrendData)])
-        }
-    }, [tf, trendTF, ticker, fromDate, toDate]);
+
+    }, [tf, ticker, fromDate, toDate]);
 
     const config = useMemo(() => ({
         smPatterns: checkboxValues.includes('smPatterns'),
@@ -91,6 +86,7 @@ export const TestPage = () => {
         showPositions: checkboxValues.includes('showPositions'),
         tradeFakeouts: checkboxValues.includes('tradeFakeouts'),
         tradeIFC: checkboxValues.includes('tradeIFC'),
+        tradeOB: checkboxValues.includes('tradeOB'),
         excludeIDM: checkboxValues.includes('excludeIDM'),
         showFakeouts: checkboxValues.includes('showFakeouts'),
         excludeTrendSFP: checkboxValues.includes('excludeTrendSFP'),
@@ -100,11 +96,6 @@ export const TestPage = () => {
 
     const setSize = (tf: string) => {
         searchParams.set('tf', tf);
-        setSearchParams(searchParams)
-    }
-
-    const setTrendSize = (tf: string) => {
-        searchParams.set('trendTF', tf);
         setSearchParams(searchParams)
     }
 
@@ -122,51 +113,49 @@ export const TestPage = () => {
         setSearchParams(searchParams);
     }
     
-    const {ema, swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions, _data} = useMemo(() => {
+    const {ema, swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
         const swipsMap = {
             'samurai':calculateSwings,
             'khrustik': khrustikCalculateSwings,
             'tradinghub' : tradinghubCalculateSwings
         }
         const swipCallback = swipsMap[swipType]  || calculateSwings;
-        const _data =tf === trendTF ? data : trendData;
         const ema = calculateEMA(
-            _data.map((h) => h.close),
+            data.map((h) => h.close),
             100
         )[1];
 
-        let {highs, lows, swings: _swings} =swipCallback(_data);
-        const {structure, highParts, lowParts} = calculateStructure(highs, lows, _data)
+        let {highs, lows, swings: _swings} =swipCallback(data);
+        const {structure, highParts, lowParts} = calculateStructure(highs, lows, data)
 
         let trend = [];
-        const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, _data);
+        const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data);
         _swings = thSwings;
         highs = thSwings.filter(t => t?.side === 'high');
         lows = thSwings.filter(t => t?.side === 'low');
-        if(tf === trendTF){
             trend = trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
-        } else {
-            trend = trandsType === 'tradinghub' ?  thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
 
-            trend = fillTrendByMinorData(trend, trendData, data)
-        }
+        const boses = structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, data, trend).boses;
+        const orderBlocks = calculateOB(highParts, lowParts, data, trend, config.excludeIDM, obType !== 'samurai');
+        const fakeouts = calculateFakeout(highParts, lowParts, data)
 
-        const boses = structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, _data, trend).boses;
-        const orderBlocks = calculateOB(highParts, lowParts, _data, trend, config.excludeIDM, obType !== 'samurai');
-        const fakeouts = calculateFakeout(highParts, lowParts, _data)
+        const positions = [];
 
-        const positions = calculatePositionsByOrderblocks(orderBlocks, _data, maxDiff, multiStop);
+        if(config.tradeOB){
+            const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop);
+            positions.push(...fakeoutPositions);
+        };
         if(config.tradeFakeouts){
-            const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, _data, multiStop);
+            const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, multiStop);
             positions.push(...fakeoutPositions);
         }
         if(config.tradeIFC){
-            const fakeoutPositions = calculatePositionsByIFC(_data, thSwings, maxDiff, multiStop);
+            const fakeoutPositions = calculatePositionsByIFC(data, thSwings, maxDiff, multiStop);
             positions.push(...fakeoutPositions);
         }
 
-        return {_data, ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [swipType, trandsType, structureType, config.tradeIFC, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, trendData, maxDiff, multiStop])
+        return { ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
+    }, [swipType, trandsType, structureType, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
@@ -296,10 +285,10 @@ export const TestPage = () => {
         btmPlots,
         markers: oldMarkers,
         itrend
-    } = useMemo(() => calculate(_data, markerColors, windowLength), [_data, markerColors, windowLength]);
+    } = useMemo(() => calculate(data, markerColors, windowLength), [data, markerColors, windowLength]);
 
     const primitives = useMemo(() => {
-        const lastCandle = _data[_data.length - 1];
+        const lastCandle = data[data.length - 1];
         const _primitives = [];
         if(config.showOB || config.showEndOB || config.imbalances){
             const checkShow = (ob) => {
@@ -388,7 +377,7 @@ export const TestPage = () => {
 
         if (config.oldTrend) {
             const sessionHighlighter = (time: Time) => {
-                const index = _data.findIndex(c => c.time * 1000 === time);
+                const index = data.findIndex(c => c.time * 1000 === time);
                 if (itrend._data[index] > 0) {
                     return 'rgba(20, 131, 92, 0.4)';
                 }
@@ -413,7 +402,7 @@ export const TestPage = () => {
         }
 
         return _primitives;
-    }, [orderBlocks, config.oldTrend, config.smartTrend, itrend, trend, config.imbalances, config.showOB, config.showEndOB, config.imbalances, _data])
+    }, [orderBlocks, config.oldTrend, config.smartTrend, itrend, trend, config.imbalances, config.showOB, config.showEndOB, config.imbalances, data])
 
     const poses = useMemo(() => positions.map(s => [{
         color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
@@ -609,42 +598,72 @@ export const TestPage = () => {
         return _lineSerieses;
     }, [poses, config.showPositions, config.BOS, boses]);
 
+    const maxRR = 10;
+
+    const marksRR: SliderSingleProps['marks'] = {
+        [1]: 1,
+        [5]: 5,
+        [maxRR]: maxRR,
+    };
+
+    const marksPR: SliderSingleProps['marks'] = {
+        [0]: 0,
+        [0.5]: 0.5,
+        [1]: 1,
+    };
+
     return <>
-        <Divider plain orientation="left">Общее</Divider>
+        <Divider plain orientation="left">Инструмент</Divider>
         <Space>
             <TickerSelect value={ticker} onSelect={onSelectTicker}/>
-            <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates}/>
+            <TimeframeSelect value={tf} onChange={setSize}/>
+            <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
+                         onChange={onChangeRangeDates}/>
         </Space>
         <Divider plain orientation="left">Структура</Divider>
         <Space>
-            <Radio.Group onChange={e => setSwipType(e.target.value)}
-                         value={swipType}>
-                <Radio value="tradinghub">Свипы по tradinghub</Radio>
-                <Radio value="samurai">Свипы по самураю</Radio>
-                <Radio value="khrustik">Свипы по хрустику</Radio>
-            </Radio.Group>
-            <Radio.Group onChange={e => setTrandsType(e.target.value)}
-                         value={trandsType}>
-                <Radio value="tradinghub">Тренд по tradinghub</Radio>
-                <Radio value="samurai">Тренд по самураю</Radio>
-                <Radio value="khrustik">Тренд по хрустику</Radio>
-            </Radio.Group>
-            <Radio.Group onChange={e => setStructureType(e.target.value)}
-                         value={structureType}>
-                <Radio value="tradinghub">Босы по tradinghub</Radio>
-                <Radio value="samurai">Босы по самураю</Radio>
-            </Radio.Group>
-            <Radio.Group onChange={e => setOBType(e.target.value)}
-                         value={obType}>
-                <Radio value="samurai">ОБ по самураю</Radio>
-                <Radio value="dobrinya">ОБ по добрыне</Radio>
-            </Radio.Group>
-            <TimeframeSelect value={trendTF} onChange={setTrendSize}/>
+            <Form.Item label="Свипы">
+                <Radio.Group onChange={e => setSwipType(e.target.value)}
+                             value={swipType}>
+                    <Radio value="tradinghub">tradinghub</Radio>
+                    <Radio value="samurai">самурай</Radio>
+                    <Radio value="khrustik">хрустик</Radio>
+                </Radio.Group>
+            </Form.Item>
+            <Form.Item label="Тренд">
+                <Radio.Group onChange={e => setTrandsType(e.target.value)}
+                             value={trandsType}>
+                    <Radio value="tradinghub">tradinghub</Radio>
+                    <Radio value="samurai">самурай</Radio>
+                    <Radio value="khrustik">хрустику</Radio>
+                </Radio.Group>
+            </Form.Item>
+            <Form.Item label="Босы">
+                <Radio.Group onChange={e => setStructureType(e.target.value)}
+                             value={structureType}>
+                    <Radio value="tradinghub">tradinghub</Radio>
+                    <Radio value="samurai">самурай</Radio>
+                </Radio.Group>
+            </Form.Item>
+            <Form.Item label="ОБ">
+                <Radio.Group onChange={e => setOBType(e.target.value)}
+                             value={obType}>
+                    <Radio value="samurai">самурай</Radio>
+                    <Radio value="dobrinya">добрыня</Radio>
+                </Radio.Group>
+            </Form.Item>
         </Space>
-        <Divider plain orientation="left">Инструмент</Divider>
+        <Divider plain orientation="left">Риски</Divider>
         <Space>
-            <TimeframeSelect value={tf} onChange={setSize}/>
-            <Input value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
+            <Form.Item label="Риск на сделку">
+                <Input value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
+            </Form.Item>
+            <Form.Item label="Risk Rate">
+                <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop} min={1} max={10} step={1}/>
+            </Form.Item>
+            <Form.Item label="Percent Rate">
+                <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
+            </Form.Item>
             <Space>
                 <div>Профит: {new Intl.NumberFormat('ru-RU', {
                     style: 'currency',
@@ -653,13 +672,11 @@ export const TestPage = () => {
                     maximumFractionDigits: 2,
                 }).format(profit.PnL)}</div>
                 <div>Прибыльных: {profit.profits}</div>
-                    <div>Убыточных: {profit.losses}</div>
-                    <div>Винрейт: {((profit.profits / (profit.profits + profit.losses)) * 100).toFixed(2)}%</div>
+                <div>Убыточных: {profit.losses}</div>
+                <div>Винрейт: {((profit.profits / (profit.profits + profit.losses)) * 100).toFixed(2)}%</div>
             </Space>
         </Space>
         <Slider defaultValue={windowLength} onChange={setWindowLength}/>
-        <Slider defaultValue={maxDiff} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
-        <Slider defaultValue={multiStop} onChange={setMultiStop} min={1} max={10} step={1}/>
         <Checkbox.Group onChange={setCheckboxValues} value={checkboxValues}>
             <Checkbox key="smPatterns" value="smPatterns">smPatterns</Checkbox>
             <Checkbox key="oldTrend" value="oldTrend">Тренд</Checkbox>
@@ -674,13 +691,15 @@ export const TestPage = () => {
             <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>
             <Checkbox key="showPositions" value="showPositions">Сделки</Checkbox>
             <Checkbox key="tradeFakeouts" value="tradeFakeouts">Торговать ложные пробои</Checkbox>
+            <Checkbox key="tradeOB" value="tradeOB">Торговать OB</Checkbox>
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>
             <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
             <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
         </Checkbox.Group>
-        <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers} data={_data} ema={ema} />
+        <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers} data={data}
+               ema={ema}/>
     </>;
 }
 

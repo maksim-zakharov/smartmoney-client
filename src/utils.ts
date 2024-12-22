@@ -628,3 +628,20 @@ export const useSeriesApi = <T extends SeriesType>({
 };
 
 export const createRectangle2 = (orderBlock, options: Partial<RectangleDrawingToolOptions>) => new Rectangle(orderBlock.leftTop, orderBlock.rightBottom, {...options})
+
+export function uniqueBy<T>(selector: (val: T) => T[keyof T], sortedData: T[]){
+    let time;
+    for (let i = 0; i < sortedData.length; i++) {
+        const item = sortedData[i];
+        if(!time){
+            time = selector(item);
+            continue;
+        } else {
+            if(time === selector(item)){
+                sortedData.splice(i, 1);
+            }
+            time = selector(item);
+        }
+    }
+    return sortedData;
+}

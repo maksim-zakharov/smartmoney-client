@@ -35,7 +35,7 @@ import {
     getSecurity,
     notTradingTime,
     persision,
-    refreshToken
+    refreshToken, uniqueBy
 } from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 
@@ -47,15 +47,14 @@ export const TestingPage = () => {
     const [allData, setAllData] = useState({});
     const [allSecurity, setAllSecurity] = useState({});
     const [data, setData] = useState([]);
-    const [trendData, setTrendData] = useState([]);
     const [tf, onChangeTF] = useState<string>('300');
-    const [trendTF, onChangeTrendTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
     const [withMove, setWithMove] = useState<boolean>(false);
     const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
     const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
     const [tradeIFC, setTradeIFC] = useState<boolean>(false);
+    const [tradeOB, setTradeOB] = useState<boolean>(true);
     const [excludeTrendSFP, setExcludeTrendSFP] = useState<boolean>(false);
     const [excludeWick, setExcludeWick] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
@@ -79,21 +78,13 @@ export const TestingPage = () => {
     }, [swipType]);
 
     const swings = useMemo(() => {
-        if(tf === trendTF){
             if(!data.length){
                 return [];
             }
             return swipCallback(data);
-        } else {
-            if(!trendData.length){
-                return [];
-            }
-            return swipCallback(trendData);
-        }
-    } ,[swipCallback, tf, trendTF, data, trendData])
+    } ,[swipCallback, tf, data])
 
     const trend = useMemo(() => {
-        if(tf === trendTF){
             if(!data.length){
                 return [];
             }
@@ -107,37 +98,7 @@ export const TestingPage = () => {
             return thTrend;
 
             return trend;
-        } else {
-            if(!trendData.length){
-                return [];
-            }
-            const {swings: swingsData, highs, lows} = swings;
-            const {structure, highParts, lowParts} = calculateStructure(highs, lows, trendData);
-            const newTrend = calculateTrend(highParts, lowParts, trendData, confirmTrend, excludeTrendSFP, excludeWick).trend;
-            if(!newTrend.length){
-                return [];
-            }
-            let lastTrendIndex = newTrend.findIndex(Boolean)
-            if(lastTrendIndex < 0){
-                return [];
-            }
-            let lastTrend = newTrend[lastTrendIndex];
-            let lastTrendCandle = trendData[lastTrendIndex];
-            for (let i = 0; i < data.length; i++) {
-                if(!lastTrendCandle){
-                    break;
-                }
-                if(lastTrendCandle.time >= data[i].time){
-                    newTrend.splice(i, 0, lastTrend);
-                    i++;
-                } else {
-                    lastTrendIndex++;
-                    lastTrendCandle = trendData[lastTrendIndex];
-                }
-            }
-            return newTrend;
-        }
-    }, [tf, trendTF, swings, confirmTrend, excludeWick, excludeTrendSFP]);
+    }, [tf, swings, confirmTrend, excludeWick, excludeTrendSFP]);
 
     const positions = useMemo(() => {
         let {swings: swingsData, highs, lows} = swipCallback(data);
@@ -148,17 +109,11 @@ export const TestingPage = () => {
         swingsData = thSwings;
         highs = thSwings.filter(t => t?.side === 'high');
         lows = thSwings.filter(t => t?.side === 'low');
-        if(tf === trendTF){
-            trend = thTrend; // trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
-        } else {
-            trend = thTrend; // trandsType === 'tradinghub' ?  thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
-
-            trend = fillTrendByMinorData(trend, trendData, data)
-        }
+        trend = thTrend; // trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
         // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
         const boses = thBoses; // structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, _data, trend).boses;
         let orderBlocks = calculateOB(highParts, lowParts, data, thTrend, excludeIDM, withMove);
-        if(excludeIDM){
+        if (excludeIDM) {
             // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
             // orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
@@ -168,17 +123,23 @@ export const TestingPage = () => {
 
         const fee = feePercent / 100
 
-        const positions = calculatePositionsByOrderblocks(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
-        if(tradeFakeouts){
+        let positions = [];
+        if (tradeOB) {
+            const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+            positions.push(...fakeoutPositions);
+        }
+        if (tradeFakeouts) {
             const fakeouts = calculateFakeout(highParts, lowParts, data)
             const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
             positions.push(...fakeoutPositions);
         }
 
-        if(tradeIFC){
-            const fakeoutPositions = calculatePositionsByIFC(data, thSwings,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+        if (tradeIFC) {
+            const fakeoutPositions = calculatePositionsByIFC(data, thSwings, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
             positions.push(...fakeoutPositions);
         }
+
+        positions = uniqueBy(v => v.openTime, positions);
 
         return positions.map((curr) => {
             const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
@@ -192,7 +153,7 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, tradeIFC, trend, withMove, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [data, tradeOB, tradeIFC, trend, withMove, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -203,13 +164,8 @@ export const TestingPage = () => {
             swingsData = thSwings;
             highs = thSwings.filter(t => t?.side === 'high');
             lows = thSwings.filter(t => t?.side === 'low');
-            if(tf === trendTF){
                 trend = thTrend; // trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
-            } else {
-                trend = thTrend; // trandsType === 'tradinghub' ?  thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
 
-                trend = fillTrendByMinorData(trend, trendData, data)
-            }
             // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
             const boses = thBoses; // structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, _data, trend).boses;
 
@@ -225,7 +181,11 @@ export const TestingPage = () => {
 
             const fee = feePercent / 100;
 
-            const positions = calculatePositionsByOrderblocks(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+            const positions = [];
+            if(tradeOB){
+                const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+                positions.push(...fakeoutPositions);
+            }
             if(tradeFakeouts){
                 const fakeouts = calculateFakeout(highParts, lowParts, data)
                 const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
@@ -250,7 +210,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
-    }, [swipCallback, tradeIFC, withMove, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [swipCallback, tradeOB, tradeIFC, withMove, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -296,15 +256,11 @@ export const TestingPage = () => {
     useEffect(() => {
         if(!isAllTickers && ticker){
 
-            if(trendTF === tf){
                 fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData).finally(() =>
                     setLoading(false));
-            } else {
-                fetchCandlesFromAlor(ticker, trendTF, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setTrendData).finally(() =>
-                    setLoading(false))
-            }
+
         }
-    }, [isAllTickers, trendTF, tf, ticker, dates]);
+    }, [isAllTickers, tf, ticker, dates]);
 
     useEffect(() => {
         localStorage.getItem('token') && refreshToken().then(setToken)
@@ -383,7 +339,7 @@ export const TestingPage = () => {
                 <Col>
                     <FormItem label="Тикер">
                         <Space>
-                            <Checkbox value={isAllTickers}
+                            <Checkbox checked={isAllTickers}
                                       onChange={e => onCheckAllTickers(e.target.checked)}>Все</Checkbox>
                             <TickerSelect value={ticker} disabled={isAllTickers} onSelect={onSelectTicker}/>
                         </Space>
@@ -407,49 +363,49 @@ export const TestingPage = () => {
             <Row gutter={8} align="bottom">
                 <Col>
                     <FormItem>
-                        <Checkbox value={excludeIDM} onChange={e => setExcludeIDM(e.target.checked)}>Исключить
+                        <Checkbox checked={excludeIDM} onChange={e => setExcludeIDM(e.target.checked)}>Исключить
                             IDM</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>
                     <FormItem>
-                        <Checkbox value={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Торговать Ложные
+                        <Checkbox checked={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Торговать Ложные
                             пробои</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>
                     <FormItem>
-                        <Checkbox value={tradeIFC} onChange={e => setTradeIFC(e.target.checked)}>Торговать IFC</Checkbox>
+                        <Checkbox checked={tradeIFC} onChange={e => setTradeIFC(e.target.checked)}>Торговать IFC</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox checked={tradeOB} onChange={e => setTradeOB(e.target.checked)}>Торговать OB</Checkbox>
                     </FormItem>
                 </Col>
             </Row>
             <Divider plain orientation="left">Тренд</Divider>
             <Row gutter={8} align="bottom">
                 <Col>
-                    <FormItem label="Таймфрейм">
-                        <TimeframeSelect value={trendTF} onChange={onChangeTrendTF}/>
-                    </FormItem>
-                </Col>
-                <Col>
                     <FormItem>
-                        <Checkbox value={confirmTrend} onChange={e => setConfirmTrend(e.target.checked)}>Подтвержденный
+                        <Checkbox checked={confirmTrend} onChange={e => setConfirmTrend(e.target.checked)}>Подтвержденный
                             тренд</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>
                     <FormItem>
-                        <Checkbox value={excludeTrendSFP} onChange={e => setExcludeTrendSFP(e.target.checked)}>Исключить
+                        <Checkbox checked={excludeTrendSFP} onChange={e => setExcludeTrendSFP(e.target.checked)}>Исключить
                             Fake BOS</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>
                     <FormItem>
-                        <Checkbox value={excludeWick} onChange={e => setExcludeWick(e.target.checked)}>Игнорировать пробитие фитилем</Checkbox>
+                        <Checkbox checked={excludeWick} onChange={e => setExcludeWick(e.target.checked)}>Игнорировать пробитие фитилем</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>
                     <FormItem>
-                        <Checkbox value={withMove} onChange={e => setWithMove(e.target.checked)}>Двигать ОБ к имбалансу</Checkbox>
+                        <Checkbox checked={withMove} onChange={e => setWithMove(e.target.checked)}>Двигать ОБ к имбалансу</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>
