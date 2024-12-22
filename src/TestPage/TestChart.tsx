@@ -26,6 +26,8 @@ export const Chart: FC<{
     }[],
     hideInternalCandles?: boolean,
     primitives: any[],
+    seriesType?: any,
+    showVolume?: boolean,
     data: any[],
     ema: any[],
 }> = ({
@@ -33,6 +35,8 @@ export const Chart: FC<{
           markers,
                               hideInternalCandles,
                               primitives,
+    seriesType = 'Candlestick',
+                              showVolume = true,
           data,
           ema,
       }) => {
@@ -116,7 +120,7 @@ export const Chart: FC<{
         }
         const chartApi = createChart(chartContainerRef.current, options)
 
-        const series = createSeries(chartApi, 'Candlestick', defaultSeriesOptions['Candlestick']);
+        const series = createSeries(chartApi, seriesType, defaultSeriesOptions[seriesType]);
 
         series.priceScale().applyOptions({
             scaleMargins: {
@@ -146,25 +150,27 @@ export const Chart: FC<{
         }
         series?.setData(data);
 
-        const volumeSeries = createSeries(chartApi, 'Histogram', {
-            priceFormat: {
-                type: 'volume',
-            },
-            priceScaleId: '', // set as an overlay by setting a blank priceScaleId
-        });
-        volumeSeries.priceScale().applyOptions({
-            // set the positioning of the volume series
-            scaleMargins: {
-                top: 0.7, // highest point of the series will be 70% away from the top
-                bottom: 0,
-            },
-        });
-        volumeSeries?.setData(data.map((d: any) => ({
-            ...d,
-            // time: d.time * 1000,
-            value: d.volume,
-            color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
-        })));
+        if(showVolume){
+            const volumeSeries = createSeries(chartApi, 'Histogram', {
+                priceFormat: {
+                    type: 'volume',
+                },
+                priceScaleId: '', // set as an overlay by setting a blank priceScaleId
+            });
+            volumeSeries.priceScale().applyOptions({
+                // set the positioning of the volume series
+                scaleMargins: {
+                    top: 0.7, // highest point of the series will be 70% away from the top
+                    bottom: 0,
+                },
+            });
+            volumeSeries?.setData(data.map((d: any) => ({
+                ...d,
+                // time: d.time * 1000,
+                value: d.volume,
+                color: d.open < d.close ? markerColors.bullColor : markerColors.bearColor
+            })));
+        }
 
         const emaSeries = createSeries(chartApi, 'Line', {
             color: "rgb(255, 186, 102)",
@@ -203,7 +209,7 @@ export const Chart: FC<{
 
             chartApi?.remove();
         };
-    }, [chartContainerRef.current, data, markers, primitives, ema, lineSerieses, hideInternalCandles]);
+    }, [showVolume, seriesType, chartContainerRef.current, data, markers, primitives, ema, lineSerieses, hideInternalCandles]);
 
     // const chartApi = useChartApi(chartContainerRef.current!, options)
 

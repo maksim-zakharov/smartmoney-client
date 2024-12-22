@@ -98,10 +98,6 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
         highs[i] = isValidPullback === 'high' ? swing : null;
         lows[i] = isValidPullback === 'low' ? swing : null;
         swings[i] = isValidPullback? swing : null;
-        if(isValidPullback){
-            // debugger
-            console.log(isValidPullback);
-        }
         prevCandleIndex = i;
         i+=diff;
     }

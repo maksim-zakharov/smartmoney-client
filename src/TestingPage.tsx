@@ -20,6 +20,7 @@ import {TimeframeSelect} from "./TimeframeSelect";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
+import moment from 'moment';
 import {
     calculateCrosses,
     calculateFakeout,
@@ -38,6 +39,7 @@ import {
     refreshToken, uniqueBy
 } from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
+import {Chart} from "./TestPage/TestChart";
 
 const {RangePicker} = DatePicker;
 
@@ -332,6 +334,31 @@ export const TestingPage = () => {
         return record.newPnl < 0 ? 'sell' : 'buy';
     };
 
+    const profitChartData = useMemo(() => {
+        const data = isAllTickers ? allPositions : positions;
+
+        return Object.entries(data.reduce((acc, curr) => {
+            const date = moment(curr.openTime * 1000).format('YYYY-MM-DD');
+            if(!acc[date]){
+                acc[date] = curr.newPnl;
+            } else {
+                acc[date] += curr.newPnl;
+            }
+            return acc;
+        }, {}))
+            .map(([date, PnL]) => ({time: moment(date, 'YYYY-MM-DD').unix(), value: PnL}))
+            .sort((a, b) => a.time - b.time)
+            .reduce((acc, curr, i) => {
+                if(i === 0){
+                    acc = [curr];
+                } else {
+                    acc.push(({...curr, value: acc[i - 1].value + curr.value}))
+                }
+
+                return acc;
+            }, []);
+    }, [isAllTickers, allPositions, positions])
+
     return <div style={{width: 'max-content', minWidth: "1800px"}}>
         <Form layout="vertical">
             <Divider plain orientation="left">Инструмент</Divider>
@@ -503,6 +530,8 @@ export const TestingPage = () => {
                     </FormItem>
                 </Col>
                 <Col span={12}>
+                    <Chart showVolume={false} seriesType="Line" lineSerieses={[]} hideInternalCandles primitives={[]} markers={[]} data={profitChartData}
+                           ema={[]}/>
                     <FormItem label="New Samurai">
                         <Row gutter={8}>
                             <Col span={6}>
