@@ -24,11 +24,17 @@ import moment from 'moment';
 import {
     calculateCrosses,
     calculateFakeout,
-    calculateOB, calculatePositionsByFakeouts, calculatePositionsByIFC,
+    calculateOB,
+    calculatePositionsByFakeouts,
+    calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
     calculateStructure,
     calculateSwings,
-    calculateTrend, khrustikCalculateSwings, tradinghubCalculateSwings, tradinghubCalculateTrendNew
+    calculateTrend,
+    khrustikCalculateSwings,
+    tradinghubCalculateSwings,
+    tradinghubCalculateTrendNew,
+    tradinghubCalculateTrendNew2
 } from "./samurai_patterns";
 import {
     fetchCandlesFromAlor,
@@ -45,6 +51,7 @@ const {RangePicker} = DatePicker;
 
 export const TestingPage = () => {
     const [swipType, setSwipType] = useState('tradinghub');
+    const [trandsType, setTrandsType] = useState('tradinghub');
     const [loading, setLoading] = useState(true);
     const [allData, setAllData] = useState({});
     const [allSecurity, setAllSecurity] = useState({});
@@ -107,15 +114,31 @@ export const TestingPage = () => {
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
 
         let trend = [];
-        const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data);
-        swingsData = thSwings;
-        highs = thSwings.filter(t => t?.side === 'high');
-        lows = thSwings.filter(t => t?.side === 'low');
-        trend = thTrend; // trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
-        // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
-        const boses = thBoses; // structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, _data, trend).boses;
-        let orderBlocks = calculateOB(highParts, lowParts, data, thTrend, excludeIDM, withMove);
-        if (excludeIDM) {
+        let boses = [];
+        let orderBlocks = [];
+        if(trandsType === 'tradinghub'){
+            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data);
+            swingsData = thSwings;
+            highs = thSwings.filter(t => t?.side === 'high');
+            lows = thSwings.filter(t => t?.side === 'low');
+            trend = thTrend;
+            boses = thBoses;
+            orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
+        } else if(trandsType === 'dobrinya'){
+            const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data, withMove);
+            swingsData = thSwings;
+            highs = thSwings.filter(t => t?.side === 'high');
+            lows = thSwings.filter(t => t?.side === 'low');
+            trend = thTrend;
+            boses = thBoses;
+            orderBlocks = thOrderBlocks;
+        } else {
+            trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
+            boses = calculateCrosses(highParts, lowParts, data, trend).boses;
+            orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
+        }
+
+       if (excludeIDM) {
             // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
             // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
             // orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
@@ -137,7 +160,7 @@ export const TestingPage = () => {
         }
 
         if (tradeIFC) {
-            const fakeoutPositions = calculatePositionsByIFC(data, thSwings, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+            const fakeoutPositions = calculatePositionsByIFC(data, swingsData, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
             positions.push(...fakeoutPositions);
         }
 
@@ -155,24 +178,38 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, tradeOB, tradeIFC, trend, withMove, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, trandsType, tradeOB, tradeIFC, trend, withMove, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
             let {swings: swingsData, highs, lows} = swipCallback(data);
             const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
+
             let trend = [];
-            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data);
-            swingsData = thSwings;
-            highs = thSwings.filter(t => t?.side === 'high');
-            lows = thSwings.filter(t => t?.side === 'low');
-                trend = thTrend; // trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            let boses = [];
+            let orderBlocks = [];
+            if(trandsType === 'tradinghub'){
+                const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data);
+                swingsData = thSwings;
+                highs = thSwings.filter(t => t?.side === 'high');
+                lows = thSwings.filter(t => t?.side === 'low');
+                trend = thTrend;
+                boses = thBoses;
+                orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
+            } else if(trandsType === 'dobrinya'){
+                const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data, withMove);
+                swingsData = thSwings;
+                highs = thSwings.filter(t => t?.side === 'high');
+                lows = thSwings.filter(t => t?.side === 'low');
+                trend = thTrend;
+                boses = thBoses;
+                orderBlocks = thOrderBlocks;
+            } else {
+                trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
+                boses = calculateCrosses(highParts, lowParts, data, trend).boses;
+                orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
+            }
 
-            // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP);
-            const boses = thBoses; // structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, _data, trend).boses;
-
-            // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP, excludeWick);
-            let orderBlocks = calculateOB(highParts, lowParts, data, thTrend, excludeIDM, withMove);
             if(excludeIDM){
                 // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
                 // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
@@ -195,7 +232,7 @@ export const TestingPage = () => {
             }
 
             if(tradeIFC){
-                const fakeoutPositions = calculatePositionsByIFC(data, thSwings,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+                const fakeoutPositions = calculatePositionsByIFC(data, swingsData,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
                 positions.push(...fakeoutPositions);
             }
 
@@ -212,7 +249,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
-    }, [swipCallback, tradeOB, tradeIFC, withMove, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [swipCallback, trandsType, tradeOB, tradeIFC, withMove, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -444,6 +481,17 @@ export const TestingPage = () => {
                             <Radio value="khrustik">Свипы по хрустику</Radio>
                         </Radio.Group>
                     </FormItem>
+                </Col>
+                <Col>
+                    <Form.Item label="Тренд">
+                        <Radio.Group onChange={e => setTrandsType(e.target.value)}
+                                     value={trandsType}>
+                            <Radio value="tradinghub">tradinghub</Radio>
+                            <Radio value="dobrinya">dobrinya</Radio>
+                            <Radio value="samurai">самурай</Radio>
+                            <Radio value="khrustik">хрустику</Radio>
+                        </Radio.Group>
+                    </Form.Item>
                 </Col>
             </Row>
             <Divider plain orientation="left">Риски и комиссии</Divider>

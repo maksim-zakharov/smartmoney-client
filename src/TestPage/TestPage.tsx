@@ -26,7 +26,7 @@ import {
     calculateTrend,
     khrustikCalculateSwings,
     tradinghubCalculateSwings,
-    tradinghubCalculateTrendNew,
+    tradinghubCalculateTrendNew, tradinghubCalculateTrendNew2,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
@@ -129,14 +129,30 @@ export const TestPage = () => {
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data)
 
         let trend = [];
-        const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data);
-        _swings = thSwings;
-        highs = thSwings.filter(t => t?.side === 'high');
-        lows = thSwings.filter(t => t?.side === 'low');
-            trend = trandsType === 'tradinghub' ? thTrend : calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+        let boses = [];
+        let orderBlocks = [];
+        if(trandsType === 'tradinghub'){
+            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data);
+            _swings = thSwings;
+            highs = thSwings.filter(t => t?.side === 'high');
+            lows = thSwings.filter(t => t?.side === 'low');
+            trend = thTrend;
+            boses = thBoses;
+            orderBlocks = calculateOB(highParts, lowParts, data, trend, config.excludeIDM, obType !== 'samurai');
+        } else if(trandsType === 'dobrinya'){
+            const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(_swings, data, obType !== 'samurai');
+            _swings = thSwings;
+            highs = thSwings.filter(t => t?.side === 'high');
+            lows = thSwings.filter(t => t?.side === 'low');
+            trend = thTrend;
+            boses = thBoses;
+            orderBlocks = thOrderBlocks;
+        } else {
+            trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
+            boses = calculateCrosses(highParts, lowParts, data, trend).boses;
+            orderBlocks = calculateOB(highParts, lowParts, data, trend, config.excludeIDM, obType !== 'samurai');
+        }
 
-        const boses = structureType === 'tradinghub' ? thBoses : calculateCrosses(highParts, lowParts, data, trend).boses;
-        const orderBlocks = calculateOB(highParts, lowParts, data, trend, config.excludeIDM, obType !== 'samurai');
         const fakeouts = calculateFakeout(highParts, lowParts, data)
 
         const positions = [];
@@ -144,13 +160,13 @@ export const TestPage = () => {
         if(config.tradeOB){
             const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop);
             positions.push(...fakeoutPositions);
-        };
+        }
         if(config.tradeFakeouts){
             const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, multiStop);
             positions.push(...fakeoutPositions);
         }
         if(config.tradeIFC){
-            const fakeoutPositions = calculatePositionsByIFC(data, thSwings, maxDiff, multiStop);
+            const fakeoutPositions = calculatePositionsByIFC(data, _swings, maxDiff, multiStop);
             positions.push(...fakeoutPositions);
         }
 
@@ -634,6 +650,7 @@ export const TestPage = () => {
                 <Radio.Group onChange={e => setTrandsType(e.target.value)}
                              value={trandsType}>
                     <Radio value="tradinghub">tradinghub</Radio>
+                    <Radio value="dobrinya">dobrinya</Radio>
                     <Radio value="samurai">самурай</Radio>
                     <Radio value="khrustik">хрустику</Radio>
                 </Radio.Group>
