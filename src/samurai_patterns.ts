@@ -1356,7 +1356,7 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
         const side = obItem.side === 'high' ? 'short' :'long';
         const candle = candles[obItem.index];
         const stopLoss = side === 'long' ? candle.low : candle.high;
-        const openPrice = side === 'long' ? candle.high : candle.low;
+        const openPrice = candle.close;
 
         const takeProfit = calculateTakeProfit({
             side,
