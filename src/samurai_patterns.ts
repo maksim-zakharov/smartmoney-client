@@ -1639,6 +1639,7 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
         if(!obItem || obItem.text !== 'IFC'){
             continue;
         }
+
         const side = obItem.side === 'high' ? 'short' :'long';
         const candle = candles[obItem.index];
         const stopLoss = side === 'long' ? candle.low : candle.high;
@@ -1658,16 +1659,17 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
         const tradeCandle = candles[obItem.index + 1];
         for (let j = obItem.index + 1; j < candles.length; j++) {
             if(side === 'long' && candles[j].low <= stopLoss){
-                positions.push({side, takeProfit, stopLoss,
+                positions.push({side, name: 'IFC', takeProfit, stopLoss,
                     openPrice,openTime: tradeCandle.time, closeTime: candles[j].time,  pnl: stopLoss - openPrice});
                 break;
             } else if(side ==='short' && candles[j].high >= stopLoss){
-                positions.push({side, takeProfit, stopLoss,
+                positions.push({side,name: 'IFC', takeProfit, stopLoss,
                     openPrice,openTime: tradeCandle.time,closeTime: candles[j].time,  pnl: openPrice - stopLoss});
                 break;
             } else if (side === 'long' && candles[j].high >= takeProfit){
                 positions.push({
                     side,
+                    name: 'IFC',
                     takeProfit,
                     stopLoss,
                     openPrice,
@@ -1680,6 +1682,7 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
             } else if(side ==='short' && candles[j].low <= takeProfit){
                 positions.push({
                     side,
+                    name: 'IFC',
                     takeProfit,
                     stopLoss,
                     openPrice,
@@ -1728,16 +1731,17 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
 
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
             if(side === 'long' && candles[j].low <= stopLoss){
-                positions.push({side, takeProfit, stopLoss,
+                positions.push({side,name: 'OB', takeProfit, stopLoss,
                     openPrice,openTime: obItem.endCandle.time, closeTime: candles[j].time,  pnl: stopLoss - openPrice});
                 break;
             } else if(side ==='short' && candles[j].high >= stopLoss){
-                positions.push({side, takeProfit, stopLoss,
+                positions.push({side,name: 'OB', takeProfit, stopLoss,
                     openPrice,openTime: obItem.endCandle.time,closeTime: candles[j].time,  pnl: openPrice - stopLoss});
                 break;
             } else if (side === 'long' && candles[j].high >= takeProfit){
                 positions.push({
                     side,
+                    name: 'OB',
                     takeProfit,
                     stopLoss,
                     openPrice,
@@ -1750,6 +1754,7 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
             } else if(side ==='short' && candles[j].low <= takeProfit){
                 positions.push({
                     side,
+                    name: 'OB',
                     takeProfit,
                     stopLoss,
                     openPrice,

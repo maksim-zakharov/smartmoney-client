@@ -47,6 +47,7 @@ import {
 import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./TestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
+import {Link} from "react-router-dom";
 
 export const TestingPage = () => {
     const [swipType, setSwipType] = useState('tradinghub');
@@ -174,7 +175,9 @@ export const TestingPage = () => {
             const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize * fee;
 
             curr.fee = openFee + closeFee;
-            curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee;
+            curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee
+
+            curr.timeframe = tf;
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
@@ -245,6 +248,7 @@ export const TestingPage = () => {
                 curr.fee = openFee + closeFee;
                 curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee;
                 curr.ticker = ticker;
+                curr.timeframe = tf;
 
                 return curr;
             });
@@ -309,20 +313,15 @@ export const TestingPage = () => {
         token && getSecurity(ticker, token).then(setSecurity)
     }, [ticker, token])
 
-    const rangePresets: TimeRangePickerProps['presets'] = [
-        { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
-        { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
-        { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
-        { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
-        { label: 'Последние 182 дня', value: [dayjs().add(-182, 'd'), dayjs()] },
-        { label: 'Последние 365 дней', value: [dayjs().add(-365, 'd'), dayjs()] },
-    ];
-
     const oldOneTickerColumns = [
         isAllTickers && {
             title: 'Ticker',
             dataIndex: 'ticker',
             key: 'ticker',
+        },{
+            title: 'Name',
+            dataIndex: 'name',
+            key: 'name',
         },
         {
             title: 'OpenTime',
@@ -364,6 +363,13 @@ export const TestingPage = () => {
             key: 'newPnl',
             render: (val) => moneyFormat(val, 'RUB', 2, 2)
         },
+        {
+            title: "Действия",
+            render: (value, row) => {
+                return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`}
+                             target="_blank">Тестер</Link>;
+            }
+        }
     ].filter(Boolean);
 
     const rowClassName = (record: any, index: number) => {

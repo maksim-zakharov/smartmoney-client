@@ -922,8 +922,12 @@ const MainPage: React.FC = () => {
             }
         ];
 
+        const minDate = moment('2024-12-19T00:00:00.000Z');
+        const min = minDate.unix()
+        const max = moment().unix()
+
         const [{fromDate, toDate}, setDates] = useState({
-            fromDate: moment().startOf('years').unix(),
+            fromDate: min,
             toDate: 9999999999999
         });
 
@@ -962,10 +966,6 @@ const MainPage: React.FC = () => {
             array: data.ema200, color: 'rgba(0, 0, 255, 0.65)', title: 'ema200'
         }];
 
-        const minDate = moment('2024-12-19T00:00:00.000Z');
-        const min = minDate.unix()
-        const max = moment().unix()
-
         const diff = max - min;
         const length = 10;
         const part = Math.floor(diff / length);
@@ -978,11 +978,11 @@ const MainPage: React.FC = () => {
 
         betweedDates.forEach(date => marks[date.unix()] = date.format('YYYY-MM-DD'))
 
-    const timeframeLabelMap = {
+        const timeframeLabelMap = {
             300: 'M5',
-        900: 'M15',
-        1800: 'M30'
-    }
+            900: 'M15',
+            1800: 'M30'
+        }
 
         return (
             <Space direction="vertical" style={{width: '100%'}}>
