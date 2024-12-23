@@ -46,8 +46,7 @@ import {
 } from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./TestPage/TestChart";
-
-const {RangePicker} = DatePicker;
+import {DatesPicker} from "./DatesPicker";
 
 export const TestingPage = () => {
     const [swipType, setSwipType] = useState('tradinghub');
@@ -417,10 +416,8 @@ export const TestingPage = () => {
                 </Col>
                 <Col>
                     <FormItem label="Период">
-                        <RangePicker
-                            presets={rangePresets}
+                        <DatesPicker
                             value={dates}
-                            format="YYYY-MM-DD"
                             onChange={onChangeRangeDates}/>
                     </FormItem>
                 </Col>
