@@ -189,33 +189,44 @@ export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
 
         if(existSH?.index !== existSL?.index){
             // Есть ли несколько вершин подряд
-            if (existSH && lastHighIndex > lastLowIndex) {
+            if (existSH && lastHighIndex >= lastLowIndex) {
                 highs[lastHighIndex] = null;
                 lastHighIndex = prevHighIndex;
             }
-            if (existSL && lastHighIndex < lastLowIndex) {
+            if (existSL && lastHighIndex <= lastLowIndex) {
                 lows[lastLowIndex] = null;
                 lastLowIndex = prevLowIndex;
             }
         } else {
-            if(lastLowIndex === -1 || lastHighIndex < lastLowIndex){
-                highs[i] = existSH;
-                if (existSH) {
-                    prevHighIndex = lastHighIndex;
-                    lastHighIndex = i;
-                }
+            // if(lastLowIndex === -1 || lastHighIndex < lastLowIndex){
+            //     highs[i] = existSH;
+            //     if (existSH) {
+            //         prevHighIndex = lastHighIndex;
+            //         lastHighIndex = i;
+            //     }
+            //
+            //     continue;
+            // }
+            //
+            // if(lastHighIndex === -1 || lastHighIndex > lastLowIndex){
+            //     lows[i] = existSL;
+            //     if (existSL) {
+            //         prevLowIndex = lastLowIndex;
+            //         lastLowIndex = i;
+            //     }
+            //
+            //     continue;
+            // }
 
-                continue;
+            highs[i] = existSH;
+            if (existSH) {
+                prevHighIndex = lastHighIndex;
+                lastHighIndex = i;
             }
-
-            if(lastHighIndex === -1 || lastHighIndex > lastLowIndex){
-                lows[i] = existSL;
-                if (existSL) {
-                    prevLowIndex = lastLowIndex;
-                    lastLowIndex = i;
-                }
-
-                continue;
+            lows[i] = existSL;
+            if (existSL) {
+                prevLowIndex = lastLowIndex;
+                lastLowIndex = i;
             }
         }
 
@@ -233,6 +244,16 @@ export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
                 prevLowIndex = lastLowIndex;
                 lastLowIndex = i;
             }
+        }
+    }
+
+    for (let i = 0; i < highs.length; i++) {
+        if(highs[i] && lows[i]){
+            swings[i] = highs[i]
+        } else if(highs[i]){
+            swings[i] = highs[i]
+        } else if(lows[i]){
+            swings[i] = lows[i]
         }
     }
 
