@@ -6,7 +6,7 @@ import {
     calculateTrend,
     Cross,
     khrustikCalculateSwings,
-    Swing
+    Swing, tradinghubCalculateTrendNew
 } from "./samurai_patterns";
 
 describe('sm_khrustik', () => {
@@ -122,14 +122,7 @@ describe('sm_khrustik', () => {
             {from: {index: 3}, extremum: {index: 4}, to: {index: 5}, text: 'IDM', type: 'high'}
         ]
 
-        let {highs, lows, swings: _swings} =khrustikCalculateSwings(candles);
-        const {structure, highParts, lowParts} = calculateStructure(highs, lows, candles)
-
-        const trend = calculateTrend(highParts, lowParts, candles).trend;
-        const boses = calculateCrosses(highParts, lowParts, candles, trend).boses;
-        // const orderBlocks = calculateOB(highParts, lowParts, candles, trend, true, true);
-
-        const result = boses;
+        const result = [];
 
         structures.forEach((s, index) => {
             expect(s.from.index).toEqual(result[index].from.index)
