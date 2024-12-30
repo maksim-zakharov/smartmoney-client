@@ -6,6 +6,7 @@ export interface HistoryObject {
   open: number;
   close: number;
   time: number
+  volume: number;
 }
 
 export const api = createApi({
