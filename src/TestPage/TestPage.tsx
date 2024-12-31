@@ -38,17 +38,34 @@ const markerColors = {
     bullColor: "rgb(20, 131, 92)"
 }
 
+enum StrategySource {
+    TradingHub = 'tradinghub',
+    Dobrunia = 'dobrunia',
+    Khrustik = 'khrustik',
+}
+
 export const TestPage = () => {
-    const [trandsType, setTrandsType] = useState('tradinghub');
-    const [swipType, setSwipType] = useState('tradinghub');
-    const [structureType, setStructureType] = useState('tradinghub');
-    const [obType, setOBType] = useState('samurai');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [swipType, setSwipType] = useState(StrategySource.TradingHub);
+    const [structureType, setStructureType] = useState(StrategySource.TradingHub);
+    const [obType, setOBType] = useState(StrategySource.Dobrunia);
     const [data, setData] = useState([]);
-    const [checkboxValues, setCheckboxValues] = useState(['tradeOB', 'BOS', 'swings']);
+
+    const trandsType = searchParams.get('trandsType') || StrategySource.TradingHub;
+    const setTrandsType = (values) => {
+        searchParams.set('trandsType', values);
+        setSearchParams(searchParams)
+    }
+
+    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings").split(',');
+    const setCheckboxValues = (values) => {
+        searchParams.set('checkboxes', values.join(','));
+        setSearchParams(searchParams)
+    }
+
     const [windowLength, setWindowLength] = useState(5);
     const [maxDiff, setMaxDiff] = useState(0);
     const [multiStop, setMultiStop] = useState(5);
-    const [searchParams, setSearchParams] = useSearchParams();
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '300';
     const fromDate = searchParams.get('fromDate') || dayjs('2024-10-01T00:00:00Z').startOf('day').unix();
@@ -117,8 +134,8 @@ export const TestPage = () => {
     const {ema, swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
         const swipsMap = {
             'samurai':calculateSwings,
-            'khrustik': khrustikCalculateSwings,
-            'tradinghub' : tradinghubCalculateSwings
+            [StrategySource.Khrustik]: khrustikCalculateSwings,
+            [StrategySource.TradingHub] : tradinghubCalculateSwings
         }
         const swipCallback = swipsMap[swipType]  || calculateSwings;
         const ema = calculateEMA(
@@ -132,7 +149,7 @@ export const TestPage = () => {
         let trend = [];
         let boses = [];
         let orderBlocks = [];
-        if(trandsType === 'tradinghub'){
+        if(trandsType === StrategySource.TradingHub){
             const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data);
             _swings = thSwings;
             highs = thSwings.filter(t => t?.side === 'high');
@@ -140,7 +157,7 @@ export const TestPage = () => {
             trend = thTrend;
             boses = thBoses;
             orderBlocks = calculateOB(highParts, lowParts, data, trend, config.excludeIDM, obType !== 'samurai');
-        } else if(trandsType === 'dobrinya'){
+        } else if(trandsType === StrategySource.Dobrunia){
             const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(_swings, data, obType !== 'samurai');
             _swings = thSwings;
             highs = thSwings.filter(t => t?.side === 'high');
@@ -642,32 +659,32 @@ export const TestPage = () => {
             <Form.Item label="Свипы">
                 <Radio.Group onChange={e => setSwipType(e.target.value)}
                              value={swipType}>
-                    <Radio value="tradinghub">tradinghub</Radio>
-                    <Radio value="samurai">самурай</Radio>
-                    <Radio value="khrustik">хрустик</Radio>
+                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
+                    {/*<Radio value="samurai">самурай</Radio>*/}
+                    {/*<Radio value="khrustik">хрустик</Radio>*/}
                 </Radio.Group>
             </Form.Item>
             <Form.Item label="Тренд">
                 <Radio.Group onChange={e => setTrandsType(e.target.value)}
                              value={trandsType}>
-                    <Radio value="tradinghub">tradinghub</Radio>
-                    <Radio value="dobrinya">dobrinya</Radio>
-                    <Radio value="samurai">самурай</Radio>
-                    <Radio value="khrustik">хрустику</Radio>
+                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
+                    <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
+                    {/*<Radio value="samurai">самурай</Radio>*/}
+                    <Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>
                 </Radio.Group>
             </Form.Item>
             <Form.Item label="Босы">
                 <Radio.Group onChange={e => setStructureType(e.target.value)}
                              value={structureType}>
-                    <Radio value="tradinghub">tradinghub</Radio>
-                    <Radio value="samurai">самурай</Radio>
+                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
+                    {/*<Radio value="samurai">самурай</Radio>*/}
                 </Radio.Group>
             </Form.Item>
             <Form.Item label="ОБ">
                 <Radio.Group onChange={e => setOBType(e.target.value)}
                              value={obType}>
-                    <Radio value="samurai">самурай</Radio>
-                    <Radio value="dobrinya">добрыня</Radio>
+                    {/*<Radio value="samurai">самурай</Radio>*/}
+                    <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
                 </Radio.Group>
             </Form.Item>
         </Space>
