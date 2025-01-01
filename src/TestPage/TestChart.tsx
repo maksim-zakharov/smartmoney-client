@@ -111,7 +111,7 @@ export const Chart: FC<{
             textColor: color
         },
         width: chartContainerRef.current?.clientWidth,
-        height: chartContainerRef.current?.height || 500,
+        height: chartContainerRef.current?.height || 650,
     }
 
     useEffect(() => {

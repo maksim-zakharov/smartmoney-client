@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Checkbox, Divider, Form, Input, Radio, Slider, SliderSingleProps, Space} from "antd";
+import {Checkbox, Divider, Form, Input, Radio, Row, Slider, SliderSingleProps, Space} from "antd";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
@@ -647,46 +647,46 @@ export const TestPage = () => {
     };
 
     return <>
-        <Divider plain orientation="left">Инструмент</Divider>
-        <Space>
+        <Space style={{alignItems: 'baseline'}}>
             <TickerSelect value={ticker} onSelect={onSelectTicker}/>
             <TimeframeSelect value={tf} onChange={setSize}/>
             <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                          onChange={onChangeRangeDates}/>
-        </Space>
-        <Divider plain orientation="left">Структура</Divider>
-        <Space>
-            <Form.Item label="Свипы">
-                <Radio.Group onChange={e => setSwipType(e.target.value)}
-                             value={swipType}>
-                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                    {/*<Radio value="samurai">самурай</Radio>*/}
-                    {/*<Radio value="khrustik">хрустик</Radio>*/}
-                </Radio.Group>
-            </Form.Item>
-            <Form.Item label="Тренд">
-                <Radio.Group onChange={e => setTrandsType(e.target.value)}
-                             value={trandsType}>
-                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                    <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
-                    {/*<Radio value="samurai">самурай</Radio>*/}
-                    <Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>
-                </Radio.Group>
-            </Form.Item>
-            <Form.Item label="Босы">
-                <Radio.Group onChange={e => setStructureType(e.target.value)}
-                             value={structureType}>
-                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                    {/*<Radio value="samurai">самурай</Radio>*/}
-                </Radio.Group>
-            </Form.Item>
-            <Form.Item label="ОБ">
-                <Radio.Group onChange={e => setOBType(e.target.value)}
-                             value={obType}>
-                    {/*<Radio value="samurai">самурай</Radio>*/}
-                    <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
-                </Radio.Group>
-            </Form.Item>
+            <Divider plain orientation="left" type="vertical"/>
+
+            <Row>
+                <Form.Item label="Свипы">
+                    <Radio.Group onChange={e => setSwipType(e.target.value)}
+                                 value={swipType}>
+                        <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
+                        {/*<Radio value="samurai">самурай</Radio>*/}
+                        {/*<Radio value="khrustik">хрустик</Radio>*/}
+                    </Radio.Group>
+                </Form.Item>
+                <Form.Item label="Тренд">
+                    <Radio.Group onChange={e => setTrandsType(e.target.value)}
+                                 value={trandsType}>
+                        <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
+                        <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
+                        {/*<Radio value="samurai">самурай</Radio>*/}
+                        <Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>
+                    </Radio.Group>
+                </Form.Item>
+                <Form.Item label="Босы">
+                    <Radio.Group onChange={e => setStructureType(e.target.value)}
+                                 value={structureType}>
+                        <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
+                        {/*<Radio value="samurai">самурай</Radio>*/}
+                    </Radio.Group>
+                </Form.Item>
+                <Form.Item label="ОБ">
+                    <Radio.Group onChange={e => setOBType(e.target.value)}
+                                 value={obType}>
+                        {/*<Radio value="samurai">самурай</Radio>*/}
+                        <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
+                    </Radio.Group>
+                </Form.Item>
+            </Row>
         </Space>
         <Divider plain orientation="left">Риски</Divider>
         <Space>

@@ -19,5 +19,6 @@ export const DatesPicker = ({value, onChange}) => {
         presets={rangePresets}
         value={value}
         format="YYYY-MM-DD"
+        style={{width: 250}}
         onChange={onChange}/>
 }

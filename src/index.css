@@ -2,13 +2,14 @@ body {
     margin: 0;
 }
 
-.buy{
+.buy {
     /*background-color: rgba(11,162,100,0.4);*/
     /*color: rgb(166,189,213)*/
     background-color: #15785566;
     color: rgb(44, 232, 156);
 }
-.sell{
+
+.sell {
     /*background-color: rgba(157,43,56,0.4);*/
     /*color: rgb(166,189,213)*/
     background-color: #d1261b66;
@@ -57,4 +58,12 @@ body {
             }
         }
     }
+}
+
+.ant-divider-horizontal.ant-divider-with-text {
+    margin: 8px 0;
+}
+
+.ant-row > .ant-form-item{
+    margin-bottom: 0;
 }
