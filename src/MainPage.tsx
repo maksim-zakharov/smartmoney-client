@@ -771,18 +771,19 @@ const MainPage: React.FC = () => {
             setSearchParams(searchParams);
         };
 
+    const [selectedTicker, setSelectedTicker] = useState();
         const [selectedTF, setSelectedTF] = useState();
         const [selectedName, setSelectedName] = useState();
 
         const positions = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && p.limitTradeId && p.stopLoss?.status === "working"), [patterns]);
         const orders = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && !p.limitTradeId), [patterns]);
-        const history = useMemo(() => patterns.filter(p => (!selectedName || p.pattern === selectedName) && (!selectedTF || p.timeframe === selectedTF) && (p.takeTradeId || p.stopTradeId)).filter(row => row.limitTrade?.price && (row.stopLossTrade?.price || row.takeProfitTrade?.price)).map(row => ({
+        const history = useMemo(() => patterns.filter(p => (!selectedTicker || p.ticker === selectedTicker) && (!selectedName || p.pattern === selectedName) && (!selectedTF || p.timeframe === selectedTF) && (p.takeTradeId || p.stopTradeId)).filter(row => row.limitTrade?.price && (row.stopLossTrade?.price || row.takeProfitTrade?.price)).map(row => ({
             ...row,
             PnL: row.limitTrade?.side === "buy" ?
                 accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price)
                 : row.limitTrade?.side === "sell" ?
                     accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
-        })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [selectedName, selectedTF, accTradesOrdernoQtyMap, patterns]);
+        })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [selectedName, selectedTicker, selectedTF, accTradesOrdernoQtyMap, patterns]);
 
         const historyTableData = useMemo(() => {
             let data = history.map((p: any) => ({
@@ -1039,8 +1040,11 @@ const MainPage: React.FC = () => {
             const tfOptions = useMemo(() => Object.entries(timeframeLabelMap).map(([value, label]) => ({value, label})), []);
 
             const nameOptions = useMemo(() => Array.from(new Set(history.map(h => h.pattern))).map((value) => ({value, label: value})), []);
+            const tickerOptions = useMemo(() => Array.from(new Set(history.map(h => h.ticker))).sort().map((value) => ({value, label: value})), []);
 
             return <Space>
+                <Select style={{width: 200}} allowClear placeholder="Выберите тикер" options={tickerOptions}
+                        value={selectedTicker} onChange={setSelectedTicker}/>
                 <Select style={{width: 200}} allowClear placeholder="Выберите паттерн" options={nameOptions}
                         value={selectedName} onChange={setSelectedName}/>
                 <Select style={{width: 200}} allowClear placeholder="Выберите таймфрейм" options={tfOptions}
