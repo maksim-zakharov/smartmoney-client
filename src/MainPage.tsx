@@ -142,7 +142,7 @@ export const ChartComponent = props => {
                     textColor: color
                 },
                 width: chartContainerRef.current.clientWidth,
-                height: 600
+                height: 570
             });
 
             const newSeries = chart.addCandlestickSeries({
@@ -771,7 +771,7 @@ const MainPage: React.FC = () => {
             setSearchParams(searchParams);
         };
 
-    const [selectedTicker, setSelectedTicker] = useState();
+        const [selectedTicker, setSelectedTicker] = useState();
         const [selectedTF, setSelectedTF] = useState();
         const [selectedName, setSelectedName] = useState();
 
@@ -891,6 +891,8 @@ const MainPage: React.FC = () => {
             return undefined;
         }, [selectedPattern]);
 
+        const pageSize = 12;
+
         const items: TabsProps["items"] = [
             {
                 key: "positions",
@@ -898,7 +900,7 @@ const MainPage: React.FC = () => {
                 children:
                     <Table size="small" dataSource={positions} columns={positionsColumns}
                            pagination={{
-                               pageSize: 15,
+                               pageSize,
                            }}
                            onRow={(record) => {
                                return {
@@ -914,7 +916,7 @@ const MainPage: React.FC = () => {
                 children:
                     <Table size="small" dataSource={orders} columns={columns}
                            pagination={{
-                               pageSize: 15,
+                               pageSize,
                            }}
                            onRow={(record: any) => {
                                return {
@@ -930,7 +932,7 @@ const MainPage: React.FC = () => {
                 children:
                     <Table size="small" dataSource={historyTableData} columns={historyColumns as any} rowKey={getPatternKey}
                            pagination={{
-                               pageSize: 15,
+                               pageSize,
                            }}
                            onRow={(record) => {
                                return {
@@ -1037,10 +1039,19 @@ const MainPage: React.FC = () => {
 
         const TabExtra = () => {
 
-            const tfOptions = useMemo(() => Object.entries(timeframeLabelMap).map(([value, label]) => ({value, label})), []);
+            const tfOptions = useMemo(() => Object.entries(timeframeLabelMap).map(([value, label]) => ({
+                value,
+                label
+            })), []);
 
-            const nameOptions = useMemo(() => Array.from(new Set(history.map(h => h.pattern))).map((value) => ({value, label: value})), []);
-            const tickerOptions = useMemo(() => Array.from(new Set(history.map(h => h.ticker))).sort().map((value) => ({value, label: value})), []);
+            const nameOptions = useMemo(() => Array.from(new Set(history.map(h => h.pattern))).map((value) => ({
+                value,
+                label: value
+            })), []);
+            const tickerOptions = useMemo(() => Array.from(new Set(history.map(h => h.ticker))).sort().map((value) => ({
+                value,
+                label: value
+            })), []);
 
             return <Space>
                 <Select style={{width: 200}} allowClear placeholder="Выберите тикер" options={tickerOptions}
@@ -1060,74 +1071,74 @@ const MainPage: React.FC = () => {
                             tooltip={{formatter: val => moment(val * 1000).format('YYYY-MM-DD')}}
                             min={min} step={60 * 60 * 24} max={moment().unix()}/>
                 </div>
-                {names.map(name =>
-                    <Row gutter={8}>
-                        <Col span={8}>
-                            <Card bordered={false}>
-                                <Statistic
-                                    title={`Общий финрез ${name}`}
-                                    value={moneyFormat(NametotalPnL[name], 'RUB', 2, 2)}
-                                    precision={2}
-                                    valueStyle={{color: NametotalPnL[name] > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={8}>
-                            <Card bordered={false}>
-                                <Statistic
-                                    title={`Прибыльных сделок ${name}`}
-                                    value={Nameprofits[name]}
-                                    valueStyle={{color: "rgb(44, 232, 156)"}}
-                                    suffix={`(${!Nameprofits[name] ? 0 : (Nameprofits[name] * 100 / ((Nameprofits[name] || 0) + (Namelosses[name] || 0))).toFixed(2)})%`}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={8}>
-                            <Card bordered={false}>
-                                <Statistic
-                                    title={`Убыточных сделок ${name}`}
-                                    value={Namelosses[name]}
-                                    valueStyle={{color: "rgb(255, 117, 132)"}}
-                                    suffix={`(${!Namelosses[name] ? 0 : (Namelosses[name] * 100 / ((Nameprofits[name] || 0) + (Namelosses[name] || 0))).toFixed(2)})%`}
-                                />
-                            </Card>
-                        </Col>
-                    </Row>
-                )}
-                {timeframes.map(tf =>
-                    <Row gutter={8}>
-                        <Col span={8}>
-                            <Card bordered={false}>
-                                <Statistic
-                                    title={`Общий финрез ${timeframeLabelMap[tf]}`}
-                                    value={moneyFormat(totalPnL[tf], 'RUB', 2, 2)}
-                                    precision={2}
-                                    valueStyle={{color: totalPnL[tf] > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={8}>
-                            <Card bordered={false}>
-                                <Statistic
-                                    title={`Прибыльных сделок ${timeframeLabelMap[tf]}`}
-                                    value={profits[tf]}
-                                    valueStyle={{color: "rgb(44, 232, 156)"}}
-                                    suffix={`(${!profits[tf] ? 0 : (profits[tf] * 100 / ((profits[tf] || 0) + (losses[tf] || 0))).toFixed(2)})%`}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={8}>
-                            <Card bordered={false}>
-                                <Statistic
-                                    title={`Убыточных сделок ${timeframeLabelMap[tf]}`}
-                                    value={losses[tf]}
-                                    valueStyle={{color: "rgb(255, 117, 132)"}}
-                                    suffix={`(${!losses[tf] ? 0 : (losses[tf] * 100 / ((profits[tf] || 0) + (losses[tf] || 0))).toFixed(2)})%`}
-                                />
-                            </Card>
-                        </Col>
-                    </Row>
-                )}
+
+                <Row gutter={8}>
+                    {names.map(name => <Col span={4}>
+                        <Card bordered={false}>
+                            <Statistic
+                                title={`Общий финрез ${name}`}
+                                value={moneyFormat(NametotalPnL[name], 'RUB', 2, 2)}
+                                precision={2}
+                                valueStyle={{color: NametotalPnL[name] > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                            />
+                        </Card>
+                    </Col>)}
+                    {names.map(name => <Col span={4}>
+                        <Card bordered={false}>
+                            <Statistic
+                                title={`Прибыльных сделок ${name}`}
+                                value={Nameprofits[name]}
+                                valueStyle={{color: "rgb(44, 232, 156)"}}
+                                suffix={`(${!Nameprofits[name] ? 0 : (Nameprofits[name] * 100 / ((Nameprofits[name] || 0) + (Namelosses[name] || 0))).toFixed(2)})%`}
+                            />
+                        </Card>
+                    </Col>)}
+                    {names.map(name => <Col span={4}>
+                        <Card bordered={false}>
+                            <Statistic
+                                title={`Убыточных сделок ${name}`}
+                                value={Namelosses[name]}
+                                valueStyle={{color: "rgb(255, 117, 132)"}}
+                                suffix={`(${!Namelosses[name] ? 0 : (Namelosses[name] * 100 / ((Nameprofits[name] || 0) + (Namelosses[name] || 0))).toFixed(2)})%`}
+                            />
+                        </Card>
+                    </Col>)}
+                </Row>
+
+
+                <Row gutter={8}>
+                    {timeframes.map(tf => <Col span={4}>
+                        <Card bordered={false}>
+                            <Statistic
+                                title={`Общий финрез ${timeframeLabelMap[tf]}`}
+                                value={moneyFormat(totalPnL[tf], 'RUB', 2, 2)}
+                                precision={2}
+                                valueStyle={{color: totalPnL[tf] > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                            />
+                        </Card>
+                    </Col>)}
+                    {timeframes.map(tf => <Col span={4}>
+                        <Card bordered={false}>
+                            <Statistic
+                                title={`Прибыльных сделок ${timeframeLabelMap[tf]}`}
+                                value={profits[tf]}
+                                valueStyle={{color: "rgb(44, 232, 156)"}}
+                                suffix={`(${!profits[tf] ? 0 : (profits[tf] * 100 / ((profits[tf] || 0) + (losses[tf] || 0))).toFixed(2)})%`}
+                            />
+                        </Card>
+                    </Col>)}
+                    {timeframes.map(tf => <Col span={4}>
+                        <Card bordered={false}>
+                            <Statistic
+                                title={`Убыточных сделок ${timeframeLabelMap[tf]}`}
+                                value={losses[tf]}
+                                valueStyle={{color: "rgb(255, 117, 132)"}}
+                                suffix={`(${!losses[tf] ? 0 : (losses[tf] * 100 / ((profits[tf] || 0) + (losses[tf] || 0))).toFixed(2)})%`}
+                            />
+                        </Card>
+                    </Col>)}
+                </Row>
+
                 <div style={{display: 'grid', gridTemplateColumns: 'auto 1300px', gap: '8px'}}>
                     <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
                                     markers={markers}
