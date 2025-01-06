@@ -690,28 +690,30 @@ export const TestPage = () => {
         </Space>
         <Divider plain orientation="left">Риски</Divider>
         <Space>
-            <Form.Item label="Риск на сделку">
-                <Input value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
-            </Form.Item>
-            <Form.Item label="Risk Rate">
-                <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop} min={1} max={10} step={1}/>
-            </Form.Item>
-            <Form.Item label="Percent Rate">
-                <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
-            </Form.Item>
-            <Space>
-                <div>Профит: {new Intl.NumberFormat('ru-RU', {
-                    style: 'currency',
-                    currency: 'RUB',
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                }).format(profit.PnL)}</div>
-                <div>Прибыльных: {profit.profits}</div>
-                <div>Убыточных: {profit.losses}</div>
-                <div>Винрейт: {((profit.profits / (profit.profits + profit.losses)) * 100).toFixed(2)}%</div>
-            </Space>
+            <Row>
+                <Form.Item label="Риск на сделку">
+                    <Input value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
+                </Form.Item>
+                <Form.Item label="Risk Rate">
+                    <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop} min={1} max={10} step={1}/>
+                </Form.Item>
+                <Form.Item label="Percent Rate">
+                    <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
+                </Form.Item>
+                <Space>
+                    <div>Профит: {new Intl.NumberFormat('ru-RU', {
+                        style: 'currency',
+                        currency: 'RUB',
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    }).format(profit.PnL)}</div>
+                    <div>Прибыльных: {profit.profits}</div>
+                    <div>Убыточных: {profit.losses}</div>
+                    <div>Винрейт: {((profit.profits / (profit.profits + profit.losses)) * 100).toFixed(2)}%</div>
+                </Space>
+                <Slider style={{width: 200}} defaultValue={windowLength} onChange={setWindowLength}/>
+            </Row>
         </Space>
-        <Slider defaultValue={windowLength} onChange={setWindowLength}/>
         <Checkbox.Group onChange={setCheckboxValues} value={checkboxValues}>
             <Checkbox key="smPatterns" value="smPatterns">smPatterns</Checkbox>
             <Checkbox key="oldTrend" value="oldTrend">Тренд</Checkbox>

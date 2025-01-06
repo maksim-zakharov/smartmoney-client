@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Card, Col, Row, Select, Slider, SliderSingleProps, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
-import {useCandlesQuery, usePortfolioQuery} from "./api";
+import {useCandlesQuery, usePortfolioQuery, useSecurityQuery} from "./api";
 import {
     ColorType,
     createChart,
@@ -21,6 +21,14 @@ function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);
     return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()) / 1000;
 }
+
+export const digitsAfterDot = (num) => {
+    if (!num) {
+        return 0;
+    }
+
+    return `${num}`.split('.')?.[1]?.length || 0;
+};
 
 const roundTime = (date: any, tf: string, utc: boolean = true) => {
 
@@ -63,6 +71,7 @@ export const ChartComponent = props => {
         emas,
         tf,
         markers,
+        digits,
         position, take, stop,
         orderBlock,
         imbalance,
@@ -102,7 +111,14 @@ export const ChartComponent = props => {
                         // }
 
                         return moment.unix(businessDayOrTimestamp / 1000).format('MMM D, YYYY HH:mm');
-                    }
+                    },
+                    priceFormatter: price => {
+                        const formatter = new Intl.NumberFormat('en-US', {
+                            minimumFractionDigits: digits,  // Минимальное количество знаков после запятой
+                            maximumFractionDigits: digits,  // Максимальное количество знаков после запятой
+                        });
+                        return formatter.format(price);
+                    },
                 },
                 timeScale: {
                     rightOffset: 20,  // это создаст отступ на 10 временных единиц вправо
@@ -147,6 +163,8 @@ export const ChartComponent = props => {
             });
 
             const volumeSeries = chart.addHistogramSeries({
+                lastValueVisible: false,
+                priceLineVisible: false,
                 priceFormat: {
                     type: 'volume',
                 },
@@ -308,7 +326,7 @@ export const ChartComponent = props => {
                 chart.remove();
             };
         },
-        [position, tf, take, stop, data, emas, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor]
+        [position, tf, take, digits, stop, data, emas, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor]
     );
 
     return (
@@ -415,6 +433,10 @@ const MainPage: React.FC = () => {
             skip: !symbol || !selectedPattern,
             pollingInterval: 10000,
         });
+
+        const {data: security} = useSecurityQuery({symbol});
+
+        const digits = useMemo(() => security ? digitsAfterDot(security.minstep) : 2, [security]);
 
         const candles = data.candles;
 
@@ -1107,6 +1129,7 @@ const MainPage: React.FC = () => {
                                     markers={markers}
                                     orderBlock={orderBlock}
                                     imbalance={imbalance}
+                                    digits={digits}
                                     position={position}/>
                     <Tabs defaultActiveKey="positions" activeKey={tab} items={items} onChange={onChange}
                           tabBarExtraContent={<TabExtra/>}/>
