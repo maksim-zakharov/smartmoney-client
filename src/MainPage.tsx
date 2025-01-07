@@ -1139,16 +1139,20 @@ const MainPage: React.FC = () => {
                     </Col>)}
                 </Row>
 
-                <div style={{display: 'grid', gridTemplateColumns: 'auto 1300px', gap: '8px'}}>
-                    <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
-                                    markers={markers}
-                                    orderBlock={orderBlock}
-                                    imbalance={imbalance}
-                                    digits={digits}
-                                    position={position}/>
-                    <Tabs defaultActiveKey="positions" activeKey={tab} items={items} onChange={onChange}
-                          tabBarExtraContent={<TabExtra/>}/>
-                </div>
+                <Row gutter={8}>
+                    <Col span={8}>
+                        <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
+                                        markers={markers}
+                                        orderBlock={orderBlock}
+                                        imbalance={imbalance}
+                                        digits={digits}
+                                        position={position}/>
+                    </Col>
+                    <Col span={16}>
+                        <Tabs defaultActiveKey="positions" activeKey={tab} items={items} onChange={onChange}
+                              tabBarExtraContent={<TabExtra/>}/>
+                    </Col>
+                </Row>
             </Space>
         );
     }
