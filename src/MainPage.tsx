@@ -1140,6 +1140,10 @@ const MainPage: React.FC = () => {
                 </Row>
 
                 <Row gutter={8}>
+                    <Col span={16}>
+                        <Tabs defaultActiveKey="positions" activeKey={tab} items={items} onChange={onChange}
+                              tabBarExtraContent={<TabExtra/>}/>
+                    </Col>
                     <Col span={8}>
                         <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
                                         markers={markers}
@@ -1147,10 +1151,6 @@ const MainPage: React.FC = () => {
                                         imbalance={imbalance}
                                         digits={digits}
                                         position={position}/>
-                    </Col>
-                    <Col span={16}>
-                        <Tabs defaultActiveKey="positions" activeKey={tab} items={items} onChange={onChange}
-                              tabBarExtraContent={<TabExtra/>}/>
                     </Col>
                 </Row>
             </Space>
