@@ -172,6 +172,39 @@ export const Chart: FC<{
             })));
         }
 
+
+        const timeCandleMap = new Map(data.map(d => [d.time, d]));
+
+        const toolTip: any = document.createElement('div');
+        toolTip.style =`position: absolute; display: none; z-index: 1000; top: 12px; left: 12px; right: 66px;`;
+        chartContainerRef!.current.appendChild(toolTip);
+
+        // toolTip.innerHTML = '123'
+        // update tooltip
+        chartApi.subscribeCrosshairMove(param => {
+            if (
+                param.point === undefined ||
+                !param.time ||
+                param.point.x < 0 ||
+                param.point.x > chartContainerRef!.current.clientWidth ||
+                param.point.y < 0 ||
+                param.point.y > chartContainerRef!.current.clientHeight
+            ) {
+                toolTip.style.display = 'none';
+            } else {
+                // time will be in the same format that we supplied to setData.
+                toolTip.style.display = 'flex';
+                const data = param.seriesData.get(series);
+                // symbol ОТКР МАКС МИН ЗАКР ОБЪЕМ
+                const candle: any = timeCandleMap.get(data.time)
+
+                toolTip.innerHTML = `ОТКР: ${candle.open} МАКС: ${candle.high} МИН: ${candle.low} ЗАКР: ${candle.close}`; // ОБЪЕМ: ${shortNumberFormat(candle.volume)} ОБЪЕМ (деньги): ${moneyFormat(candle.volume * candle.close * lotSize)}`;
+
+                toolTip.style.left = '12px';
+                toolTip.style.top = '12px';
+            }
+        });
+
         const emaSeries = createSeries(chartApi, 'Line', {
             color: "rgb(255, 186, 102)",
             lineWidth: 1,
@@ -227,6 +260,7 @@ export const Chart: FC<{
     // })
 
     return <div
+        style={{position: 'relative'}}
         ref={chartContainerRef}
     />
 };
