@@ -1,4 +1,6 @@
 import { Typography } from "antd";
+import img21 from "../../assets/img_21.png"
+import img22 from "../../assets/img_22.png"
 
 const SMTPage = () => {
 
@@ -8,8 +10,8 @@ const SMTPage = () => {
             look any order Block then dont trade blindly you have to wait for inducement or Liquidity
             sweep Clear Confirmation before buy sell on Order block . Let see how it work .
         </Typography.Paragraph>
-        <img src="/public/img_21.png"/>
-        <img src="/public/img_22.png"/>
+        <img src={img21}/>
+        <img src={img22}/>
     </>
 }
 

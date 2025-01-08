@@ -1,4 +1,6 @@
 import {Typography} from "antd";
+import img29 from "../../assets/img_29.png"
+import img30 from "../../assets/img_30.png"
 
 const POIPage = () => {
 
@@ -10,8 +12,8 @@ const POIPage = () => {
             inducement and Liquidity . Now i am going to explain here that how many types POI work in
             smart Money concept and how you can identify , Lets Understand By Given Few Examples .
         </Typography.Paragraph>
-        <img src="/public/img_29.png"/>
-        <img src="/public/img_30.png"/>
+        <img src={img29}/>
+        <img src={img30}/>
     </>
 }
 

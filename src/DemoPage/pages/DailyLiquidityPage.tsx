@@ -1,4 +1,6 @@
 import {Typography} from "antd";
+import img27 from "../../assets/img_27.png"
+import img28 from "../../assets/img_28.png"
 
 const DailyLiquidityPage = () => {
 
@@ -13,8 +15,8 @@ const DailyLiquidityPage = () => {
             better in Entries Parts. Now you can understand more better clear that How you can identify
             Daily Liquidity .
         </Typography.Paragraph>
-        <img src="/public/img_27.png"/>
-        <img src="/public/img_28.png"/>
+        <img src={img27}/>
+        <img src={img28}/>
     </>
 }
 

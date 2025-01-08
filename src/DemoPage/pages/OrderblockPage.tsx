@@ -1,4 +1,8 @@
 import {Typography} from "antd";
+import img15 from "../../assets/img_15.png"
+import img16 from "../../assets/img_16.png"
+import img17 from "../../assets/img_17.png"
+import img18 from "../../assets/img_18.png"
 
 const OrderblockPage = () => {
 
@@ -10,15 +14,15 @@ const OrderblockPage = () => {
             are going to discuss in more details that how we can identify and trade it. price generally
             react from Decesional Order Block or Extreme Order block .
         </Typography.Paragraph>
-        <img src="/public/img_15.png"/>
-        <img src="/public/img_16.png"/>
+        <img src={img15}/>
+        <img src={img16}/>
         <Typography.Paragraph>
             Now you can understand more better clearly that how things actually work in order Block , to
             mark oder Block Proper imbalance and Liquidity Sweep Order Block .in upcoming chapters
             we 'll discuss Entries Parts in more details . these are just examples to identify valid OB .
         </Typography.Paragraph>
-        <img src="/public/img_17.png"/>
-        <img src="/public/img_18.png"/>
+        <img src={img17}/>
+        <img src={img18}/>
     </>
 }
 

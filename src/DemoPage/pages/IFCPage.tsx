@@ -1,4 +1,6 @@
 import {Typography} from "antd";
+import img19 from "../../assets/img_19.png"
+import img20 from "../../assets/img_20.png"
 
 const IFCPage = () => {
 
@@ -12,8 +14,8 @@ const IFCPage = () => {
             you can use in some cases ( if Price already tap on any Other HTF POI ) . Now you can
             understand More Better Below Given Charts Explanations .
         </Typography.Paragraph>
-        <img src="/public/img_19.png"/>
-        <img src="/public/img_20.png"/>
+        <img src={img19}/>
+        <img src={img20}/>
     </>
 }
 
