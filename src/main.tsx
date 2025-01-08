@@ -31,7 +31,8 @@ createRoot(document.getElementById("root")!).render(
                                 theme={{
                                     token: {
                                         // Seed Token
-                                        colorBgLayout: 'black', // 'rgb(30,44,57)',
+                                        colorBgLayout: 'rgb(23, 35, 46)', // 'rgb(30,44,57)',
+                                        colorBgElevated: 'rgb(30, 44, 57)',
                                         colorBgBase: 'black', // 'rgb(30,44,57)',
                                         colorBorderBg: 'black', // 'rgb(23, 35, 46)',
                                         colorTextBase: 'rgb(166, 189, 213)',
