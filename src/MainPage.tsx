@@ -463,19 +463,19 @@ const MainPage: React.FC = () => {
                 dataIndex: "pattern",
                 key: "pattern"
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Время пересвипа",
                 dataIndex: "liquidSweepTime",
                 key: "liquidSweepTime",
                 render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Время ОБ",
                 dataIndex: "orderblockTime",
                 key: "orderblockTime",
                 render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Вход",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
@@ -525,7 +525,7 @@ const MainPage: React.FC = () => {
                     return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%) (${moneyFormat(PnL * (accTradesOrdernoQtyMap[row.limitTrade?.orderno] || row.limitTrade?.qtyUnits), 'RUB', 2, 2)})`;
                 }
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Действия",
                 render: (value, row) => {
                     return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}`}
@@ -545,13 +545,13 @@ const MainPage: React.FC = () => {
                 dataIndex: "pattern",
                 key: "pattern"
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Время пересвипа",
                 dataIndex: "liquidSweepTime",
                 key: "liquidSweepTime",
                 render: (value) => moment(value).format("YYYY-MM-DD HH:mm")
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Время ОБ",
                 dataIndex: "orderblockTime",
                 key: "orderblockTime",
@@ -627,30 +627,30 @@ const MainPage: React.FC = () => {
                 dataIndex: "ticker",
                 key: "ticker"
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Паттерн",
                 dataIndex: "pattern",
                 key: "pattern"
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Тип",
                 dataIndex: "side",
                 key: "side",
                 render: (value, row) => row?.type !== 'summary' ? row?.limitTrade?.side || "-" : ""
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Пересвип",
                 dataIndex: "liquidSweepTime",
                 key: "liquidSweepTime",
                 render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "ОБ",
                 dataIndex: "orderblockTime",
                 key: "orderblockTime",
                 render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Вход",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
@@ -736,7 +736,7 @@ const MainPage: React.FC = () => {
                 align: "right",
                 render: (value, row) => row.PnL ? moneyFormat(row.PnL, "RUB", 2, 2) : "-"
             },
-            width > 430 && {
+            width > 1200 && {
                 title: "Действия",
                 render: (value, row) => {
                     return row?.type !== 'summary' ?
@@ -1140,7 +1140,7 @@ const MainPage: React.FC = () => {
                 <Row gutter={8}>
                     <Col span={width > 1200 ? 16 : 24}>
                         <Tabs defaultActiveKey="positions" activeKey={tab} items={items} onChange={onChange}
-                              tabBarExtraContent={width > 430 && <TabExtra/>}/>
+                              tabBarExtraContent={width > 1200 && <TabExtra/>}/>
                     </Col>
                     {width > 1200 && <Col span={8}>
                         <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
