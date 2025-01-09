@@ -156,7 +156,7 @@ export const TestPage = () => {
             lows = thSwings.filter(t => t?.side === 'low');
             trend = thTrend;
             boses = thBoses;
-            orderBlocks = calculateOB(highParts, lowParts, data, trend, config.excludeIDM, obType !== 'samurai');
+            orderBlocks = calculateOB(highParts, lowParts, data, trend, config.excludeIDM, obType.toString() !== 'samurai');
         } else if(trandsType === StrategySource.Dobrunia){
             const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(_swings, data, obType !== 'samurai');
             _swings = thSwings;
@@ -667,9 +667,9 @@ export const TestPage = () => {
                     <Radio.Group onChange={e => setTrandsType(e.target.value)}
                                  value={trandsType}>
                         <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                        <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
+                        {/*<Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>*/}
                         {/*<Radio value="samurai">самурай</Radio>*/}
-                        <Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>
+                        {/*<Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>*/}
                     </Radio.Group>
                 </Form.Item>
                 <Form.Item label="Босы">

@@ -58,7 +58,7 @@ export const Chart: FC<{
         areaBottomColor: "rgba(41, 98, 255, 0.28)"
     };
 
-    const chartContainerRef = useRef<any>();
+    const chartContainerRef = useRef<HTMLDivElement>();
 
     const options = {
         crosshair: {
@@ -111,7 +111,7 @@ export const Chart: FC<{
             textColor: color
         },
         width: chartContainerRef.current?.clientWidth,
-        height: chartContainerRef.current?.height || 710,
+        height: chartContainerRef.current?.clientHeight || 710,
     }
 
     useEffect(() => {
@@ -175,11 +175,14 @@ export const Chart: FC<{
 
         const timeCandleMap = new Map(data.map(d => [d.time, d]));
 
+        if(chartContainerRef!.current.children.length > 1 && !chartContainerRef!.current.children[0].classList.contains('tv-lightweight-charts')){
+            chartContainerRef!.current.children[0].remove();
+        }
+
         const toolTip: any = document.createElement('div');
         toolTip.style =`position: absolute; display: none; z-index: 1000; top: 12px; left: 12px; right: 66px;`;
         chartContainerRef!.current.appendChild(toolTip);
 
-        // toolTip.innerHTML = '123'
         // update tooltip
         chartApi.subscribeCrosshairMove(param => {
             if (

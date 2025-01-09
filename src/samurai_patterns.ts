@@ -9,7 +9,7 @@ export interface Swing {
     text?: string;
 }
 
-export interface Trend{
+export interface Trend {
     time: number;
     trend: number;
     index: number;
@@ -23,7 +23,7 @@ export const calculateSwings = (candles: HistoryObject[]) => {
     for (let i = 0; i < candles.length; i++) {
         const [left, middle, right] = candles.slice(i, i + 3);
         // Чтобы на каждую свечку было значение
-        if(!right){
+        if (!right) {
             highs.push(null);
             lows.push(null);
             continue;
@@ -63,17 +63,17 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
     const lows: (Swing | null)[] = new Array(candles.length).fill(null);
 
     const hasValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject) => {
-        if(leftCandle.high <= currentCandle.high && nextCandle.high < currentCandle.high && nextCandle.low <= currentCandle.low){
+        if (leftCandle.high <= currentCandle.high && nextCandle.high < currentCandle.high && nextCandle.low <= currentCandle.low) {
             return 'high'
         }
-        if(leftCandle.low >= currentCandle.low && nextCandle.low > currentCandle.low && nextCandle.high >= currentCandle.high){
+        if (leftCandle.low >= currentCandle.low && nextCandle.low > currentCandle.low && nextCandle.high >= currentCandle.high) {
             return 'low'
         }
         return '';
     };
 
     // Тупо первая точка
-    if(candles.length){
+    if (candles.length) {
         highs[0] = {
             side: 'high',
             time: candles[0].time,
@@ -92,14 +92,14 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
     for (let i = 1; i < candles.length - 1; i++) {
         const prevCandle = candles[prevCandleIndex];
         const currentCandle = candles[i];
-        if(isInsideBar(prevCandle, currentCandle)){
+        if (isInsideBar(prevCandle, currentCandle)) {
             continue;
         }
         let nextIndex = i + 1;
         let nextCandle = candles[nextIndex];
         for (; nextIndex < candles.length - 1; nextIndex++) {
             nextCandle = candles[nextIndex]
-            if(!isInsideBar(currentCandle, nextCandle)){
+            if (!isInsideBar(currentCandle, nextCandle)) {
                 break;
             }
         }
@@ -113,24 +113,24 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
         }
         highs[i] = isValidPullback === 'high' ? swing : null;
         lows[i] = isValidPullback === 'low' ? swing : null;
-        swings[i] = isValidPullback? swing : null;
+        swings[i] = isValidPullback ? swing : null;
         prevCandleIndex = i;
-        i+=diff;
+        i += diff;
     }
 
     let lastSwingIndex = -1;
     // фильтруем вершины подряд
     for (let i = 0; i < swings.length; i++) {
-        if(!swings[i]){
+        if (!swings[i]) {
             continue;
         }
         const swing = swings[i];
-        if(lastSwingIndex === - 1 || swing.side !== swings[lastSwingIndex]?.side){
+        if (lastSwingIndex === -1 || swing.side !== swings[lastSwingIndex]?.side) {
             lastSwingIndex = i;
             continue;
         }
-        if(swing.side === 'high'){
-            if(swing.price > swings[lastSwingIndex]?.price){
+        if (swing.side === 'high') {
+            if (swing.price > swings[lastSwingIndex]?.price) {
                 swings[lastSwingIndex] = null;
                 highs[lastSwingIndex] = null;
                 lastSwingIndex = i;
@@ -139,8 +139,8 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
                 highs[i] = null;
             }
         }
-        if(swing.side === 'low'){
-            if(swing.price < swings[lastSwingIndex]?.price){
+        if (swing.side === 'low') {
+            if (swing.price < swings[lastSwingIndex]?.price) {
                 swings[lastSwingIndex] = null;
                 lows[lastSwingIndex] = null;
                 lastSwingIndex = i;
@@ -187,7 +187,7 @@ export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
         const existSH = currentCandle.high > prevCandle.high ? high : null;
         const existSL = currentCandle.low < prevCandle.low ? low : null;
 
-        if(existSH?.index !== existSL?.index){
+        if (existSH?.index !== existSL?.index) {
             // Есть ли несколько вершин подряд
             if (existSH && lastHighIndex >= lastLowIndex) {
                 highs[lastHighIndex] = null;
@@ -230,7 +230,7 @@ export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
             }
         }
 
-        if(lastLowIndex === -1 || lastHighIndex < lastLowIndex){
+        if (lastLowIndex === -1 || lastHighIndex < lastLowIndex) {
             highs[i] = existSH;
             if (existSH) {
                 prevHighIndex = lastHighIndex;
@@ -238,7 +238,7 @@ export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
             }
         }
 
-        if(lastHighIndex === -1 || lastHighIndex > lastLowIndex){
+        if (lastHighIndex === -1 || lastHighIndex > lastLowIndex) {
             lows[i] = existSL;
             if (existSL) {
                 prevLowIndex = lastLowIndex;
@@ -248,11 +248,11 @@ export const khrustikCalculateSwings = (candles: HistoryObject[]) => {
     }
 
     for (let i = 0; i < highs.length; i++) {
-        if(highs[i] && lows[i]){
+        if (highs[i] && lows[i]) {
             swings[i] = highs[i]
-        } else if(highs[i]){
+        } else if (highs[i]) {
             swings[i] = highs[i]
-        } else if(lows[i]){
+        } else if (lows[i]) {
             swings[i] = lows[i]
         }
     }
@@ -304,33 +304,33 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
         const nextStruct = structure[i + 1];
 
 
-        if(nextStruct.side === 'low'){
+        if (nextStruct.side === 'low') {
             const batch = lows.slice(currStruct.index + 1, nextStruct.index + 2);
             const index = batch.reduce((acc, curr) => {
-                if(curr && candles[acc].low > curr.price){
+                if (curr && candles[acc].low > curr.price) {
                     return curr.index + 1;
                 }
                 return acc;
             }, currStruct.index + 1);
 
             const lowest = candles[index];
-            if(lowest){
+            if (lowest) {
                 structure[i + 1].index = index;
                 structure[i + 1].price = lowest.low;
                 structure[i + 1].time = lowest.time;
             }
         }
-        if(nextStruct.side === 'high'){
+        if (nextStruct.side === 'high') {
             const batch = highs.slice(currStruct.index + 1, nextStruct.index + 2);
             const index = batch.reduce((acc, curr) => {
-                if(curr && candles[acc].high < curr.price){
+                if (curr && candles[acc].high < curr.price) {
                     return curr.index + 1;
                 }
                 return acc;
             }, currStruct.index + 1);
 
             const lowest = candles[index];
-            if(lowest){
+            if (lowest) {
                 structure[i + 1].index = index;
                 structure[i + 1].price = lowest.high;
                 structure[i + 1].time = lowest.time;
@@ -343,8 +343,8 @@ export const calculateStructure = (highs: Swing[], lows: Swing[], candles: Histo
 
     let lastStructIndex = 0;
     for (let i = 0; i < candles.length; i++) {
-        while(structure[lastStructIndex]?.index === i){
-            if(structure[lastStructIndex].side === 'high'){
+        while (structure[lastStructIndex]?.index === i) {
+            if (structure[lastStructIndex].side === 'high') {
                 highParts[i] = structure[lastStructIndex]
                 lowParts[i] = null;
             } else {
@@ -368,16 +368,16 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
     let prevLow = null;
     let currLow = null;
     for (let i = 0; i < candles.length; i++) {
-        if(highs[i]){
+        if (highs[i]) {
             prevHigh = currHigh;
             currHigh = highs[i];
         }
-        if(lows[i]){
+        if (lows[i]) {
             prevLow = currLow;
             currLow = lows[i];
         }
 
-        if(!prevHigh || !prevLow || !currLow || !currHigh){
+        if (!prevHigh || !prevLow || !currLow || !currHigh) {
             trend[i] = null;
             continue;
         }
@@ -400,8 +400,8 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
             highLows[i] = {high: currHigh, low: currLow};
         }
 
-        if(!trend[i] && trend[i-1]) {
-            trend[i] = {time: candles[i].time, trend: trend[i-1].trend, index: trend[i-1].index};
+        if (!trend[i] && trend[i - 1]) {
+            trend[i] = {time: candles[i].time, trend: trend[i - 1].trend, index: trend[i - 1].index};
         }
     }
 
@@ -414,10 +414,10 @@ const removeDuplicates = (swings: Swing[], boses: Cross[]) => {
     // Ищет ближайший IDM для текущей точки
     const closestIDM = (extremum: Swing) => {
         for (let i = extremum.index; i >= 0; i--) {
-            if(!boses[i]){
+            if (!boses[i]) {
                 continue;
             }
-            if(extremum.side !== boses[i].type){
+            if (extremum.side !== boses[i].type) {
                 return i;
             }
         }
@@ -427,18 +427,18 @@ const removeDuplicates = (swings: Swing[], boses: Cross[]) => {
     let lastExt = null;
     for (let i = 0; i < swings.length; i++) {
         const currSwing = swings[i];
-        if(!currSwing){
+        if (!currSwing) {
             continue;
         }
         // Убираем точки на которых нет HH LL
-        if(!currSwing.text){
+        if (!currSwing.text) {
             swings[i] = null;
             continue;
         }
 
-        if(lastExt && currSwing.side === lastExt.side){
+        if (lastExt && currSwing.side === lastExt.side) {
             const index = closestIDM(currSwing);
-            if(index > -1){
+            if (index > -1) {
                 // Удаляем пересечение
                 boses[index] = null
             }
@@ -454,27 +454,27 @@ const removeDuplicates = (swings: Swing[], boses: Cross[]) => {
 
 // Рисует BOS если LL или HH перекрываются
 const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
-    const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high'? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
+    const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
 
     const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
     for (let i = 0; i < candles.length; i++) {
-        if(!swings[i]){
+        if (!swings[i]) {
             continue;
         }
 
-        if(swings[i].side === 'high'){
+        if (swings[i].side === 'high') {
             const from = swings[i];
             let to;
             let liquidityCandle = candles[i];
             let text = '';
             for (let j = i + 1; j < candles.length; j++) {
                 const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[j]);
-                if(!isTakenOutLiquidity){
+                if (!isTakenOutLiquidity) {
                     continue;
                 }
                 const isClose = hasClose('high', liquidityCandle, candles[j]);
-                if(isClose){
+                if (isClose) {
                     to = {index: j, time: candles[j].time, price: candles[j].close};
                     text = 'BOS';
                     break;
@@ -482,12 +482,12 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
                     liquidityCandle = candles[j];
                 }
             }
-            if(!to){
+            if (!to) {
                 continue;
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if(text)
+            if (text)
                 boses[i] = {
                     from,
                     to,
@@ -495,18 +495,18 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
                     type: 'high',
                     text
                 }
-        } else if(swings[i].side === 'low'){
+        } else if (swings[i].side === 'low') {
             const from = swings[i];
             let to;
             let liquidityCandle = candles[i];
             let text = '';
             for (let j = i + 1; j < candles.length; j++) {
                 const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[j]);
-                if(!isTakenOutLiquidity){
+                if (!isTakenOutLiquidity) {
                     continue;
                 }
                 const isClose = hasClose('low', liquidityCandle, candles[j]);
-                if(isClose){
+                if (isClose) {
                     to = {index: j, time: candles[j].time, price: candles[j].close};
                     text = 'BOS';
                     break;
@@ -514,13 +514,13 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
                     liquidityCandle = candles[j];
                 }
             }
-            if(!to){
+            if (!to) {
                 continue;
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if(text)
-                boses[i] ={
+            if (text)
+                boses[i] = {
                     from,
                     to,
                     textCandle: candles[textIndex],
@@ -539,24 +539,24 @@ const deleteInternalStructures = (swings: Swing[], boses: Cross[]) => {
     for (let i = 0; i < boses.length; i++) {
         const currBos = boses[i];
 
-        if(!currBos){
+        if (!currBos) {
             continue;
         }
 
-        if(currBos.type === 'high'){
-            if(!lastHighBOS){
+        if (currBos.type === 'high') {
+            if (!lastHighBOS) {
                 lastHighBOS = currBos;
-            } else if(lastHighBOS.from.index < currBos.from.index && lastHighBOS.to.index >= currBos.to.index) {
+            } else if (lastHighBOS.from.index < currBos.from.index && lastHighBOS.to.index >= currBos.to.index) {
                 boses[i] = null;
                 swings[i] = null;
             } else {
                 lastHighBOS = null;
             }
             continue;
-        } else if (currBos.type === 'low'){
-            if(!lastLowBOS){
+        } else if (currBos.type === 'low') {
+            if (!lastLowBOS) {
                 lastLowBOS = currBos;
-            } else if(lastLowBOS.from.index < currBos.from.index && lastLowBOS.to.index >= currBos.to.index) {
+            } else if (lastLowBOS.from.index < currBos.from.index && lastLowBOS.to.index >= currBos.to.index) {
                 boses[i] = null;
                 swings[i] = null;
             } else {
@@ -573,7 +573,7 @@ const removeIDM = (boses: Cross[], trend: Trend[]) => {
     const IDM = boses.filter(b => b?.text === 'IDM');
     for (let i = 0; i < IDM.length; i++) {
         const idmtrend = IDM[i].type === 'high' ? 1 : -1;
-        if(trend[IDM[i].from.index] && idmtrend === trend[IDM[i].from.index].trend){
+        if (trend[IDM[i].from.index] && idmtrend === trend[IDM[i].from.index].trend) {
             boses[IDM[i].from.index] = null;
         }
     }
@@ -587,11 +587,11 @@ const deleteExternalStructures = (swings: Swing[], boses: Cross[]) => {
     for (let i = 0; i < highs.length; i++) {
         const currBos = highs[i];
 
-        if(!lastHighExternalBOS){
+        if (!lastHighExternalBOS) {
             lastHighExternalBOS = currBos;
             continue;
         }
-        if(lastHighExternalBOS.from.index < currBos.from.index && lastHighExternalBOS.to.index >= currBos.to.index){
+        if (lastHighExternalBOS.from.index < currBos.from.index && lastHighExternalBOS.to.index >= currBos.to.index) {
             boses[lastHighExternalBOS.from.index] = null;
         }
         lastHighExternalBOS = currBos;
@@ -602,11 +602,11 @@ const deleteExternalStructures = (swings: Swing[], boses: Cross[]) => {
     for (let i = 0; i < lows.length; i++) {
         const currBos = lows[i];
 
-        if(!lastLowExternalBOS){
+        if (!lastLowExternalBOS) {
             lastLowExternalBOS = currBos;
             continue;
         }
-        if(lastLowExternalBOS.from.index < currBos.from.index && lastLowExternalBOS.to.index >= currBos.to.index){
+        if (lastLowExternalBOS.from.index < currBos.from.index && lastLowExternalBOS.to.index >= currBos.to.index) {
             boses[lastLowExternalBOS.from.index] = null;
         }
         lastLowExternalBOS = currBos;
@@ -615,62 +615,128 @@ const deleteExternalStructures = (swings: Swing[], boses: Cross[]) => {
     return {swings, boses};
 }
 
-const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
+const markHHLL = (candles: HistoryObject[], swings: Swing[], withIDM: boolean = false) => {
     let boses: Cross[] = new Array(candles.length).fill(null);
 
-    let lastLow = null;
-    let lowestLow = null;
+    let lastLow: (Swing & {idmSwing?: Swing}) = null;
+    let lowestLow: (Swing & {idmSwing?: Swing}) = null;
 
-    let lastHigh = null;
-    let highestHigh = null;
+    let lastHigh: (Swing & {idmSwing?: Swing}) = null;
+    let highestHigh: (Swing & {idmSwing?: Swing}) = null;
+
+    let confirmHighIndex: number = -1;
+    let confirmLowIndex: number = -1;
+
+    // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
+    const updateHighestHigh = (index: number, swing: Swing) => {
+        if (swing
+            && swing.side === 'high'
+            && (!highestHigh || highestHigh.price < swing.price)
+            && confirmLowIndex < index
+        ) {
+            if (highestHigh) {
+                delete highestHigh.text
+                if (highestHigh.idmSwing)
+                    boses[highestHigh.idmSwing.index] = null;
+            }
+            highestHigh = swing;
+            highestHigh.idmSwing = lastLow;
+        }
+    }
+
+    const updateLowestLow = (index: number, swing: Swing) => {
+        if (swing
+            && swing.side === 'low'
+            && (!lowestLow || lowestLow.price > swing.price)
+            && confirmHighIndex < index
+        ) {
+            if(lowestLow){
+                delete lowestLow.text
+                if (lowestLow.idmSwing)
+                    boses[lowestLow.idmSwing.index] = null;
+            }
+
+            lowestLow = swing;
+            lowestLow.idmSwing = lastHigh;
+        }
+    }
+
+    const confirmLowestLow = (index: number) => {
+        if (lowestLow
+            && lowestLow.idmSwing
+            && !boses[lowestLow.idmSwing.index]
+            && lowestLow.idmSwing.price < candles[index].high
+        ) {
+            lowestLow.text = 'LL';
+            confirmLowIndex = index;
+            const from = lowestLow.idmSwing
+            const to = {index, time: candles[index].time, price: candles[index].close}
+
+            const textIndex = from.index + Math.floor((to.index - from.index) / 2);
+
+            if (lowestLow.index !== to.index) {
+                boses[from.index] = {
+                    type: 'high',
+                    text: 'IDM',
+                    from,
+                    textCandle: candles[textIndex],
+                    to,
+                    extremum: lowestLow
+                } as Cross
+            }
+
+            highestHigh = null;
+        }
+    }
+
+    const confirmHighestHigh = (index: number) => {
+        if (highestHigh
+            && highestHigh.idmSwing
+            && !boses[highestHigh.idmSwing.index]
+            && highestHigh.idmSwing.price > candles[index].low
+        ) {
+            highestHigh.text = 'HH';
+            confirmHighIndex = index;
+            const from = highestHigh.idmSwing
+            const to = {index, time: candles[index].time, price: candles[index].close}
+
+            const textIndex = from.index + Math.floor((to.index - from.index) / 2);
+
+            if (highestHigh.index !== to.index) {
+                boses[from.index] = {
+                    type: 'low',
+                    text: 'IDM',
+                    from,
+                    textCandle: candles[textIndex],
+                    to,
+                    extremum: highestHigh
+                } as Cross
+            }
+
+            lowestLow = null;
+        }
+    }
+
+    const updateLast = (swing: Swing) => {
+        lastHigh = swing && swing.side === 'high' ? swing : lastHigh;
+        lastLow = swing && swing.side === 'low' ? swing : lastLow;
+    }
 
     for (let i = 0; i < swings.length; i++) {
-
-        /**
-         * Варианты HH LL
-         * 1) Пока не определены, определяем первый хай и лой
-         * 2) Определены, (сужение): Если некст хай ниже ХХ или некст лой выше ЛЛ - ХХ и ЛЛ остаются
-         * 3) Определены, тренд: хай выше ХХ - обновляем ХХ, обнуляем ЛЛ. лой ниже ЛЛ - обновляем ЛЛ, обнуляем ХХ.
-         */
-
         // Заполняем если пусто (п.1)
-        if(!highestHigh && swings[i] && swings[i].side === 'high'){
-            highestHigh = swings[i];
-            highestHigh.text = 'HH';
-        }
+        // if(!highestHigh && swings[i] && swings[i].side === 'high'){
+        //     highestHigh = swings[i];
+        //     highestHigh.text = 'HH';
+        //     confirmHighIndex = i;
+        // }
 
-        if(!lowestLow && swings[i] && swings[i].side === 'low'){
-            lowestLow = swings[i];
-        }
+        confirmLowestLow(i)
+        confirmHighestHigh(i);
 
-        // Если нисходящий тренд - передвигаем хай, но ХХ не записываем
-        if(swings[i] && swings[i].side === 'high' && lastHigh && lastHigh.price > swings[i].price){
-            highestHigh = swings[i];
-        }
-        // Если тренд восходящий - просто двигаем лой и не перезаписываем ЛЛ
-        if(swings[i] && swings[i].side === 'low' && lastLow && lastLow.price < swings[i].price){
-            lowestLow = swings[i];
-        }
+        updateHighestHigh(i, swings[i]);
+        updateLowestLow(i, swings[i]);
 
-        // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
-        if(swings[i] && swings[i].side === 'high' && lastHigh && lastHigh.price < swings[i].price){
-            delete highestHigh.text
-            delete lastLow.text
-            highestHigh = swings[i];
-            highestHigh.text = 'HH';
-            lastLow.text = 'IDM'
-        }
-        // Если тренд нисходящий - перезаписываем каждый ЛЛ и прошлый удаляем
-        if(swings[i] && swings[i].side === 'low' && lastLow && lastLow.price > swings[i].price){
-            delete lowestLow.text
-            delete lastHigh.text
-            lowestLow = swings[i];
-            lowestLow.text = 'LL';
-            lastHigh.text = 'IDM'
-        }
-
-        lastHigh = swings[i] && swings[i].side === 'high'? swings[i] : lastHigh;
-        lastLow = swings[i] && swings[i].side === 'low'? swings[i] : lastLow;
+        updateLast(swings[i])
     }
 
     return boses;
@@ -693,22 +759,22 @@ const drawIDM = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
          * lasthigh обнвляется если он пересекается либо если обновляется HH
          */
 
-        lastHigh = swings[i] && swings[i].side === 'high'? swings[i] : lastHigh;
-        lastLow = swings[i] && swings[i].side === 'low'? swings[i] : lastLow;
+        lastHigh = swings[i] && swings[i].side === 'high' ? swings[i] : lastHigh;
+        lastLow = swings[i] && swings[i].side === 'low' ? swings[i] : lastLow;
 
-        if(swings[i] && swings[i].text === 'HH'){
+        if (swings[i] && swings[i].text === 'HH') {
             confirmedLow = lastLow;
             lastHH = swings[i];
             confirmedHigh = null;
         }
-        if(swings[i] && swings[i].text === 'LL'){
+        if (swings[i] && swings[i].text === 'LL') {
             confirmedHigh = lastHigh;
             lastLL = swings[i];
             confirmedLow = null;
         }
 
         // Ждем cross
-        if(lastLL && confirmedHigh && candles[i] && candles[i].high > confirmedHigh.price) {
+        if (lastLL && confirmedHigh && candles[i] && candles[i].high > confirmedHigh.price) {
             const candle = candles[i];
             const from = confirmedHigh;
             const diff = i - from.index;
@@ -726,7 +792,7 @@ const drawIDM = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             // confirmedLow = null;
         }
 
-        if(lastHH && confirmedLow && candles[i] && candles[i].low < confirmedLow.price) {
+        if (lastHH && confirmedLow && candles[i] && candles[i].low < confirmedLow.price) {
             const candle = candles[i];
             const from = confirmedLow;
             const diff = i - from.index;
@@ -750,7 +816,7 @@ const drawIDM = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
 
 const deleteEmptySwings = (swings: Swing[]) => {
     for (let i = 0; i < swings.length; i++) {
-        if(!swings[i]?.text){
+        if (!swings[i]?.text) {
             swings[i] = null;
             continue;
         }
@@ -773,7 +839,7 @@ const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
             trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
         }
 
-        if(nextBos && curBos.type !== nextBos.type){
+        if (nextBos && curBos.type !== nextBos.type) {
             curBos.text = 'CHoCH'
         }
     }
@@ -784,7 +850,7 @@ const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
 const deleteNonConfirmed = (swings: Swing[], boses: Cross[]) => {
     const bosExtremumIdx = new Set(boses.map(b => b?.extremum?.index));
     for (let i = 0; i < swings.length; i++) {
-        if(swings[i] && !bosExtremumIdx.has(swings[i].index)){
+        if (swings[i] && !bosExtremumIdx.has(swings[i].index)) {
             swings[i] = null;
         }
     }
@@ -805,7 +871,7 @@ const markIFC = (candles: HistoryObject[], swings: Swing[]) => {
 
     for (let i = 0; i < swings.length; i++) {
         const bos = swings[i];
-        if(bos && ['HH', 'LL'].includes(bos.text) && isIFC(bos.side, candles[bos.index])){
+        if (bos && ['HH', 'LL'].includes(bos.text) && isIFC(bos.side, candles[bos.index])) {
             bos.text = 'IFC'
         }
     }
@@ -831,11 +897,11 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
 
     for (let i = 0; i < candles.length; i++) {
 
-        if(i > 0)
-        trend[i] = trend[i - 1];
+        if (i > 0)
+            trend[i] = trend[i - 1];
 
         // Ловим бос для перехая
-        if(highestHigh && candles[i].close > highestHigh.price){
+        if (highestHigh && candles[i].close > highestHigh.price) {
             const from = highestHigh;
             const to = {index: i, time: candles[i].time, price: candles[i].close}
             const extremum = lowestLow;
@@ -845,13 +911,13 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             boses[from.index] = {
                 type: 'high',
                 text: 'BOS',
-                 from,
+                from,
                 to,
                 extremum,
                 textCandle
             }
             trend[i] = {time: candles[i].time, trend: 1, index: i};
-            if(i > 0 && trend[i-1] && trend[i].trend !==trend[i-1].trend){
+            if (i > 0 && trend[i - 1] && trend[i].trend !== trend[i - 1].trend) {
                 boses[from.index].text = 'CHoCH';
                 // orderBlocks = orderBlocks.map(ob => ob?.endIndex >= i ? null : ob);
             }
@@ -861,11 +927,11 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             const batch = swings.slice(from.index, to.index).filter(s => s?.side === 'low');
             let lowest;
             for (let j = 0; j < batch.length; j++) {
-                if(!lowest){
+                if (!lowest) {
                     lowest = batch[j];
                     swings[lowest.index].text = 'LL';
                     lowestLow = swings[lowest.index];
-                } else if(lowest.price > batch[j].price){
+                } else if (lowest.price > batch[j].price) {
                     delete swings[lowest.index].text;
                     lowest = batch[j];
                     swings[lowest.index].text = 'LL';
@@ -877,7 +943,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             lastHigh = null;
         }
         // Ловим бос для перелоя
-        if(lowestLow && candles[i].close < lowestLow.price){
+        if (lowestLow && candles[i].close < lowestLow.price) {
             const from = lowestLow;
             const to = {index: i, time: candles[i].time, price: candles[i].close}
             const extremum = highestHigh;
@@ -893,7 +959,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                 textCandle
             }
             trend[i] = {time: candles[i].time, trend: -1, index: i};
-            if(i > 0 && trend[i-1] && trend[i].trend !==trend[i-1].trend){
+            if (i > 0 && trend[i - 1] && trend[i].trend !== trend[i - 1].trend) {
                 boses[from.index].text = 'CHoCH';
                 // orderBlocks = orderBlocks.map(ob => ob?.endIndex >= i ? null : ob);
             }
@@ -903,11 +969,11 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             const batch = swings.slice(from.index, to.index).filter(s => s?.side === 'high');
             let lowest;
             for (let j = 0; j < batch.length; j++) {
-                if(!lowest){
+                if (!lowest) {
                     lowest = batch[j];
                     swings[lowest.index].text = 'HH';
                     highestHigh = swings[lowest.index];
-                } else if(lowest.price < batch[j].price){
+                } else if (lowest.price < batch[j].price) {
                     delete swings[lowest.index].text;
                     lowest = batch[j];
                     swings[lowest.index].text = 'HH';
@@ -918,14 +984,14 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             lowestLow = null;
             lastLow = null;
         }
-        if(lastHighIDM && candles[i].high >= lastHighIDM.price){
+        if (lastHighIDM && candles[i].high >= lastHighIDM.price) {
             const from = lastHighIDM;
             const to = {index: i, time: candles[i].time, price: candles[i].close}
             const extremum = lowestLow;
             const textIndex = to.index - Math.floor((to.index - from.index) / 2);
             const textCandle = candles[textIndex];
 
-            if(!boses[from.index]) {
+            if (!boses[from.index]) {
                 boses[from.index] = {
                     type: 'high',
                     text: 'IDM',
@@ -937,7 +1003,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
 
                 orderBlocks[from.index] = null;
 
-                if(isIFC(boses[from.index].type, candles[i])) {
+                if (isIFC(boses[from.index].type, candles[i])) {
                     swings[i] = {
                         side: boses[from.index].type,
                         time: candles[i].time,
@@ -950,14 +1016,14 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
 
             lastHighIDM = null;
         }
-        if(lastLowIDM && candles[i].low <= lastLowIDM.price){
+        if (lastLowIDM && candles[i].low <= lastLowIDM.price) {
             const from = lastLowIDM;
             const to = {index: i, time: candles[i].time, price: candles[i].close}
             const extremum = lowestLow;
             const textIndex = to.index - Math.floor((to.index - from.index) / 2);
             const textCandle = candles[textIndex];
 
-            if(!boses[from.index]){
+            if (!boses[from.index]) {
                 boses[from.index] = {
                     type: 'low',
                     text: 'IDM',
@@ -969,7 +1035,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
 
                 orderBlocks[from.index] = null;
 
-                if(isIFC(boses[from.index].type, candles[i])) {
+                if (isIFC(boses[from.index].type, candles[i])) {
                     swings[i] = {
                         side: boses[from.index].type,
                         time: candles[i].time,
@@ -983,7 +1049,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             lastLowIDM = null;
         }
 
-        if(swings[i]?.side === 'high' && trend[i]?.trend === -1 && (!lastHighIDM || lastHighIDM.price < swings[i].price)){
+        if (swings[i]?.side === 'high' && trend[i]?.trend === -1 && (!lastHighIDM || lastHighIDM.price < swings[i].price)) {
             const high = swings[i];
             const index = high?.index
             const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
@@ -1015,7 +1081,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             }
         }
 
-        if(swings[i]?.side === 'low' && trend[i]?.trend === 1 && (!lastLowIDM || lastLowIDM.price > swings[i].price)) {
+        if (swings[i]?.side === 'low' && trend[i]?.trend === 1 && (!lastLowIDM || lastLowIDM.price > swings[i].price)) {
             const low = swings[i];
             const index = low?.index
             const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
@@ -1052,14 +1118,14 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
         lastLow = swings[i] && swings[i].side === 'low' ? swings[i] : lastLow;
 
         // Если нет highestHigh или lowestLow - проставляем
-        if(lastHigh){
-            if(!highestHigh){
+        if (lastHigh) {
+            if (!highestHigh) {
                 highestHigh = lastHigh;
                 highestHigh.text = 'HH'
             }
         }
-        if(lastLow){
-            if(!lowestLow){
+        if (lastLow) {
+            if (!lowestLow) {
                 lowestLow = lastLow;
                 lowestLow.text = 'LL'
             }
@@ -1071,7 +1137,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
     for (let i = 1; i < notEmptyOrderblocks.length; i++) {
         const prevOB = notEmptyOrderblocks[i - 1];
         const curOB = notEmptyOrderblocks[i];
-        if(prevOB.time === curOB.time){
+        if (prevOB.time === curOB.time) {
             notEmptyOrderblocks.splice(i, 1);
         }
     }
@@ -1081,34 +1147,20 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
 
 export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
     let boses = markHHLL(candles, swings)
-    boses = drawIDM(candles, swings, boses);
     swings = deleteEmptySwings(swings);
-
-    const withoutInternal = deleteInternalStructures(swings, boses);
-    boses = withoutInternal.boses;
-    swings = withoutInternal.swings;
-
-    const withoutNonConfirmed = deleteNonConfirmed(swings, boses);
-    boses = withoutNonConfirmed.boses;
-    swings = withoutNonConfirmed.swings;
-
-    const confirmed = removeDuplicates(swings, boses);
-    boses = confirmed.boses;
-    swings = confirmed.swings;
-
     boses = drawBOS(candles, swings, boses);
-
-    const withoutExternal = deleteExternalStructures(swings, boses);
-    boses = withoutExternal.boses;
-    swings = withoutExternal.swings;
-
+    // //
+    // const withoutExternal = deleteExternalStructures(swings, boses);
+    // boses = withoutExternal.boses;
+    // swings = withoutExternal.swings;
+    //
     const withTrend = drawTrend(candles, boses);
     const trend = withTrend.trend
     boses = withTrend.boses;
 
-    boses = removeIDM(boses, trend)
-
-    swings = markIFC(candles, swings)
+    // boses = removeIDM(boses, trend)
+    //
+    // swings = markIFC(candles, swings)
 
     return {trend, boses, swings};
 };
@@ -1134,17 +1186,17 @@ export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject
     let lastHigh = null;
     let lastLow = null;
     for (let i = 0; i < swings.length; i++) {
-        if(lastLowestLow && candles[i].close < lastLowestLow.price){
+        if (lastLowestLow && candles[i].close < lastLowestLow.price) {
             trend[i] = {time: candles[i].time, trend: -1, index: i};
             lastHighestHigh = highestHigh ?? lastHighestHigh;
-            if(lastHighestHigh){
+            if (lastHighestHigh) {
                 lastHighestHigh.text = 'HH';
             }
             lastLowestLow = null;
             highestHigh = null;
             lowestLow = null;
             continue;
-        } else  if(!lastLowestLow && lowestLow && candles[i].close < lowestLow.price){
+        } else if (!lastLowestLow && lowestLow && candles[i].close < lowestLow.price) {
             trend[i] = {time: candles[i].time, trend: -1, index: i};
             lastHighestHigh = highestHigh ?? lastHighestHigh;
             highestHigh = null;
@@ -1152,24 +1204,24 @@ export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject
             continue;
         }
 
-        if(lastHighestHigh && candles[i].close > lastHighestHigh.price){
+        if (lastHighestHigh && candles[i].close > lastHighestHigh.price) {
             trend[i] = {time: candles[i].time, trend: 1, index: i};
             lastLowestLow = lowestLow ?? lastLowestLow;
-            if(lastLowestLow){
+            if (lastLowestLow) {
                 lastLowestLow.text = 'LL';
             }
             lastHighestHigh = null;
             lowestLow = null;
             highestHigh = null;
             continue;
-        } else  if(!lastHighestHigh && highestHigh && candles[i].close > highestHigh.price){
+        } else if (!lastHighestHigh && highestHigh && candles[i].close > highestHigh.price) {
             trend[i] = {time: candles[i].time, trend: 1, index: i};
             lastLowestLow = lowestLow ?? lastLowestLow;
             lowestLow = null;
             highestHigh = null;
             continue;
         }
-        if(!swings[i]){
+        if (!swings[i]) {
             trend[i] = i > 0 ? trend[i - 1] : trend[i];
             continue;
         }
@@ -1178,24 +1230,24 @@ export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject
         lowestLow = !lowestLow && swings[i].side === 'low' ? swings[i] : lowestLow;
 
         // Если уже не пусто - проверяем перехай
-        if(swings[i].side === 'high'){
-            if(swings[i].price > highestHigh.price){
+        if (swings[i].side === 'high') {
+            if (swings[i].price > highestHigh.price) {
                 delete highestHigh.text;
                 swings[i].text = 'HH';
                 highestHigh = swings[i];
                 // lowestLow = null;
-            } else if(swings[i].price < highestHigh.price){
+            } else if (swings[i].price < highestHigh.price) {
                 delete swings[i].text;
                 highestHigh.text = 'HH';
             }
         }
-        if(swings[i].side === 'low'){
-            if(swings[i].price < lowestLow.price){
+        if (swings[i].side === 'low') {
+            if (swings[i].price < lowestLow.price) {
                 delete lowestLow.text;
                 swings[i].text = 'LL';
                 lowestLow = swings[i];
                 // highestHigh = null;
-            } else if(swings[i].price > lowestLow.price){
+            } else if (swings[i].price > lowestLow.price) {
                 delete swings[i].text;
                 lowestLow.text = 'LL';
             }
@@ -1207,12 +1259,20 @@ export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject
         lastHigh = swings[i].side === 'high' ? swings[i] : lastHigh;
         lastLow = swings[i].side === 'low' ? swings[i] : lastLow;
 
-        if(swings[i].side === 'high' && prevHigh){
-            trend[i] = !lastHighestHigh && lastHigh.price > prevHigh.price ? {time: swings[i].time, trend: 1, index: swings[i].index} : trend[i - 1];
+        if (swings[i].side === 'high' && prevHigh) {
+            trend[i] = !lastHighestHigh && lastHigh.price > prevHigh.price ? {
+                time: swings[i].time,
+                trend: 1,
+                index: swings[i].index
+            } : trend[i - 1];
         }
 
-        if(swings[i].side === 'low' && prevLow){
-            trend[i] = !lastLowestLow && lastLow.price < prevLow.price ? {time: swings[i].time, trend: -1, index: swings[i].index} : trend[i - 1];
+        if (swings[i].side === 'low' && prevLow) {
+            trend[i] = !lastLowestLow && lastLow.price < prevLow.price ? {
+                time: swings[i].time,
+                trend: -1,
+                index: swings[i].index
+            } : trend[i - 1];
         }
     }
 
@@ -1234,7 +1294,7 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
 
     for (let i = 0; i < candles.length; i++) {
         const lastBOS = boses[boses.length - 1];
-        if(lastLow?.price > candles[i].close && (!lastBOS || lastBOS?.from?.index < lastLow?.index)){
+        if (lastLow?.price > candles[i].close && (!lastBOS || lastBOS?.from?.index < lastLow?.index)) {
             const diff = i - lastLow.index;
             const textIndex = diff >= 6 ? i - Math.floor((i - lastLow.index) / 2) : lastLow.index;
             boses.push({
@@ -1244,8 +1304,7 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
                 type: 'low',
                 text: trends[i]?.trend === -1 ? 'BOS' : 'IDM'
             });
-        }
-        else if(lastHigh?.price < candles[i].close && (!lastBOS || lastBOS?.from?.index < lastHigh?.index)){
+        } else if (lastHigh?.price < candles[i].close && (!lastBOS || lastBOS?.from?.index < lastHigh?.index)) {
             const diff = i - lastHigh.index;
             const textIndex = diff >= 6 ? i - Math.floor((i - lastHigh.index) / 2) : lastHigh.index;
             boses.push({
@@ -1257,10 +1316,10 @@ export const calculateCrosses = (highs: Swing[], lows: Swing[], candles: History
             });
         }
 
-        if(highs[i]){
+        if (highs[i]) {
             lastHigh = highs[i]
         }
-        if(lows[i]){
+        if (lows[i]) {
             lastLow = lows[i]
         }
     }
@@ -1275,47 +1334,47 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
 
     const EQPercent = 0.005;
 
-    const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high'? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
+    const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
 
     const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
-    const hasEQ = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high'? isEqualPercents(bossCandle.high, currentCandle.high, EQPercent) : isEqualPercents(bossCandle.low, currentCandle.low, EQPercent);
+    const hasEQ = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? isEqualPercents(bossCandle.high, currentCandle.high, EQPercent) : isEqualPercents(bossCandle.low, currentCandle.low, EQPercent);
 
     for (let i = 0; i < candles.length; i++) {
-        if(!highs[i] && !lows[i]){
+        if (!highs[i] && !lows[i]) {
             continue;
         }
 
-        if(highs[i]){
+        if (highs[i]) {
             const from = highs[i];
             let to;
             let liquidityCandle = candles[i];
             let text = '';
             for (let j = i + 1; j < candles.length; j++) {
-                if(trends[j]?.trend !== trends[i]?.trend){
+                if (trends[j]?.trend !== trends[i]?.trend) {
                     break;
                 }
                 const isClose = hasClose('high', liquidityCandle, candles[j]);
-                if(isClose){
+                if (isClose) {
                     break;
                 }
                 const isEQL = hasEQ('high', candles[i], candles[j]);
-                if(!isEQL){
+                if (!isEQL) {
                     continue;
                 }
                 to = {index: j, time: candles[j].time, price: candles[j].high};
                 text = 'EQH';
             }
             for (let j = i + 1; j < candles.length; j++) {
-                if(trends[j]?.trend !== trends[i]?.trend){
+                if (trends[j]?.trend !== trends[i]?.trend) {
                     break;
                 }
                 const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[j]);
-                if(!isTakenOutLiquidity){
+                if (!isTakenOutLiquidity) {
                     continue;
                 }
                 const isClose = hasClose('high', liquidityCandle, candles[j]);
-                if(isClose){
+                if (isClose) {
                     to = {index: j, time: candles[j].time, price: candles[j].close};
                     text = 'BOS';
                     break;
@@ -1323,49 +1382,49 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
                     liquidityCandle = candles[j];
                 }
             }
-            if(!to){
+            if (!to) {
                 continue;
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if(text !== 'BOS' || trends[i]?.trend === 1)
-            boses.push({
-                from,
-                to,
-                textCandle: candles[textIndex],
-                type: 'high',
-                text
-            })
-        } else if(lows[i]){
+            if (text !== 'BOS' || trends[i]?.trend === 1)
+                boses.push({
+                    from,
+                    to,
+                    textCandle: candles[textIndex],
+                    type: 'high',
+                    text
+                })
+        } else if (lows[i]) {
             const from = lows[i];
             let to;
             let liquidityCandle = candles[i];
             let text = '';
             for (let j = i + 1; j < candles.length; j++) {
-                if(trends[j]?.trend !== trends[i]?.trend){
+                if (trends[j]?.trend !== trends[i]?.trend) {
                     break;
                 }
                 const isClose = hasClose('low', liquidityCandle, candles[j]);
-                if(isClose){
+                if (isClose) {
                     break;
                 }
                 const isEQL = hasEQ('low', candles[i], candles[j]);
-                if(!isEQL){
+                if (!isEQL) {
                     continue;
                 }
                 to = {index: j, time: candles[j].time, price: candles[j].low};
                 text = 'EQL';
             }
             for (let j = i + 1; j < candles.length; j++) {
-                if(trends[j]?.trend !== trends[i]?.trend){
+                if (trends[j]?.trend !== trends[i]?.trend) {
                     break;
                 }
                 const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[j]);
-                if(!isTakenOutLiquidity){
+                if (!isTakenOutLiquidity) {
                     continue;
                 }
                 const isClose = hasClose('low', liquidityCandle, candles[j]);
-                if(isClose){
+                if (isClose) {
                     to = {index: j, time: candles[j].time, price: candles[j].close};
                     text = 'BOS';
                     break;
@@ -1373,40 +1432,40 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
                     liquidityCandle = candles[j];
                 }
             }
-            if(!to){
+            if (!to) {
                 continue;
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if(text !== 'BOS' || trends[i]?.trend === -1)
-            boses.push({
-                from,
-                to,
-                textCandle: candles[textIndex],
-                type: 'low',
-                text
-            })
+            if (text !== 'BOS' || trends[i]?.trend === -1)
+                boses.push({
+                    from,
+                    to,
+                    textCandle: candles[textIndex],
+                    type: 'low',
+                    text
+                })
         }
     }
 
     // отфильтровать eql eqh
     let sorted = boses.sort((a, b) => {
-            if(a.type !== b.type)
+        if (a.type !== b.type)
             return a.type.localeCompare(b.type);
-        if(a.text !== b.text)
+        if (a.text !== b.text)
             return a.text.localeCompare(b.text);
-            if(a.to.index !== b.to.index)
-                return a.to.index - b.to.index;
+        if (a.to.index !== b.to.index)
+            return a.to.index - b.to.index;
         return a.from.index - b.from.index;
     })
 
     for (let i = 1; i < sorted.length; i++) {
-            const prevBos = sorted[i - 1];
-            const currBos = sorted[i];
-            if(prevBos.type === currBos.type && prevBos.text === currBos.text && prevBos.to.index === currBos.to.index){
-                sorted.splice(i, 1);
-                        i--;
-            }
+        const prevBos = sorted[i - 1];
+        const currBos = sorted[i];
+        if (prevBos.type === currBos.type && prevBos.text === currBos.text && prevBos.to.index === currBos.to.index) {
+            sorted.splice(i, 1);
+            i--;
+        }
     }
 
     sorted = sorted.sort((a, b) => a.from.index - b.from.index);
@@ -1471,20 +1530,34 @@ export const tradinghubCalculateCrosses = (highs: Swing[], lows: Swing[], candle
 export const calculateBreakingBlocks = (crosses: Cross[], candles: HistoryObject[]) => {
     let bb = [];
     let lastCrossIndex = 0;
-    for(let i = 0; i< candles.length; i++){
+    for (let i = 0; i < candles.length; i++) {
         const lastCross = crosses[lastCrossIndex];
-        if(!lastCross){
+        if (!lastCross) {
             break;
         }
-        if(lastCross.to.index < i){
+        if (lastCross.to.index < i) {
             const textIndex = i - Math.floor((i - lastCross.from.index) / 2);
 
-            if(lastCross.type === 'high' && candles[i].low <= lastCross.to.price && lastCross.to.index+1 < i){
-                bb.push({type: 'high', textCandle: candles[textIndex], price: lastCross.from.price, fromTime: lastCross.from.time, toTime: candles[i].time, text: 'Breaking Block'});
+            if (lastCross.type === 'high' && candles[i].low <= lastCross.to.price && lastCross.to.index + 1 < i) {
+                bb.push({
+                    type: 'high',
+                    textCandle: candles[textIndex],
+                    price: lastCross.from.price,
+                    fromTime: lastCross.from.time,
+                    toTime: candles[i].time,
+                    text: 'Breaking Block'
+                });
                 lastCrossIndex++;
             }
-            if(lastCross.type === 'low' && candles[i].high >= lastCross.to.price && lastCross.to.index+1 < i){
-                bb.push({type: 'low', textCandle: candles[textIndex], price: lastCross.from.price, fromTime: lastCross.from.time, toTime: candles[i].time, text: 'Breaking Block'});
+            if (lastCross.type === 'low' && candles[i].high >= lastCross.to.price && lastCross.to.index + 1 < i) {
+                bb.push({
+                    type: 'low',
+                    textCandle: candles[textIndex],
+                    price: lastCross.from.price,
+                    fromTime: lastCross.from.time,
+                    toTime: candles[i].time,
+                    text: 'Breaking Block'
+                });
                 lastCrossIndex++;
             }
         }
@@ -1498,24 +1571,24 @@ const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high >
 const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
 
 const isOrderblock = (candles: HistoryObject[], withMove: boolean = false) => {
-    if(candles.length < 3){
+    if (candles.length < 3) {
         return null;
     }
     let firstImbalanceIndex;
     let firstCandle = candles[0];
 
     for (let i = 1; i < candles.length; i++) {
-        if(!isInsideBar(firstCandle, candles[i])){
+        if (!isInsideBar(firstCandle, candles[i])) {
             firstImbalanceIndex = i - 1;
             break;
         }
     }
 
     let lastImbalanceIndex;
-    if(withMove){
+    if (withMove) {
         // Берем не только первый имбаланс, а ближайший из 10 свечей
         for (let i = firstImbalanceIndex; i < candles.length - 2; i++) {
-            if(isImbalance(candles[i], candles[i + 2])){
+            if (isImbalance(candles[i], candles[i + 2])) {
                 firstCandle = candles[i]
                 firstImbalanceIndex = i;
 
@@ -1523,7 +1596,7 @@ const isOrderblock = (candles: HistoryObject[], withMove: boolean = false) => {
                 break;
             }
         }
-    }else {
+    } else {
         // Берем не только первый имбаланс, а ближайший из 10 свечей
         for (let i = firstImbalanceIndex; i < candles.length - 1; i++) {
             if (isImbalance(candles[firstImbalanceIndex], candles[i + 1])) {
@@ -1534,16 +1607,38 @@ const isOrderblock = (candles: HistoryObject[], withMove: boolean = false) => {
     }
 
     let lastImbalanceCandle = candles[lastImbalanceIndex];
-    if(!lastImbalanceCandle){
+    if (!lastImbalanceCandle) {
         return null;
     }
 
     let lastOrderblockCandle = candles[firstImbalanceIndex];
-    if(lastImbalanceCandle.low > firstCandle.high){
-        return {orderblock: {time: firstCandle.time, high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastOrderblockCandle, lastImbalanceCandle, firstImbalanceIndex, imbalanceIndex: lastImbalanceIndex, type: 'low'};
+    if (lastImbalanceCandle.low > firstCandle.high) {
+        return {
+            orderblock: {
+                time: firstCandle.time,
+                high: Math.max(firstCandle.high, lastOrderblockCandle.high),
+                low: Math.min(firstCandle.low, lastOrderblockCandle.low)
+            },
+            lastOrderblockCandle,
+            lastImbalanceCandle,
+            firstImbalanceIndex,
+            imbalanceIndex: lastImbalanceIndex,
+            type: 'low'
+        };
     }
-    if(lastImbalanceCandle.high < firstCandle.low){
-        return {orderblock: {time: firstCandle.time,high: Math.max(firstCandle.high, lastOrderblockCandle.high), low: Math.min(firstCandle.low, lastOrderblockCandle.low)}, lastOrderblockCandle, lastImbalanceCandle, firstImbalanceIndex, imbalanceIndex: lastImbalanceIndex, type: 'high'};
+    if (lastImbalanceCandle.high < firstCandle.low) {
+        return {
+            orderblock: {
+                time: firstCandle.time,
+                high: Math.max(firstCandle.high, lastOrderblockCandle.high),
+                low: Math.min(firstCandle.low, lastOrderblockCandle.low)
+            },
+            lastOrderblockCandle,
+            lastImbalanceCandle,
+            firstImbalanceIndex,
+            imbalanceIndex: lastImbalanceIndex,
+            type: 'high'
+        };
     }
     return null;
 }
@@ -1579,7 +1674,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     for (let i = 0; i < highs.length; i++) {
         const high = highs[i];
         const index = high?.index
-        if(!high || trends[index]?.trend !== -1){
+        if (!high || trends[index]?.trend !== -1) {
             continue;
         }
         const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
@@ -1601,7 +1696,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     for (let i = 0; i < lows.length; i++) {
         const low = lows[i];
         const index = low?.index
-        if(!lows[i] || trends[index]?.trend !== 1){
+        if (!lows[i] || trends[index]?.trend !== 1) {
             continue;
         }
         const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
@@ -1636,11 +1731,11 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
                 // торгую или нет. Торгую если есть endIndex и если это не последний хай в структуре
                 // Короче просто исключаем торговлю на первом откате (минусит)
-                if(excludeIDM){
+                if (excludeIDM) {
                     obItem.canTrade = false;
                     const typeExtremumsArray = obItem.type === 'low' ? lows : highs;
                     const betweenExtremums = typeExtremumsArray.slice(startPositionIndex, obItem.endIndex + 1);
-                    if(betweenExtremums.some(s => s?.side === obItem.type)){
+                    if (betweenExtremums.some(s => s?.side === obItem.type)) {
                         obItem.canTrade = true;
                     }
                 }
@@ -1657,11 +1752,11 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
     const positions = [];
     for (let i = 0; i < swings.length; i++) {
         const obItem = swings[i];
-        if(!obItem || obItem.text !== 'IFC'){
+        if (!obItem || obItem.text !== 'IFC') {
             continue;
         }
 
-        const side = obItem.side === 'high' ? 'short' :'long';
+        const side = obItem.side === 'high' ? 'short' : 'long';
         const candle = candles[obItem.index];
         const stopLoss = side === 'long' ? candle.low : candle.high;
         const openPrice = candle.close;
@@ -1674,20 +1769,24 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
             multiStop,
             candles: []
         })
-        if(Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1){
+        if (Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1) {
             continue;
         }
         const tradeCandle = candles[obItem.index + 1];
         for (let j = obItem.index + 1; j < candles.length; j++) {
-            if(side === 'long' && candles[j].low <= stopLoss){
-                positions.push({side, name: 'IFC', takeProfit, stopLoss,
-                    openPrice,openTime: tradeCandle.time, closeTime: candles[j].time,  pnl: stopLoss - openPrice});
+            if (side === 'long' && candles[j].low <= stopLoss) {
+                positions.push({
+                    side, name: 'IFC', takeProfit, stopLoss,
+                    openPrice, openTime: tradeCandle.time, closeTime: candles[j].time, pnl: stopLoss - openPrice
+                });
                 break;
-            } else if(side ==='short' && candles[j].high >= stopLoss){
-                positions.push({side,name: 'IFC', takeProfit, stopLoss,
-                    openPrice,openTime: tradeCandle.time,closeTime: candles[j].time,  pnl: openPrice - stopLoss});
+            } else if (side === 'short' && candles[j].high >= stopLoss) {
+                positions.push({
+                    side, name: 'IFC', takeProfit, stopLoss,
+                    openPrice, openTime: tradeCandle.time, closeTime: candles[j].time, pnl: openPrice - stopLoss
+                });
                 break;
-            } else if (side === 'long' && candles[j].high >= takeProfit){
+            } else if (side === 'long' && candles[j].high >= takeProfit) {
                 positions.push({
                     side,
                     name: 'IFC',
@@ -1700,7 +1799,7 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
                     pnl: takeProfit - openPrice
                 });
                 break;
-            } else if(side ==='short' && candles[j].low <= takeProfit){
+            } else if (side === 'short' && candles[j].low <= takeProfit) {
                 positions.push({
                     side,
                     name: 'IFC',
@@ -1724,10 +1823,10 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
     const positions = [];
     for (let i = 0; i < ob.length; i++) {
         const obItem = ob[i];
-        if(!obItem.endCandle || !obItem.canTrade){
+        if (!obItem.endCandle || !obItem.canTrade) {
             continue;
         }
-        const side = obItem.type === 'high' ? 'short' :'long';
+        const side = obItem.type === 'high' ? 'short' : 'long';
         const stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
         const openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
 
@@ -1739,27 +1838,31 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
             multiStop,
             candles: candles.slice(obItem.index, obItem.endIndex)
         })
-        if(Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1){
+        if (Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1) {
             continue;
         }
 
-        if(!limitOrder && side === 'short' && candles[obItem.endIndex].close >= openPrice){
+        if (!limitOrder && side === 'short' && candles[obItem.endIndex].close >= openPrice) {
             continue;
         }
-        if(!limitOrder && side === 'long' && candles[obItem.endIndex].close <= openPrice){
+        if (!limitOrder && side === 'long' && candles[obItem.endIndex].close <= openPrice) {
             continue;
         }
 
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
-            if(side === 'long' && candles[j].low <= stopLoss){
-                positions.push({side,name: 'OB', takeProfit, stopLoss,
-                    openPrice,openTime: obItem.endCandle.time, closeTime: candles[j].time,  pnl: stopLoss - openPrice});
+            if (side === 'long' && candles[j].low <= stopLoss) {
+                positions.push({
+                    side, name: 'OB', takeProfit, stopLoss,
+                    openPrice, openTime: obItem.endCandle.time, closeTime: candles[j].time, pnl: stopLoss - openPrice
+                });
                 break;
-            } else if(side ==='short' && candles[j].high >= stopLoss){
-                positions.push({side,name: 'OB', takeProfit, stopLoss,
-                    openPrice,openTime: obItem.endCandle.time,closeTime: candles[j].time,  pnl: openPrice - stopLoss});
+            } else if (side === 'short' && candles[j].high >= stopLoss) {
+                positions.push({
+                    side, name: 'OB', takeProfit, stopLoss,
+                    openPrice, openTime: obItem.endCandle.time, closeTime: candles[j].time, pnl: openPrice - stopLoss
+                });
                 break;
-            } else if (side === 'long' && candles[j].high >= takeProfit){
+            } else if (side === 'long' && candles[j].high >= takeProfit) {
                 positions.push({
                     side,
                     name: 'OB',
@@ -1768,11 +1871,11 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
                     openPrice,
                     openTime: obItem.endCandle.time,
                     closeTime: candles[j].time,
-                    
+
                     pnl: takeProfit - openPrice
                 });
                 break;
-            } else if(side ==='short' && candles[j].low <= takeProfit){
+            } else if (side === 'short' && candles[j].low <= takeProfit) {
                 positions.push({
                     side,
                     name: 'OB',
@@ -1781,7 +1884,7 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
                     openPrice,
                     openTime: obItem.endCandle.time,
                     closeTime: candles[j].time,
-                    
+
                     pnl: openPrice - takeProfit
                 });
                 break;
@@ -1801,7 +1904,7 @@ export const isWickCandle = (candle: HistoryObject, type: 'high' | 'low', wickRa
 
     const bodyWickRatio = body / wickRatio;
 
-    const hasWick = type === 'high' ?  bodyWickRatio <= topWick : bodyWickRatio <= bottomWick
+    const hasWick = type === 'high' ? bodyWickRatio <= topWick : bodyWickRatio <= bottomWick
 
     return hasWick && (type === 'high' ? topWick > bottomWick : bottomWick > topWick);
 }
@@ -1817,14 +1920,14 @@ export const calculateFakeout = (highs: Swing[], lows: Swing[], candles: History
 
     let lastHigh;
     for (let i = 0; i < highs.length; i++) {
-        if(!highs[i]){
+        if (!highs[i]) {
             continue;
         }
         const currHigh = highs[i];
-        if(lastHigh){
+        if (lastHigh) {
             const lastCandle = candles[lastHigh.index];
             const currCandle = candles[currHigh.index];
-            if(currCandle.high > lastCandle.high && currCandle.close < lastCandle.high && isWickCandle(currCandle, 'high')){
+            if (currCandle.high > lastCandle.high && currCandle.close < lastCandle.high && isWickCandle(currCandle, 'high')) {
                 fakeouts.push(currHigh)
             }
         }
@@ -1833,14 +1936,14 @@ export const calculateFakeout = (highs: Swing[], lows: Swing[], candles: History
 
     let lastLow;
     for (let i = 0; i < lows.length; i++) {
-        if(!lows[i]){
+        if (!lows[i]) {
             continue;
         }
         const currHigh = lows[i];
-        if(lastLow){
+        if (lastLow) {
             const lastCandle = candles[lastLow.index];
             const currCandle = candles[currHigh.index];
-            if(currCandle.low < lastCandle.low && currCandle.close > lastCandle.low && isWickCandle(currCandle, 'low')){
+            if (currCandle.low < lastCandle.low && currCandle.close > lastCandle.low && isWickCandle(currCandle, 'low')) {
                 fakeouts.push(currHigh)
             }
         }
@@ -1855,7 +1958,7 @@ export const calculatePositionsByFakeouts = (fakeouts: Swing[], candles: History
     for (let i = 0; i < fakeouts.length; i++) {
         const fakeout = fakeouts[i];
         const fakeoutIndex = fakeout.index;
-        const side = fakeout.side === 'high' ? 'short' :'long';
+        const side = fakeout.side === 'high' ? 'short' : 'long';
         const openCandle = candles[fakeoutIndex + 1];
         const stopLoss = side === 'long' ? openCandle.low : openCandle.high;
         const openPrice = openCandle.open;
@@ -1868,19 +1971,23 @@ export const calculatePositionsByFakeouts = (fakeouts: Swing[], candles: History
             multiStop,
             candles: []
         })
-        if(Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1){
+        if (Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1) {
             continue;
         }
         for (let j = fakeout.index + 2; j < candles.length; j++) {
-            if(side === 'long' && candles[j].low <= stopLoss){
-                positions.push({side, takeProfit, stopLoss,
-                    openPrice,openTime: openCandle.time, closeTime: candles[j].time,  pnl: stopLoss - openPrice});
+            if (side === 'long' && candles[j].low <= stopLoss) {
+                positions.push({
+                    side, takeProfit, stopLoss,
+                    openPrice, openTime: openCandle.time, closeTime: candles[j].time, pnl: stopLoss - openPrice
+                });
                 break;
-            } else if(side ==='short' && candles[j].high >= stopLoss){
-                positions.push({side, takeProfit, stopLoss,
-                    openPrice,openTime: openCandle.time,closeTime: candles[j].time,  pnl: openPrice - stopLoss});
+            } else if (side === 'short' && candles[j].high >= stopLoss) {
+                positions.push({
+                    side, takeProfit, stopLoss,
+                    openPrice, openTime: openCandle.time, closeTime: candles[j].time, pnl: openPrice - stopLoss
+                });
                 break;
-            } else if (side === 'long' && candles[j].high >= takeProfit){
+            } else if (side === 'long' && candles[j].high >= takeProfit) {
                 positions.push({
                     side,
                     takeProfit,
@@ -1891,7 +1998,7 @@ export const calculatePositionsByFakeouts = (fakeouts: Swing[], candles: History
                     pnl: takeProfit - openPrice
                 });
                 break;
-            } else if(side ==='short' && candles[j].low <= takeProfit){
+            } else if (side === 'short' && candles[j].low <= takeProfit) {
                 positions.push({
                     side,
                     takeProfit,
