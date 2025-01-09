@@ -1,7 +1,7 @@
 import React, {FC, useEffect, useRef} from "react";
 import {
     ColorType, createChart,
-    CrosshairMode, LineData, SeriesMarker, SeriesOptionsMap, Time
+    CrosshairMode, ISeriesPrimitive, LineData, SeriesMarker, SeriesOptionsMap, Time
 } from "lightweight-charts";
 import moment from 'moment';
 import {createSeries, defaultSeriesOptions, getVisibleMarkers, uniqueBy} from "../utils";
@@ -25,7 +25,7 @@ export const Chart: FC<{
         markers?: SeriesMarker<Time>[]
     }[],
     hideInternalCandles?: boolean,
-    primitives: any[],
+    primitives: ISeriesPrimitive<any>[],
     seriesType?: any,
     showVolume?: boolean,
     data: any[],
