@@ -23,9 +23,6 @@ const ImpulseAndCorrectionPage = () => {
     })
 
     const onChangeRangeDates = (value: Dayjs[], dateString) => {
-        console.log('Selected Time: ', value);
-        console.log('Formatted Selected Time: ', dateString);
-
         setDates({fromDate: value[0].unix(), toDate: value[1].unix()})
     }
 
@@ -35,7 +32,6 @@ const ImpulseAndCorrectionPage = () => {
                 .filter(candle => !notTradingTime(candle))
             ).then(setData);
     }, [tf, ticker, fromDate, toDate]);
-
 
     let {highs, lows, swings} = useMemo(() => tradinghubCalculateSwings(data), [data]);
 

@@ -548,7 +548,6 @@ export const TestPage = () => {
                 ]
             })));
         }
-        let idms = []
         if(config.smPatterns){
             _lineSerieses.push(...oldMarkers.map(marker => ({
                 options: {
@@ -570,18 +569,6 @@ export const TestPage = () => {
                     position: marker.position,
                     text: marker.text
                 }]
-
-                // if (marker.idmIndex) {
-                //     idms.push({
-                //         color: marker.color,
-                //         time: data[marker.idmIndex].time * 1000,
-                //         shape: 'text',
-                //         position: marker.position,
-                //         text: 'IDM'
-                //     })
-                // }
-
-                // smPatterns && allMarkers.push(...idms);
             })   ))
         }
         if(config.BOS){
