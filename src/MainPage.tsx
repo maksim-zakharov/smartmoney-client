@@ -627,30 +627,30 @@ const MainPage: React.FC = () => {
                 dataIndex: "ticker",
                 key: "ticker"
             },
-            {
+            width > 430 && {
                 title: "Паттерн",
                 dataIndex: "pattern",
                 key: "pattern"
             },
-            {
+            width > 430 && {
                 title: "Тип",
                 dataIndex: "side",
                 key: "side",
                 render: (value, row) => row?.type !== 'summary' ? row?.limitTrade?.side || "-" : ""
             },
-            {
+            width > 430 && {
                 title: "Пересвип",
                 dataIndex: "liquidSweepTime",
                 key: "liquidSweepTime",
                 render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
             },
-            {
+            width > 430 && {
                 title: "ОБ",
                 dataIndex: "orderblockTime",
                 key: "orderblockTime",
                 render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
             },
-            {
+            width > 430 && {
                 title: "Вход",
                 dataIndex: "limitTrade",
                 key: "limitTrade",
@@ -736,7 +736,7 @@ const MainPage: React.FC = () => {
                 align: "right",
                 render: (value, row) => row.PnL ? moneyFormat(row.PnL, "RUB", 2, 2) : "-"
             },
-            {
+            width > 430 && {
                 title: "Действия",
                 render: (value, row) => {
                     return row?.type !== 'summary' ?
@@ -744,7 +744,7 @@ const MainPage: React.FC = () => {
                               target="_blank">Тестер</Link> : '';
                 }
             }
-        ];
+        ].filter(Boolean);
 
         function onSelect(record: any): void {
             if (record.type === 'summary') {
