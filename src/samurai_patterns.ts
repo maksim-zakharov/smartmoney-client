@@ -581,11 +581,23 @@ const deleteInternalStructures = (swings: Swing[], boses: Cross[]) => {
 }
 
 const removeIDM = (boses: Cross[], trend: Trend[]) => {
-    const IDM = boses.filter(b => b?.text === 'IDM');
-    for (let i = 0; i < IDM.length; i++) {
-        const idmtrend = IDM[i].type === 'high' ? 1 : -1;
-        if (trend[IDM[i].from.index] && idmtrend === trend[IDM[i].from.index].trend) {
-            boses[IDM[i].from.index] = null;
+    const IDM = boses.filter(b => b?.text).sort((a, b) => a.extremum?.index - b.extremum?.index);
+    // for (let i = 0; i < IDM.length; i++) {
+    //     const idmtrend = IDM[i].type === 'high' ? 1 : -1;
+    //     if (trend[IDM[i].from.index] && idmtrend === trend[IDM[i].from.index].trend) {
+    //         boses[IDM[i].from.index] = null;
+    //     }
+    // }
+
+    for (let i = 1; i < IDM.length; i++) {
+        const prev = IDM[i - 1];
+        const cur = IDM[i];
+        if(prev.extremum && prev.extremum?.index === cur.extremum?.index) {
+            if(prev.text === 'IDM'){
+                // boses[prev.from.index] = null
+            } else if (cur.text === 'IDM'){
+                // boses[cur.from.index] = null
+            }
         }
     }
 
@@ -1148,7 +1160,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     const trend = withTrend.trend
     boses = withTrend.boses;
 
-    // boses = removeIDM(boses, trend)
+    boses = removeIDM(boses, trend)
     //
     // swings = markIFC(candles, swings)
 

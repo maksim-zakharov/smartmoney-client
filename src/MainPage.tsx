@@ -1,5 +1,19 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {Card, Col, Row, Select, Slider, SliderSingleProps, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
+import {
+    Card,
+    Col,
+    InputNumber,
+    Row,
+    Select,
+    Slider,
+    SliderSingleProps,
+    Space,
+    Statistic,
+    Table,
+    Tabs,
+    TabsProps,
+    theme
+} from "antd";
 import {useCandlesQuery, usePortfolioQuery, useSecurityQuery} from "./api";
 import {
     ColorType,
@@ -338,6 +352,9 @@ export const ChartComponent = props => {
 };
 
 const MainPage: React.FC = () => {
+    const [stopFrom ,setStopFrom] = useState(0);
+    const [stopTo ,setStopTo] = useState(100);
+
     const {height, width, isMobile} = useWindowDimensions();
         const {
             token: {colorBgContainer, borderRadiusLG}
@@ -773,13 +790,31 @@ const MainPage: React.FC = () => {
 
         const positions = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && p.limitTradeId && p.stopLoss?.status === "working"), [patterns]);
         const orders = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && !p.limitTradeId), [patterns]);
-        const history = useMemo(() => patterns.filter(p => (!selectedTicker || p.ticker === selectedTicker) && (!selectedName || p.pattern === selectedName) && (!selectedTF || p.timeframe === selectedTF) && (p.takeTradeId || p.stopTradeId)).filter(row => row.limitTrade?.price && (row.stopLossTrade?.price || row.takeProfitTrade?.price)).map(row => ({
+    const history = useMemo(() => patterns.filter(p => {
+        const baseBool = (!selectedTicker || p.ticker === selectedTicker)
+            && (!selectedName || p.pattern === selectedName)
+            && (!selectedTF || p.timeframe === selectedTF)
+            && (!!p.takeTradeId || !!p.stopTradeId);
+
+        const value = p?.stopLoss;
+        if (!value) {
+            return baseBool;
+        }
+
+        let percent = p.limitTrade?.price > value?.stopPrice ? p.limitTrade?.price / value?.stopPrice : value?.stopPrice / p.limitTrade?.price;
+        percent = (percent - 1) * 100;
+
+        return baseBool && percent > stopFrom && percent < stopTo;
+    })
+        .filter(row => row.limitTrade?.price && (row.stopLossTrade?.price || row.takeProfitTrade?.price))
+        .map(row => ({
             ...row,
             PnL: row.limitTrade?.side === "buy" ?
                 accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price)
                 : row.limitTrade?.side === "sell" ?
                     accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
-        })).sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [selectedName, selectedTicker, selectedTF, accTradesOrdernoQtyMap, patterns]);
+        }))
+        .sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [stopFrom, stopTo, selectedName, selectedTicker, selectedTF, accTradesOrdernoQtyMap, patterns]);
 
         const historyTableData = useMemo(() => {
             let data = history.map((p: any) => ({
@@ -1050,6 +1085,8 @@ const MainPage: React.FC = () => {
             })), []);
 
             return <Space>
+                <InputNumber placeholder="Stop from" value={stopFrom} onChange={setStopFrom} />
+                <InputNumber placeholder="Stop to" value={stopTo} onChange={setStopTo} />
                 <Select style={{width: 200}} allowClear placeholder="Выберите тикер" options={tickerOptions}
                         value={selectedTicker} onChange={setSelectedTicker}/>
                 <Select style={{width: 200}} allowClear placeholder="Выберите паттерн" options={nameOptions}
