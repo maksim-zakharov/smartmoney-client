@@ -623,7 +623,7 @@ const deleteExternalStructures = (swings: Swing[], boses: Cross[]) => {
     return {swings, boses};
 }
 
-const markHHLL = (candles: HistoryObject[], swings: Swing[], withIDM: boolean = false) => {
+const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     let boses: Cross[] = new Array(candles.length).fill(null);
 
     let lastLow: (Swing & {idmSwing?: Swing}) = null;
@@ -1083,10 +1083,40 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
     return {trend, boses, swings, orderBlocks: notEmptyOrderblocks};
 };
 
-export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], removeEmpty: boolean = false) => {
+export const deleteInternalStructure = (swings: Swing[]) => {
+    let preLastHighIndex = null;
+    let lastHighIndex = null;
+
+    let preLastLowIndex = null;
+    let lastLowIndex = null;
+
+    for (let i = 0; i < swings.length; i++) {
+        if(swings[i] && swings[i].side === 'high'){
+            preLastHighIndex = lastHighIndex;
+            lastHighIndex = i;
+        }
+        if(swings[i] && swings[i].side === 'low'){
+            preLastLowIndex = lastLowIndex;
+            lastLowIndex = i;
+        }
+
+        if(swings[preLastLowIndex]?.price < swings[lastLowIndex]?.price && swings[preLastHighIndex]?.price > swings[lastHighIndex]?.price){
+            swings[lastLowIndex] = null;
+            swings[lastHighIndex] = null;
+            lastLowIndex = preLastLowIndex;
+            lastHighIndex = preLastHighIndex;
+        }
+    }
+
+    return swings;
+}
+
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], removeInternal: boolean =false, removeEmpty: boolean = false) => {
     let boses = markHHLL(candles, swings)
     if(removeEmpty)
     swings = deleteEmptySwings(swings);
+    if(removeInternal)
+    swings = deleteInternalStructure(swings);
     boses = drawBOS(candles, swings, boses);
     // //
     // const withoutExternal = deleteExternalStructures(swings, boses);
