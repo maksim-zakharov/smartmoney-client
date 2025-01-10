@@ -466,6 +466,10 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[], only
             continue;
         }
 
+        if(i > 227){
+            debugger
+        }
+
         if (swings[i].side === 'high' && (!onlyExtremum || swings[i].text === 'HH')) {
             const from = swings[i];
             let to;
@@ -499,7 +503,6 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[], only
                     type: 'high',
                     text
                 }
-                console.log('lastHighBOSIndex', lastHighBOSIndex)
             }
         } else if (swings[i].side === 'low' && (!onlyExtremum || swings[i].text === 'LL')) {
             const from = swings[i];
@@ -732,9 +735,9 @@ const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
 
     for (let i = 0; i < swings.length; i++) {
         // TODO test
-        if(swings[i]){
-            swings[i].text = i.toString();
-        }
+        // if(swings[i]){
+        //     swings[i].text = i.toString();
+        // }
         //
         // if(i === 170){
         //     debugger
@@ -763,10 +766,10 @@ const deleteEmptySwings = (swings: Swing[]) => {
     return swings;
 }
 
-const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
+const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
-    const onlyBOSes = boses.filter(bos => bos?.text === 'BOS');
+    const onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.text);
     for (let i = 0; i < onlyBOSes.length; i++) {
         const curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
@@ -778,7 +781,7 @@ const drawTrend = (candles: HistoryObject[], boses: Cross[]) => {
         }
 
         if (nextBos && curBos.type !== nextBos.type) {
-            curBos.text = 'CHoCH'
+            nextBos.text = 'CHoCH'
         }
     }
 
@@ -1136,12 +1139,12 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     if(removeInternal)
     swings = deleteInternalStructure(swings);
     boses = drawBOS(candles, swings, boses, onlyExtremum);
-    // //
-    // const withoutExternal = deleteExternalStructures(swings, boses);
-    // boses = withoutExternal.boses;
-    // swings = withoutExternal.swings;
-    //
-    const withTrend = drawTrend(candles, boses);
+
+    const withoutExternal = deleteExternalStructures(swings, boses);
+    boses = withoutExternal.boses;
+    swings = withoutExternal.swings;
+
+    const withTrend = drawTrend(candles, swings, boses);
     const trend = withTrend.trend
     boses = withTrend.boses;
 
