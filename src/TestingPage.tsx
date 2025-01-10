@@ -61,6 +61,7 @@ export const TestingPage = () => {
     const [withMove, setWithMove] = useState<boolean>(false);
     const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
     const [removeInternal, setremoveInternal] = useState<boolean>(false);
+    const [onlyExtremum, setonlyExtremum] = useState<boolean>(false);
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
     const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
     const [tradeIFC, setTradeIFC] = useState<boolean>(false);
@@ -119,7 +120,7 @@ export const TestingPage = () => {
         let boses = [];
         let orderBlocks = [];
         if(trandsType === 'tradinghub'){
-            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data, removeInternal);
+            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data, removeInternal, false, onlyExtremum);
             swingsData = thSwings;
             highs = thSwings.filter(t => t?.side === 'high');
             lows = thSwings.filter(t => t?.side === 'low');
@@ -182,7 +183,7 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, trandsType, tradeOB, limitOrderTrade, tradeIFC, trend, withMove, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, trandsType, tradeOB, limitOrderTrade, tradeIFC, trend, withMove, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -193,7 +194,7 @@ export const TestingPage = () => {
             let boses = [];
             let orderBlocks = [];
             if(trandsType === 'tradinghub'){
-                const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data, removeInternal);
+                const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data, removeInternal, false, onlyExtremum);
                 swingsData = thSwings;
                 highs = thSwings.filter(t => t?.side === 'high');
                 lows = thSwings.filter(t => t?.side === 'low');
@@ -254,7 +255,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
-    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, withMove, removeInternal, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, withMove, removeInternal, onlyExtremum, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -430,10 +431,10 @@ export const TestingPage = () => {
                 </Col>
             </Row>
             <Row gutter={8} align="bottom">
+
                 <Col>
                     <FormItem>
-                        <Checkbox checked={excludeIDM} onChange={e => setExcludeIDM(e.target.checked)}>Исключить
-                            IDM</Checkbox>
+                        <Checkbox checked={onlyExtremum} onChange={e => setonlyExtremum(e.target.checked)}>БОСЫ только на экстремумах</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>

@@ -97,6 +97,7 @@ export const TestPage = () => {
         smartTrend: checkboxValues.includes('smartTrend'),
         withTrendConfirm: checkboxValues.includes('withTrendConfirm'),
         removeInternal: checkboxValues.includes('removeInternal'),
+        onlyExtremum: checkboxValues.includes('onlyExtremum'),
         removeEmpty: checkboxValues.includes('removeEmpty'),
         BOS: checkboxValues.includes('BOS'),
         showOB: checkboxValues.includes('showOB'),
@@ -152,7 +153,7 @@ export const TestPage = () => {
         let boses = [];
         let orderBlocks = [];
         if(trandsType === StrategySource.TradingHub){
-            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data, config.removeInternal, config.removeEmpty);
+            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data, config.removeInternal, config.removeEmpty, config.onlyExtremum);
             _swings = thSwings;
             highs = thSwings.filter(t => t?.side === 'high');
             lows = thSwings.filter(t => t?.side === 'low');
@@ -191,7 +192,7 @@ export const TestPage = () => {
         }
 
         return { ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [swipType, trandsType, structureType, config.removeEmpty, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, maxDiff, multiStop])
+    }, [swipType, trandsType, structureType, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
@@ -726,6 +727,7 @@ export const TestPage = () => {
             <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
             <Checkbox key="removeInternal" value="removeInternal">Игнорировать внутреннюю структуру</Checkbox>
             <Checkbox key="removeEmpty" value="removeEmpty">Удалить пустые точки</Checkbox>
+            <Checkbox key="onlyExtremum" value="onlyExtremum">БОСЫ только на экстремумах</Checkbox>
 
         </Checkbox.Group>
         <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers} data={data}
