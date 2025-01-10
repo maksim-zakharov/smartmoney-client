@@ -491,8 +491,8 @@ export const TestingPage = () => {
                         <Radio.Group onChange={e => setSwipType(e.target.value)}
                                      value={swipType}>
                             <Radio value="tradinghub">Свипы по tradinghub</Radio>
-                            <Radio value="samurai">Свипы по самураю</Radio>
-                            <Radio value="khrustik">Свипы по хрустику</Radio>
+                            {/*<Radio value="samurai">Свипы по самураю</Radio>*/}
+                            {/*<Radio value="khrustik">Свипы по хрустику</Radio>*/}
                         </Radio.Group>
                     </FormItem>
                 </Col>
@@ -501,9 +501,9 @@ export const TestingPage = () => {
                         <Radio.Group onChange={e => setTrandsType(e.target.value)}
                                      value={trandsType}>
                             <Radio value="tradinghub">tradinghub</Radio>
-                            <Radio value="dobrinya">dobrinya</Radio>
-                            <Radio value="samurai">самурай</Radio>
-                            <Radio value="khrustik">хрустику</Radio>
+                            {/*<Radio value="dobrinya">dobrinya</Radio>*/}
+                            {/*<Radio value="samurai">самурай</Radio>*/}
+                            {/*<Radio value="khrustik">хрустику</Radio>*/}
                         </Radio.Group>
                     </Form.Item>
                 </Col>
