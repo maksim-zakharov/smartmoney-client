@@ -458,6 +458,9 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
 
     const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
+    let lastHighBOSIndex = null;
+    let lastLowBOSIndex = null;
+
     for (let i = 0; i < candles.length; i++) {
         if (!swings[i]) {
             continue;
@@ -487,14 +490,17 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if (text)
-                boses[i] = {
+            if (text) {
+                lastHighBOSIndex = i;
+                boses[lastHighBOSIndex] = {
                     from,
                     to,
                     textCandle: candles[textIndex],
                     type: 'high',
                     text
                 }
+                console.log('lastHighBOSIndex', lastHighBOSIndex)
+            }
         } else if (swings[i].side === 'low') {
             const from = swings[i];
             let to;
@@ -519,14 +525,16 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             }
             const diff = to.index - i;
             const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if (text)
-                boses[i] = {
+            if (text){
+                lastLowBOSIndex = i;
+                boses[lastLowBOSIndex] = {
                     from,
                     to,
                     textCandle: candles[textIndex],
                     type: 'low',
                     text
                 }
+            }
         }
     }
 
@@ -632,7 +640,7 @@ const markHHLL = (candles: HistoryObject[], swings: Swing[], withIDM: boolean = 
         if (swing
             && swing.side === 'high'
             && (!highestHigh || highestHigh.price < swing.price)
-            && confirmLowIndex < index
+            && confirmLowIndex <= index
         ) {
             if (highestHigh) {
                 delete highestHigh.text
@@ -648,7 +656,7 @@ const markHHLL = (candles: HistoryObject[], swings: Swing[], withIDM: boolean = 
         if (swing
             && swing.side === 'low'
             && (!lowestLow || lowestLow.price > swing.price)
-            && confirmHighIndex < index
+            && confirmHighIndex <= index
         ) {
             if(lowestLow){
                 delete lowestLow.text
@@ -723,11 +731,13 @@ const markHHLL = (candles: HistoryObject[], swings: Swing[], withIDM: boolean = 
     }
 
     for (let i = 0; i < swings.length; i++) {
-        // Заполняем если пусто (п.1)
-        // if(!highestHigh && swings[i] && swings[i].side === 'high'){
-        //     highestHigh = swings[i];
-        //     highestHigh.text = 'HH';
-        //     confirmHighIndex = i;
+        // TODO test
+        // if(swings[i]){
+        //     swings[i].text = i.toString();
+        // }
+        //
+        // if(i === 170){
+        //     debugger
         // }
 
         confirmLowestLow(i)
@@ -737,78 +747,6 @@ const markHHLL = (candles: HistoryObject[], swings: Swing[], withIDM: boolean = 
         updateLowestLow(i, swings[i]);
 
         updateLast(swings[i])
-    }
-
-    return boses;
-}
-
-const drawIDM = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
-
-    let lastHH = null;
-    let lastLL = null;
-
-    let lastHigh = null;
-    let lastLow = null;
-
-    let confirmedHigh = null
-    let confirmedLow = null;
-
-    for (let i = 0; i < swings.length; i++) {
-        /**
-         * Если появляется LL - я фиксирую lasthigh
-         * lasthigh обнвляется если он пересекается либо если обновляется HH
-         */
-
-        lastHigh = swings[i] && swings[i].side === 'high' ? swings[i] : lastHigh;
-        lastLow = swings[i] && swings[i].side === 'low' ? swings[i] : lastLow;
-
-        if (swings[i] && swings[i].text === 'HH') {
-            confirmedLow = lastLow;
-            lastHH = swings[i];
-            confirmedHigh = null;
-        }
-        if (swings[i] && swings[i].text === 'LL') {
-            confirmedHigh = lastHigh;
-            lastLL = swings[i];
-            confirmedLow = null;
-        }
-
-        // Ждем cross
-        if (lastLL && confirmedHigh && candles[i] && candles[i].high > confirmedHigh.price) {
-            const candle = candles[i];
-            const from = confirmedHigh;
-            const diff = i - from.index;
-            const textIndex = diff >= 3 ? from.index - Math.floor((from.index - i) / 2) : i;
-            const to = {index: i, side: 'high', price: from.price, time: candle.time}
-            boses[from.index] = {
-                type: 'high',
-                text: 'IDM',
-                from,
-                textCandle: candles[textIndex],
-                to,
-                extremum: lastLL
-            } as Cross
-            confirmedHigh = null;
-            // confirmedLow = null;
-        }
-
-        if (lastHH && confirmedLow && candles[i] && candles[i].low < confirmedLow.price) {
-            const candle = candles[i];
-            const from = confirmedLow;
-            const diff = i - from.index;
-            const textIndex = diff >= 3 ? from.index - Math.floor((from.index - i) / 2) : i;
-            const to = {index: i, side: 'low', price: from.price, time: candle.time}
-            boses[from.index] = {
-                type: 'low',
-                text: 'IDM',
-                from,
-                textCandle: candles[textIndex],
-                to,
-                extremum: lastHH
-            } as Cross
-            // confirmedHigh = null;
-            confirmedLow = null;
-        }
     }
 
     return boses;
@@ -1145,8 +1083,9 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
     return {trend, boses, swings, orderBlocks: notEmptyOrderblocks};
 };
 
-export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], removeEmpty: boolean = false) => {
     let boses = markHHLL(candles, swings)
+    if(removeEmpty)
     swings = deleteEmptySwings(swings);
     boses = drawBOS(candles, swings, boses);
     // //
