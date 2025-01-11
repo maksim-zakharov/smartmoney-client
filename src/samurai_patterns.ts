@@ -458,16 +458,6 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
 
     const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
-    let lastHighBOSIndex = null;
-    let lastLowBOSIndex = null;
-
-    // l1
-    // h
-    // l2
-    // cross
-    //
-    // h crosses ? l2 > l1 ? h - bos : h - choch
-
     let prelastLowBosSwing = null;
     let prelastHighBosSwing = null;
 
@@ -491,12 +481,29 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             lastLowBosSwing = i;
         }
 
-        if(prelastLowBosSwing && !boses[lastHighBosSwing]) {
+        // TODO Хз надо ли, выглядит ок но финрез хуже
+        if(
+            swings[prelastHighBosSwing]?.price > swings[lastHighBosSwing]?.price
+        && swings[prelastLowBosSwing]?.price < swings[lastLowBosSwing]?.price
+        ) {
+            // debugger
+            swings[lastLowBosSwing] = null;
+            swings[lastHighBosSwing] = null;
+
+            deleteIDM.add(lastLowBosSwing);
+            deleteIDM.add(lastHighBosSwing);
+
+            lastLowBosSwing = prelastLowBosSwing;
+            lastHighBosSwing = prelastHighBosSwing;
+            continue;
+        }
+
+        if(lastHighBosSwing && (!boses[lastLowBosSwing] || boses[lastLowBosSwing].text === 'IDM')) {
             let from = swings[lastHighBosSwing];
             let liquidityCandle = liquidityHighCandle ?? candles[lastHighBosSwing];
             let to;
 
-            const text = 'BOS'; // swings[prelastLowBosSwing].price < swings[lastLowBosSwing].price ? 'BOS' : 'CHoCH';
+            const text = 'BOS';
 
             const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[i]);
             if (isTakenOutLiquidity) {
@@ -512,7 +519,7 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
                 const diff = to.index - lastHighBosSwing;
                 const textIndex = diff >= 5 ? lastHighBosSwing - Math.round((lastHighBosSwing - to.index) / 2) : from.index;
 
-                boses[lastHighBosSwing] = {
+                boses[lastLowBosSwing] = {
                     from,
                     to,
                     textCandle: candles[textIndex],
@@ -525,12 +532,12 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
             }
         }
 
-        if(prelastHighBosSwing && !boses[lastLowBosSwing]) {
+        if(lastLowBosSwing && (!boses[lastHighBosSwing] || boses[lastHighBosSwing].text === 'IDM')) {
             let from = swings[lastLowBosSwing];
             let liquidityCandle = liquidityLowCandle ?? candles[lastLowBosSwing];
             let to;
 
-            const text = 'BOS'; // swings[prelastHighBosSwing].price > swings[lastHighBosSwing].price ? 'BOS' : 'CHoCH';
+            const text = 'BOS';
 
             const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[i]);
             if (isTakenOutLiquidity) {
@@ -546,7 +553,7 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
                 const diff = to.index - lastLowBosSwing;
                 const textIndex = diff >= 5 ? lastLowBosSwing - Math.round((lastLowBosSwing - to.index) / 2) : from.index;
 
-                boses[lastLowBosSwing] = {
+                boses[lastHighBosSwing] = {
                     from,
                     to,
                     textCandle: candles[textIndex],

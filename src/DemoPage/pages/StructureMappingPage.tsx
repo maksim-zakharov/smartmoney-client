@@ -41,6 +41,9 @@ const StructureMappingPage = () => {
 
         const {trend, boses, swings: thSwings} = tradinghubCalculateTrendNew(swings, data);
 
+        highs = thSwings.filter(t => t?.side === 'high');
+        lows = thSwings.filter(t => t?.side === 'low');
+
         return {trend, boses, highs, lows, swings: thSwings}
     }, [data]);
 
