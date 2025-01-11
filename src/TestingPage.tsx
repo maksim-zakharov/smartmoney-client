@@ -126,7 +126,7 @@ export const TestingPage = () => {
             lows = thSwings.filter(t => t?.side === 'low');
             trend = thTrend;
             boses = thBoses;
-            orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, excludeIDM, withMove);
         } else if(trandsType === 'dobrinya'){
             const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data, withMove);
             swingsData = thSwings;
@@ -138,7 +138,7 @@ export const TestingPage = () => {
         } else {
             trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
             boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-            orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, excludeIDM, withMove);
         }
 
        if (excludeIDM) {
@@ -163,7 +163,7 @@ export const TestingPage = () => {
         }
 
         if (tradeIFC) {
-            const fakeoutPositions = calculatePositionsByIFC(data, swingsData, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+            const fakeoutPositions = calculatePositionsByIFC(data, swingsData, trend,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
             positions.push(...fakeoutPositions);
         }
 
@@ -200,7 +200,7 @@ export const TestingPage = () => {
                 lows = thSwings.filter(t => t?.side === 'low');
                 trend = thTrend;
                 boses = thBoses;
-                orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
+                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, excludeIDM, withMove);
             } else if(trandsType === 'dobrinya'){
                 const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data, withMove);
                 swingsData = thSwings;
@@ -212,7 +212,7 @@ export const TestingPage = () => {
             } else {
                 trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
                 boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-                orderBlocks = calculateOB(highParts, lowParts, data, trend, excludeIDM, withMove);
+                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, excludeIDM, withMove);
             }
 
             if(excludeIDM){
@@ -237,7 +237,7 @@ export const TestingPage = () => {
             }
 
             if(tradeIFC){
-                const fakeoutPositions = calculatePositionsByIFC(data, swingsData,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+                const fakeoutPositions = calculatePositionsByIFC(data, swingsData,trend, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
                 positions.push(...fakeoutPositions);
             }
 

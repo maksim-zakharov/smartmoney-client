@@ -159,7 +159,7 @@ export const TestPage = () => {
             lows = thSwings.filter(t => t?.side === 'low');
             trend = thTrend;
             boses = thBoses;
-            orderBlocks = calculateOB(highParts, lowParts, data, trend, config.excludeIDM, obType.toString() !== 'samurai');
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, config.excludeIDM, obType.toString() !== 'samurai');
         } else if(trandsType === StrategySource.Dobrunia){
             const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(_swings, data, obType !== 'samurai');
             _swings = thSwings;
@@ -171,7 +171,7 @@ export const TestPage = () => {
         } else {
             trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
             boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-            orderBlocks = calculateOB(highParts, lowParts, data, trend, config.excludeIDM, obType !== 'samurai');
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, config.excludeIDM, obType !== 'samurai');
         }
 
         const fakeouts = calculateFakeout(highParts, lowParts, data)
@@ -187,7 +187,7 @@ export const TestPage = () => {
             positions.push(...fakeoutPositions);
         }
         if(config.tradeIFC){
-            const fakeoutPositions = calculatePositionsByIFC(data, _swings, maxDiff, multiStop);
+            const fakeoutPositions = calculatePositionsByIFC(data, _swings, trend, maxDiff, multiStop);
             positions.push(...fakeoutPositions);
         }
 
@@ -471,10 +471,10 @@ export const TestPage = () => {
             }
             allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
                 color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
+                time: (s.textTime || s.time) as Time,
                 shape: 'text',
                 position: s.type === 'high' ? 'aboveBar' : 'belowBar',
-                text: "OB"
+                text: s.text
             })));
         }
         if(config.swings){

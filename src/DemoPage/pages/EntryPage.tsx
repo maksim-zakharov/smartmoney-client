@@ -15,10 +15,12 @@ import img43 from "../../assets/img_43.png"
 import img44 from "../../assets/img_44.png"
 import img45 from "../../assets/img_45.png"
 import img46 from "../../assets/img_46.png"
+import React from "react";
 
 const EntryPage = () => {
 
     return <>
+        <Typography.Title level={3}>CHoCH with IDM</Typography.Title>
         <Typography.Paragraph>
             Everything is correct in each strategy but main part is that how we should play on POI . Now i
             am going to explain here all Major High Probability entry Types . that how you can take
@@ -28,6 +30,7 @@ const EntryPage = () => {
         </Typography.Paragraph>
         <img src={img31}/>
         <img src={img32}/>
+        <Typography.Title level={3}>Flip with IDM</Typography.Title>
         <Typography.Paragraph>
             Flip Entry Module are very common and powerful method in smart money concept . when
             Price tap on HTF Supply Zone then you have to switch into Lower time frame as per our
@@ -39,6 +42,7 @@ const EntryPage = () => {
         </Typography.Paragraph>
         <img src={img33}/>
         <img src={img34}/>
+        <Typography.Title level={3}>CHoCH without IDM</Typography.Title>
         <Typography.Paragraph>
             CHoCH is first indication for reversal and you'll see two type entry during Change of
             character first one is CHoCH with inducement and second entry CHoCH Without inducement
@@ -48,6 +52,7 @@ const EntryPage = () => {
         </Typography.Paragraph>
         <img src={img35}/>
         <img src={img36}/>
+        <Typography.Title level={3}>FLiP without IDM</Typography.Title>
         <Typography.Paragraph>
             When Price tap on Higher time frame POI and give small reaction in terms of structure and
             recet Order Block and give small reaction and failed to hold supply and finally break and
@@ -56,6 +61,7 @@ const EntryPage = () => {
         </Typography.Paragraph>
         <img src={img37}/>
         <img src={img38}/>
+        <Typography.Title level={3}>Single Candle Mitigation</Typography.Title>
         <Typography.Paragraph>
             if you don't know that how do scale you're Winner and cut your'e losses then SMC not for you
             .Single candle mitigation is very Powerful way to add multiple entries in you're winside . single
@@ -73,6 +79,7 @@ const EntryPage = () => {
         </Typography.Paragraph>
         <img src={img41}/>
         <img src={img42}/>
+        <Typography.Title level={3}>Ping Pong</Typography.Title>
         <Typography.Paragraph>
             When you start play on both side move major and minor thats is Ping Pong Entries . These
             types of entries are really toughest because few peoples can think in both side and main
