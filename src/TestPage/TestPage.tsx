@@ -637,47 +637,39 @@ export const TestPage = () => {
     };
 
     return <>
-        <Space style={{alignItems: 'baseline'}}>
-            <TickerSelect value={ticker} onSelect={onSelectTicker}/>
-            <TimeframeSelect value={tf} onChange={setSize}/>
-            <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-                         onChange={onChangeRangeDates}/>
-            <Divider plain orientation="left" type="vertical"/>
-
-            <Row>
-                <Form.Item label="Свипы">
-                    <Radio.Group onChange={e => setSwipType(e.target.value)}
-                                 value={swipType}>
-                        <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                        {/*<Radio value="samurai">самурай</Radio>*/}
-                        {/*<Radio value="khrustik">хрустик</Radio>*/}
-                    </Radio.Group>
-                </Form.Item>
-                <Form.Item label="Тренд">
-                    <Radio.Group onChange={e => setTrandsType(e.target.value)}
-                                 value={trandsType}>
-                        <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                        {/*<Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>*/}
-                        {/*<Radio value="samurai">самурай</Radio>*/}
-                        {/*<Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>*/}
-                    </Radio.Group>
-                </Form.Item>
-                <Form.Item label="Босы">
-                    <Radio.Group onChange={e => setStructureType(e.target.value)}
-                                 value={structureType}>
-                        <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                        {/*<Radio value="samurai">самурай</Radio>*/}
-                    </Radio.Group>
-                </Form.Item>
-                <Form.Item label="ОБ">
-                    <Radio.Group onChange={e => setOBType(e.target.value)}
-                                 value={obType}>
-                        {/*<Radio value="samurai">самурай</Radio>*/}
-                        <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
-                    </Radio.Group>
-                </Form.Item>
-            </Row>
-        </Space>
+        <Row>
+            <Form.Item label="Свипы">
+                <Radio.Group onChange={e => setSwipType(e.target.value)}
+                             value={swipType}>
+                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
+                    {/*<Radio value="samurai">самурай</Radio>*/}
+                    {/*<Radio value="khrustik">хрустик</Radio>*/}
+                </Radio.Group>
+            </Form.Item>
+            <Form.Item label="Тренд">
+                <Radio.Group onChange={e => setTrandsType(e.target.value)}
+                             value={trandsType}>
+                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
+                    {/*<Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>*/}
+                    {/*<Radio value="samurai">самурай</Radio>*/}
+                    {/*<Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>*/}
+                </Radio.Group>
+            </Form.Item>
+            <Form.Item label="Босы">
+                <Radio.Group onChange={e => setStructureType(e.target.value)}
+                             value={structureType}>
+                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
+                    {/*<Radio value="samurai">самурай</Radio>*/}
+                </Radio.Group>
+            </Form.Item>
+            <Form.Item label="ОБ">
+                <Radio.Group onChange={e => setOBType(e.target.value)}
+                             value={obType}>
+                    {/*<Radio value="samurai">самурай</Radio>*/}
+                    <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
+                </Radio.Group>
+            </Form.Item>
+        </Row>
         <Divider plain orientation="left">Риски</Divider>
         <Space>
             <Row>
@@ -705,13 +697,13 @@ export const TestPage = () => {
             </Row>
         </Space>
         <Checkbox.Group onChange={setCheckboxValues} value={checkboxValues}>
-            <Checkbox key="smPatterns" value="smPatterns">smPatterns</Checkbox>
-            <Checkbox key="oldTrend" value="oldTrend">Тренд</Checkbox>
+            {/*<Checkbox key="smPatterns" value="smPatterns">smPatterns</Checkbox>*/}
+            {/*<Checkbox key="oldTrend" value="oldTrend">Тренд</Checkbox>*/}
             <Checkbox key="swings" value="swings">Swings</Checkbox>
-            <Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>
+            {/*<Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>*/}
             {/*<Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>*/}
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
-            <Checkbox key="withTrendConfirm" value="withTrendConfirm">Тренд с подтверждением</Checkbox>
+            {/*<Checkbox key="withTrendConfirm" value="withTrendConfirm">Тренд с подтверждением</Checkbox>*/}
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
             <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
@@ -728,8 +720,13 @@ export const TestPage = () => {
             <Checkbox key="removeInternal" value="removeInternal">Игнорировать внутреннюю структуру</Checkbox>
             <Checkbox key="removeEmpty" value="removeEmpty">Удалить пустые точки</Checkbox>
             <Checkbox key="onlyExtremum" value="onlyExtremum">БОСЫ только на экстремумах</Checkbox>
-
         </Checkbox.Group>
+        <Space style={{alignItems: 'baseline'}}>
+            <TickerSelect value={ticker} onSelect={onSelectTicker}/>
+            <TimeframeSelect value={tf} onChange={setSize}/>
+            <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
+                         onChange={onChangeRangeDates}/>
+        </Space>
         <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers} data={data}
                ema={ema}/>
     </>;

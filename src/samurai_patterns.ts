@@ -461,83 +461,189 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[], only
     let lastHighBOSIndex = null;
     let lastLowBOSIndex = null;
 
+    // l1
+    // h
+    // l2
+    // cross
+    //
+    // h crosses ? l2 > l1 ? h - bos : h - choch
+
+    let prelastLowBosSwing = null;
+    let prelastHighBosSwing = null;
+
+    let lastLowBosSwing = null;
+    let lastHighBosSwing = null;
+
+    let liquidityHighCandle = null;
+    let liquidityLowCandle = null;
+
+    let deleteIDM = new Set([]);
+
     for (let i = 0; i < candles.length; i++) {
-        if (!swings[i]) {
-            continue;
+
+        if(swings[i] && swings[i].side === 'high'){
+            prelastHighBosSwing = lastHighBosSwing;
+            lastHighBosSwing = i;
         }
 
-        if(i > 227){
-            debugger
+        if(swings[i] && swings[i].side === 'low'){
+            prelastLowBosSwing = lastLowBosSwing;
+            lastLowBosSwing = i;
         }
 
-        if (swings[i].side === 'high' && (!onlyExtremum || swings[i].text === 'HH')) {
-            const from = swings[i];
+        if(prelastLowBosSwing && !boses[lastHighBosSwing]) {
+            let from = swings[lastHighBosSwing];
+            let liquidityCandle = liquidityHighCandle ?? candles[lastHighBosSwing];
             let to;
-            let liquidityCandle = candles[i];
-            let text = '';
-            for (let j = i + 1; j < candles.length; j++) {
-                const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[j]);
-                if (!isTakenOutLiquidity) {
-                    continue;
-                }
-                const isClose = hasClose('high', liquidityCandle, candles[j]);
+
+            const text = 'BOS'; // swings[prelastLowBosSwing].price < swings[lastLowBosSwing].price ? 'BOS' : 'CHoCH';
+
+            const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[i]);
+            if (isTakenOutLiquidity) {
+                const isClose = hasClose('high', liquidityCandle, candles[i]);
                 if (isClose) {
-                    to = {index: j, time: candles[j].time, price: candles[j].close};
-                    text = 'BOS';
-                    break;
+                    to = {index: i, time: candles[i].time, price: candles[i].close};
                 } else {
-                    liquidityCandle = candles[j];
+                    liquidityCandle = candles[i];
                 }
             }
-            if (!to) {
-                continue;
-            }
-            const diff = to.index - i;
-            const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if (text) {
-                lastHighBOSIndex = i;
-                boses[lastHighBOSIndex] = {
+
+            if (to) {
+                const diff = to.index - lastHighBosSwing;
+                const textIndex = diff >= 5 ? lastHighBosSwing - Math.round((lastHighBosSwing - to.index) / 2) : from.index;
+
+                boses[lastHighBosSwing] = {
                     from,
                     to,
                     textCandle: candles[textIndex],
                     type: 'high',
-                    text
+                    text,
+                    extremum: swings[lastLowBosSwing]
                 }
+
+                deleteIDM.add(lastLowBosSwing);
             }
-        } else if (swings[i].side === 'low' && (!onlyExtremum || swings[i].text === 'LL')) {
-            const from = swings[i];
+        }
+
+        if(prelastHighBosSwing && !boses[lastLowBosSwing]) {
+            let from = swings[lastLowBosSwing];
+            let liquidityCandle = liquidityLowCandle ?? candles[lastLowBosSwing];
             let to;
-            let liquidityCandle = candles[i];
-            let text = '';
-            for (let j = i + 1; j < candles.length; j++) {
-                const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[j]);
-                if (!isTakenOutLiquidity) {
-                    continue;
-                }
-                const isClose = hasClose('low', liquidityCandle, candles[j]);
+
+            const text = 'BOS'; // swings[prelastHighBosSwing].price > swings[lastHighBosSwing].price ? 'BOS' : 'CHoCH';
+
+            const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[i]);
+            if (isTakenOutLiquidity) {
+                const isClose = hasClose('low', liquidityCandle, candles[i]);
                 if (isClose) {
-                    to = {index: j, time: candles[j].time, price: candles[j].close};
-                    text = 'BOS';
-                    break;
+                    to = {index: i, time: candles[i].time, price: candles[i].close};
                 } else {
-                    liquidityCandle = candles[j];
+                    liquidityCandle = candles[i];
                 }
             }
-            if (!to) {
-                continue;
-            }
-            const diff = to.index - i;
-            const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-            if (text){
-                lastLowBOSIndex = i;
-                boses[lastLowBOSIndex] = {
+
+            if (to) {
+                const diff = to.index - lastLowBosSwing;
+                const textIndex = diff >= 5 ? lastLowBosSwing - Math.round((lastLowBosSwing - to.index) / 2) : from.index;
+
+                boses[lastLowBosSwing] = {
                     from,
                     to,
                     textCandle: candles[textIndex],
                     type: 'low',
-                    text
+                    text,
+                    extremum: swings[lastHighBosSwing]
                 }
+
+                deleteIDM.add(lastHighBosSwing);
             }
+        }
+
+        // if (!swings[i]) {
+        //     continue;
+        // }
+        //
+        // if(i > 227){
+        //     debugger
+        // }
+        //
+        // if (swings[i].side === 'high' && (!onlyExtremum || swings[i].text === 'HH')) {
+        //     const from = swings[i];
+        //     let to;
+        //     let liquidityCandle = candles[i];
+        //     let text = '';
+        //     for (let j = i + 1; j < candles.length; j++) {
+        //         const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[j]);
+        //         if (!isTakenOutLiquidity) {
+        //             continue;
+        //         }
+        //         const isClose = hasClose('high', liquidityCandle, candles[j]);
+        //         if (isClose) {
+        //             to = {index: j, time: candles[j].time, price: candles[j].close};
+        //             text = 'BOS';
+        //             break;
+        //         } else {
+        //             liquidityCandle = candles[j];
+        //         }
+        //     }
+        //     if (!to) {
+        //         continue;
+        //     }
+        //     const diff = to.index - i;
+        //     const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
+        //     if (text) {
+        //         lastHighBOSIndex = i;
+        //         boses[lastHighBOSIndex] = {
+        //             from,
+        //             to,
+        //             textCandle: candles[textIndex],
+        //             type: 'high',
+        //             text
+        //         }
+        //     }
+        // } else if (swings[i].side === 'low' && (!onlyExtremum || swings[i].text === 'LL')) {
+        //     const from = swings[i];
+        //     let to;
+        //     let liquidityCandle = candles[i];
+        //     let text = '';
+        //     for (let j = i + 1; j < candles.length; j++) {
+        //         const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[j]);
+        //         if (!isTakenOutLiquidity) {
+        //             continue;
+        //         }
+        //         const isClose = hasClose('low', liquidityCandle, candles[j]);
+        //         if (isClose) {
+        //             to = {index: j, time: candles[j].time, price: candles[j].close};
+        //             text = 'BOS';
+        //             break;
+        //         } else {
+        //             liquidityCandle = candles[j];
+        //         }
+        //     }
+        //     if (!to) {
+        //         continue;
+        //     }
+        //     const diff = to.index - i;
+        //     const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
+        //     if (text){
+        //         lastLowBOSIndex = i;
+        //         boses[lastLowBOSIndex] = {
+        //             from,
+        //             to,
+        //             textCandle: candles[textIndex],
+        //             type: 'low',
+        //             text
+        //         }
+        //     }
+        // }
+    }
+
+    // boses = boses.filter(b => !(deleteIDM.has(b?.extremum?.index) && b?.extremum?.text === 'IDM'));
+
+    for (let i = 0; i < boses.length; i++) {
+        const b = boses[i];
+        if(b?.text === 'IDM' && deleteIDM.has(b?.extremum?.index)){
+            boses[i] = null;
         }
     }
 
@@ -1098,21 +1204,23 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
     return {trend, boses, swings, orderBlocks: notEmptyOrderblocks};
 };
 
-export const deleteInternalStructure = (swings: Swing[]) => {
+export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
     let preLastHighIndex = null;
     let lastHighIndex = null;
 
     let preLastLowIndex = null;
     let lastLowIndex = null;
 
+    let deletedSwingIndexes = new Set([]);
+
     for (let i = 0; i < swings.length; i++) {
         //
-        if(i === 230){
-            debugger
-        }
-        if(i === 262){
-            debugger
-        }
+        // if(i === 230){
+        //     debugger
+        // }
+        // if(i === 262){
+        //     debugger
+        // }
 
         if(swings[i] && swings[i].side === 'high'){
             preLastHighIndex = lastHighIndex;
@@ -1123,46 +1231,60 @@ export const deleteInternalStructure = (swings: Swing[]) => {
             lastLowIndex = i;
         }
 
-        // Сужение
-        if(swings[preLastLowIndex]?.price < swings[lastLowIndex]?.price && swings[preLastHighIndex]?.price > swings[lastHighIndex]?.price){
-            swings[lastLowIndex] = null;
-            swings[lastHighIndex] = null;
-            lastLowIndex = preLastLowIndex;
-            lastHighIndex = preLastHighIndex;
-        }
+        if(preLastLowIndex < preLastHighIndex){
+            if(swings[preLastHighIndex].price > swings[lastHighIndex].price && swings[preLastLowIndex].price < swings[lastLowIndex].price) {
+                swings[lastLowIndex] = null;
+                swings[lastHighIndex] = null;
 
-        // Расширение
-        if(swings[preLastLowIndex]?.price > swings[lastLowIndex]?.price && swings[preLastHighIndex]?.price < swings[lastHighIndex]?.price){
-            swings[preLastLowIndex] = null;
-            swings[preLastHighIndex] = null;
+                deletedSwingIndexes.add(lastLowIndex)
+                deletedSwingIndexes.add(lastHighIndex)
 
-            preLastLowIndex = null;
-            preLastHighIndex = null;
+                lastLowIndex = preLastLowIndex;
+                lastHighIndex = preLastHighIndex;
+            }
         }
+        //
+        // // Сужение
+        // if(swings[preLastLowIndex]?.price < swings[lastLowIndex]?.price && swings[preLastHighIndex]?.price > swings[lastHighIndex]?.price){
+        //     swings[lastLowIndex] = null;
+        //     swings[lastHighIndex] = null;
+        //     lastLowIndex = preLastLowIndex;
+        //     lastHighIndex = preLastHighIndex;
+        // }
+        //
+        // // Расширение
+        // if(swings[preLastLowIndex]?.price > swings[lastLowIndex]?.price && swings[preLastHighIndex]?.price < swings[lastHighIndex]?.price){
+        //     swings[preLastLowIndex] = null;
+        //     swings[preLastHighIndex] = null;
+        //
+        //     preLastLowIndex = null;
+        //     preLastHighIndex = null;
+        // }
     }
 
-    return swings;
+    boses = boses.filter(b => !deletedSwingIndexes.has(b?.extremum?.index));
+
+    return {swings, boses};
 }
 
 export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], removeInternal: boolean =false, removeEmpty: boolean = false, onlyExtremum: boolean = false) => {
     let boses = markHHLL(candles, swings)
-    if(removeEmpty)
+    // if(removeEmpty)
     swings = deleteEmptySwings(swings);
-    if(removeInternal)
-    swings = deleteInternalStructure(swings);
-    boses = drawBOS(candles, swings, boses, onlyExtremum);
+    // if(removeInternal)
+    const internal = deleteInternalStructure(swings, boses);
+    boses = internal.boses;
+    swings = internal.swings;
 
-    const withoutExternal = deleteExternalStructures(swings, boses);
-    boses = withoutExternal.boses;
-    swings = withoutExternal.swings;
+    boses = drawBOS(candles, swings, boses, onlyExtremum);
+    //
+    // const withoutExternal = deleteExternalStructures(swings, boses);
+    // boses = withoutExternal.boses;
+    // swings = withoutExternal.swings;
 
     const withTrend = drawTrend(candles, swings, boses);
     const trend = withTrend.trend
     boses = withTrend.boses;
-
-    boses = removeIDM(boses, trend)
-    //
-    // swings = markIFC(candles, swings)
 
     return {trend, boses, swings};
 };
