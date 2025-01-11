@@ -453,7 +453,7 @@ const removeDuplicates = (swings: Swing[], boses: Cross[]) => {
 }
 
 // Рисует BOS если LL или HH перекрываются
-const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[], onlyExtremum: boolean = false) => {
+const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
     const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
 
     const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
@@ -852,15 +852,6 @@ const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     }
 
     for (let i = 0; i < swings.length; i++) {
-        // TODO test
-        // if(swings[i]){
-        //     swings[i].text = i.toString();
-        // }
-        //
-        // if(i === 170){
-        //     debugger
-        // }
-
         confirmLowestLow(i)
         confirmHighestHigh(i);
 
@@ -1214,14 +1205,6 @@ export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
     let deletedSwingIndexes = new Set([]);
 
     for (let i = 0; i < swings.length; i++) {
-        //
-        // if(i === 230){
-        //     debugger
-        // }
-        // if(i === 262){
-        //     debugger
-        // }
-
         if(swings[i] && swings[i].side === 'high'){
             preLastHighIndex = lastHighIndex;
             lastHighIndex = i;
@@ -1243,23 +1226,6 @@ export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
                 lastHighIndex = preLastHighIndex;
             }
         }
-        //
-        // // Сужение
-        // if(swings[preLastLowIndex]?.price < swings[lastLowIndex]?.price && swings[preLastHighIndex]?.price > swings[lastHighIndex]?.price){
-        //     swings[lastLowIndex] = null;
-        //     swings[lastHighIndex] = null;
-        //     lastLowIndex = preLastLowIndex;
-        //     lastHighIndex = preLastHighIndex;
-        // }
-        //
-        // // Расширение
-        // if(swings[preLastLowIndex]?.price > swings[lastLowIndex]?.price && swings[preLastHighIndex]?.price < swings[lastHighIndex]?.price){
-        //     swings[preLastLowIndex] = null;
-        //     swings[preLastHighIndex] = null;
-        //
-        //     preLastLowIndex = null;
-        //     preLastHighIndex = null;
-        // }
     }
 
     boses = boses.filter(b => !deletedSwingIndexes.has(b?.extremum?.index));
@@ -1267,20 +1233,14 @@ export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
     return {swings, boses};
 }
 
-export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], removeInternal: boolean =false, removeEmpty: boolean = false, onlyExtremum: boolean = false) => {
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
     let boses = markHHLL(candles, swings)
-    // if(removeEmpty)
     swings = deleteEmptySwings(swings);
-    // if(removeInternal)
     const internal = deleteInternalStructure(swings, boses);
     boses = internal.boses;
     swings = internal.swings;
 
-    boses = drawBOS(candles, swings, boses, onlyExtremum);
-    //
-    // const withoutExternal = deleteExternalStructures(swings, boses);
-    // boses = withoutExternal.boses;
-    // swings = withoutExternal.swings;
+    boses = drawBOS(candles, swings, boses);
 
     const withTrend = drawTrend(candles, swings, boses);
     const trend = withTrend.trend
