@@ -63,6 +63,7 @@ export const TestingPage = () => {
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
     const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
     const [tradeIFC, setTradeIFC] = useState<boolean>(false);
+    const [withMove, setwithMove] = useState<boolean>(false);
     const [tradeOB, setTradeOB] = useState<boolean>(true);
     const [limitOrderTrade, setLimitOrderTrade] = useState<boolean>(false);
     const [excludeTrendSFP, setExcludeTrendSFP] = useState<boolean>(false);
@@ -124,7 +125,7 @@ export const TestingPage = () => {
             lows = thSwings.filter(t => t?.side === 'low');
             trend = thTrend;
             boses = thBoses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, withMove);
         } else if(trandsType === 'dobrinya'){
             const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data);
             swingsData = thSwings;
@@ -136,7 +137,7 @@ export const TestingPage = () => {
         } else {
             trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
             boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, withMove);
         }
 
         const lotsize = (security?.lotsize || 1)
@@ -175,7 +176,7 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, trandsType, tradeOB, limitOrderTrade, tradeIFC, trend, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, trandsType, tradeOB, withMove, limitOrderTrade, tradeIFC, trend, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -192,7 +193,7 @@ export const TestingPage = () => {
                 lows = thSwings.filter(t => t?.side === 'low');
                 trend = thTrend;
                 boses = thBoses;
-                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
+                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, withMove);
             } else if(trandsType === 'dobrinya'){
                 const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data);
                 swingsData = thSwings;
@@ -204,7 +205,7 @@ export const TestingPage = () => {
             } else {
                 trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
                 boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
+                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, withMove);
             }
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
@@ -241,7 +242,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
-    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -436,6 +437,11 @@ export const TestingPage = () => {
                 <Col>
                     <FormItem>
                         <Checkbox checked={tradeIFC} onChange={e => setTradeIFC(e.target.checked)}>Торговать IFC</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox checked={withMove} onChange={e => setwithMove(e.target.checked)}>Двигать к имбалансу</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>
