@@ -13,6 +13,7 @@ import SessionLiquidityPage from "./pages/SessionLiquidityPage.tsx";
 import DailyLiquidityPage from "./pages/DailyLiquidityPage.tsx";
 import POIPage from "./pages/POIPage.tsx";
 import EntryPage from "./pages/EntryPage.tsx";
+import MultipleTimeFramePage from "./pages/MultipleTimeFramePage";
 
 type MenuItem = Required<MenuProps>['items'][number] & {element?: ReactNode};
 
@@ -31,7 +32,8 @@ const DemoPage = () => {
         {key: '8', label: 'Session Liquidity', element: <SessionLiquidityPage/>},
         {key: '9', label: 'Daily Candle Liquidity', element: <DailyLiquidityPage/>},
         {key: '10', label: 'POI Identification', element: <POIPage/>},
-        {key: '11', label: 'Entry Types Explanation', element: <EntryPage/>},
+        {key: '11', label: 'Multiple Time Frame', element: <MultipleTimeFramePage/>},
+        {key: '12', label: 'Entry Types Explanation', element: <EntryPage/>},
     ]
 
     const menuMap = useMemo(() => items.reduce((acc, curr) => {
