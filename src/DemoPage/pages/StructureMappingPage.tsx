@@ -155,6 +155,87 @@ const data6: HistoryObject[] = [
     {open: 86, high: 87, close: 83, low: 81, volume: 0, time: 10},
 ];
 
+const data7: HistoryObject[] = [
+    {open: 10, high: 21, close: 20, low: 9, volume: 0, time: 1},
+    {open: 20, high: 30, close: 21, low: 19, volume: 0, time: 2},
+    {open: 21, high: 31, close: 30, low: 20, volume: 0, time: 3},
+    {open: 30, high: 31, close: 23, low: 21, volume: 0, time: 4},
+    {open: 23, high: 24, close: 15, low: 14, volume: 0, time: 5},
+    {open: 15, high: 16, close: 14, low: 12, volume: 0, time: 6},
+    {open: 14, high: 18, close: 17, low: 13, volume: 0, time: 7},
+    {open: 17, high: 26, close: 25, low: 16, volume: 0, time: 8},
+    {open: 25, high: 33, close: 32, low: 24, volume: 0, time: 9},
+];
+
+const data8: HistoryObject[] = [
+    {open: 10, high: 21, close: 20, low: 9, volume: 0, time: 1},
+    {open: 20, high: 30, close: 21, low: 19, volume: 0, time: 2},
+    {open: 21, high: 31, close: 30, low: 20, volume: 0, time: 3},
+    {open: 30, high: 31, close: 23, low: 21, volume: 0, time: 4},
+    {open: 23, high: 24, close: 15, low: 14, volume: 0, time: 5},
+    {open: 15, high: 16, close: 14, low: 12, volume: 0, time: 6},
+    {open: 14, high: 18, close: 17, low: 13, volume: 0, time: 7},
+    {open: 17, high: 26, close: 25, low: 16, volume: 0, time: 8},
+    {open: 25, high: 33, close: 27, low: 24, volume: 0, time: 9},
+    {open: 27, high: 32, close: 31, low: 26, volume: 0, time: 10},
+    {open: 31, high: 32, close: 23, low: 22, volume: 0, time: 11},
+    {open: 23, high: 28, close: 27, low: 22, volume: 0, time: 12},
+    {open: 27, high: 35, close: 34, low: 26, volume: 0, time: 13},
+];
+
+const data9: HistoryObject[] = [
+    {open: 10, high: 21, close: 20, low: 9, volume: 0, time: 1},
+    {open: 20, high: 30, close: 21, low: 19, volume: 0, time: 2},
+    {open: 21, high: 31, close: 30, low: 20, volume: 0, time: 3},
+    {open: 30, high: 31, close: 23, low: 21, volume: 0, time: 4},
+    {open: 23, high: 24, close: 15, low: 14, volume: 0, time: 5},
+    {open: 15, high: 16, close: 14, low: 12, volume: 0, time: 6},
+    {open: 14, high: 18, close: 17, low: 13, volume: 0, time: 7},
+    {open: 17, high: 26, close: 25, low: 16, volume: 0, time: 8},
+    {open: 25, high: 33, close: 27, low: 24, volume: 0, time: 9},
+    {open: 27, high: 35, close: 34, low: 26, volume: 0, time: 10},
+];
+
+const data10: HistoryObject[] = [
+    {open: 10, high: 21, close: 20, low: 9, volume: 0, time: 1},
+    {open: 20, high: 30, close: 21, low: 19, volume: 0, time: 2},
+    {open: 21, high: 31, close: 30, low: 20, volume: 0, time: 3},
+    {open: 30, high: 31, close: 23, low: 21, volume: 0, time: 4},
+    {open: 23, high: 24, close: 15, low: 14, volume: 0, time: 5},
+    {open: 15, high: 16, close: 14, low: 12, volume: 0, time: 6},
+    {open: 14, high: 18, close: 17, low: 13, volume: 0, time: 7},
+    {open: 17, high: 26, close: 25, low: 16, volume: 0, time: 8},
+    {open: 25, high: 33, close: 27, low: 24, volume: 0, time: 9},
+];
+
+const data11: HistoryObject[] = [
+    {open: 10, high: 21, close: 20, low: 9, volume: 0, time: 1},
+    {open: 20, high: 30, close: 21, low: 19, volume: 0, time: 2},
+    {open: 21, high: 31, close: 30, low: 20, volume: 0, time: 3},
+    {open: 30, high: 31, close: 23, low: 21, volume: 0, time: 4},
+    {open: 23, high: 24, close: 15, low: 14, volume: 0, time: 5},
+    {open: 15, high: 16, close: 14, low: 12, volume: 0, time: 6},
+    {open: 14, high: 18, close: 17, low: 13, volume: 0, time: 7},
+    {open: 17, high: 26, close: 25, low: 16, volume: 0, time: 8},
+    {open: 25, high: 33, close: 27, low: 24, volume: 0, time: 9},
+    {open: 27, high: 32, close: 31, low: 26, volume: 0, time: 10},
+];
+
+const data12: HistoryObject[] = [
+    {open: 10, high: 21, close: 20, low: 9, volume: 0, time: 1},
+    {open: 20, high: 30, close: 21, low: 19, volume: 0, time: 2},
+    {open: 21, high: 31, close: 30, low: 20, volume: 0, time: 3},
+    {open: 30, high: 31, close: 23, low: 21, volume: 0, time: 4},
+    {open: 23, high: 24, close: 15, low: 14, volume: 0, time: 5},
+    {open: 15, high: 16, close: 14, low: 12, volume: 0, time: 6},
+    {open: 14, high: 18, close: 17, low: 13, volume: 0, time: 7},
+    {open: 17, high: 26, close: 25, low: 16, volume: 0, time: 8},
+    {open: 25, high: 33, close: 27, low: 24, volume: 0, time: 9},
+    {open: 27, high: 36, close: 31, low: 26, volume: 0, time: 10},
+    {open: 31, high: 32, close: 23, low: 22, volume: 0, time: 11},
+    {open: 23, high: 35, close: 34, low: 22, volume: 0, time: 12},
+];
+
 const StructureMappingPage = () => {
     const [data, setData] = useState([]);
     const [ticker, onSelectTicker] = useState('SBER');
@@ -301,6 +382,25 @@ const StructureMappingPage = () => {
         </div>
         <img src={img_5}/>
         <img src={img_6}/>
+        <div style={{    display: 'flex',
+
+            flexDirection: 'row',
+            gap: '8px',
+            marginBottom: '8px'
+        }}>
+            <BOSChart data={data7}/>
+            <BOSChart data={data8}/>
+            <BOSChart data={data9}/>
+        </div>
+        <div style={{    display: 'flex',
+            flexDirection: 'row',
+            gap: '8px',
+            marginBottom: '8px'
+        }}>
+            <BOSChart data={data10}/>
+            <BOSChart data={data11}/>
+            <BOSChart data={data12}/>
+        </div>
         <Typography.Paragraph>
             These are Bullish and Bearish Chart explanations you need to understand every point very carefully and
             peacefully because once you understand Structure mapping clearly then rest things will be easy to
