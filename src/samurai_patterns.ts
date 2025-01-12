@@ -534,17 +534,6 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
     let deleteIDM = new Set([]);
 
     for (let i = 0; i < candles.length; i++) {
-
-        if(swings[i] && swings[i].side === 'high' && swings[i].text === 'HH'){
-            prelastHighBosSwing = lastHighBosSwing;
-            lastHighBosSwing = i;
-        }
-
-        if(swings[i] && swings[i].side === 'low' && swings[i].text === 'LL'){
-            prelastLowBosSwing = lastLowBosSwing;
-            lastLowBosSwing = i;
-        }
-
         // TODO Хз надо ли, выглядит ок но финрез хуже
         if(
             swings[prelastHighBosSwing]?.price > swings[lastHighBosSwing]?.price
@@ -632,6 +621,18 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
                 liquidityLowCandle = null;
             }
+        }
+
+        if(swings[i] && swings[i].side === 'high' && swings[i].text === 'HH'){
+            prelastHighBosSwing = lastHighBosSwing;
+            lastHighBosSwing = i;
+            liquidityHighCandle = null;
+        }
+
+        if(swings[i] && swings[i].side === 'low' && swings[i].text === 'LL'){
+            prelastLowBosSwing = lastLowBosSwing;
+            lastLowBosSwing = i;
+            liquidityLowCandle = null;
         }
 
         // if (!swings[i]) {
