@@ -58,13 +58,13 @@ export const TestingPage = () => {
     const [data, setData] = useState([]);
     const [tf, onChangeTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
-    const [removeInternal, setremoveInternal] = useState<boolean>(false);
-    const [onlyExtremum, setonlyExtremum] = useState<boolean>(false);
+    const [removeInternal, setremoveInternal] = useState<boolean>(true);
+    const [onlyExtremum, setonlyExtremum] = useState<boolean>(true);
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
     const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
     const [tradeIFC, setTradeIFC] = useState<boolean>(false);
     const [tradeOB, setTradeOB] = useState<boolean>(true);
-    const [limitOrderTrade, setLimitOrderTrade] = useState<boolean>(true);
+    const [limitOrderTrade, setLimitOrderTrade] = useState<boolean>(false);
     const [excludeTrendSFP, setExcludeTrendSFP] = useState<boolean>(false);
     const [excludeWick, setExcludeWick] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
