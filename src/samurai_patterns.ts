@@ -7,6 +7,7 @@ export interface Swing {
     price: number;
     index: number;
     text?: string;
+    isIFC?: boolean;
 }
 
 export interface Trend {
@@ -78,13 +79,14 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
         }
         return '';
     };
-    const hasValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject) => {
-        if (leftCandle.high <= currentCandle.high && nextCandle.high < currentCandle.high
+
+    const hasValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle?: HistoryObject) => {
+        if (leftCandle.high <= currentCandle.high //  && nextCandle.high < currentCandle.high
             // && nextCandle.low <= currentCandle.low TODO В методичке этого нет
         ) {
             return 'high'
         }
-        if (leftCandle.low >= currentCandle.low && nextCandle.low > currentCandle.low
+        if (leftCandle.low >= currentCandle.low // && nextCandle.low > currentCandle.low
            // && nextCandle.high >= currentCandle.high TODO В методичке этого нет
         ) {
             return 'low'
@@ -107,6 +109,70 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
             index: 0
         };
     }
+
+    // let prevCandleIndex = 0;
+    //
+    // let lastHighIndex = null
+    // let lastLowIndex = null;
+    //
+    // for (let i = 1; i < candles.length - 1; i++) {
+    //     const prevCandle = candles[i - 1]; // [prevCandleIndex];
+    //     const currentCandle = candles[i];
+    //     if (isInsideBar(prevCandle, currentCandle)) {
+    //         continue;
+    //     }
+    //     let nextIndex = i + 1;
+    //     let nextCandle = candles[nextIndex];
+    //     // TODO в методичке этого нет
+    //     // for (; nextIndex < candles.length - 1; nextIndex++) {
+    //     //     nextCandle = candles[nextIndex]
+    //     //     if (!isInsideBar(currentCandle, nextCandle)) {
+    //     //         break;
+    //     //     }
+    //     // }
+    //
+    //     let diff = nextIndex - i - 1;
+    //     const highPullback = hasHighValidPullback(lastLowIndex ? candles[lastLowIndex] : prevCandle, currentCandle, nextCandle)
+    //     const lowPullback = hasLowValidPullback(lastHighIndex ? candles[lastHighIndex] : prevCandle, currentCandle, nextCandle)
+    //     const isValidPullback = hasValidPullback(prevCandle, currentCandle, nextCandle)
+    //
+    //     if(!lastHighIndex && highPullback){
+    //         lastHighIndex = i;
+    //     }
+    //
+    //     if(!lastLowIndex && lowPullback) {
+    //         lastLowIndex = i;
+    //     }
+    //
+    //     if(lastLowIndex && highPullback) {
+    //         const swing: Swing = {
+    //             side: (isValidPullback || '') as any,
+    //             time: candles[lastLowIndex].time,
+    //             price: isValidPullback === 'high' ? candles[lastLowIndex].high : candles[lastLowIndex].low,
+    //             index: lastLowIndex
+    //         }
+    //         lows[lastLowIndex] = {...swing, side: 'low'};
+    //         swings[lastLowIndex] = {...swing, side: 'low'};
+    //
+    //         lastLowIndex = null;
+    //     }
+    //
+    //     if(lastHighIndex && lowPullback){
+    //         const swing: Swing = {
+    //             side: (isValidPullback || '') as any,
+    //             time: candles[lastHighIndex].time,
+    //             price: isValidPullback === 'high' ? candles[lastHighIndex].high : candles[lastHighIndex].low,
+    //             index: lastHighIndex
+    //         }
+    //         highs[lastHighIndex] = {...swing, side: 'high'};
+    //         swings[lastHighIndex] = {...swing, side: 'high'};
+    //
+    //         lastHighIndex = null;
+    //     }
+    //
+    //     prevCandleIndex = i;
+    //     i += diff;
+    // }
 
     let prevCandleIndex = 0
     for (let i = 1; i < candles.length - 1; i++) {
@@ -499,12 +565,12 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
     for (let i = 0; i < candles.length; i++) {
 
-        if(swings[i] && swings[i].side === 'high' && swings[i].text){
+        if(swings[i] && swings[i].side === 'high' && swings[i].text === 'HH'){
             prelastHighBosSwing = lastHighBosSwing;
             lastHighBosSwing = i;
         }
 
-        if(swings[i] && swings[i].side === 'low' && swings[i].text){
+        if(swings[i] && swings[i].side === 'low' && swings[i].text === 'LL'){
             prelastLowBosSwing = lastLowBosSwing;
             lastLowBosSwing = i;
         }
@@ -960,8 +1026,8 @@ const markIFC = (candles: HistoryObject[], swings: Swing[]) => {
 
     for (let i = 0; i < swings.length; i++) {
         const bos = swings[i];
-        if (bos && ['HH', 'LL'].includes(bos.text) && isIFC(bos.side, candles[bos.index])) {
-            bos.text = 'IFC'
+        if (bos && isIFC(bos.side, candles[bos.index])) {
+            bos.isIFC = true
         }
     }
 
@@ -1098,7 +1164,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                         time: candles[i].time,
                         price: candles[i].high,
                         index: i,
-                        text: 'IFC'
+                        isIFC: true
                     }
                 }
             }
@@ -1130,7 +1196,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                         time: candles[i].time,
                         price: candles[i].high,
                         index: i,
-                        text: 'IFC'
+                        isIFC: true
                     }
                 }
             }
@@ -1244,11 +1310,11 @@ export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
     let deletedSwingIndexes = new Set([]);
 
     for (let i = 0; i < swings.length; i++) {
-        if(swings[i] && swings[i].side === 'high' && swings[i].text){
+        if(swings[i] && swings[i].side === 'high' && swings[i].text === 'HH'){
             preLastHighIndex = lastHighIndex;
             lastHighIndex = i;
         }
-        if(swings[i] && swings[i].side === 'low' && swings[i].text){
+        if(swings[i] && swings[i].side === 'low' && swings[i].text === 'LL'){
             preLastLowIndex = lastLowIndex;
             lastLowIndex = i;
         }
@@ -1274,6 +1340,9 @@ export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
 
 export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
     let boses = markHHLL(candles, swings)
+
+    swings = markIFC(candles, swings);
+
     swings = deleteEmptySwings(swings);
     const internal = deleteInternalStructure(swings, boses);
     boses = internal.boses;
@@ -1285,7 +1354,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     const trend = withTrend.trend
     boses = withTrend.boses;
 
-    swings = markIFC(candles, swings);
+    // swings = markIFC(candles, swings);
 
     return {trend, boses, swings};
 };
@@ -1912,7 +1981,7 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
     const positions = [];
     for (let i = 0; i < swings.length; i++) {
         const obItem = swings[i];
-        if (!obItem || obItem.text !== 'IFC') {
+        if (!obItem || !obItem.isIFC) {
             continue;
         }
 

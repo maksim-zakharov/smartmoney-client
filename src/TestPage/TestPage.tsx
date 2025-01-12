@@ -152,7 +152,7 @@ export const TestPage = () => {
         let boses = [];
         let orderBlocks = [];
         if(trandsType === StrategySource.TradingHub){
-            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data, config.removeInternal, config.removeEmpty, config.onlyExtremum);
+            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data);
             _swings = thSwings;
             highs = thSwings.filter(t => t?.side === 'high');
             lows = thSwings.filter(t => t?.side === 'low');
@@ -489,14 +489,14 @@ export const TestPage = () => {
                 time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.text
+                text: s.isIFC ? 'IFC' : s.text
             })));
             allMarkers.push(...swings.lows.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.text
+                text: s.isIFC ? 'IFC' : s.text
             })));
         }
         if(config.noDoubleSwing){

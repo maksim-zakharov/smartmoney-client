@@ -74,6 +74,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
     return <Chart width={300} height={200} markers={allMarkers1} lineSerieses={_lineSerieses1} primitives={_primitives}
                   data={data} ema={[]}/>
 };
+
 const data1: HistoryObject[] = [
     {open: 60, high: 61, close: 50, low: 48, volume: 0, time: 1},
     {open: 50, high: 62, close: 60, low: 49, volume: 0, time: 2},
