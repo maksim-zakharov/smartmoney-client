@@ -10,15 +10,15 @@ import React from "react";
 import {HistoryObject} from "../../api";
 import {createRectangle2} from "../../utils";
 
-const BOSChart = ({data}) => {
+const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
     const {swings: swings1, highs, lows} = tradinghubCalculateSwings(data);
 
     let bosses1 = markHHLL(data, swings1);
     bosses1 = drawBOS(data, swings1, bosses1);
 
-    const trends = data.map((candle, index) => ({trend: -1, time: candle.time, index}) as Trend);
+    const trends = data.map((candle, index) => ({trend, time: candle.time, index}) as Trend);
 
-    const orderBlocks = calculateOB(highs, lows, data, bosses1, trends);
+    const orderBlocks = calculateOB(highs, lows, data, bosses1, trends, true);
     const lastCandle = data[data.length - 1];
     const _primitives = [];
     _primitives.push(...orderBlocks.map(orderBlock => createRectangle2({
@@ -27,7 +27,7 @@ const BOSChart = ({data}) => {
             time: orderBlock.lastOrderblockCandle.time
         },
         rightBottom: {
-            price: orderBlock.lastImbalanceCandle.high,
+            price: orderBlock.lastImbalanceCandle[orderBlock.type],
             time: (orderBlock.endCandle || lastCandle).time
         }
     }, {
@@ -54,7 +54,14 @@ const BOSChart = ({data}) => {
         bullColor: "rgb(20, 131, 92)"
     }
     const allMarkers1 = [];
-    allMarkers1.push(...swings1.filter(Boolean).map(s => ({
+    allMarkers1.push(...highs.filter(Boolean).map(s => ({
+        color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+        time: (s.time) as Time,
+        shape: 'circle',
+        position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+        text: s.text
+    })));
+    allMarkers1.push(...lows.filter(Boolean).map(s => ({
         color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
         time: (s.time) as Time,
         shape: 'circle',
@@ -63,39 +70,6 @@ const BOSChart = ({data}) => {
     })));
 
     const _lineSerieses1 = [];
-    _lineSerieses1.push(...bosses1.filter(Boolean).map(marker => {
-        const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
-        const options = {
-            color, // Цвет линии
-            priceLineVisible: false,
-            lastValueVisible: false,
-            lineWidth: 1,
-            lineStyle: LineStyle.LargeDashed,
-        };
-        let data = [];
-        let markers = [];
-// 5. Устанавливаем данные для линии
-        if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
-            data = [
-                {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-            ];
-        } else
-            data = [
-                {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
-                {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-            ].sort((a, b) => a.time - b.time);
-
-        markers = [{
-            color,
-            time: (marker.textCandle.time) as Time,
-            shape: 'text',
-            position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-            text: marker.text
-        }]
-        return {options, data, markers}
-    }));
 
     return <Chart width={300} height={200} markers={allMarkers1} lineSerieses={_lineSerieses1} primitives={_primitives}
                   data={data} ema={[]}/>
@@ -130,6 +104,36 @@ const data2: HistoryObject[] = [
     {open: 35, high: 36, close: 31, low: 30, volume: 0, time: 12},
 ];
 
+const data3: HistoryObject[] = [
+    {open: 50, high: 63, close: 60, low: 48, volume: 0, time: 1},
+    {open: 60, high: 62, close: 50, low: 47, volume: 0, time: 2},
+    {open: 50, high: 51, close: 40, low: 38, volume: 0, time: 3},
+    {open: 40, high: 41, close: 30, low: 28, volume: 0, time: 4},
+    {open: 30, high: 43, close: 42, low: 26, volume: 0, time: 5},
+    {open: 42, high: 46, close: 45, low: 40, volume: 0, time: 6},
+    {open: 45, high: 68, close: 66, low: 43, volume: 0, time: 7},
+    {open: 66, high: 71, close: 70, low: 63, volume: 0, time: 8},
+    {open: 70, high: 73, close: 65, low: 64, volume: 0, time: 9},
+    {open: 65, high: 81, close: 80, low: 64, volume: 0, time: 10},
+    {open: 80, high: 86, close: 85, low: 79, volume: 0, time: 11},
+    {open: 85, high: 91, close: 90, low: 84, volume: 0, time: 12},
+];
+
+const data4: HistoryObject[] = [
+    {open: 50, high: 63, close: 60, low: 47, volume: 0, time: 1},
+    {open: 60, high: 62, close: 52, low: 47, volume: 0, time: 2},
+    {open: 52, high: 54, close: 40, low: 38, volume: 0, time: 3},
+    {open: 40, high: 52, close: 50, low: 36, volume: 0, time: 4},
+    {open: 50, high: 52, close: 40, low: 34, volume: 0, time: 5},
+    {open: 40, high: 58, close: 56, low: 38, volume: 0, time: 6},
+    {open: 56, high: 60, close: 58, low: 54, volume: 0, time: 7},
+    {open: 58, high: 68, close: 66, low: 56, volume: 0, time: 8},
+    {open: 66, high: 74, close: 72, low: 62, volume: 0, time: 9},
+    {open: 72, high: 74, close: 64, low: 60, volume: 0, time: 10},
+    {open: 64, high: 76, close: 74, low: 63, volume: 0, time: 11},
+    {open: 74, high: 82, close: 80, low: 72, volume: 0, time: 12},
+];
+
 const OrderblockPage = () => {
 
     return <>
@@ -151,6 +155,15 @@ const OrderblockPage = () => {
             <BOSChart data={data2}/>
         </div>
         <img src={img16}/>
+        <div style={{    display: 'flex',
+
+            flexDirection: 'row',
+            gap: '8px',
+            marginBottom: '8px'
+        }}>
+        <BOSChart data={data3} trend={1}/>
+        <BOSChart data={data4} trend={1}/>
+        </div>
         <Typography.Paragraph>
             Now you can understand more better clearly that how things actually work in order Block , to
             mark oder Block Proper imbalance and Liquidity Sweep Order Block .in upcoming chapters

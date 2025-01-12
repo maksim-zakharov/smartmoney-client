@@ -343,7 +343,7 @@ export const TestPage = () => {
                         time: orderBlock.lastOrderblockCandle.time
                     },
                     rightBottom: {
-                        price: orderBlock.lastImbalanceCandle.high,
+                        price: orderBlock.lastImbalanceCandle[orderBlock.type],
                         time: (orderBlock.endCandle || lastCandle).time
                     }
                 }, {
