@@ -10,18 +10,62 @@ import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
 import {DatesPicker} from "../../DatesPicker";
 import type { Dayjs } from 'dayjs';
-import {calculateOB, drawBOS, markHHLL, tradinghubCalculateSwings, Trend} from "../../samurai_patterns";
-import {Time} from "lightweight-charts";
+import {
+    calculateOB,
+    deleteEmptySwings,
+    drawBOS,
+    markHHLL,
+    tradinghubCalculateSwings,
+    Trend
+} from "../../samurai_patterns";
+import {LineStyle, Time} from "lightweight-charts";
 import {HistoryObject} from "../../api";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
+    let {swings, highs, lows} = tradinghubCalculateSwings(data);
     debugger
 
-    const {swings: swings1, highs, lows} = tradinghubCalculateSwings(data);
+    let boses = markHHLL(data, swings);
+    boses = drawBOS(data, swings, boses);
 
     const markerColors = {
         bearColor: "rgb(157, 43, 56)",
         bullColor: "rgb(20, 131, 92)"
     }
+
+    const _lineSerieses1 = [];
+    _lineSerieses1.push(...boses.filter(Boolean).map(marker => {
+        const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
+        const options = {
+            color, // Цвет линии
+            priceLineVisible: false,
+            lastValueVisible: false,
+            lineWidth: 1,
+            lineStyle: LineStyle.LargeDashed,
+        };
+        let data = [];
+        let markers = [];
+// 5. Устанавливаем данные для линии
+        if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
+            data = [
+                {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+            ];
+        } else
+            data = [
+                {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
+                {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+            ].sort((a, b) => a.time - b.time);
+
+        markers = [{
+            color,
+            time: (marker.textCandle.time) as Time,
+            shape: 'text',
+            position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
+            text: marker.text
+        }]
+        return {options, data, markers}
+    }));
     const allMarkers1 = [];
     allMarkers1.push(...highs.filter(Boolean).map(s => ({
         color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
@@ -38,7 +82,7 @@ const BOSChart = ({data}: {data: HistoryObject[]}) => {
         text: s.text
     })));
 
-    return <Chart width={300} height={200} markers={allMarkers1} lineSerieses={[]} primitives={[]}
+    return <Chart width={300} height={200} markers={allMarkers1} lineSerieses={_lineSerieses1} primitives={[]}
                   data={data} ema={[]}/>
 };
 
@@ -57,18 +101,47 @@ const data1: HistoryObject[] = [
     {open: 54, high: 56, close: 48, low: 46, volume: 0, time: 12},
 ];
 const data2: HistoryObject[] = [
-    {open: 60, high: 61, close: 50, low: 48, volume: 0, time: 1},
-    {open: 50, high: 62, close: 60, low: 49, volume: 0, time: 2},
-    {open: 60, high: 71, close: 70, low: 59, volume: 0, time: 3},
-    {open: 70, high: 81, close: 80, low: 69, volume: 0, time: 4},
-    {open: 80, high: 83, close: 72, low: 70, volume: 0, time: 5},
-    {open: 72, high: 73, close: 59, low: 58, volume: 0, time: 6},
-    {open: 59, high: 60, close: 48, low: 47, volume: 0, time: 7},
-    {open: 48, high: 49, close: 40, low: 39, volume: 0, time: 8},
-    {open: 40, high: 52, close: 46, low: 38, volume: 0, time: 9},
-    {open: 46, high: 47, close: 42, low: 41, volume: 0, time: 10},
-    {open: 42, high: 43, close: 35, low: 34, volume: 0, time: 11},
-    {open: 35, high: 36, close: 31, low: 30, volume: 0, time: 12},
+    {open: 90, high: 92, close: 80, low: 77, volume: 0, time: 1},
+    {open: 80, high: 84, close: 76, low: 74, volume: 0, time: 2},
+    {open: 76, high: 86, close: 70, low: 68, volume: 0, time: 3},
+    {open: 70, high: 80, close: 78, low: 69, volume: 0, time: 4},
+    {open: 78, high: 84, close: 82, low: 76, volume: 0, time: 5},
+    {open: 82, high: 84, close: 66, low: 64, volume: 0, time: 6},
+    {open: 66, high: 70, close: 63, low: 61, volume: 0, time: 7},
+    {open: 63, high: 66, close: 50, low: 48, volume: 0, time: 8},
+    {open: 50, high: 56, close: 54, low: 46, volume: 0, time: 9},
+    {open: 54, high: 62, close: 60, low: 52, volume: 0, time: 10},
+    {open: 60, high: 63, close: 54, low: 50, volume: 0, time: 11},
+    {open: 54, high: 56, close: 48, low: 46, volume: 0, time: 12},
+];
+
+const data3: HistoryObject[] = [
+    {open: 10, high: 22, close: 20, low: 8, volume: 0, time: 1},
+    {open: 20, high: 32, close: 30, low: 18, volume: 0, time: 2},
+    {open: 30, high: 42, close: 40, low: 28, volume: 0, time: 3},
+    {open: 40, high: 41, close: 26, low: 24, volume: 0, time: 4},
+    {open: 26, high: 28, close: 18, low: 16, volume: 0, time: 5},
+    {open: 18, high: 32, close: 30, low: 14, volume: 0, time: 6},
+    {open: 30, high: 36, close: 34, low: 26, volume: 0, time: 7},
+    {open: 34, high: 54, close: 50, low: 30, volume: 0, time: 8},
+    {open: 50, high: 52, close: 44, low: 42, volume: 0, time: 9},
+    {open: 44, high: 46, close: 34, low: 32, volume: 0, time: 10},
+    {open: 34, high: 44, close: 40, low: 32, volume: 0, time: 11},
+    {open: 40, high: 56, close: 54, low: 38, volume: 0, time: 12},
+];
+const data4: HistoryObject[] = [
+    {open: 10, high: 22, close: 20, low: 8, volume: 0, time: 1},
+    {open: 20, high: 32, close: 30, low: 18, volume: 0, time: 2},
+    {open: 30, high: 42, close: 40, low: 12, volume: 0, time: 3},
+    {open: 40, high: 41, close: 26, low: 24, volume: 0, time: 4},
+    {open: 26, high: 28, close: 18, low: 16, volume: 0, time: 5},
+    {open: 18, high: 32, close: 30, low: 14, volume: 0, time: 6},
+    {open: 30, high: 36, close: 34, low: 26, volume: 0, time: 7},
+    {open: 34, high: 54, close: 50, low: 30, volume: 0, time: 8},
+    {open: 50, high: 56, close: 44, low: 42, volume: 0, time: 9},
+    {open: 44, high: 46, close: 34, low: 32, volume: 0, time: 10},
+    {open: 34, high: 44, close: 40, low: 32, volume: 0, time: 11},
+    {open: 40, high: 56, close: 54, low: 38, volume: 0, time: 12},
 ];
 
 const ImpulseAndCorrectionPage = () => {
@@ -143,6 +216,15 @@ const ImpulseAndCorrectionPage = () => {
             scenarios are valid. one more thing Price taken out High/Low then sometimes candle close or Sweep Prev
             Candle High Low . Both scenarios are valid.
         </Typography.Paragraph>
+        <div style={{    display: 'flex',
+
+            flexDirection: 'row',
+            gap: '8px',
+            marginBottom: '8px'
+        }}>
+            <BOSChart data={data3}/>
+            <BOSChart data={data4}/>
+        </div>
         <img src={img_2}/>
         <Divider/>
         <Space>
