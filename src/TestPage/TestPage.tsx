@@ -606,16 +606,6 @@ export const TestPage = () => {
                     position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
                     text: marker.text
                 }]
-
-                // if (marker.idmIndex) {
-                //     crossesMarkers.push({
-                //         color: marker.color,
-                //         time: data[marker.idmIndex].time,
-                //         shape: 'text',
-                //         position: marker.position,
-                //         text: 'IDM'
-                //     })
-                // }
                 return {options, data, markers}
             }));
         }
@@ -713,13 +703,13 @@ export const TestPage = () => {
             <Checkbox key="tradeOB" value="tradeOB">Торговать OB</Checkbox>
             <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
-            <Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>
-            <Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>
-            <Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>
-            <Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>
-            <Checkbox key="removeInternal" value="removeInternal">Игнорировать внутреннюю структуру</Checkbox>
-            <Checkbox key="removeEmpty" value="removeEmpty">Удалить пустые точки</Checkbox>
-            <Checkbox key="onlyExtremum" value="onlyExtremum">БОСЫ только на экстремумах</Checkbox>
+            {/*<Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>*/}
+            {/*<Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>*/}
+            {/*<Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>*/}
+            {/*<Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>*/}
+            {/*<Checkbox key="removeInternal" value="removeInternal">Игнорировать внутреннюю структуру</Checkbox>*/}
+            {/*<Checkbox key="removeEmpty" value="removeEmpty">Удалить пустые точки</Checkbox>*/}
+            {/*<Checkbox key="onlyExtremum" value="onlyExtremum">БОСЫ только на экстремумах</Checkbox>*/}
         </Checkbox.Group>
         <Space style={{alignItems: 'baseline'}}>
             <TickerSelect value={ticker} onSelect={onSelectTicker}/>

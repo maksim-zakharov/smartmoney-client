@@ -19,6 +19,208 @@ import {useEffect, useMemo, useState} from "react";
 import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
 
+
+export class CandlesBuilder{
+    _candles: HistoryObject[] = [];
+
+    constructor() {
+    }
+
+    add(options: {highest?: boolean, eqh?: boolean, eql?: boolean, lowest?: boolean,bullish?: boolean,bearish?: boolean}){
+        const lastCandle = this._candles[this._candles.length - 1];
+
+        const open = lastCandle?.open || 100;
+        const close = lastCandle?.close || 110;
+        const high = lastCandle?.high || 110;
+        const low = lastCandle?.low || 90;
+
+        const eq = options.lowest === options.highest;
+        if(eq){
+            this._candles.push({
+                open: close,
+                close: close > open ? close - 10 : close + 10,
+                high: options.highest ? high + 10 : high - 10,
+                low: options.lowest ? low - 10 : low + 10,
+                volume: 1000,
+                time: 1
+            });
+        }else {
+            this._candles.push({
+                open: close,
+                close: options.bullish ? close + 10 :  close - 10,
+                high: options.eqh ? high : options.highest ? high + 10 : high - 10,
+                low: options.eql ? low :  options.lowest ? low - 10 : low + 10,
+                volume: 1000,
+                time: 1
+            });
+        }
+
+        return this;
+    }
+
+    addBullish(){
+        const lastCandle = this._candles[this._candles.length - 1];
+        const time = lastCandle?.time || 1;
+        this._candles.push({
+            open: 40,
+            close: 80,
+            high: 110,
+            low: 20,
+            volume: 1000,
+            time: time + 1
+        });
+
+        return this;
+    }
+
+    addBearish(){
+        const lastCandle = this._candles[this._candles.length - 1];
+        const time = lastCandle?.time || 1;
+        this._candles.push({
+            close: 40,
+            open: 80,
+            high: 110,
+            low: 20,
+            volume: 1000,
+            time: time + 1
+        });
+
+        return this;
+    }
+
+    addInternalBar(){
+        // const lastCandle = this._candles[this._candles.length - 1];
+        //
+        // const close = lastCandle?.close || 110;
+        // const high = lastCandle?.high || 110;
+        // const low = lastCandle?.low || 90;
+        //
+        // this._candles.push({
+        //     open: close,
+        //     close: close + 10,
+        //     high: high - 10,
+        //     low: low + 10,
+        //     volume: 1000,
+        //     time: 1
+        // });
+
+        this.add({
+            highest: false,
+            lowest: false
+        })
+
+        return this;
+    }
+
+    addExternalBar(){
+        // const lastCandle = this._candles[this._candles.length - 1];
+        //
+        // const close = lastCandle?.close || 110;
+        // const high = lastCandle?.high || 110;
+        // const low = lastCandle?.low || 90;
+        //
+        // this._candles.push({
+        //     open: close,
+        //     close: close + 10,
+        //     high: high + 10,
+        //     low: low - 10,
+        //     volume: 1000,
+        //     time: 1
+        // });
+
+        this.add({
+            highest: true,
+            lowest: true
+        })
+
+        return this;
+    }
+
+    addSwingBullish(index?: number){
+        const lastCandle = this._candles[this._candles.length - 1];
+        const indexCandle = this._candles[index];
+
+        const close = lastCandle?.close || 110;
+        const high = indexCandle?.high || lastCandle?.high || 110;
+        const low = lastCandle?.low || 90;
+        const time = lastCandle?.time || 1;
+
+        this._candles.push({
+            open: close,
+            close: close + 10,
+            high: high + 10,
+            low: low + 10,
+            volume: 1000,
+            time: time + 1
+        });
+
+        return this;
+    }
+
+    addBearishEH(){
+        const lastCandle = this._candles[this._candles.length - 1];
+
+        const close = lastCandle?.close || 110;
+        const high = lastCandle?.high || 110;
+        const low = lastCandle?.low || 90;
+
+        this._candles.push({
+            open: close,
+            close: close - 10,
+            high: high,
+            low: low - 10,
+            volume: 1000,
+            time: 1
+        });
+
+        return this;
+    }
+
+    addSwingBearish(index?: number){
+        const lastCandle = this._candles[this._candles.length - 1];
+        const indexCandle = this._candles[index];
+
+        const close = lastCandle?.close || 110;
+        const high = lastCandle?.high || 110;
+        const low = indexCandle?.low || lastCandle?.low || 90;
+        const time = lastCandle?.time || 1;
+
+        this._candles.push({
+            open: close,
+            close: close - 10,
+            high: high - 10,
+            low: low - 10,
+            volume: 1000,
+            time: time + 1
+        });
+
+        return this;
+    }
+
+    addSwingHighBearish(){
+        const lastCandle = this._candles[this._candles.length - 1];
+
+        const close = lastCandle?.close || 110;
+        const high = lastCandle?.high || 110;
+        const low = lastCandle?.low || 90;
+
+        this._candles.push({
+            open: close,
+            close: close - 10,
+            high: high + 10,
+            low: low + 10,
+            volume: 1000,
+            time: 1
+        });
+
+        return this;
+    }
+
+    toArray() {
+        return this._candles;
+    }
+}
+
 export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit?) {
     let url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX`;
     if(limit){

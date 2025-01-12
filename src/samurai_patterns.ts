@@ -105,6 +105,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
         }
         let diff = nextIndex - i - 1;
         const isValidPullback = hasValidPullback(prevCandle, currentCandle, nextCandle)
+
         const swing: Swing = {
             side: (isValidPullback || '') as any,
             time: currentCandle.time,
@@ -453,7 +454,7 @@ const removeDuplicates = (swings: Swing[], boses: Cross[]) => {
 }
 
 // Рисует BOS если LL или HH перекрываются
-const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
+export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
     const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
 
     const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
@@ -511,7 +512,7 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
                 if (isClose) {
                     to = {index: i, time: candles[i].time, price: candles[i].close};
                 } else {
-                    liquidityCandle = candles[i];
+                    liquidityHighCandle = candles[i];
                 }
             }
 
@@ -545,7 +546,7 @@ const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
                 if (isClose) {
                     to = {index: i, time: candles[i].time, price: candles[i].close};
                 } else {
-                    liquidityCandle = candles[i];
+                    liquidityLowCandle = candles[i];
                 }
             }
 
@@ -751,7 +752,7 @@ const deleteExternalStructures = (swings: Swing[], boses: Cross[]) => {
     return {swings, boses};
 }
 
-const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
+export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     let boses: Cross[] = new Array(candles.length).fill(null);
 
     let lastLow: (Swing & {idmSwing?: Swing}) = null;
@@ -1242,7 +1243,7 @@ export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
 
 export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
     let boses = markHHLL(candles, swings)
-    // swings = deleteEmptySwings(swings);
+    swings = deleteEmptySwings(swings);
     const internal = deleteInternalStructure(swings, boses);
     boses = internal.boses;
     swings = internal.swings;

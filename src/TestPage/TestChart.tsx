@@ -30,6 +30,8 @@ export const Chart: FC<{
     showVolume?: boolean,
     data: any[],
     ema: any[],
+    height?: number,
+    width?: number,
 }> = ({
           lineSerieses,
           markers,
@@ -39,6 +41,8 @@ export const Chart: FC<{
                               showVolume = true,
           data,
           ema,
+                              width,
+                              height = 710
       }) => {
 
     const {
@@ -110,8 +114,8 @@ export const Chart: FC<{
             background: {type: ColorType.Solid, color: "rgb(30,44,57)"},
             textColor: color
         },
-        width: chartContainerRef.current?.clientWidth,
-        height: chartContainerRef.current?.clientHeight || 710,
+        width: width || chartContainerRef.current?.clientWidth,
+        height: chartContainerRef.current?.clientHeight || height,
     }
 
     useEffect(() => {
