@@ -58,8 +58,6 @@ export const TestingPage = () => {
     const [data, setData] = useState([]);
     const [tf, onChangeTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
-    const [withMove, setWithMove] = useState<boolean>(false);
-    const [excludeIDM, setExcludeIDM] = useState<boolean>(false);
     const [removeInternal, setremoveInternal] = useState<boolean>(false);
     const [onlyExtremum, setonlyExtremum] = useState<boolean>(false);
     const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
@@ -126,9 +124,9 @@ export const TestingPage = () => {
             lows = thSwings.filter(t => t?.side === 'low');
             trend = thTrend;
             boses = thBoses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, excludeIDM, withMove);
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
         } else if(trandsType === 'dobrinya'){
-            const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data, withMove);
+            const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data);
             swingsData = thSwings;
             highs = thSwings.filter(t => t?.side === 'high');
             lows = thSwings.filter(t => t?.side === 'low');
@@ -138,13 +136,7 @@ export const TestingPage = () => {
         } else {
             trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
             boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, excludeIDM, withMove);
-        }
-
-       if (excludeIDM) {
-            // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
-            // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
-            // orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
         }
 
         const lotsize = (security?.lotsize || 1)
@@ -183,7 +175,7 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
-    }, [data, trandsType, tradeOB, limitOrderTrade, tradeIFC, trend, withMove, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, excludeIDM, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, trandsType, tradeOB, limitOrderTrade, tradeIFC, trend, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -200,9 +192,9 @@ export const TestingPage = () => {
                 lows = thSwings.filter(t => t?.side === 'low');
                 trend = thTrend;
                 boses = thBoses;
-                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, excludeIDM, withMove);
+                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
             } else if(trandsType === 'dobrinya'){
-                const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data, withMove);
+                const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data);
                 swingsData = thSwings;
                 highs = thSwings.filter(t => t?.side === 'high');
                 lows = thSwings.filter(t => t?.side === 'low');
@@ -212,13 +204,7 @@ export const TestingPage = () => {
             } else {
                 trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
                 boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, excludeIDM, withMove);
-            }
-
-            if(excludeIDM){
-                // const {boses} = calculateCrosses(highParts, lowParts, data, newTrend)
-                // const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
-                // orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
+                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
             }
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
@@ -255,7 +241,7 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
-    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, withMove, removeInternal, onlyExtremum, excludeIDM, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -480,11 +466,6 @@ export const TestingPage = () => {
                 <Col>
                     <FormItem>
                         <Checkbox checked={excludeWick} onChange={e => setExcludeWick(e.target.checked)}>Игнорировать пробитие фитилем</Checkbox>
-                    </FormItem>
-                </Col>
-                <Col>
-                    <FormItem>
-                        <Checkbox checked={withMove} onChange={e => setWithMove(e.target.checked)}>Двигать ОБ к имбалансу</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>

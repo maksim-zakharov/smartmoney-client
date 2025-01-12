@@ -62,11 +62,31 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
     const highs: (Swing | null)[] = new Array(candles.length).fill(null);
     const lows: (Swing | null)[] = new Array(candles.length).fill(null);
 
-    const hasValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject) => {
-        if (leftCandle.high <= currentCandle.high && nextCandle.high < currentCandle.high && nextCandle.low <= currentCandle.low) {
+    const hasHighValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject) => {
+        if (leftCandle.high <= currentCandle.high && nextCandle.high < currentCandle.high
+            // && nextCandle.low <= currentCandle.low TODO В методичке этого нет
+        ) {
             return 'high'
         }
-        if (leftCandle.low >= currentCandle.low && nextCandle.low > currentCandle.low && nextCandle.high >= currentCandle.high) {
+        return '';
+    };
+    const hasLowValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject) => {
+        if (leftCandle.low >= currentCandle.low && nextCandle.low > currentCandle.low
+            // && nextCandle.high >= currentCandle.high TODO В методичке этого нет
+        ) {
+            return 'low'
+        }
+        return '';
+    };
+    const hasValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject) => {
+        if (leftCandle.high <= currentCandle.high && nextCandle.high < currentCandle.high
+            // && nextCandle.low <= currentCandle.low TODO В методичке этого нет
+        ) {
+            return 'high'
+        }
+        if (leftCandle.low >= currentCandle.low && nextCandle.low > currentCandle.low
+           // && nextCandle.high >= currentCandle.high TODO В методичке этого нет
+        ) {
             return 'low'
         }
         return '';
@@ -97,13 +117,16 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
         }
         let nextIndex = i + 1;
         let nextCandle = candles[nextIndex];
-        for (; nextIndex < candles.length - 1; nextIndex++) {
-            nextCandle = candles[nextIndex]
-            if (!isInsideBar(currentCandle, nextCandle)) {
-                break;
-            }
-        }
+        // TODO в методичке этого нет
+        // for (; nextIndex < candles.length - 1; nextIndex++) {
+        //     nextCandle = candles[nextIndex]
+        //     if (!isInsideBar(currentCandle, nextCandle)) {
+        //         break;
+        //     }
+        // }
         let diff = nextIndex - i - 1;
+        const highPullback = hasHighValidPullback(prevCandle, currentCandle, nextCandle)
+        const lowPullback = hasLowValidPullback(prevCandle, currentCandle, nextCandle)
         const isValidPullback = hasValidPullback(prevCandle, currentCandle, nextCandle)
 
         const swing: Swing = {
@@ -112,8 +135,8 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
             price: isValidPullback === 'high' ? currentCandle.high : currentCandle.low,
             index: i
         }
-        highs[i] = isValidPullback === 'high' ? swing : null;
-        lows[i] = isValidPullback === 'low' ? swing : null;
+        highs[i] = highPullback ? {...swing, side: 'high'} : null;
+        lows[i] = lowPullback ? {...swing, side: 'low'} : null;
         swings[i] = isValidPullback ? swing : null;
         prevCandleIndex = i;
         i += diff;
@@ -131,21 +154,25 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
             continue;
         }
         if (swing.side === 'high') {
+            // Обновляем хай
             if (swing.price > swings[lastSwingIndex]?.price) {
                 swings[lastSwingIndex] = null;
                 highs[lastSwingIndex] = null;
                 lastSwingIndex = i;
-            } else {
+            } else if(!lows[i]) {
+                // Убираем хай подряд
                 swings[i] = null;
                 highs[i] = null;
             }
         }
         if (swing.side === 'low') {
+            // Обновляем лой
             if (swing.price < swings[lastSwingIndex]?.price) {
                 swings[lastSwingIndex] = null;
                 lows[lastSwingIndex] = null;
                 lastSwingIndex = i;
-            } else {
+            } else if(!highs[i]) {
+                // Обновляем лой подряд
                 swings[i] = null;
                 lows[i] = null;
             }
@@ -1767,8 +1794,11 @@ const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' 
  * и только если следующая свеча после структурной дает имбаланс
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
-export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], excludeIDM: boolean = false, withMove: boolean = false) => {
+export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false) => {
     let ob: OrderBlock [] = [];
+    // Иногда определяеются несколько ОБ на одной свечке, убираем
+    let uniqueOrderBlockTimeSet = new Set();
+
     const MAX_CANDLES_COUNT = 10;
 
     let lastHighIDMIndex = null;
@@ -1785,7 +1815,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         }
         const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
         const orderBlock = isOrderblock(candlesBatch, withMove);
-        if (orderBlock?.type === 'high') {
+        if (orderBlock?.type === 'high' && !uniqueOrderBlockTimeSet.has(orderBlock.orderblock.time)) {
             // TODO Не торговать ОБ под IDM
             const bossIndex = orderBlock.firstImbalanceIndex + index;
             const boss = boses[bossIndex];
@@ -1809,6 +1839,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 imbalanceIndex: orderBlock.imbalanceIndex,
                 startCandle: orderBlock.orderblock
             } as OrderBlock)
+
+            uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
         }
     }
 
@@ -1826,7 +1858,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         }
         const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
         const orderBlock = isOrderblock(candlesBatch, withMove);
-        if (orderBlock?.type === 'low') {
+        if (orderBlock?.type === 'low' && !uniqueOrderBlockTimeSet.has(orderBlock.orderblock.time)) {
             // TODO Не торговать ОБ под IDM
             const bossIndex = orderBlock.firstImbalanceIndex + index;
             const boss = boses[bossIndex];
@@ -1849,6 +1881,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 imbalanceIndex: orderBlock.imbalanceIndex,
                 startCandle: orderBlock.orderblock
             } as OrderBlock)
+
+            uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
         }
     }
 
@@ -1865,17 +1899,6 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 obItem.endCandle = candle;
                 obItem.endIndex = j
                 obItem.canTrade = true;
-
-                // торгую или нет. Торгую если есть endIndex и если это не последний хай в структуре
-                // Короче просто исключаем торговлю на первом откате (минусит)
-                if (excludeIDM) {
-                    obItem.canTrade = false;
-                    const typeExtremumsArray = obItem.type === 'low' ? lows : highs;
-                    const betweenExtremums = typeExtremumsArray.slice(startPositionIndex, obItem.endIndex + 1);
-                    if (betweenExtremums.some(s => s?.side === obItem.type)) {
-                        obItem.canTrade = true;
-                    }
-                }
 
                 break;
             }

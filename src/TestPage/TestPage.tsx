@@ -108,11 +108,9 @@ export const TestPage = () => {
         tradeIFC: checkboxValues.includes('tradeIFC'),
         limitOrderTrade: checkboxValues.includes('limitOrderTrade'),
         tradeOB: checkboxValues.includes('tradeOB'),
-        excludeIDM: checkboxValues.includes('excludeIDM'),
         showFakeouts: checkboxValues.includes('showFakeouts'),
         excludeTrendSFP: checkboxValues.includes('excludeTrendSFP'),
         excludeWick: checkboxValues.includes('excludeWick'),
-        withMove: checkboxValues.includes('withMove'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -159,7 +157,7 @@ export const TestPage = () => {
             lows = thSwings.filter(t => t?.side === 'low');
             trend = thTrend;
             boses = thBoses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, config.excludeIDM, obType.toString() !== 'samurai');
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
         } else if(trandsType === StrategySource.Dobrunia){
             const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(_swings, data, obType !== 'samurai');
             _swings = thSwings;
@@ -171,7 +169,7 @@ export const TestPage = () => {
         } else {
             trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
             boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, config.excludeIDM, obType !== 'samurai');
+            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend);
         }
 
         const fakeouts = calculateFakeout(highParts, lowParts, data)
@@ -192,7 +190,7 @@ export const TestPage = () => {
         }
 
         return { ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [swipType, trandsType, structureType, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, config.excludeIDM, obType, data, maxDiff, multiStop])
+    }, [swipType, trandsType, structureType, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, obType, data, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
@@ -345,8 +343,8 @@ export const TestPage = () => {
                         time: orderBlock.lastOrderblockCandle.time
                     },
                     rightBottom: {
-                        price: orderBlock.lastImbalanceCandle.low,
-                        time: (orderBlock.lastImbalanceCandle || lastCandle).time
+                        price: orderBlock.lastImbalanceCandle.high,
+                        time: (orderBlock.endCandle || lastCandle).time
                     }
                 }, {
                     fillColor: 'rgba(179, 199, 219, .3)',
@@ -704,7 +702,6 @@ export const TestPage = () => {
             <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             {/*<Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>*/}
-            {/*<Checkbox key="excludeIDM" value="excludeIDM">Исключить IDM</Checkbox>*/}
             {/*<Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>*/}
             {/*<Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>*/}
             {/*<Checkbox key="removeInternal" value="removeInternal">Игнорировать внутреннюю структуру</Checkbox>*/}
