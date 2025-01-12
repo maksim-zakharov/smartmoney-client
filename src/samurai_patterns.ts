@@ -530,6 +530,8 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
                 }
 
                 deleteIDM.add(lastLowBosSwing);
+
+                liquidityHighCandle = null;
             }
         }
 
@@ -564,6 +566,8 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
                 }
 
                 deleteIDM.add(lastHighBosSwing);
+
+                liquidityLowCandle = null;
             }
         }
 
