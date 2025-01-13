@@ -290,7 +290,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
             const swing: Swing = {
                 side: (highPullback || '') as any,
                 time: currentCandle.time,
-                price: highPullback === 'high' ? currentCandle.high : currentCandle.low,
+                price: currentCandle.high,
                 index: i
             }
             highs[i] = highPullback ? {...swing, side: 'high'} : highs[i];
@@ -301,7 +301,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
             const swing: Swing = {
                 side: (lowPullback || '') as any,
                 time: currentCandle.time,
-                price: lowPullback === 'high' ? currentCandle.high : currentCandle.low,
+                price: currentCandle.low,
                 index: i
             }
             lows[i] = lowPullback ? {...swing, side: 'low'} : lows[i];
@@ -454,41 +454,6 @@ export interface Trend {
     index: number;
 }
 
-const deleteInternalStructures = (swings: Swing[], boses: Cross[]) => {
-    let lastHighBOS = null;
-    let lastLowBOS = null;
-    for (let i = 0; i < boses.length; i++) {
-        const currBos = boses[i];
-
-        if (!currBos) {
-            continue;
-        }
-
-        if (currBos.type === 'high') {
-            if (!lastHighBOS) {
-                lastHighBOS = currBos;
-            } else if (lastHighBOS.from.index < currBos.from.index && lastHighBOS.to.index >= currBos.to.index) {
-                boses[i] = null;
-                swings[i] = null;
-            } else {
-                lastHighBOS = null;
-            }
-            continue;
-        } else if (currBos.type === 'low') {
-            if (!lastLowBOS) {
-                lastLowBOS = currBos;
-            } else if (lastLowBOS.from.index < currBos.from.index && lastLowBOS.to.index >= currBos.to.index) {
-                boses[i] = null;
-                swings[i] = null;
-            } else {
-                lastLowBOS = null;
-            }
-            continue;
-        }
-    }
-
-    return {swings, boses};
-}
 export const deleteEmptySwings = (swings: Swing[]) => {
     for (let i = 0; i < swings.length; i++) {
         if (!swings[i]?.text) {
