@@ -2,7 +2,7 @@ import {
     Card,
     Checkbox,
     Col,
-    DatePicker, Divider,
+    Divider,
     Form,
     Input,
     Radio,
@@ -10,8 +10,7 @@ import {
     Slider,
     Space,
     Statistic,
-    Table,
-    TimeRangePickerProps
+    Table
 } from "antd";
 import {TickerSelect} from "./TickerSelect";
 import React, {useCallback, useEffect, useMemo, useState} from "react";
@@ -22,19 +21,15 @@ import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
 import moment from 'moment';
 import {
-    calculateCrosses,
     calculateFakeout,
     calculatePositionsByFakeouts,
     calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
     calculateSwings,
-    calculateTrend,
-    khrustikCalculateSwings,
-    tradinghubCalculateTrendNew2
+    khrustikCalculateSwings
 } from "./samurai_patterns";
 import {
     fetchCandlesFromAlor,
-    fillTrendByMinorData,
     getSecurity,
     notTradingTime,
     persision,
@@ -44,7 +39,10 @@ import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./TestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateOB, calculateStructure, tradinghubCalculateSwings, tradinghubCalculateTrendNew} from "./th_ultimate";
+import {
+    calculateTesting,
+    tradinghubCalculateSwings
+} from "./th_ultimate";
 
 export const TestingPage = () => {
     const [swipType, setSwipType] = useState('tradinghub');
@@ -92,50 +90,8 @@ export const TestingPage = () => {
             return swipCallback(data);
     } ,[swipCallback, tf, data])
 
-    const trend = useMemo(() => {
-            if(!data.length){
-                return [];
-            }
-            let {swings: swingsData, highs, lows} = swings;
-            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data);
-            swingsData = thSwings;
-            highs = thSwings.filter(t => t?.side === 'high');
-            lows = thSwings.filter(t => t?.side === 'low');
-            const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-            const trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP, excludeWick).trend;
-            return thTrend;
-
-            return trend;
-    }, [tf, swings, confirmTrend, excludeWick, excludeTrendSFP]);
-
     const positions = useMemo(() => {
-        let {swings: swingsData, highs, lows} = swipCallback(data);
-        const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-
-        let trend = [];
-        let boses = [];
-        let orderBlocks = [];
-        if(trandsType === 'tradinghub'){
-            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data, removeInternal, false, onlyExtremum);
-            swingsData = thSwings;
-            highs = thSwings.filter(t => t?.side === 'high');
-            lows = thSwings.filter(t => t?.side === 'low');
-            trend = thTrend;
-            boses = thBoses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, withMove);
-        } else if(trandsType === 'dobrinya'){
-            const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data);
-            swingsData = thSwings;
-            highs = thSwings.filter(t => t?.side === 'high');
-            lows = thSwings.filter(t => t?.side === 'low');
-            trend = thTrend;
-            boses = thBoses;
-            orderBlocks = thOrderBlocks;
-        } else {
-            trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
-            boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, withMove);
-        }
+        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove)
 
         const lotsize = (security?.lotsize || 1)
 
@@ -153,7 +109,7 @@ export const TestingPage = () => {
         }
 
         if (tradeIFC) {
-            const fakeoutPositions = calculatePositionsByIFC(data, swingsData, trend,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+            const fakeoutPositions = calculatePositionsByIFC(data, swings, trend,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
             positions.push(...fakeoutPositions);
         }
 
@@ -173,37 +129,11 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.time - a.time);
-    }, [data, trandsType, tradeOB, withMove, limitOrderTrade, tradeIFC, trend, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, trandsType, tradeOB, withMove, limitOrderTrade, tradeIFC, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            let {swings: swingsData, highs, lows} = swipCallback(data);
-            const {structure, highParts, lowParts} = calculateStructure(highs, lows, data);
-
-            let trend = [];
-            let boses = [];
-            let orderBlocks = [];
-            if(trandsType === 'tradinghub'){
-                const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(swingsData, data, removeInternal, false, onlyExtremum);
-                swingsData = thSwings;
-                highs = thSwings.filter(t => t?.side === 'high');
-                lows = thSwings.filter(t => t?.side === 'low');
-                trend = thTrend;
-                boses = thBoses;
-                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, withMove);
-            } else if(trandsType === 'dobrinya'){
-                const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(swingsData, data);
-                swingsData = thSwings;
-                highs = thSwings.filter(t => t?.side === 'high');
-                lows = thSwings.filter(t => t?.side === 'low');
-                trend = thTrend;
-                boses = thBoses;
-                orderBlocks = thOrderBlocks;
-            } else {
-                trend = calculateTrend(highParts, lowParts, data, confirmTrend, excludeTrendSFP).trend;
-                boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-                orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, withMove);
-            }
+            const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove)
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
@@ -221,7 +151,7 @@ export const TestingPage = () => {
             }
 
             if(tradeIFC){
-                const fakeoutPositions = calculatePositionsByIFC(data, swingsData,trend, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+                const fakeoutPositions = calculatePositionsByIFC(data, swings,trend, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
                 positions.push(...fakeoutPositions);
             }
 

@@ -1,14 +1,12 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Checkbox, Divider, Form, Input, Radio, Row, Slider, SliderSingleProps, Space} from "antd";
+import {Checkbox, Divider, Form, Input, Row, Slider, SliderSingleProps, Space} from "antd";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
-import {calculateEMA} from "../../symbolFuturePairs";
 import {
     createRectangle2,
     fetchCandlesFromAlor,
-    fillTrendByMinorData,
     getSecurity,
     notTradingTime,
     refreshToken
@@ -16,20 +14,17 @@ import {
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
 import {
-    calculateCrosses,
     calculateFakeout,
     calculatePositionsByFakeouts, calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
-    calculateSwings,
-    calculateTrend,
-    khrustikCalculateSwings,
-    tradinghubCalculateTrendNew2,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {calculate} from "../sm_scripts";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {calculateOB, calculateStructure, tradinghubCalculateSwings, tradinghubCalculateTrendNew} from "../th_ultimate";
+import {
+    calculateTesting
+} from "../th_ultimate";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -131,15 +126,7 @@ export const TestPage = () => {
     }
     
     const {swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        // <-- Копировать в робота
-        let {highs, lows, swings: _swings} = tradinghubCalculateSwings(data);
-        const {structure, highParts, lowParts} = calculateStructure(highs, lows, data)
-        const {trend, boses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data);
-        _swings = thSwings;
-        highs = thSwings.filter(t => t?.side === 'high');
-        lows = thSwings.filter(t => t?.side === 'low');
-        let orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, config.withMove);
-        // Копировать в робота -->
+        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, config.withMove)
 
         const fakeouts = calculateFakeout(highParts, lowParts, data)
 
@@ -154,7 +141,7 @@ export const TestPage = () => {
             positions.push(...fakeoutPositions);
         }
         if(config.tradeIFC){
-            const fakeoutPositions = calculatePositionsByIFC(data, _swings, trend, maxDiff, multiStop);
+            const fakeoutPositions = calculatePositionsByIFC(data, swings, trend, maxDiff, multiStop);
             positions.push(...fakeoutPositions);
         }
 

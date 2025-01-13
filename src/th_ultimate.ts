@@ -154,12 +154,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
     return ob;
 };
-// Точка входа в торговлю
-export const calculateTradinghub = (data: HistoryObject[]) => {
-    const config = {
-        withMove: false,
-    };
 
+export const calculateTesting = (data: HistoryObject[], withMove: boolean = false) => {
     // <-- Копировать в робота
     let { highs, lows, swings: _swings } = tradinghubCalculateSwings(data);
     const { structure, highParts, lowParts } = calculateStructure(
@@ -176,15 +172,22 @@ export const calculateTradinghub = (data: HistoryObject[]) => {
     highs = thSwings.filter((t) => t?.side === 'high');
     lows = thSwings.filter((t) => t?.side === 'low');
 
+    // Копировать в робота -->
     const orderBlocks = calculateOB(
         highParts,
         lowParts,
         data,
         boses,
         trend,
-        config.withMove,
-    );
-    // Копировать в робота -->
+        withMove,
+    )
+
+    return {swings: _swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks};
+}
+
+// Точка входа в торговлю
+export const calculateProduction = (data: HistoryObject[]) => {
+    const {orderBlocks} = calculateTesting(data, false);
 
     // orderBlocks.push(...IFCtoOB(thSwings, candles));
 
@@ -350,7 +353,8 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
 
     return {swings, highs, lows};
 }
-export const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
+
+const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
     let structure: Swing[] = [];
 
     for (let i = 0; i < candles.length; i++) {
