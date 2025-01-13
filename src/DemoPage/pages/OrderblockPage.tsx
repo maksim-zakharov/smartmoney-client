@@ -3,12 +3,19 @@ import img15 from "../../assets/img_15.png"
 import img16 from "../../assets/img_16.png"
 import img17 from "../../assets/img_17.png"
 import img18 from "../../assets/img_18.png"
-import {calculateOB} from "../../samurai_patterns";
 import {LineStyle, Time} from "lightweight-charts";
 import {Chart} from "../../TestPage/TestChart";
 import React from "react";
 import {createRectangle2} from "../../utils";
-import {drawBOS, HistoryObject, markHHLL, Swing, tradinghubCalculateSwings, Trend} from "../../th_ultimate";
+import {
+    calculateOB,
+    drawBOS,
+    HistoryObject,
+    markHHLL,
+    Swing,
+    tradinghubCalculateSwings,
+    Trend
+} from "../../th_ultimate";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
     const {swings: swings1, highs, lows} = tradinghubCalculateSwings(data);

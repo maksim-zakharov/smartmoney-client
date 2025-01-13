@@ -24,7 +24,6 @@ import moment from 'moment';
 import {
     calculateCrosses,
     calculateFakeout,
-    calculateOB,
     calculatePositionsByFakeouts,
     calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
@@ -45,7 +44,7 @@ import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./TestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateStructure, tradinghubCalculateSwings, tradinghubCalculateTrendNew} from "./th_ultimate";
+import {calculateOB, calculateStructure, tradinghubCalculateSwings, tradinghubCalculateTrendNew} from "./th_ultimate";
 
 export const TestingPage = () => {
     const [swipType, setSwipType] = useState('tradinghub');

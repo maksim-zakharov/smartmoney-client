@@ -18,7 +18,6 @@ import {TimeframeSelect} from "../TimeframeSelect";
 import {
     calculateCrosses,
     calculateFakeout,
-    calculateOB,
     calculatePositionsByFakeouts, calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
     calculateSwings,
@@ -30,7 +29,7 @@ import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts
 import {DatesPicker} from "../DatesPicker";
 import {calculate} from "../sm_scripts";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {calculateStructure, tradinghubCalculateSwings, tradinghubCalculateTrendNew} from "../th_ultimate";
+import {calculateOB, calculateStructure, tradinghubCalculateSwings, tradinghubCalculateTrendNew} from "../th_ultimate";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",

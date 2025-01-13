@@ -16,6 +16,181 @@ export interface HistoryObject {
     volume: number;
 }
 
+
+export interface OrderBlock {
+    index: number;
+    time: number;
+    textTime?: number;
+    imbalanceIndex: number;
+    type: 'high' | 'low';
+    lastOrderblockCandle: HistoryObject;
+    lastImbalanceCandle: HistoryObject;
+    startCandle: HistoryObject;
+    // TODO только для теста
+    canTrade?: boolean;
+    endCandle?: HistoryObject;
+    endIndex?: number;
+    text?: string;
+}
+
+/**
+ * OB - строится на структурных точках,
+ * только по тренду.
+ * На все тело свечи,
+ * длится пока его не коснутся,
+ * и только если следующая свеча после структурной дает имбаланс
+ * Если Об ни разу не пересекли - тянуть до последней свечи
+ */
+export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false) => {
+    let ob: OrderBlock [] = [];
+    // Иногда определяеются несколько ОБ на одной свечке, убираем
+    let uniqueOrderBlockTimeSet = new Set();
+
+    const MAX_CANDLES_COUNT = 10;
+
+    let lastHighIDMIndex = null;
+    for (let i = 0; i < highs.length; i++) {
+        const high = highs[i];
+        const index = high?.index
+
+        if (boses[i]?.type === 'high' && boses[i]?.text === 'IDM') {
+            lastHighIDMIndex = i;
+        }
+
+        if (!high || trends[index]?.trend !== -1) {
+            continue;
+        }
+        const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
+        const orderBlock = isOrderblock(candlesBatch, withMove);
+        if (orderBlock?.type === 'high' && !uniqueOrderBlockTimeSet.has(orderBlock.orderblock.time)) {
+            // TODO Не торговать ОБ под IDM
+            const bossIndex = orderBlock.firstImbalanceIndex + index;
+            const boss = boses[bossIndex];
+            let text = 'OB';
+            if (boss || (lastHighIDMIndex
+                && boses[lastHighIDMIndex].from.index <= i
+                && boses[lastHighIDMIndex].to.index > i)
+            ) {
+                text = 'SMT';
+            }
+
+            ob.push({
+                text,
+                type: orderBlock.type,
+                index,
+                time: orderBlock.orderblock.time,
+                // textTime,
+                lastOrderblockCandle: orderBlock.lastOrderblockCandle,
+                lastImbalanceCandle: orderBlock.lastImbalanceCandle,
+                firstImbalanceIndex: orderBlock.firstImbalanceIndex,
+                imbalanceIndex: orderBlock.imbalanceIndex,
+                startCandle: orderBlock.orderblock
+            } as OrderBlock)
+
+            uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
+        }
+    }
+
+    let lastLowIDMIndex = null;
+    for (let i = 0; i < lows.length; i++) {
+        const low = lows[i];
+        const index = low?.index
+
+        if (boses[i]?.type === 'low' && boses[i]?.text === 'IDM') {
+            lastLowIDMIndex = i;
+        }
+
+        if (!lows[i] || trends[index]?.trend !== 1) {
+            continue;
+        }
+        const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
+        const orderBlock = isOrderblock(candlesBatch, withMove);
+        if (orderBlock?.type === 'low' && !uniqueOrderBlockTimeSet.has(orderBlock.orderblock.time)) {
+            // TODO Не торговать ОБ под IDM
+            const bossIndex = orderBlock.firstImbalanceIndex + index;
+            const boss = boses[bossIndex];
+            let text = 'OB';
+            if (boss || (lastLowIDMIndex
+                && boses[lastLowIDMIndex].from.index <= i
+                && boses[lastLowIDMIndex].to.index > i)
+            ) {
+                text = 'SMT';
+            }
+
+            ob.push({
+                text,
+                type: orderBlock.type,
+                index,
+                time: orderBlock.orderblock.time,
+                lastOrderblockCandle: orderBlock.lastOrderblockCandle,
+                lastImbalanceCandle: orderBlock.lastImbalanceCandle,
+                firstImbalanceIndex: orderBlock.firstImbalanceIndex,
+                imbalanceIndex: orderBlock.imbalanceIndex,
+                startCandle: orderBlock.orderblock
+            } as OrderBlock)
+
+            uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
+        }
+    }
+
+    ob = ob.sort((a, b) => a.index - b.index);
+
+    // Где начинается позиция TODO для теста, в реальности это точка входа
+    for (let i = 0; i < ob.length; i++) {
+        const obItem = ob[i];
+        const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+        for (let j = startPositionIndex; j < candles.length - 1; j++) {
+            const candle = candles[j];
+            if (hasHitOB(obItem, candle)) {
+                // debugger
+                obItem.endCandle = candle;
+                obItem.endIndex = j
+                obItem.canTrade = true;
+
+                break;
+            }
+        }
+    }
+
+    return ob;
+};
+// Точка входа в торговлю
+export const calculateTradinghub = (data: HistoryObject[]) => {
+    const config = {
+        withMove: false,
+    };
+
+    // <-- Копировать в робота
+    let { highs, lows, swings: _swings } = tradinghubCalculateSwings(data);
+    const { structure, highParts, lowParts } = calculateStructure(
+        highs,
+        lows,
+        data,
+    );
+    const {
+        trend,
+        boses,
+        swings: thSwings,
+    } = tradinghubCalculateTrendNew(_swings, data);
+    _swings = thSwings;
+    highs = thSwings.filter((t) => t?.side === 'high');
+    lows = thSwings.filter((t) => t?.side === 'low');
+
+    const orderBlocks = calculateOB(
+        highParts,
+        lowParts,
+        data,
+        boses,
+        trend,
+        config.withMove,
+    );
+    // Копировать в робота -->
+
+    // orderBlocks.push(...IFCtoOB(thSwings, candles));
+
+    return orderBlocks.filter((obItem) => obItem.text !== 'SMT');
+};
+
 export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
     const swings: (Swing | null)[] = new Array(candles.length).fill(null);
     const highs: (Swing | null)[] = new Array(candles.length).fill(null);
@@ -758,3 +933,86 @@ export const isIFC = (side: Swing['side'], candle: HistoryObject) => {
         || (side === 'low' && upWick < downWick && body < downWick)
 }
 export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar.high && candle.low < bar.low;
+export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false) => {
+    if (candles.length < 3) {
+        return null;
+    }
+    let firstImbalanceIndex;
+    let firstCandle = candles[0];
+
+    for (let i = 1; i < candles.length; i++) {
+        if (!isInsideBar(firstCandle, candles[i])) {
+            firstImbalanceIndex = i - 1;
+            break;
+        }
+    }
+
+    let lastImbalanceIndex;
+    if (withMove) {
+        // Берем не только первый имбаланс, а ближайший из 10 свечей
+        for (let i = firstImbalanceIndex; i < candles.length - 2; i++) {
+            if (isImbalance(candles[i], candles[i + 2])) {
+                firstCandle = candles[i];
+                firstImbalanceIndex = i;
+
+                lastImbalanceIndex = i + 2;
+                break;
+            }
+        }
+    } else {
+        // Берем не только первый имбаланс, а ближайший из 10 свечей
+        for (let i = firstImbalanceIndex; i < candles.length - 1; i++) {
+            if (isImbalance(candles[firstImbalanceIndex], candles[i + 1])) {
+                lastImbalanceIndex = i + 1;
+                break;
+            }
+        }
+    }
+
+    const lastImbalanceCandle = candles[lastImbalanceIndex];
+    const lastOrderblockCandle = candles[firstImbalanceIndex];
+    if (!lastImbalanceCandle) {
+        return null;
+    }
+
+    // Жестко нужно для БД, не трогать
+    const time = Math.min(firstCandle.time, lastOrderblockCandle.time);
+    const open = firstCandle.time === time ? firstCandle.open : lastOrderblockCandle.open;
+    const close = firstCandle.time !== time ? firstCandle.close : lastOrderblockCandle.close;
+
+    if (lastImbalanceCandle.low > firstCandle.high) {
+        return {
+            orderblock: {
+                time,
+                open,
+                close,
+                high: Math.max(firstCandle.high, lastOrderblockCandle.high),
+                low: Math.min(firstCandle.low, lastOrderblockCandle.low),
+            } as HistoryObject,
+            lastOrderblockCandle,
+            lastImbalanceCandle,
+            firstImbalanceIndex,
+            imbalanceIndex: lastImbalanceIndex,
+            type: 'low',
+        };
+    }
+    if (lastImbalanceCandle.high < firstCandle.low) {
+        return {
+            orderblock: {
+                time,
+                open,
+                close,
+                high: Math.max(firstCandle.high, lastOrderblockCandle.high),
+                low: Math.min(firstCandle.low, lastOrderblockCandle.low),
+            } as HistoryObject,
+            lastOrderblockCandle,
+            lastImbalanceCandle,
+            firstImbalanceIndex,
+            imbalanceIndex: lastImbalanceIndex,
+            type: 'high',
+        };
+    }
+    return null;
+};
+const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
+export const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' && ob.startCandle.low <= candle.high) || (ob.type === 'low' && ob.startCandle.high >= candle.low);
