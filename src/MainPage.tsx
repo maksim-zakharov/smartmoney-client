@@ -352,8 +352,8 @@ export const ChartComponent = props => {
 };
 
 const MainPage: React.FC = () => {
-    const [stopFrom ,setStopFrom] = useState(0.15);
-    const [stopTo ,setStopTo] = useState(0.5);
+    const [stopFrom ,setStopFrom] = useState(0);
+    const [stopTo ,setStopTo] = useState(100);
 
     const {height, width, isMobile} = useWindowDimensions();
         const {
