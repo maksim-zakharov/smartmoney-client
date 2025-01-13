@@ -4,9 +4,9 @@ import {Checkbox, DatePicker, Radio, Row, Select, Slider, Space, TimeRangePicker
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {Chart} from "./Chart";
-import {HistoryObject} from "../api";
 import {calculateCandle} from "../../symbolFuturePairs";
 import {getCommonCandles} from "../utils";
+import {HistoryObject} from "../th_ultimate";
 
 const {RangePicker} = DatePicker
 

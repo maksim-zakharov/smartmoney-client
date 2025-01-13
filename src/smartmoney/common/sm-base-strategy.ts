@@ -1,4 +1,4 @@
-import {HistoryObject} from "../../api";
+import {HistoryObject} from "../../th_ultimate";
 
 export interface Swing {
     side?: 'high' | 'low',
@@ -12,8 +12,6 @@ export interface Trend{
     trend: number;
     index: number;
 }
-
-export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar.high && candle.low < bar.low;
 
 export const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
 

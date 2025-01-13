@@ -6,7 +6,7 @@ import {
 import moment from 'moment';
 import {createSeries, defaultSeriesOptions, getVisibleMarkers, uniqueBy} from "../utils";
 import {ensureDefined} from "../lwc-plugins/helpers/assertions";
-import {isInsideBar} from "../smartmoney/common/sm-base-strategy";
+import {isInsideBar} from "../th_ultimate";
 
 function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);

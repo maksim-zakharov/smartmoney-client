@@ -1,9 +1,8 @@
-import {HistoryObject} from "./api";
 import {
-    Cross,
     khrustikCalculateSwings
 } from "./samurai_patterns";
 import {CandlesBuilder} from "./utils";
+import {Cross, HistoryObject} from "./th_ultimate";
 
 describe('sm_khrustik', () => {
     it('khrustikCalculateSwings 1', () => {

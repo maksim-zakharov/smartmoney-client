@@ -1,8 +1,6 @@
 // Функция для получения данных из Alor API
-import {HistoryObject} from "./api";
 
 import dayjs from 'dayjs';
-import {Trend} from "./samurai_patterns";
 import {
     AreaSeriesPartialOptions, BarSeriesPartialOptions, CandlestickSeriesPartialOptions,
     ChartOptions,
@@ -18,6 +16,7 @@ import {Options} from "@vitejs/plugin-react";
 import {useEffect, useMemo, useState} from "react";
 import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
+import {HistoryObject, Trend} from "./th_ultimate";
 
 
 export class CandlesBuilder{

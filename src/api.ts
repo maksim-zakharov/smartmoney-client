@@ -1,13 +1,5 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
-export interface HistoryObject {
-  high: number;
-  low: number;
-  open: number;
-  close: number;
-  time: number
-  volume: number;
-}
+import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
+import {HistoryObject} from "./th_ultimate";
 
 export interface Security {
   symbol:                 string;

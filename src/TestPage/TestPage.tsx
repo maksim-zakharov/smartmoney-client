@@ -21,17 +21,16 @@ import {
     calculateOB,
     calculatePositionsByFakeouts, calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
-    calculateStructure,
     calculateSwings,
     calculateTrend,
     khrustikCalculateSwings,
-    tradinghubCalculateSwings,
-    tradinghubCalculateTrendNew, tradinghubCalculateTrendNew2,
+    tradinghubCalculateTrendNew2,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {calculate} from "../sm_scripts";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
+import {calculateStructure, tradinghubCalculateSwings, tradinghubCalculateTrendNew} from "../th_ultimate";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",

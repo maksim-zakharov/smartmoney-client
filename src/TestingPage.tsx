@@ -28,12 +28,9 @@ import {
     calculatePositionsByFakeouts,
     calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
-    calculateStructure,
     calculateSwings,
     calculateTrend,
     khrustikCalculateSwings,
-    tradinghubCalculateSwings,
-    tradinghubCalculateTrendNew,
     tradinghubCalculateTrendNew2
 } from "./samurai_patterns";
 import {
@@ -48,6 +45,7 @@ import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./TestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
+import {calculateStructure, tradinghubCalculateSwings, tradinghubCalculateTrendNew} from "./th_ultimate";
 
 export const TestingPage = () => {
     const [swipType, setSwipType] = useState('tradinghub');

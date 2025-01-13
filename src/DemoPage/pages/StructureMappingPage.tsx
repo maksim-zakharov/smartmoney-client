@@ -7,7 +7,6 @@ import img_7 from "../../assets/img_7.png"
 import img_8 from "../../assets/img_8.png"
 import React, {useEffect, useMemo, useState} from "react";
 import {CandlesBuilder, fetchCandlesFromAlor, notTradingTime} from "../../utils";
-import {drawBOS, markHHLL, Swing, tradinghubCalculateSwings, tradinghubCalculateTrendNew} from "../../samurai_patterns";
 import {LineStyle, Time} from "lightweight-charts";
 import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
@@ -15,7 +14,14 @@ import {DatesPicker} from "../../DatesPicker";
 import {Chart} from "../../TestPage/TestChart";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
-import {HistoryObject} from "../../api";
+import {
+    drawBOS,
+    HistoryObject,
+    markHHLL,
+    Swing,
+    tradinghubCalculateSwings,
+    tradinghubCalculateTrendNew
+} from "../../th_ultimate";
 
 const BOSChart = ({data, text = 'LL'}) => {
     const {swings: swings1} = tradinghubCalculateSwings(data);

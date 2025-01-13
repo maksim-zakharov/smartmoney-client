@@ -1,5 +1,5 @@
 import {SmBaseStrategy, Swing, Trend} from "./sm-base-strategy";
-import {HistoryObject} from "../../api";
+import {HistoryObject} from "../../th_ultimate";
 
 export class SmSamuraiStrategy implements SmBaseStrategy{
     readonly _name: string;

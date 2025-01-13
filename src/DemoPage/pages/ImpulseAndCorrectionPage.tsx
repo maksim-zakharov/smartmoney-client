@@ -11,15 +11,10 @@ import {TimeframeSelect} from "../../TimeframeSelect";
 import {DatesPicker} from "../../DatesPicker";
 import type { Dayjs } from 'dayjs';
 import {
-    calculateOB,
-    deleteEmptySwings,
-    drawBOS,
-    markHHLL,
-    tradinghubCalculateSwings,
-    Trend
+    calculateOB
 } from "../../samurai_patterns";
 import {LineStyle, Time} from "lightweight-charts";
-import {HistoryObject} from "../../api";
+import {deleteEmptySwings, drawBOS, HistoryObject, markHHLL, tradinghubCalculateSwings, Trend} from "../../th_ultimate";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
     let {swings, highs, lows} = tradinghubCalculateSwings(data);
     debugger
