@@ -1281,26 +1281,24 @@ export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
     let deletedSwingIndexes = new Set([]);
 
     for (let i = 0; i < swings.length; i++) {
-        if(swings[i] && swings[i].side === 'high' && swings[i].text === 'HH'){
+        if (swings[i] && swings[i].side === 'high' && swings[i].text === 'HH') {
             preLastHighIndex = lastHighIndex;
             lastHighIndex = i;
         }
-        if(swings[i] && swings[i].side === 'low' && swings[i].text === 'LL'){
+        if (swings[i] && swings[i].side === 'low' && swings[i].text === 'LL') {
             preLastLowIndex = lastLowIndex;
             lastLowIndex = i;
         }
 
-        if(preLastLowIndex < preLastHighIndex){
-            if(swings[preLastHighIndex].price > swings[lastHighIndex].price && swings[preLastLowIndex].price < swings[lastLowIndex].price) {
-                swings[lastLowIndex] = null;
-                swings[lastHighIndex] = null;
+        if (swings[preLastHighIndex]?.price > swings[lastHighIndex]?.price && swings[preLastLowIndex]?.price < swings[lastLowIndex]?.price) {
+            swings[lastLowIndex] = null;
+            swings[lastHighIndex] = null;
 
-                deletedSwingIndexes.add(lastLowIndex)
-                deletedSwingIndexes.add(lastHighIndex)
+            deletedSwingIndexes.add(lastLowIndex)
+            deletedSwingIndexes.add(lastHighIndex)
 
-                lastLowIndex = preLastLowIndex;
-                lastHighIndex = preLastHighIndex;
-            }
+            lastLowIndex = preLastLowIndex;
+            lastHighIndex = preLastHighIndex;
         }
     }
 
