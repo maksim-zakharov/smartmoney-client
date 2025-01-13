@@ -48,7 +48,6 @@ export const TestPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [swipType, setSwipType] = useState(StrategySource.TradingHub);
     const [structureType, setStructureType] = useState(StrategySource.TradingHub);
-    const [obType, setOBType] = useState(StrategySource.Dobrunia);
     const [data, setData] = useState([]);
 
     const trandsType = searchParams.get('trandsType') || StrategySource.TradingHub;
@@ -133,45 +132,16 @@ export const TestPage = () => {
         setSearchParams(searchParams);
     }
     
-    const {ema, swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const swipsMap = {
-            'samurai':calculateSwings,
-            [StrategySource.Khrustik]: khrustikCalculateSwings,
-            [StrategySource.TradingHub] : tradinghubCalculateSwings
-        }
-        const swipCallback = swipsMap[swipType]  || calculateSwings;
-        const ema = calculateEMA(
-            data.map((h) => h.close),
-            100
-        )[1];
-
-        let {highs, lows, swings: _swings} =swipCallback(data);
+    const {swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
+        // <-- Копировать в робота
+        let {highs, lows, swings: _swings} = tradinghubCalculateSwings(data);
         const {structure, highParts, lowParts} = calculateStructure(highs, lows, data)
-
-        let trend = [];
-        let boses = [];
-        let orderBlocks = [];
-        if(trandsType === StrategySource.TradingHub){
-            const {trend: thTrend, boses: thBoses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data);
-            _swings = thSwings;
-            highs = thSwings.filter(t => t?.side === 'high');
-            lows = thSwings.filter(t => t?.side === 'low');
-            trend = thTrend;
-            boses = thBoses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, config.withMove);
-        } else if(trandsType === StrategySource.Dobrunia){
-            const {trend: thTrend, boses: thBoses, swings: thSwings, orderBlocks: thOrderBlocks} = tradinghubCalculateTrendNew2(_swings, data, obType !== 'samurai');
-            _swings = thSwings;
-            highs = thSwings.filter(t => t?.side === 'high');
-            lows = thSwings.filter(t => t?.side === 'low');
-            trend = thTrend;
-            boses = thBoses;
-            orderBlocks = thOrderBlocks;
-        } else {
-            trend = calculateTrend(highParts, lowParts, data, config.withTrendConfirm, config.excludeTrendSFP, config.excludeWick).trend;
-            boses = calculateCrosses(highParts, lowParts, data, trend).boses;
-            orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, config.withMove);
-        }
+        const {trend, boses, swings: thSwings} = tradinghubCalculateTrendNew(_swings, data);
+        _swings = thSwings;
+        highs = thSwings.filter(t => t?.side === 'high');
+        lows = thSwings.filter(t => t?.side === 'low');
+        let orderBlocks = calculateOB(highParts, lowParts, data, boses, trend, config.withMove);
+        // Копировать в робота -->
 
         const fakeouts = calculateFakeout(highParts, lowParts, data)
 
@@ -190,8 +160,8 @@ export const TestPage = () => {
             positions.push(...fakeoutPositions);
         }
 
-        return { ema, swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [swipType, trandsType, structureType, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, obType, data, maxDiff, multiStop])
+        return { swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
+    }, [swipType, trandsType, structureType, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
@@ -626,39 +596,39 @@ export const TestPage = () => {
     };
 
     return <>
-        <Row>
-            <Form.Item label="Свипы">
-                <Radio.Group onChange={e => setSwipType(e.target.value)}
-                             value={swipType}>
-                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                    {/*<Radio value="samurai">самурай</Radio>*/}
-                    {/*<Radio value="khrustik">хрустик</Radio>*/}
-                </Radio.Group>
-            </Form.Item>
-            <Form.Item label="Тренд">
-                <Radio.Group onChange={e => setTrandsType(e.target.value)}
-                             value={trandsType}>
-                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                    {/*<Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>*/}
-                    {/*<Radio value="samurai">самурай</Radio>*/}
-                    {/*<Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>*/}
-                </Radio.Group>
-            </Form.Item>
-            <Form.Item label="Босы">
-                <Radio.Group onChange={e => setStructureType(e.target.value)}
-                             value={structureType}>
-                    <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>
-                    {/*<Radio value="samurai">самурай</Radio>*/}
-                </Radio.Group>
-            </Form.Item>
-            <Form.Item label="ОБ">
-                <Radio.Group onChange={e => setOBType(e.target.value)}
-                             value={obType}>
-                    {/*<Radio value="samurai">самурай</Radio>*/}
-                    <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>
-                </Radio.Group>
-            </Form.Item>
-        </Row>
+        {/*<Row>*/}
+        {/*    <Form.Item label="Свипы">*/}
+        {/*        <Radio.Group onChange={e => setSwipType(e.target.value)}*/}
+        {/*                     value={swipType}>*/}
+        {/*            <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>*/}
+        {/*            /!*<Radio value="samurai">самурай</Radio>*!/*/}
+        {/*            /!*<Radio value="khrustik">хрустик</Radio>*!/*/}
+        {/*        </Radio.Group>*/}
+        {/*    </Form.Item>*/}
+        {/*    <Form.Item label="Тренд">*/}
+        {/*        <Radio.Group onChange={e => setTrandsType(e.target.value)}*/}
+        {/*                     value={trandsType}>*/}
+        {/*            <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>*/}
+        {/*            /!*<Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>*!/*/}
+        {/*            /!*<Radio value="samurai">самурай</Radio>*!/*/}
+        {/*            /!*<Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>*!/*/}
+        {/*        </Radio.Group>*/}
+        {/*    </Form.Item>*/}
+        {/*    <Form.Item label="Босы">*/}
+        {/*        <Radio.Group onChange={e => setStructureType(e.target.value)}*/}
+        {/*                     value={structureType}>*/}
+        {/*            <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>*/}
+        {/*            /!*<Radio value="samurai">самурай</Radio>*!/*/}
+        {/*        </Radio.Group>*/}
+        {/*    </Form.Item>*/}
+        {/*    <Form.Item label="ОБ">*/}
+        {/*        <Radio.Group onChange={e => setOBType(e.target.value)}*/}
+        {/*                     value={obType}>*/}
+        {/*            /!*<Radio value="samurai">самурай</Radio>*!/*/}
+        {/*            <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>*/}
+        {/*        </Radio.Group>*/}
+        {/*    </Form.Item>*/}
+        {/*</Row>*/}
         <Divider plain orientation="left">Риски</Divider>
         <Space>
             <Row>
@@ -717,7 +687,7 @@ export const TestPage = () => {
                          onChange={onChangeRangeDates}/>
         </Space>
         <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers} data={data}
-               ema={ema}/>
+               ema={[]}/>
     </>;
 }
 
