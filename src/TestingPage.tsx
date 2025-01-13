@@ -175,7 +175,7 @@ export const TestingPage = () => {
             curr.timeframe = tf;
 
             return curr;
-        }).filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime);
+        }).filter(s => s.quantity).sort((a, b) => b.time - a.time);
     }, [data, trandsType, tradeOB, withMove, limitOrderTrade, tradeIFC, trend, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
@@ -241,7 +241,7 @@ export const TestingPage = () => {
 
                 return curr;
             });
-        }).flat().filter(s => s.quantity).sort((a, b) => b.closeTime - a.closeTime)
+        }).flat().filter(s => s.quantity).sort((a, b) => b.time - a.time)
     }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
