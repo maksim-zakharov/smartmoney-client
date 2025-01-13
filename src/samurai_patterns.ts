@@ -1752,7 +1752,7 @@ const isOrderblock = (candles: HistoryObject[], withMove: boolean = false) => {
         // Берем не только первый имбаланс, а ближайший из 10 свечей
         for (let i = firstImbalanceIndex; i < candles.length - 2; i++) {
             if (isImbalance(candles[i], candles[i + 2])) {
-                firstCandle = candles[i]
+                firstCandle = candles[i];
                 firstImbalanceIndex = i;
 
                 lastImbalanceIndex = i + 2;
@@ -1769,42 +1769,51 @@ const isOrderblock = (candles: HistoryObject[], withMove: boolean = false) => {
         }
     }
 
-    let lastImbalanceCandle = candles[lastImbalanceIndex];
+    const lastImbalanceCandle = candles[lastImbalanceIndex];
+    const lastOrderblockCandle = candles[firstImbalanceIndex];
     if (!lastImbalanceCandle) {
         return null;
     }
 
-    let lastOrderblockCandle = candles[firstImbalanceIndex];
+    // Жестко нужно для БД, не трогать
+    const time = Math.min(firstCandle.time, lastOrderblockCandle.time);
+    const open = firstCandle.time === time ? firstCandle.open : lastOrderblockCandle.open;
+    const close = firstCandle.time !== time ? firstCandle.close : lastOrderblockCandle.close;
+
     if (lastImbalanceCandle.low > firstCandle.high) {
         return {
             orderblock: {
-                time: firstCandle.time,
+                time,
+                open,
+                close,
                 high: Math.max(firstCandle.high, lastOrderblockCandle.high),
-                low: Math.min(firstCandle.low, lastOrderblockCandle.low)
-            },
+                low: Math.min(firstCandle.low, lastOrderblockCandle.low),
+            } as HistoryObject,
             lastOrderblockCandle,
             lastImbalanceCandle,
             firstImbalanceIndex,
             imbalanceIndex: lastImbalanceIndex,
-            type: 'low'
+            type: 'low',
         };
     }
     if (lastImbalanceCandle.high < firstCandle.low) {
         return {
             orderblock: {
-                time: firstCandle.time,
+                time,
+                open,
+                close,
                 high: Math.max(firstCandle.high, lastOrderblockCandle.high),
-                low: Math.min(firstCandle.low, lastOrderblockCandle.low)
-            },
+                low: Math.min(firstCandle.low, lastOrderblockCandle.low),
+            } as HistoryObject,
             lastOrderblockCandle,
             lastImbalanceCandle,
             firstImbalanceIndex,
             imbalanceIndex: lastImbalanceIndex,
-            type: 'high'
+            type: 'high',
         };
     }
     return null;
-}
+};
 
 export interface OrderBlock {
     index: number;
