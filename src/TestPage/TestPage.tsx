@@ -71,22 +71,6 @@ export const TestPage = () => {
 
     const [token, setToken] = useState();
 
-    useEffect(() => {
-        localStorage.getItem('token') && refreshToken().then(setToken)
-    }, [])
-
-    useEffect(() => {
-        token && getSecurity(ticker, token).then(setSecurity)
-    }, [ticker, token])
-
-    useEffect(() => {
-        fetchRiskRates(ticker).then(setRiskRate)
-    }, [ticker])
-
-    useEffect(() => {
-            fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
-    }, [tf, ticker, fromDate, toDate]);
-
     const {data: robotOB = []} = useOrderblocksQuery({symbol: ticker, tf, from: fromDate, to: toDate});
 
     const config = useMemo(() => ({
@@ -116,6 +100,22 @@ export const TestPage = () => {
         moreBOS: checkboxValues.includes('moreBOS'),
         showRobotOB: checkboxValues.includes('showRobotOB'),
     }), [checkboxValues])
+
+    useEffect(() => {
+        localStorage.getItem('token') && refreshToken().then(setToken)
+    }, [])
+
+    useEffect(() => {
+        token && getSecurity(ticker, token).then(setSecurity)
+    }, [ticker, token])
+
+    useEffect(() => {
+        fetchRiskRates(ticker).then(setRiskRate)
+    }, [ticker])
+
+    useEffect(() => {
+            fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
+    }, [tf, ticker, fromDate, toDate]);
 
     const setSize = (tf: string) => {
         searchParams.set('tf', tf);
@@ -162,6 +162,23 @@ export const TestPage = () => {
 
         return { swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
     }, [isShortSellPossible, swipType, trandsType, structureType, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+
+    const robotEqualsPercent = useMemo(() => {
+        if(!config.showRobotOB || !robotOB.length){
+            return 0;
+        }
+
+        const robotOBMap = robotOB.reduce((acc, curr) => {
+            const key = curr.time;
+            acc[key] = curr;
+            return acc;
+        }, {});
+
+        const total = orderBlocks.length;
+        const current = orderBlocks.filter(o => robotOBMap[o.time]).length;
+
+        return (current / total) * 100;
+    }, [robotOB, config.showRobotOB, orderBlocks]);
 
     const profit = useMemo(() => {
         if(!security){
@@ -690,6 +707,7 @@ export const TestPage = () => {
                     <div>Прибыльных: {profit.profits}</div>
                     <div>Убыточных: {profit.losses}</div>
                     <div>Винрейт: {((profit.profits / (profit.profits + profit.losses)) * 100).toFixed(2)}%</div>
+                    <div>Совпадений с роботом: {(robotEqualsPercent).toFixed(2)}%</div>
                 </Space>
                 <Slider style={{width: 200}} defaultValue={windowLength} onChange={setWindowLength}/>
             </Row>
