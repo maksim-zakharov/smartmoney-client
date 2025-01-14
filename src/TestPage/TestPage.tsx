@@ -48,7 +48,7 @@ export const TestPage = () => {
         setSearchParams(searchParams)
     }
 
-    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,withMove").split(',');
+    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,withMove,moreBOS").split(',');
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
@@ -110,6 +110,7 @@ export const TestPage = () => {
         excludeTrendSFP: checkboxValues.includes('excludeTrendSFP'),
         excludeWick: checkboxValues.includes('excludeWick'),
         withMove: checkboxValues.includes('withMove'),
+        moreBOS: checkboxValues.includes('moreBOS'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -132,7 +133,7 @@ export const TestPage = () => {
     }
     
     const {swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, config.withMove)
+        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS)
 
         const fakeouts = calculateFakeout(highParts, lowParts, data)
 
@@ -156,7 +157,7 @@ export const TestPage = () => {
         }
 
         return { swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [isShortSellPossible, swipType, trandsType, structureType, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [isShortSellPossible, swipType, trandsType, structureType, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){
@@ -668,6 +669,7 @@ export const TestPage = () => {
             <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
+            <Checkbox key="moreBOS" value="moreBOS">Более точные BOS</Checkbox>
             {/*<Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>*/}
             {/*<Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>*/}
             {/*<Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>*/}

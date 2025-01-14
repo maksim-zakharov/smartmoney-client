@@ -155,7 +155,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     return ob;
 };
 
-export const calculateTesting = (data: HistoryObject[], withMove: boolean = false) => {
+export const calculateTesting = (data: HistoryObject[], withMove: boolean = false, moreBOS: boolean = false) => {
     // <-- Копировать в робота
     let { highs, lows, swings: _swings } = tradinghubCalculateSwings(data);
     const { structure, highParts, lowParts } = calculateStructure(
@@ -167,7 +167,7 @@ export const calculateTesting = (data: HistoryObject[], withMove: boolean = fals
         trend,
         boses,
         swings: thSwings,
-    } = tradinghubCalculateTrendNew(_swings, data);
+    } = tradinghubCalculateTrendNew(_swings, data, moreBOS);
     _swings = thSwings;
     highs = thSwings.filter((t) => t?.side === 'high');
     lows = thSwings.filter((t) => t?.side === 'low');
@@ -633,123 +633,117 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     return boses;
 }
 // Рисует BOS если LL или HH перекрываются
-export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
+export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[], moreBOS: boolean = false) => {
     const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
 
     const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
-    let prelastLowBosSwing = null;
-    let prelastHighBosSwing = null;
+    let liquidityLowCandleMap: Record<'high' | 'low', HistoryObject> = {
+      high: null,
+      low: null
+    }
 
-    let lastLowBosSwing = null;
-    let lastHighBosSwing = null;
-
-    let liquidityHighCandle = null;
-    let liquidityLowCandle = null;
+    let prelastBosSwingMap: Record<'high' | 'low', number> = {
+        high: null,
+        low: null
+    }
+    let lastBosSwingMap: Record<'high' | 'low', number> = {
+        high: null,
+        low: null
+    }
 
     let deleteIDM = new Set([]);
+    debugger
+
+    const lastLowBosSwingSet = new Set<number>([]);
+    const lastHighBosSwingSet = new Set<number>([]);
+
+    const updateLastSwing = (i: number, type: 'high' | 'low', text: string) => {
+        if (swings[i] && swings[i].side === type && swings[i].text === text) {
+            prelastBosSwingMap[type] = lastBosSwingMap[type];
+            lastBosSwingMap[type] = i;
+
+            if(moreBOS) {
+                lastHighBosSwingSet.add(lastBosSwingMap[type])
+            }
+
+            liquidityLowCandleMap[type] = null;
+        }
+    }
+
+    const confirmBOS = (i: number, lastBosSwing: number, lastCrossBosSwing: number, type: 'high' | 'low') => {
+        if (lastBosSwing && (!boses[lastBosSwing] || boses[lastBosSwing].text === 'IDM')) {
+        let from = swings[lastBosSwing];
+        let liquidityCandle = liquidityLowCandleMap[type] ?? candles[lastBosSwing];
+        let to;
+
+        const text = 'BOS';
+
+        const isTakenOutLiquidity = hasTakenOutLiquidity(type, liquidityCandle, candles[i]);
+        if (isTakenOutLiquidity) {
+            const isClose = hasClose(type, liquidityCandle, candles[i]);
+            if (isClose) {
+                to = {index: i, time: candles[i].time, price: candles[i].close};
+            } else {
+                liquidityLowCandleMap[type] = candles[i];
+            }
+        }
+
+        if (to) {
+            const diff = to.index - lastBosSwing;
+            const textIndex = diff >= 5 ? lastBosSwing - Math.round((lastBosSwing - to.index) / 2) : from.index;
+
+            boses[lastBosSwing] = {
+                from,
+                to,
+                textCandle: candles[textIndex],
+                type,
+                text,
+                extremum: swings[lastCrossBosSwing]
+            }
+
+            deleteIDM.add(lastCrossBosSwing);
+
+            if(moreBOS) {
+                lastHighBosSwingSet.delete(lastBosSwing)
+            }
+
+            liquidityLowCandleMap[type] = null;
+        }
+    }
+    }
 
     for (let i = 0; i < candles.length; i++) {
         // TODO Хз надо ли, выглядит ок но финрез хуже
+        // Если сужение - удаляем внутренние босы
         if (
-            swings[prelastHighBosSwing]?.price > swings[lastHighBosSwing]?.price
-            && swings[prelastLowBosSwing]?.price < swings[lastLowBosSwing]?.price
+            swings[prelastBosSwingMap['high']]?.price > swings[lastBosSwingMap['high']]?.price
+            && swings[prelastBosSwingMap['low']]?.price < swings[lastBosSwingMap['low']]?.price
         ) {
-            // debugger
-            swings[lastLowBosSwing] = null;
-            swings[lastHighBosSwing] = null;
+            swings[lastBosSwingMap['low']] = null;
+            swings[lastBosSwingMap['high']] = null;
 
-            deleteIDM.add(lastLowBosSwing);
-            deleteIDM.add(lastHighBosSwing);
+            if(moreBOS) {
+                lastLowBosSwingSet.delete(lastBosSwingMap['low'])
+                lastHighBosSwingSet.delete(lastBosSwingMap['high'])
+            }
 
-            lastLowBosSwing = prelastLowBosSwing;
-            lastHighBosSwing = prelastHighBosSwing;
+            deleteIDM.add(lastBosSwingMap['low']);
+            deleteIDM.add(lastBosSwingMap['high']);
+
+            lastBosSwingMap['low'] = prelastBosSwingMap['low'];
+            lastBosSwingMap['high'] = prelastBosSwingMap['high'];
             continue;
         }
 
-        if (lastHighBosSwing && (!boses[lastHighBosSwing] || boses[lastHighBosSwing].text === 'IDM')) {
-            let from = swings[lastHighBosSwing];
-            let liquidityCandle = liquidityHighCandle ?? candles[lastHighBosSwing];
-            let to;
+        // BOS сверху
+        confirmBOS(i, lastBosSwingMap['high'], lastBosSwingMap['low'],'high');
 
-            const text = 'BOS';
+        // BOS снизу
+        confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'],'low');
 
-            const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[i]);
-            if (isTakenOutLiquidity) {
-                const isClose = hasClose('high', liquidityCandle, candles[i]);
-                if (isClose) {
-                    to = {index: i, time: candles[i].time, price: candles[i].close};
-                } else {
-                    liquidityHighCandle = candles[i];
-                }
-            }
-
-            if (to) {
-                const diff = to.index - lastHighBosSwing;
-                const textIndex = diff >= 5 ? lastHighBosSwing - Math.round((lastHighBosSwing - to.index) / 2) : from.index;
-
-                boses[lastHighBosSwing] = {
-                    from,
-                    to,
-                    textCandle: candles[textIndex],
-                    type: 'high',
-                    text,
-                    extremum: swings[lastLowBosSwing]
-                }
-
-                deleteIDM.add(lastLowBosSwing);
-
-                liquidityHighCandle = null;
-            }
-        }
-
-        if (lastLowBosSwing && (!boses[lastLowBosSwing] || boses[lastLowBosSwing].text === 'IDM')) {
-            let from = swings[lastLowBosSwing];
-            let liquidityCandle = liquidityLowCandle ?? candles[lastLowBosSwing];
-            let to;
-
-            const text = 'BOS';
-
-            const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[i]);
-            if (isTakenOutLiquidity) {
-                const isClose = hasClose('low', liquidityCandle, candles[i]);
-                if (isClose) {
-                    to = {index: i, time: candles[i].time, price: candles[i].close};
-                } else {
-                    liquidityLowCandle = candles[i];
-                }
-            }
-
-            if (to) {
-                const diff = to.index - lastLowBosSwing;
-                const textIndex = diff >= 5 ? lastLowBosSwing - Math.round((lastLowBosSwing - to.index) / 2) : from.index;
-
-                boses[lastLowBosSwing] = {
-                    from,
-                    to,
-                    textCandle: candles[textIndex],
-                    type: 'low',
-                    text,
-                    extremum: swings[lastHighBosSwing]
-                }
-
-                deleteIDM.add(lastHighBosSwing);
-
-                liquidityLowCandle = null;
-            }
-        }
-
-        if (swings[i] && swings[i].side === 'high' && swings[i].text === 'HH') {
-            prelastHighBosSwing = lastHighBosSwing;
-            lastHighBosSwing = i;
-            liquidityHighCandle = null;
-        }
-
-        if (swings[i] && swings[i].side === 'low' && swings[i].text === 'LL') {
-            prelastLowBosSwing = lastLowBosSwing;
-            lastLowBosSwing = i;
-            liquidityLowCandle = null;
-        }
+        updateLastSwing(i, 'high', 'HH');
+        updateLastSwing(i, 'low', 'LL');
 
         // if (!swings[i]) {
         //     continue;
@@ -839,9 +833,10 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
         }
     }
 
+
     return boses;
 }
-export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[]) => {
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], moreBOS: boolean = false) => {
     let boses = markHHLL(candles, swings)
 
     swings = markIFC(candles, swings);
@@ -851,7 +846,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     boses = internal.boses;
     swings = internal.swings;
 
-    boses = drawBOS(candles, swings, boses);
+    boses = drawBOS(candles, swings, boses, moreBOS);
 
     const withTrend = drawTrend(candles, swings, boses);
     const trend = withTrend.trend
