@@ -400,47 +400,6 @@ export const TestingPage = () => {
                     </FormItem>
                 </Col>
             </Row>
-            <Divider plain orientation="left">Тренд</Divider>
-            <Row gutter={8} align="bottom">
-                <Col>
-                    <FormItem>
-                        <Checkbox checked={confirmTrend} onChange={e => setConfirmTrend(e.target.checked)}>Подтвержденный
-                            тренд</Checkbox>
-                    </FormItem>
-                </Col>
-                <Col>
-                    <FormItem>
-                        <Checkbox checked={excludeTrendSFP} onChange={e => setExcludeTrendSFP(e.target.checked)}>Исключить
-                            Fake BOS</Checkbox>
-                    </FormItem>
-                </Col>
-                <Col>
-                    <FormItem>
-                        <Checkbox checked={excludeWick} onChange={e => setExcludeWick(e.target.checked)}>Игнорировать пробитие фитилем</Checkbox>
-                    </FormItem>
-                </Col>
-                <Col>
-                    <FormItem>
-                        <Radio.Group onChange={e => setSwipType(e.target.value)}
-                                     value={swipType}>
-                            <Radio value="tradinghub">Свипы по tradinghub</Radio>
-                            {/*<Radio value="samurai">Свипы по самураю</Radio>*/}
-                            {/*<Radio value="khrustik">Свипы по хрустику</Radio>*/}
-                        </Radio.Group>
-                    </FormItem>
-                </Col>
-                <Col>
-                    <Form.Item label="Тренд">
-                        <Radio.Group onChange={e => setTrandsType(e.target.value)}
-                                     value={trandsType}>
-                            <Radio value="tradinghub">tradinghub</Radio>
-                            {/*<Radio value="dobrinya">dobrinya</Radio>*/}
-                            {/*<Radio value="samurai">самурай</Radio>*/}
-                            {/*<Radio value="khrustik">хрустику</Radio>*/}
-                        </Radio.Group>
-                    </Form.Item>
-                </Col>
-            </Row>
             <Divider plain orientation="left">Риски и комиссии</Divider>
             <Row gutter={8} align="bottom">
                 <Col>
