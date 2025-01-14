@@ -632,13 +632,14 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
 
     return boses;
 }
+
 // Рисует BOS если LL или HH перекрываются
 export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[], moreBOS: boolean = false) => {
     const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
 
     const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
-    let liquidityLowCandleMap: Record<'high' | 'low', HistoryObject> = {
+    let liquidityCandleMap: Record<'high' | 'low', HistoryObject> = {
       high: null,
       low: null
     }
@@ -653,10 +654,16 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
     }
 
     let deleteIDM = new Set([]);
-    debugger
 
-    const lastLowBosSwingSet = new Set<number>([]);
-    const lastHighBosSwingSet = new Set<number>([]);
+    let lastBosSwingMapSet: Record<'high' | 'low', Set<number>> = {
+        high: new Set<number>([]),
+        low: new Set<number>([])
+    }
+
+    let liquidityCandleMapMap: Record<'high' | 'low', Map<number, HistoryObject>> = {
+        high: new Map<number, HistoryObject>([]),
+        low: new Map<number, HistoryObject>([])
+    }
 
     const updateLastSwing = (i: number, type: 'high' | 'low', text: string) => {
         if (swings[i] && swings[i].side === type && swings[i].text === text) {
@@ -664,53 +671,59 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
             lastBosSwingMap[type] = i;
 
             if(moreBOS) {
-                lastHighBosSwingSet.add(lastBosSwingMap[type])
+                lastBosSwingMapSet[type].add(lastBosSwingMap[type])
             }
 
-            liquidityLowCandleMap[type] = null;
+            liquidityCandleMap[type] = null;
         }
     }
 
     const confirmBOS = (i: number, lastBosSwing: number, lastCrossBosSwing: number, type: 'high' | 'low') => {
         if (lastBosSwing && (!boses[lastBosSwing] || boses[lastBosSwing].text === 'IDM')) {
-        let from = swings[lastBosSwing];
-        let liquidityCandle = liquidityLowCandleMap[type] ?? candles[lastBosSwing];
-        let to;
+            let from = swings[lastBosSwing];
+            let liquidityCandle = liquidityCandleMap[type] ?? candles[lastBosSwing];
+            let to;
 
-        const text = 'BOS';
+            const text = 'BOS';
 
-        const isTakenOutLiquidity = hasTakenOutLiquidity(type, liquidityCandle, candles[i]);
-        if (isTakenOutLiquidity) {
-            const isClose = hasClose(type, liquidityCandle, candles[i]);
-            if (isClose) {
-                to = {index: i, time: candles[i].time, price: candles[i].close};
-            } else {
-                liquidityLowCandleMap[type] = candles[i];
+            const isTakenOutLiquidity = hasTakenOutLiquidity(type, liquidityCandle, candles[i]);
+            if (isTakenOutLiquidity) {
+                const isClose = hasClose(type, liquidityCandle, candles[i]);
+                if (isClose) {
+                    to = {index: i, time: candles[i].time, price: candles[i].close};
+                } else {
+                    liquidityCandleMap[type] = candles[i];
+                    if (moreBOS) {
+                        liquidityCandleMapMap[type].set(lastBosSwing, liquidityCandleMap[type])
+                    }
+                }
+            }
+
+            if (to) {
+                const diff = to.index - lastBosSwing;
+                const textIndex = diff >= 5 ? lastBosSwing - Math.round((lastBosSwing - to.index) / 2) : from.index;
+
+                boses[lastBosSwing] = {
+                    from,
+                    to,
+                    textCandle: candles[textIndex],
+                    type,
+                    text,
+                    extremum: swings[lastCrossBosSwing]
+                }
+
+                deleteIDM.add(lastCrossBosSwing);
+
+                if (moreBOS) {
+                    lastBosSwingMapSet[type].delete(lastBosSwing)
+                }
+
+                liquidityCandleMap[type] = null;
+                if (moreBOS) {
+                    liquidityCandleMapMap[type].delete(lastBosSwing)
+                }
             }
         }
-
-        if (to) {
-            const diff = to.index - lastBosSwing;
-            const textIndex = diff >= 5 ? lastBosSwing - Math.round((lastBosSwing - to.index) / 2) : from.index;
-
-            boses[lastBosSwing] = {
-                from,
-                to,
-                textCandle: candles[textIndex],
-                type,
-                text,
-                extremum: swings[lastCrossBosSwing]
-            }
-
-            deleteIDM.add(lastCrossBosSwing);
-
-            if(moreBOS) {
-                lastHighBosSwingSet.delete(lastBosSwing)
-            }
-
-            liquidityLowCandleMap[type] = null;
-        }
-    }
     }
 
     for (let i = 0; i < candles.length; i++) {
@@ -724,8 +737,11 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
             swings[lastBosSwingMap['high']] = null;
 
             if(moreBOS) {
-                lastLowBosSwingSet.delete(lastBosSwingMap['low'])
-                lastHighBosSwingSet.delete(lastBosSwingMap['high'])
+                lastBosSwingMapSet['low'].delete(lastBosSwingMap['low'])
+                lastBosSwingMapSet['high'].delete(lastBosSwingMap['high'])
+
+                liquidityCandleMapMap['low'].delete(lastBosSwingMap['low'])
+                liquidityCandleMapMap['high'].delete(lastBosSwingMap['high'])
             }
 
             deleteIDM.add(lastBosSwingMap['low']);
@@ -737,94 +753,22 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
         }
 
         // BOS сверху
-        confirmBOS(i, lastBosSwingMap['high'], lastBosSwingMap['low'],'high');
+        if(moreBOS) {
+            lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['low'],'high'))
+        } else {
+            confirmBOS(i, lastBosSwingMap['high'], lastBosSwingMap['low'], 'high');
+        }
 
         // BOS снизу
-        confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'],'low');
+        if(moreBOS) {
+            lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['high'],'low'))
+        } else {
+            confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'],'low');
+        }
 
         updateLastSwing(i, 'high', 'HH');
         updateLastSwing(i, 'low', 'LL');
-
-        // if (!swings[i]) {
-        //     continue;
-        // }
-        //
-        // if(i > 227){
-        //     debugger
-        // }
-        //
-        // if (swings[i].side === 'high' && (!onlyExtremum || swings[i].text === 'HH')) {
-        //     const from = swings[i];
-        //     let to;
-        //     let liquidityCandle = candles[i];
-        //     let text = '';
-        //     for (let j = i + 1; j < candles.length; j++) {
-        //         const isTakenOutLiquidity = hasTakenOutLiquidity('high', liquidityCandle, candles[j]);
-        //         if (!isTakenOutLiquidity) {
-        //             continue;
-        //         }
-        //         const isClose = hasClose('high', liquidityCandle, candles[j]);
-        //         if (isClose) {
-        //             to = {index: j, time: candles[j].time, price: candles[j].close};
-        //             text = 'BOS';
-        //             break;
-        //         } else {
-        //             liquidityCandle = candles[j];
-        //         }
-        //     }
-        //     if (!to) {
-        //         continue;
-        //     }
-        //     const diff = to.index - i;
-        //     const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-        //     if (text) {
-        //         lastHighBOSIndex = i;
-        //         boses[lastHighBOSIndex] = {
-        //             from,
-        //             to,
-        //             textCandle: candles[textIndex],
-        //             type: 'high',
-        //             text
-        //         }
-        //     }
-        // } else if (swings[i].side === 'low' && (!onlyExtremum || swings[i].text === 'LL')) {
-        //     const from = swings[i];
-        //     let to;
-        //     let liquidityCandle = candles[i];
-        //     let text = '';
-        //     for (let j = i + 1; j < candles.length; j++) {
-        //         const isTakenOutLiquidity = hasTakenOutLiquidity('low', liquidityCandle, candles[j]);
-        //         if (!isTakenOutLiquidity) {
-        //             continue;
-        //         }
-        //         const isClose = hasClose('low', liquidityCandle, candles[j]);
-        //         if (isClose) {
-        //             to = {index: j, time: candles[j].time, price: candles[j].close};
-        //             text = 'BOS';
-        //             break;
-        //         } else {
-        //             liquidityCandle = candles[j];
-        //         }
-        //     }
-        //     if (!to) {
-        //         continue;
-        //     }
-        //     const diff = to.index - i;
-        //     const textIndex = diff >= 5 ? i - Math.round((i - to.index) / 2) : from.index;
-        //     if (text){
-        //         lastLowBOSIndex = i;
-        //         boses[lastLowBOSIndex] = {
-        //             from,
-        //             to,
-        //             textCandle: candles[textIndex],
-        //             type: 'low',
-        //             text
-        //         }
-        //     }
-        // }
     }
-
-    // boses = boses.filter(b => !(deleteIDM.has(b?.extremum?.index) && b?.extremum?.text === 'IDM'));
 
     for (let i = 0; i < boses.length; i++) {
         const b = boses[i];
@@ -832,7 +776,6 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
             boses[i] = null;
         }
     }
-
 
     return boses;
 }
