@@ -250,11 +250,11 @@ const data12: HistoryObject[] = [
 
 const StructureMappingPage = () => {
     const [data, setData] = useState([]);
-    const [ticker, onSelectTicker] = useState('SBER');
+    const [ticker, onSelectTicker] = useState('MTLR');
     const [tf, setSize] = useState('300');
     const [{fromDate, toDate}, setDates] = useState({
-        fromDate: dayjs('2024-10-01T00:00:00Z').startOf('day').unix(),
-        toDate: dayjs('2025-10-01T00:00:00Z').endOf('day').unix()
+        fromDate: 1732050000,
+        toDate: 1732222799
     })
 
     const onChangeRangeDates = (value: Dayjs[], dateString) => {
