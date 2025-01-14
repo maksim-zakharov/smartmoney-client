@@ -31,7 +31,6 @@ import {
 import {
     fetchCandlesFromAlor,
     getSecurity,
-    notTradingTime,
     persision,
     refreshToken, uniqueBy
 } from "./utils";
@@ -40,7 +39,7 @@ import {Chart} from "./TestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
 import {
-    calculateTesting,
+    calculateTesting, notTradingTime,
     tradinghubCalculateSwings
 } from "./th_ultimate";
 

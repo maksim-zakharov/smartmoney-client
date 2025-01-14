@@ -4,7 +4,7 @@ import img_1 from "../../assets/img_1.png"
 import img_2 from "../../assets/img_2.png"
 import {Chart} from "../../TestPage/TestChart";
 import React, {useEffect, useMemo, useState} from "react";
-import {createRectangle2, fetchCandlesFromAlor, notTradingTime} from "../../utils";
+import {createRectangle2, fetchCandlesFromAlor} from "../../utils";
 import dayjs from 'dayjs';
 import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
@@ -16,7 +16,7 @@ import {
     deleteEmptySwings,
     drawBOS,
     HistoryObject,
-    markHHLL,
+    markHHLL, notTradingTime,
     tradinghubCalculateSwings,
     Trend
 } from "../../th_ultimate";

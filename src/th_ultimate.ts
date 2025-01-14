@@ -985,3 +985,31 @@ export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false
 };
 const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
 export const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' && ob.startCandle.low <= candle.high) || (ob.type === 'low' && ob.startCandle.high >= candle.low);
+export const notTradingTime = (candle: HistoryObject) => {
+    const hours = new Date(candle.time * 1000).getHours();
+    const minutes = new Date(candle.time * 1000).getMinutes();
+
+    // Открытие утреннего аукциона
+    if (hours > 2 && hours < 10) {
+        return true;
+    }
+
+    // Открытие утренней сессии
+    // хз удалять ли
+    // if (hours === 10 && minutes === 0) {
+    //   return true;
+    // }
+
+    // закрытие дневной сессии
+    if (hours === 18 && minutes >= 45) {
+        return true;
+    }
+
+    // Открытие вечерней сессии
+    // хз удалять ли
+    if (hours === 19 && minutes === 0) {
+        return true;
+    }
+
+    return false;
+};

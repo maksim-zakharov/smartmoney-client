@@ -6,7 +6,7 @@ import img_6 from "../../assets/img_6.png"
 import img_7 from "../../assets/img_7.png"
 import img_8 from "../../assets/img_8.png"
 import React, {useEffect, useMemo, useState} from "react";
-import {CandlesBuilder, fetchCandlesFromAlor, notTradingTime} from "../../utils";
+import {CandlesBuilder, fetchCandlesFromAlor} from "../../utils";
 import {LineStyle, Time} from "lightweight-charts";
 import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
@@ -17,7 +17,7 @@ import type { Dayjs } from 'dayjs';
 import {
     drawBOS,
     HistoryObject,
-    markHHLL,
+    markHHLL, notTradingTime,
     Swing,
     tradinghubCalculateSwings,
     tradinghubCalculateTrendNew

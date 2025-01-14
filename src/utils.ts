@@ -2,13 +2,21 @@
 
 import dayjs from 'dayjs';
 import {
-    AreaSeriesPartialOptions, BarSeriesPartialOptions, CandlestickSeriesPartialOptions,
+    AreaSeriesPartialOptions,
+    BarSeriesPartialOptions,
+    CandlestickSeriesPartialOptions,
     ChartOptions,
     createChart,
-    DeepPartial, HistogramSeriesPartialOptions,
-    IChartApi, ISeriesApi, ISeriesPrimitive, LineData, LineSeriesPartialOptions, PriceLineOptions,
+    DeepPartial,
+    HistogramSeriesPartialOptions,
+    IChartApi,
+    ISeriesApi,
+    LineData,
+    LineSeriesPartialOptions,
+    PriceLineOptions,
     SeriesDataItemTypeMap,
-    SeriesMarker, SeriesOptionsMap,
+    SeriesMarker,
+    SeriesOptionsMap,
     SeriesType,
     Time
 } from "lightweight-charts";
@@ -316,35 +324,6 @@ export const calculateTakeProfit = ({
 };
 
 export const persision = (num: number) => num ? num.toString().split('.')[1]?.length : 0;
-
-export const notTradingTime = (candle: HistoryObject) => {
-    const hours = new Date(candle.time * 1000).getHours();
-    const minutes = new Date(candle.time * 1000).getMinutes();
-
-    // Открытие утреннего аукциона
-    if (hours > 2 && hours < 10) {
-        return true;
-    }
-
-    // Открытие утренней сессии
-    // хз удалять ли
-    // if (hours === 10 && minutes === 0) {
-    //   return true;
-    // }
-
-    // закрытие дневной сессии
-    if (hours === 18 && minutes >= 45) {
-        return true;
-    }
-
-    // Открытие вечерней сессии
-    // хз удалять ли
-    if (hours === 19 && minutes === 0) {
-      return true;
-    }
-
-    return false;
-};
 
 export const calculateMOEXFutureFee = (side: 'buy' | 'sell', security: any, brokerFee = 0.5):number => {
     const cfiCodeExchangeFeeMap = {

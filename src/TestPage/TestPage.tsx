@@ -8,7 +8,6 @@ import {
     createRectangle2,
     fetchCandlesFromAlor,
     getSecurity,
-    notTradingTime,
     refreshToken
 } from "../utils";
 import {TickerSelect} from "../TickerSelect";
@@ -23,7 +22,7 @@ import {DatesPicker} from "../DatesPicker";
 import {calculate} from "../sm_scripts";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 import {
-    calculateTesting
+    calculateTesting, notTradingTime
 } from "../th_ultimate";
 
 const markerColors = {
@@ -77,7 +76,6 @@ export const TestPage = () => {
 
     useEffect(() => {
             fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
-
     }, [tf, ticker, fromDate, toDate]);
 
     const config = useMemo(() => ({
