@@ -227,6 +227,27 @@ export class CandlesBuilder{
         return this._candles;
     }
 }
+    export async function fetchRiskRates(symbol) {
+        let url = `https://apidev.alor.ru/md/v2/risk/rates?riskCategoryId=1&ticker=${symbol}&exchange=MOEX`;
+
+        try {
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error("Ошибка при запросе данных");
+            }
+
+            const data = await response.json();
+            return data.list[0];
+        } catch (error) {
+            console.error("Ошибка получения данных:", error);
+        }
+    }
 
 export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit?) {
     let url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX`;

@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
 import {
     createRectangle2,
-    fetchCandlesFromAlor,
+    fetchCandlesFromAlor, fetchRiskRates,
     getSecurity,
     refreshToken
 } from "../utils";
@@ -64,6 +64,10 @@ export const TestPage = () => {
     const [stopMargin, setStopMargin] = useState(100);
     const [security, setSecurity] = useState();
 
+    const [riskRate, setRiskRate] = useState();
+
+    const isShortSellPossible = riskRate?.isShortSellPossible || false;
+
     const [token, setToken] = useState();
 
     useEffect(() => {
@@ -73,6 +77,10 @@ export const TestPage = () => {
     useEffect(() => {
         token && getSecurity(ticker, token).then(setSecurity)
     }, [ticker, token])
+
+    useEffect(() => {
+        fetchRiskRates(ticker).then(setRiskRate)
+    }, [ticker])
 
     useEffect(() => {
             fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
@@ -128,7 +136,7 @@ export const TestPage = () => {
 
         const fakeouts = calculateFakeout(highParts, lowParts, data)
 
-        const positions = [];
+        let positions = [];
 
         if(config.tradeOB){
             const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop, config.limitOrderTrade);
@@ -143,8 +151,12 @@ export const TestPage = () => {
             positions.push(...fakeoutPositions);
         }
 
+        if(!isShortSellPossible){
+            positions = positions.filter(p => p.side !== 'short');
+        }
+
         return { swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [swipType, trandsType, structureType, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [isShortSellPossible, swipType, trandsType, structureType, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const profit = useMemo(() => {
         if(!security){

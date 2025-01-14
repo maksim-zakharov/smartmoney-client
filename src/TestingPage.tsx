@@ -29,7 +29,7 @@ import {
     khrustikCalculateSwings
 } from "./samurai_patterns";
 import {
-    fetchCandlesFromAlor,
+    fetchCandlesFromAlor, fetchRiskRates,
     getSecurity,
     persision,
     refreshToken, uniqueBy
@@ -49,6 +49,7 @@ export const TestingPage = () => {
     const [loading, setLoading] = useState(true);
     const [allData, setAllData] = useState({});
     const [allSecurity, setAllSecurity] = useState({});
+    const [allRiskRates, setAllRiskRates] = useState({});
     const [data, setData] = useState([]);
     const [tf, onChangeTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
@@ -69,6 +70,7 @@ export const TestingPage = () => {
     const [baseTakePercent, setBaseTakePercent] = useState<number>(5)
     const [maxTakePercent, setMaxTakePercent] = useState<number>(0.5)
     const [security, setSecurity] = useState();
+    const [riskRates, setRiskRates] = useState();
     const [token, setToken] = useState();
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([dayjs('2024-10-01T00:00:00Z'), dayjs('2025-10-01T00:00:00Z')])
 
@@ -114,6 +116,11 @@ export const TestingPage = () => {
 
         positions = uniqueBy(v => v.openTime, positions);
 
+        const isShortSellPossible = riskRates?.isShortSellPossible || false;
+        if(!isShortSellPossible){
+            positions = positions.filter(p => p.side !== 'short');
+        }
+
         return positions.map((curr) => {
             const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
             const stopLossMarginPerLot = diff * lotsize
@@ -128,7 +135,7 @@ export const TestingPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.time - a.time);
-    }, [data, trandsType, tradeOB, withMove, limitOrderTrade, tradeIFC, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, trandsType, tradeOB, withMove, limitOrderTrade, tradeIFC, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -138,7 +145,7 @@ export const TestingPage = () => {
 
             const fee = feePercent / 100;
 
-            const positions = [];
+            let positions = [];
             if(tradeOB){
                 const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
                 positions.push(...fakeoutPositions);
@@ -152,6 +159,11 @@ export const TestingPage = () => {
             if(tradeIFC){
                 const fakeoutPositions = calculatePositionsByIFC(data, swings,trend, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
                 positions.push(...fakeoutPositions);
+            }
+
+            const isShortSellPossible = allRiskRates[ticker]?.isShortSellPossible || false;
+            if(!isShortSellPossible){
+                positions = positions.filter(p => p.side !== 'short');
             }
 
             return positions.map((curr) => {
@@ -168,18 +180,21 @@ export const TestingPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.time - a.time)
-    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
         const result = {};
         const result1 = {};
+        const result2 = {};
         const stockSymbols = symbolFuturePairs.map(curr => curr.stockSymbol);
         for (let i = 0; i < stockSymbols.length; i++) {
             result[stockSymbols[i]] = await fetchCandlesFromAlor(stockSymbols[i], tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle)));
             if(token)
             result1[stockSymbols[i]] = await getSecurity(stockSymbols[i], token);
+            result2[stockSymbols[i]] = await fetchRiskRates(stockSymbols[i]);
         }
+        setAllRiskRates(result2)
         setAllSecurity(result1)
         setAllData(result)
         setLoading(false);
@@ -227,6 +242,10 @@ export const TestingPage = () => {
     useEffect(() => {
         token && getSecurity(ticker, token).then(setSecurity)
     }, [ticker, token])
+
+    useEffect(() => {
+       fetchRiskRates(ticker).then(setRiskRates)
+    }, [ticker])
 
     const oldOneTickerColumns = [
         isAllTickers && {
