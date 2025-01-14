@@ -770,6 +770,32 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
         updateLastSwing(i, 'low', 'LL');
     }
 
+    boses
+        .filter(b => b?.type === 'high' && b?.text !== 'IDM')
+        .sort((a, b) => a.from.price - b.from.price)
+        .forEach((curr: any, i, array) => {
+            for (let j = 0; j < i; j++) {
+                const prev = array[j];
+                if(isInternalBOS(curr, prev)){
+                    boses[curr.from.index] = null;
+                    break;
+                }
+            }
+        })
+
+    boses
+        .filter(b => b?.type === 'low' && b?.text !== 'IDM')
+        .sort((a, b) => b.from.price - a.from.price)
+        .forEach((curr: any, i, array) => {
+            for (let j = 0; j < i; j++) {
+                const prev = array[j];
+                if(isInternalBOS(curr, prev)){
+                    boses[curr.from.index] = null;
+                    break;
+                }
+            }
+        })
+
     for (let i = 0; i < boses.length; i++) {
         const b = boses[i];
         if (b?.text === 'IDM' && deleteIDM.has(b?.extremum?.index)) {
@@ -921,6 +947,9 @@ export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false
     }
     return null;
 };
+
+const isInternalBOS = (leftBos: Cross, rightBos: Cross) => leftBos.from.index < rightBos.from.index
+    && leftBos.to.index >= rightBos.to.index
 const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
 export const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' && ob.startCandle.low <= candle.high) || (ob.type === 'low' && ob.startCandle.high >= candle.low);
 export const notTradingTime = (candle: HistoryObject) => {
