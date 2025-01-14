@@ -49,7 +49,7 @@ export const TestPage = () => {
         setSearchParams(searchParams)
     }
 
-    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,withMove,moreBOS").split(',');
+    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,showRobotOB").split(',');
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
@@ -175,7 +175,28 @@ export const TestPage = () => {
         }, {});
 
         const total = orderBlocks.length;
-        const current = orderBlocks.filter(o => robotOBMap[o.time]).length;
+        const current = orderBlocks.filter(o =>
+            robotOBMap[o.time]
+            && robotOBMap[o.time].index === o.index
+
+            && robotOBMap[o.time].startCandle.time === o.startCandle.time
+            && robotOBMap[o.time].startCandle.high === o.startCandle.high
+            && robotOBMap[o.time].startCandle.low === o.startCandle.low
+            && robotOBMap[o.time].startCandle.close === o.startCandle.close
+            && robotOBMap[o.time].startCandle.open === o.startCandle.open
+
+            && robotOBMap[o.time].lastImbalanceCandle.time === o.lastImbalanceCandle.time
+            && robotOBMap[o.time].lastImbalanceCandle.high === o.lastImbalanceCandle.high
+            && robotOBMap[o.time].lastImbalanceCandle.low === o.lastImbalanceCandle.low
+            && robotOBMap[o.time].lastImbalanceCandle.close === o.lastImbalanceCandle.close
+            && robotOBMap[o.time].lastImbalanceCandle.open === o.lastImbalanceCandle.open
+
+            && robotOBMap[o.time].endCandle?.time === o.endCandle?.time
+            && robotOBMap[o.time].endCandle?.high === o.endCandle?.high
+            && robotOBMap[o.time].endCandle?.low === o.endCandle?.low
+            && robotOBMap[o.time].endCandle?.close === o.endCandle?.close
+            && robotOBMap[o.time].endCandle?.open === o.endCandle?.open
+        ).length;
 
         return (current / total) * 100;
     }, [robotOB, config.showRobotOB, orderBlocks]);

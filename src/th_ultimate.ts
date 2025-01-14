@@ -163,6 +163,7 @@ export const calculateTesting = (data: HistoryObject[], withMove: boolean = fals
         lows,
         data,
     );
+
     const {
         trend,
         boses,
@@ -357,6 +358,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
 const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
     let structure: Swing[] = [];
 
+    // Просто формируется массив structure
     for (let i = 0; i < candles.length; i++) {
         if (highs[i]) {
             if (!structure[structure.length - 1] || structure[structure.length - 1].side === 'low') {
@@ -396,7 +398,6 @@ const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     for (let i = 0; i < structure.length - 1; i++) {
         const currStruct = structure[i];
         const nextStruct = structure[i + 1];
-
 
         if (nextStruct.side === 'low') {
             const batch = lows.slice(currStruct.index + 1, nextStruct.index + 2);
