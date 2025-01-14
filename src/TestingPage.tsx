@@ -363,17 +363,17 @@ export const TestingPage = () => {
                 </Col>
             </Row>
             <Row gutter={8} align="bottom">
-
+                {/*<Col>*/}
+                {/*    <FormItem>*/}
+                {/*        <Checkbox checked={onlyExtremum} onChange={e => setonlyExtremum(e.target.checked)}>БОСЫ только на экстремумах</Checkbox>*/}
+                {/*    </FormItem>*/}
+                {/*</Col>*/}
+                {/*<Col>*/}
+                {/*    <FormItem>*/}
+                {/*        <Checkbox checked={removeInternal} onChange={e => setremoveInternal(e.target.checked)}>Игнорировать внутреннюю структуру</Checkbox>*/}
+                {/*    </FormItem>*/}
+                {/*</Col>*/}
                 <Col>
-                    <FormItem>
-                        <Checkbox checked={onlyExtremum} onChange={e => setonlyExtremum(e.target.checked)}>БОСЫ только на экстремумах</Checkbox>
-                    </FormItem>
-                </Col>
-                <Col>
-                    <FormItem>
-                        <Checkbox checked={removeInternal} onChange={e => setremoveInternal(e.target.checked)}>Игнорировать внутреннюю структуру</Checkbox>
-                    </FormItem>
-                </Col><Col>
                     <FormItem>
                         <Checkbox checked={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Торговать Ложные
                             пробои</Checkbox>
