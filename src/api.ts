@@ -60,12 +60,19 @@ export const api = createApi({
       query: () => ({
         url: "/api/portfolio"
       })
-    })
+    }),
+    orderblocks: builder.query<any, { symbol:string, tf:string, from: number, to: number }>({
+          query: (params) => ({
+            url: "/api/orderblocks",
+            params
+          })
+        })
   })
 });
 
 export const {
   useCandlesQuery,
     useSecurityQuery,
-  usePortfolioQuery
+  usePortfolioQuery,
+    useOrderblocksQuery
 } = api;

@@ -24,6 +24,7 @@ import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 import {
     calculateTesting, notTradingTime
 } from "../th_ultimate";
+import {useOrderblocksQuery} from "../api";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -86,6 +87,8 @@ export const TestPage = () => {
             fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
+    const {data: robotOB = []} = useOrderblocksQuery({symbol: ticker, tf, from: fromDate, to: toDate});
+
     const config = useMemo(() => ({
         smPatterns: checkboxValues.includes('smPatterns'),
         oldTrend: checkboxValues.includes('oldTrend'),
@@ -111,6 +114,7 @@ export const TestPage = () => {
         excludeWick: checkboxValues.includes('excludeWick'),
         withMove: checkboxValues.includes('withMove'),
         moreBOS: checkboxValues.includes('moreBOS'),
+        showRobotOB: checkboxValues.includes('showRobotOB'),
     }), [checkboxValues])
 
     const setSize = (tf: string) => {
@@ -321,7 +325,36 @@ export const TestPage = () => {
                     borderWidth: 2,
                     borderColor: '#222'
                 })));
+                if(config.showRobotOB)
+                _primitives.push(...robotOB.filter(checkShow).map(orderBlock => createRectangle2({
+                    leftTop: {
+                        price: orderBlock.lastOrderblockCandle.high,
+                        time: orderBlock.lastOrderblockCandle.time
+                    },
+                    rightBottom: {
+                        price: orderBlock.lastImbalanceCandle[orderBlock.type],
+                        time: (orderBlock.endCandle || lastCandle).time
+                    }
+                }, {
+                    fillColor: 'rgba(179, 199, 219, .3)',
+                    showLabels: false,
+                    borderLeftWidth: 0,
+                    borderRightWidth: 0,
+                    borderWidth: 2,
+                    borderColor: '#222'
+                })));
             }
+            if(config.showRobotOB)
+                _primitives.push(...robotOB.filter(checkShow).map(orderBlock =>
+                    createRectangle2({
+                            leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
+                            rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
+                        },
+                        {
+                            fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
+                            showLabels: false,
+                            borderWidth: 0,
+                        })));
             _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock =>
                 createRectangle2({
                         leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
@@ -404,7 +437,7 @@ export const TestPage = () => {
         }
 
         return _primitives;
-    }, [orderBlocks, config.oldTrend, config.smartTrend, itrend, trend, config.imbalances, config.showOB, config.showEndOB, config.imbalances, data])
+    }, [robotOB, config.showRobotOB, orderBlocks, config.oldTrend, config.smartTrend, itrend, trend, config.imbalances, config.showOB, config.showEndOB, config.imbalances, data])
 
     const poses = useMemo(() => positions.map(s => [{
         color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
@@ -441,6 +474,16 @@ export const TestPage = () => {
                 position: s.type === 'high' ? 'aboveBar' : 'belowBar',
                 text: s.text
             })));
+
+            if(config.showRobotOB){
+                allMarkers.push(...robotOB.filter(checkShow).map(s => ({
+                    color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
+                    time: (s.textTime || s.time) as Time,
+                    shape: 'text',
+                    position: s.type === 'high' ? 'aboveBar' : 'belowBar',
+                    text: s.text
+                })));
+            }
         }
         if(config.swings){
             // allMarkers.push(...swings.swings.filter(Boolean).map(s => ({
@@ -497,7 +540,7 @@ export const TestPage = () => {
         }
 
         return allMarkers;
-    }, [swings, lowParts, poses, highParts, orderBlocks, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
+    }, [swings, lowParts, poses, highParts,config.showRobotOB, robotOB, orderBlocks, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
 
     const lineSerieses = useMemo(() => {
         const _lineSerieses = [];
@@ -670,6 +713,7 @@ export const TestPage = () => {
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
             <Checkbox key="moreBOS" value="moreBOS">Более точные BOS</Checkbox>
+            <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
             {/*<Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>*/}
             {/*<Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>*/}
             {/*<Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>*/}
