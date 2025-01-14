@@ -66,7 +66,7 @@ export const TestingPage = () => {
     const [excludeWick, setExcludeWick] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("default");
-    const [stopMargin, setStopMargin] = useState<number>(50)
+    const [stopMargin, setStopMargin] = useState<number>(20)
     const [feePercent, setFeePercent] = useState<number>(0.04)
     const [baseTakePercent, setBaseTakePercent] = useState<number>(5)
     const [maxTakePercent, setMaxTakePercent] = useState<number>(0.5)
@@ -135,7 +135,7 @@ export const TestingPage = () => {
             curr.timeframe = tf;
 
             return curr;
-        }).filter(s => s.quantity).sort((a, b) => b.time - a.time);
+        }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
     }, [data, trandsType, tradeOB, moreBOS, withMove, limitOrderTrade, tradeIFC, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
@@ -180,7 +180,7 @@ export const TestingPage = () => {
 
                 return curr;
             });
-        }).flat().filter(s => s.quantity).sort((a, b) => b.time - a.time)
+        }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
     }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, moreBOS, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
