@@ -188,7 +188,7 @@ export const calculateTesting = (data: HistoryObject[], withMove: boolean = fals
 
 // Точка входа в торговлю
 export const calculateProduction = (data: HistoryObject[]) => {
-    const {orderBlocks} = calculateTesting(data, false);
+    const {orderBlocks} = calculateTesting(data, false, true);
 
     // orderBlocks.push(...IFCtoOB(thSwings, candles));
 
