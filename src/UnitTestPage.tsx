@@ -164,9 +164,9 @@ const UnitTestPage = () => {
             <Typography.Title>{menuMap[selectedKey].label}</Typography.Title>
             <Typography.Text>{menuMap[selectedKey].description}</Typography.Text>
             <Typography.Title level={3}>Как нужно</Typography.Title>
-            <BOSChart showStructure showSwings data={menuMap[selectedKey].candles}/>
-            <Typography.Title level={3}>Как сейчас</Typography.Title>
             <BOSChart showStructure showSwings mockHighs={menuMap[selectedKey].mocks.highs} mockBoses={menuMap[selectedKey].mocks.boses} mockLows={menuMap[selectedKey].mocks.lows} data={menuMap[selectedKey].candles}/>
+            <Typography.Title level={3}>Как сейчас</Typography.Title>
+            <BOSChart showStructure showSwings data={menuMap[selectedKey].candles}/>
         </Content>
     </Layout>
 }
