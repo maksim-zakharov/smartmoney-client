@@ -827,7 +827,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
 const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
-    const onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.text && bos?.text === 'BOS');
+    let onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.text && bos?.text === 'BOS');
     for (let i = 0; i < onlyBOSes.length; i++) {
         const prevBos = onlyBOSes[i - 1];
         const curBos = onlyBOSes[i];
@@ -848,6 +848,17 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
 
         if (nextBos && curBos.type !== nextBos.type && curBos.to.index < nextBos.to.index) {
             nextBos.text = 'CHoCH'
+        }
+    }
+
+    onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.text && bos?.text === 'BOS');
+    for (let i = 0; i < onlyBOSes.length; i++) {
+        const curBos = onlyBOSes[i];
+        const nextBos = onlyBOSes[i + 1];
+
+        // Если оба боса подтвердились одной свечой, значит второй бос лишний и оставляем самый длинный
+        if(curBos.to.index === nextBos?.to.index){
+            boses[nextBos.from.index] = null;
         }
     }
 
