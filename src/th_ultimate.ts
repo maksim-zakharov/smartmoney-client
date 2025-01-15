@@ -827,12 +827,20 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
 const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
-    const onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.text);
+    const onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.text && bos?.text === 'BOS');
     for (let i = 0; i < onlyBOSes.length; i++) {
+        const prevBos = onlyBOSes[i - 1];
         const curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
 
         const to = !nextBos ? trend.length : nextBos.to.index;
+
+        // Если текущий бос внутри предыдущего боса - то текущий бос нужно выпилить и не учитывать в тренде
+        if(curBos?.from.index > prevBos?.from.index && curBos?.to.index < prevBos?.to.index){
+            boses[curBos.from.index] = null;
+            continue;
+        }
+
         for (let j = curBos.to.index; j < to; j++) {
             const type = curBos.type;
             trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
