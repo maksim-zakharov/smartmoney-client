@@ -682,7 +682,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
     const confirmBOS = (i: number, lastBosSwing: number, lastCrossBosSwing: number, type: 'high' | 'low') => {
         if (lastBosSwing && (!boses[lastBosSwing] || boses[lastBosSwing].text === 'IDM')) {
             let from = swings[lastBosSwing];
-            let liquidityCandle = liquidityCandleMap[type] ?? candles[lastBosSwing];
+            let liquidityCandle = (moreBOS ? liquidityCandleMapMap[type].get(lastBosSwing) : liquidityCandleMap[type]) ?? candles[lastBosSwing];
             let to;
 
             const text = 'BOS';
@@ -827,7 +827,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
 const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
-    let onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.text && bos?.text === 'BOS');
+    let onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.text);
     for (let i = 0; i < onlyBOSes.length; i++) {
         const prevBos = onlyBOSes[i - 1];
         const curBos = onlyBOSes[i];
@@ -851,7 +851,9 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
         }
     }
 
-    onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.text && bos?.text === 'BOS');
+    onlyBOSes = boses
+        .filter(bos => swings[bos?.from?.index]?.text)
+        .sort((a, b) => a.to.index - b.to.index);
     for (let i = 0; i < onlyBOSes.length; i++) {
         const curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
