@@ -35,7 +35,7 @@ import {
     refreshToken, uniqueBy
 } from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
-import {Chart} from "./TestPage/TestChart";
+import {Chart} from "./SoloTestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
 import {
@@ -43,7 +43,7 @@ import {
     tradinghubCalculateSwings
 } from "./th_ultimate";
 
-export const TestingPage = () => {
+export const MultiTestPage = () => {
     const [swipType, setSwipType] = useState('tradinghub');
     const [trandsType, setTrandsType] = useState('tradinghub');
     const [loading, setLoading] = useState(true);

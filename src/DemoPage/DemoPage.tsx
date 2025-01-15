@@ -48,39 +48,6 @@ const DemoPage = () => {
             <Typography.Title>{menuMap[selectedKey].label}</Typography.Title>
             {menuMap[selectedKey].element ?? 'not found'}
         </Content>
-        {/*<Sider>*/}
-        {/*    <Anchor*/}
-        {/*        affix={false}*/}
-        {/*        items={[*/}
-        {/*            {*/}
-        {/*                key: '1',*/}
-        {/*                href: '/#/demo#anchor-demo-basic',*/}
-        {/*                title: 'Basic demo',*/}
-        {/*            },*/}
-        {/*            {*/}
-        {/*                key: '2',*/}
-        {/*                href: '/#/demo#anchor-demo-static',*/}
-        {/*                title: 'Static demo',*/}
-        {/*            },*/}
-        {/*            {*/}
-        {/*                key: '3',*/}
-        {/*                href: '/#/demo#api',*/}
-        {/*                title: 'API',*/}
-        {/*                children: [*/}
-        {/*                    {*/}
-        {/*                        key: '4',*/}
-        {/*                        href: '/#/demo#anchor-props',*/}
-        {/*                        title: 'Anchor Props',*/}
-        {/*                    },*/}
-        {/*                    {*/}
-        {/*                        key: '5',*/}
-        {/*                        href: '/#/demo#link-props',*/}
-        {/*                        title: 'Link Props',*/}
-        {/*                    },*/}
-        {/*                ],*/}
-        {/*            },*/}
-        {/*        ]}*/}
-        {/*    /></Sider>*/}
     </Layout>
 }
 

@@ -2,7 +2,7 @@ import {Divider, Space, Typography} from "antd";
 import img from "../../assets/img.png"
 import img_1 from "../../assets/img_1.png"
 import img_2 from "../../assets/img_2.png"
-import {Chart} from "../../TestPage/TestChart";
+import {Chart} from "../../SoloTestPage/TestChart";
 import React, {useEffect, useMemo, useState} from "react";
 import {createRectangle2, fetchCandlesFromAlor} from "../../utils";
 import dayjs from 'dayjs';
@@ -22,7 +22,6 @@ import {
 } from "../../th_ultimate";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
     let {swings, highs, lows} = tradinghubCalculateSwings(data);
-    debugger
 
     let boses = markHHLL(data, swings);
     boses = drawBOS(data, swings, boses);

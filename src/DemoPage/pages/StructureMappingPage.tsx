@@ -11,7 +11,7 @@ import {LineStyle, Time} from "lightweight-charts";
 import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
 import {DatesPicker} from "../../DatesPicker";
-import {Chart} from "../../TestPage/TestChart";
+import {Chart} from "../../SoloTestPage/TestChart";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {

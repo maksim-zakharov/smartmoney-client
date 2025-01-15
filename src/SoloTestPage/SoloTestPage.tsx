@@ -37,7 +37,7 @@ enum StrategySource {
     Khrustik = 'khrustik',
 }
 
-export const TestPage = () => {
+export const SoloTestPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [swipType, setSwipType] = useState(StrategySource.TradingHub);
     const [structureType, setStructureType] = useState(StrategySource.TradingHub);
@@ -771,4 +771,4 @@ export const TestPage = () => {
     </>;
 }
 
-export default TestPage;
+export default SoloTestPage;
