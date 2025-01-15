@@ -822,8 +822,6 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     const trend = withTrend.trend
     boses = withTrend.boses;
 
-    // swings = markIFC(candles, swings);
-
     return {trend, boses, swings};
 };
 const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
@@ -840,7 +838,7 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
             trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
         }
 
-        if (nextBos && curBos.type !== nextBos.type) {
+        if (nextBos && curBos.type !== nextBos.type && curBos.to.index < nextBos.to.index) {
             nextBos.text = 'CHoCH'
         }
     }
