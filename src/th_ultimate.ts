@@ -824,7 +824,6 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
 
     return {trend, boses, swings};
 };
-
 const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
     const trend: Trend[] = new Array(candles.length).fill(null);
 
