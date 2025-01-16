@@ -34,7 +34,7 @@ export const SoloTestPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState([]);
 
-    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,moreBOS,showEndOB").split(',');
+    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,moreBOS,showEndOB").split(','));
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
@@ -59,28 +59,29 @@ export const SoloTestPage = () => {
     const {data: robotOB = []} = useOrderblocksQuery({symbol: ticker, tf, from: fromDate, to: toDate});
 
     const config = useMemo(() => ({
-        swings: checkboxValues.includes('swings'),
-        noInternal: checkboxValues.includes('noInternal'),
-        smartTrend: checkboxValues.includes('smartTrend'),
-        withTrendConfirm: checkboxValues.includes('withTrendConfirm'),
-        onlyExtremum: checkboxValues.includes('onlyExtremum'),
-        removeEmpty: checkboxValues.includes('removeEmpty'),
-        BOS: checkboxValues.includes('BOS'),
-        showOB: checkboxValues.includes('showOB'),
-        showEndOB: checkboxValues.includes('showEndOB'),
-        imbalances: checkboxValues.includes('imbalances'),
-        showPositions: checkboxValues.includes('showPositions'),
-        tradeFakeouts: checkboxValues.includes('tradeFakeouts'),
-        tradeIFC: checkboxValues.includes('tradeIFC'),
-        limitOrderTrade: checkboxValues.includes('limitOrderTrade'),
-        tradeOB: checkboxValues.includes('tradeOB'),
-        showFakeouts: checkboxValues.includes('showFakeouts'),
-        excludeWick: checkboxValues.includes('excludeWick'),
-        withMove: checkboxValues.includes('withMove'),
-        moreBOS: checkboxValues.includes('moreBOS'),
-        newSMT: checkboxValues.includes('newSMT'),
-        showHiddenSwings: checkboxValues.includes('showHiddenSwings'),
-        showRobotOB: checkboxValues.includes('showRobotOB'),
+        swings: checkboxValues.has('swings'),
+        noInternal: checkboxValues.has('noInternal'),
+        smartTrend: checkboxValues.has('smartTrend'),
+        withTrendConfirm: checkboxValues.has('withTrendConfirm'),
+        onlyExtremum: checkboxValues.has('onlyExtremum'),
+        removeEmpty: checkboxValues.has('removeEmpty'),
+        BOS: checkboxValues.has('BOS'),
+        showOB: checkboxValues.has('showOB'),
+        showEndOB: checkboxValues.has('showEndOB'),
+        imbalances: checkboxValues.has('imbalances'),
+        showPositions: checkboxValues.has('showPositions'),
+        tradeFakeouts: checkboxValues.has('tradeFakeouts'),
+        tradeIFC: checkboxValues.has('tradeIFC'),
+        limitOrderTrade: checkboxValues.has('limitOrderTrade'),
+        tradeOB: checkboxValues.has('tradeOB'),
+        showFakeouts: checkboxValues.has('showFakeouts'),
+        excludeWick: checkboxValues.has('excludeWick'),
+        withMove: checkboxValues.has('withMove'),
+        moreBOS: checkboxValues.has('moreBOS'),
+        newStructure: checkboxValues.has('newStructure'),
+        newSMT: checkboxValues.has('newSMT'),
+        showHiddenSwings: checkboxValues.has('showHiddenSwings'),
+        showRobotOB: checkboxValues.has('showRobotOB'),
     }), [checkboxValues])
 
     useEffect(() => {
@@ -119,7 +120,7 @@ export const SoloTestPage = () => {
     }
     
     const {swings, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS);
+        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS, config.newStructure);
 
         const fakeouts = calculateFakeout(highs, lows, data)
 
@@ -143,7 +144,7 @@ export const SoloTestPage = () => {
         }
 
         return { swings: {highs, lows}, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [isShortSellPossible, config.newSMT, config.showHiddenSwings, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [isShortSellPossible, config.newSMT, config.showHiddenSwings, config.newStructure, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -510,8 +511,8 @@ export const SoloTestPage = () => {
                 <Slider style={{width: 200}} defaultValue={windowLength} onChange={setWindowLength}/>
             </Row>
         </Space>
-        <Checkbox.Group onChange={setCheckboxValues} value={checkboxValues}>
-            {/*<Checkbox key="swings" value="swings">Swings</Checkbox>*/}
+        <Checkbox.Group onChange={setCheckboxValues} value={Array.from(checkboxValues)}>
+            <Checkbox key="swings" value="swings">Swings</Checkbox>
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
             <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
@@ -524,6 +525,7 @@ export const SoloTestPage = () => {
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
             <Checkbox key="moreBOS" value="moreBOS">Более точные BOS</Checkbox>
+            <Checkbox key="newStructure" value="newStructure">Новая структура</Checkbox>
             <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
             <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
             <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
