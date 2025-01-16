@@ -77,7 +77,7 @@ export const MultiTestPage = () => {
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([dayjs('2024-10-01T00:00:00Z'), dayjs('2025-10-01T00:00:00Z')])
 
     const positions = useMemo(() => {
-        const {swings, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS);
+        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS);
 
         const lotsize = (security?.lotsize || 1)
 
@@ -89,7 +89,7 @@ export const MultiTestPage = () => {
             positions.push(...fakeoutPositions);
         }
         if (tradeFakeouts) {
-            const fakeouts = calculateFakeout(highParts, lowParts, data)
+            const fakeouts = calculateFakeout(highs, lows, data)
             const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
             positions.push(...fakeoutPositions);
         }
@@ -124,7 +124,7 @@ export const MultiTestPage = () => {
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            const {swings, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS);
+            const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS);
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
@@ -136,7 +136,7 @@ export const MultiTestPage = () => {
                 positions.push(...fakeoutPositions);
             }
             if(tradeFakeouts){
-                const fakeouts = calculateFakeout(highParts, lowParts, data)
+                const fakeouts = calculateFakeout(highs, lows, data)
                 const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
                 positions.push(...fakeoutPositions);
             }
@@ -165,7 +165,7 @@ export const MultiTestPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, moreBOS, newSMT, showHiddenSwings, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [trandsType, limitOrderTrade, tradeOB, tradeIFC, moreBOS, newSMT, showHiddenSwings, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);

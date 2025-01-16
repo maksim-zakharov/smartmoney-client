@@ -158,7 +158,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 export const calculateTesting = (data: HistoryObject[], withMove: boolean = false, moreBOS: boolean = false) => {
     // <-- Копировать в робота
     let { highs, lows, swings: _swings } = tradinghubCalculateSwings(data);
-    const { structure, highParts, lowParts } = calculateStructure(
+    const { highParts, lowParts } = calculateStructure(
         highs,
         lows,
         data,
@@ -183,7 +183,7 @@ export const calculateTesting = (data: HistoryObject[], withMove: boolean = fals
         withMove,
     )
 
-    return {swings: _swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks};
+    return {swings: _swings, highs, lows, trend, boses, orderBlocks};
 }
 
 // Точка входа в торговлю

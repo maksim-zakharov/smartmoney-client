@@ -63,7 +63,6 @@ export const SoloTestPage = () => {
         noInternal: checkboxValues.includes('noInternal'),
         smartTrend: checkboxValues.includes('smartTrend'),
         withTrendConfirm: checkboxValues.includes('withTrendConfirm'),
-        removeInternal: checkboxValues.includes('removeInternal'),
         onlyExtremum: checkboxValues.includes('onlyExtremum'),
         removeEmpty: checkboxValues.includes('removeEmpty'),
         BOS: checkboxValues.includes('BOS'),
@@ -76,7 +75,6 @@ export const SoloTestPage = () => {
         limitOrderTrade: checkboxValues.includes('limitOrderTrade'),
         tradeOB: checkboxValues.includes('tradeOB'),
         showFakeouts: checkboxValues.includes('showFakeouts'),
-        excludeTrendSFP: checkboxValues.includes('excludeTrendSFP'),
         excludeWick: checkboxValues.includes('excludeWick'),
         withMove: checkboxValues.includes('withMove'),
         moreBOS: checkboxValues.includes('moreBOS'),
@@ -145,7 +143,7 @@ export const SoloTestPage = () => {
         }
 
         return { swings: {highs, lows}, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [isShortSellPossible, config.newSMT, config.showHiddenSwings, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [isShortSellPossible, config.newSMT, config.showHiddenSwings, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -513,7 +511,7 @@ export const SoloTestPage = () => {
             </Row>
         </Space>
         <Checkbox.Group onChange={setCheckboxValues} value={checkboxValues}>
-            <Checkbox key="swings" value="swings">Swings</Checkbox>
+            {/*<Checkbox key="swings" value="swings">Swings</Checkbox>*/}
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
             <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
@@ -530,9 +528,7 @@ export const SoloTestPage = () => {
             <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
             <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
             {/*<Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>*/}
-            {/*<Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>*/}
             {/*<Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>*/}
-            {/*<Checkbox key="removeInternal" value="removeInternal">Игнорировать внутреннюю структуру</Checkbox>*/}
             {/*<Checkbox key="removeEmpty" value="removeEmpty">Удалить пустые точки</Checkbox>*/}
             {/*<Checkbox key="onlyExtremum" value="onlyExtremum">БОСЫ только на экстремумах</Checkbox>*/}
         </Checkbox.Group>
