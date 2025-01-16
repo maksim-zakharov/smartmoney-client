@@ -34,7 +34,7 @@ export const SoloTestPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState([]);
 
-    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,moreBOS").split(',');
+    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,moreBOS,showEndOB").split(',');
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)

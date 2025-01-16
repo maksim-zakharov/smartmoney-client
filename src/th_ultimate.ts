@@ -399,14 +399,16 @@ const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         const currStruct = structure[i];
         const nextStruct = structure[i + 1];
 
+        const idx = 0; // было 1 теперь ок
+
         if (nextStruct.side === 'low') {
             const batch = lows.slice(currStruct.index + 1, nextStruct.index + 2);
             const index = batch.reduce((acc, curr) => {
                 if (curr && candles[acc].low > curr.price) {
-                    return curr.index + 1;
+                    return curr.index + idx;
                 }
                 return acc;
-            }, currStruct.index + 1);
+            }, currStruct.index + idx);
 
             const lowest = candles[index];
             if (lowest) {
@@ -419,10 +421,10 @@ const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const batch = highs.slice(currStruct.index + 1, nextStruct.index + 2);
             const index = batch.reduce((acc, curr) => {
                 if (curr && candles[acc].high < curr.price) {
-                    return curr.index + 1;
+                    return curr.index + idx;
                 }
                 return acc;
-            }, currStruct.index + 1);
+            }, currStruct.index + idx);
 
             const lowest = candles[index];
             if (lowest) {
@@ -811,7 +813,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
 
     swings = markIFC(candles, swings);
 
-    swings = deleteEmptySwings(swings);
+    // swings = deleteEmptySwings(swings);
     const internal = deleteInternalStructure(swings, boses);
     boses = internal.boses;
     swings = internal.swings;
