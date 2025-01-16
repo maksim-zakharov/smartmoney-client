@@ -19,7 +19,6 @@ import {
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
-import {calculate} from "../sm_scripts";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 import {
     calculateTesting, notTradingTime
@@ -31,23 +30,9 @@ const markerColors = {
     bullColor: "rgb(20, 131, 92)"
 }
 
-enum StrategySource {
-    TradingHub = 'tradinghub',
-    Dobrunia = 'dobrunia',
-    Khrustik = 'khrustik',
-}
-
 export const SoloTestPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
-    const [swipType, setSwipType] = useState(StrategySource.TradingHub);
-    const [structureType, setStructureType] = useState(StrategySource.TradingHub);
     const [data, setData] = useState([]);
-
-    const trandsType = searchParams.get('trandsType') || StrategySource.TradingHub;
-    const setTrandsType = (values) => {
-        searchParams.set('trandsType', values);
-        setSearchParams(searchParams)
-    }
 
     const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,moreBOS").split(',');
     const setCheckboxValues = (values) => {
@@ -74,10 +59,7 @@ export const SoloTestPage = () => {
     const {data: robotOB = []} = useOrderblocksQuery({symbol: ticker, tf, from: fromDate, to: toDate});
 
     const config = useMemo(() => ({
-        smPatterns: checkboxValues.includes('smPatterns'),
-        oldTrend: checkboxValues.includes('oldTrend'),
         swings: checkboxValues.includes('swings'),
-        noDoubleSwing: checkboxValues.includes('noDoubleSwing'),
         noInternal: checkboxValues.includes('noInternal'),
         smartTrend: checkboxValues.includes('smartTrend'),
         withTrendConfirm: checkboxValues.includes('withTrendConfirm'),
@@ -138,10 +120,10 @@ export const SoloTestPage = () => {
         setSearchParams(searchParams);
     }
     
-    const {swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS);
+    const {swings, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
+        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS);
 
-        const fakeouts = calculateFakeout(highParts, lowParts, data)
+        const fakeouts = calculateFakeout(highs, lows, data)
 
         let positions = [];
 
@@ -162,8 +144,8 @@ export const SoloTestPage = () => {
             positions = positions.filter(p => p.side !== 'short');
         }
 
-        return { swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [isShortSellPossible, swipType, trandsType, structureType, config.newSMT, config.showHiddenSwings, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+        return { swings: {highs, lows}, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
+    }, [isShortSellPossible, config.newSMT, config.showHiddenSwings, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -225,113 +207,6 @@ export const SoloTestPage = () => {
             losses: recalculatePositions.filter(p => p.newPnl < 0).length
         };
     }, [stopMargin, security?.lotsize, positions])
-
-
-
-    // const {trend: newTrend} = calculateTrend(highParts, lowParts, data, withTrendConfirm, excludeTrendSFP);
-    // const breakingBlocks: any[] = calculateBreakingBlocks(boses, data);
-    // let orderBlocks = calculateOB(highParts, lowParts, data, newTrend, excludeIDM, withMove);
-
-    // if(excludeIDM){
-    //     const idmIndexes = boses.filter(bos => bos.text === 'IDM').map(bos => bos.from.index)
-    //     orderBlocks = orderBlocks.filter(ob => !idmIndexes.includes(ob.index))
-    // }
-
-//             breakingBlocks.filter(Boolean).forEach(marker => {
-//                 const color = marker.type === 'high' ? markerColors.bullColor: markerColors.bearColor
-//                 const lineSeries = chart.addLineSeries({
-//                     color, // Цвет линии
-//                     priceLineVisible: false,
-//                     lastValueVisible: false,
-//                     lineWidth: 1,
-//                     lineStyle: LineStyle.LargeDashed,
-//                 });
-// // 5. Устанавливаем данные для линии
-//                 lineSeries.setData([
-//                     {time: marker.fromTime * 1000 as Time, value: marker.price}, // начальная точка между свечками
-//                     {time: marker.textCandle.time * 1000 as Time, value: marker.price}, // конечная точка между свечками
-//                     {time: marker.toTime * 1000 as Time, value: marker.price}, // конечная точка между свечками
-//                 ]);
-//
-//                 lineSeries.setMarkers([{
-//                     color,
-//                     time: (marker.textCandle.time * 1000) as Time,
-//                     shape: 'text',
-//                     position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-//                     text: marker.text
-//                 }] as any)
-//
-//                 // if (marker.idmIndex) {
-//                 //     crossesMarkers.push({
-//                 //         color: marker.color,
-//                 //         time: data[marker.idmIndex].time * 1000,
-//                 //         shape: 'text',
-//                 //         position: marker.position,
-//                 //         text: 'IDM'
-//                 //     })
-//                 // }
-//             })
-
-    // if (noInternal) {
-
-        // allMarkers.push(...filteredExtremums.filter(Boolean).map(s => ({
-        //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-        //     time: (s.time * 1000) as Time,
-        //     shape: 'circle',
-        //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-        //     // text: marker.text
-        // })));
-    // }
-
-
-    // smPatterns && [...topPlots.filter(Boolean).map(v => ({
-    //     ...v,
-    //     position: 'aboveBar',
-    //     text: v.isCHoCH ? 'IDM' : 'BOS',
-    //     color: markerColors.bullColor
-    // })),
-    //     ...btmPlots.filter(Boolean).map(v => ({
-    //         ...v,
-    //         position: 'belowBar',
-    //         text: v.isCHoCH ? 'IDM' : 'BOS',
-    //         color: markerColors.bearColor
-    //     }))
-    // ].forEach(plot => {
-    //     const lineSeries = chart.addLineSeries({
-    //         color: plot.color, // Цвет линии
-    //         priceLineVisible: false,
-    //         lastValueVisible: false,
-    //         lineWidth: 1,
-    //         lineStyle: LineStyle.LargeDashed,
-    //     });
-    //
-    //     const textIndex = plot.to - Math.floor((plot.to - plot.from) / 2);
-    //
-    //     const fromCandle = data[plot.from];
-    //     const toCandle = data[plot.to];
-    //     const textCandle = data[textIndex];
-    //
-    //     lineSeries.setData([
-    //         {time: fromCandle.time * 1000, value: plot.price}, // начальная точка между свечками
-    //         {time: textCandle.time * 1000, value: plot.price}, // начальная точка между свечками
-    //         {time: toCandle.time * 1000, value: plot.price}, // конечная точка между свечками
-    //     ]);
-    //
-    //     lineSeries.setMarkers([{
-    //         color: plot.color,
-    //         time: textCandle.time * 1000,
-    //         shape: 'text',
-    //         position: plot.position,
-    //         text: plot.text
-    //     }])
-    // })
-
-    const {
-        topPlots,
-        btmPlots,
-        markers: oldMarkers,
-        itrend
-    } = useMemo(() => calculate(data, markerColors, windowLength), [data, markerColors, windowLength]);
 
     const primitives = useMemo(() => {
         const lastCandle = data[data.length - 1];
@@ -450,34 +325,8 @@ export const SoloTestPage = () => {
             _primitives.push(sessionHighlighting);
         }
 
-        if (config.oldTrend) {
-            const sessionHighlighter = (time: Time) => {
-                const index = data.findIndex(c => c.time * 1000 === time);
-                if (itrend._data[index] > 0) {
-                    return 'rgba(20, 131, 92, 0.4)';
-                }
-                if (itrend._data[index] < 0) {
-                    return 'rgba(157, 43, 56, 0.4)';
-                }
-                if (itrend._data[index] === 0) {
-                    return 'gray';
-                }
-
-                const date = getDate(time);
-                const dayOfWeek = date.getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) {
-                    // Weekend 🏖️
-                    return 'rgba(255, 152, 1, 0.08)'
-                }
-                return 'rgba(41, 98, 255, 0.08)';
-            };
-
-            const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
-            _primitives.push(sessionHighlighting);
-        }
-
         return _primitives;
-    }, [robotOB, config.showRobotOB, orderBlocks, config.oldTrend, config.smartTrend, itrend, trend, config.imbalances, config.showOB, config.showEndOB, config.imbalances, data])
+    }, [robotOB, config.showRobotOB, orderBlocks, config.smartTrend, trend, config.imbalances, config.showOB, config.showEndOB, config.imbalances, data])
 
     const poses = useMemo(() => positions.map(s => [{
         color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
@@ -548,22 +397,6 @@ export const SoloTestPage = () => {
                 text: s.isIFC ? 'IFC' : s.text
             })));
         }
-        if(config.noDoubleSwing){
-            allMarkers.push(...lowParts.filter(Boolean).map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'circle',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                // text: marker.text
-            })));
-            allMarkers.push(...highParts.filter(Boolean).map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'circle',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                // text: marker.text
-            })))
-        }
 
         if(config.showFakeouts){
             allMarkers.push(...fakeouts.map(s => ({
@@ -580,7 +413,7 @@ export const SoloTestPage = () => {
         }
 
         return allMarkers;
-    }, [swings, lowParts, poses, highParts,config.showRobotOB, robotOB, orderBlocks, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings, config.noDoubleSwing, fakeouts, config.showFakeouts]);
+    }, [swings, poses, config.showRobotOB, robotOB, orderBlocks, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings, fakeouts, config.showFakeouts]);
 
     const lineSerieses = useMemo(() => {
         const _lineSerieses = [];
@@ -598,29 +431,6 @@ export const SoloTestPage = () => {
                     {time: close.time as Time, value: close.price}, // конечная точка между свечками
                 ]
             })));
-        }
-        if(config.smPatterns){
-            _lineSerieses.push(...oldMarkers.map(marker => ({
-                options: {
-                    color: marker.color, // Цвет линии
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                    lineWidth: 1,
-                    lineStyle: LineStyle.LargeDashed,
-                },
-                data: [
-                    {time: marker.fromTime, value: marker.value}, // начальная точка между свечками
-                    {time: marker.textTime, value: marker.value}, // начальная точка между свечками
-                    {time: marker.toTime, value: marker.value}, // конечная точка между свечками
-                ],
-                markers: [{
-                    color: marker.color,
-                    time: marker.textTime,
-                    shape: marker.shape,
-                    position: marker.position,
-                    text: marker.text
-                }]
-            })   ))
         }
         if(config.BOS){
             _lineSerieses.push(...boses.filter(Boolean).map(marker => {
@@ -675,39 +485,6 @@ export const SoloTestPage = () => {
     };
 
     return <>
-        {/*<Row>*/}
-        {/*    <Form.Item label="Свипы">*/}
-        {/*        <Radio.Group onChange={e => setSwipType(e.target.value)}*/}
-        {/*                     value={swipType}>*/}
-        {/*            <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>*/}
-        {/*            /!*<Radio value="samurai">самурай</Radio>*!/*/}
-        {/*            /!*<Radio value="khrustik">хрустик</Radio>*!/*/}
-        {/*        </Radio.Group>*/}
-        {/*    </Form.Item>*/}
-        {/*    <Form.Item label="Тренд">*/}
-        {/*        <Radio.Group onChange={e => setTrandsType(e.target.value)}*/}
-        {/*                     value={trandsType}>*/}
-        {/*            <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>*/}
-        {/*            /!*<Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>*!/*/}
-        {/*            /!*<Radio value="samurai">самурай</Radio>*!/*/}
-        {/*            /!*<Radio value={StrategySource.Khrustik}>{StrategySource.Khrustik}</Radio>*!/*/}
-        {/*        </Radio.Group>*/}
-        {/*    </Form.Item>*/}
-        {/*    <Form.Item label="Босы">*/}
-        {/*        <Radio.Group onChange={e => setStructureType(e.target.value)}*/}
-        {/*                     value={structureType}>*/}
-        {/*            <Radio value={StrategySource.TradingHub}>{StrategySource.TradingHub}</Radio>*/}
-        {/*            /!*<Radio value="samurai">самурай</Radio>*!/*/}
-        {/*        </Radio.Group>*/}
-        {/*    </Form.Item>*/}
-        {/*    <Form.Item label="ОБ">*/}
-        {/*        <Radio.Group onChange={e => setOBType(e.target.value)}*/}
-        {/*                     value={obType}>*/}
-        {/*            /!*<Radio value="samurai">самурай</Radio>*!/*/}
-        {/*            <Radio value={StrategySource.Dobrunia}>{StrategySource.Dobrunia}</Radio>*/}
-        {/*        </Radio.Group>*/}
-        {/*    </Form.Item>*/}
-        {/*</Row>*/}
         <Divider plain orientation="left">Риски</Divider>
         <Space>
             <Row>
@@ -736,13 +513,8 @@ export const SoloTestPage = () => {
             </Row>
         </Space>
         <Checkbox.Group onChange={setCheckboxValues} value={checkboxValues}>
-            {/*<Checkbox key="smPatterns" value="smPatterns">smPatterns</Checkbox>*/}
-            {/*<Checkbox key="oldTrend" value="oldTrend">Тренд</Checkbox>*/}
             <Checkbox key="swings" value="swings">Swings</Checkbox>
-            {/*<Checkbox key="noDoubleSwing" value="noDoubleSwing">Исключить свинги подряд</Checkbox>*/}
-            {/*<Checkbox key="noInternal" value="noInternal">Исключить внутренние свинги</Checkbox>*/}
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
-            {/*<Checkbox key="withTrendConfirm" value="withTrendConfirm">Тренд с подтверждением</Checkbox>*/}
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
             <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
