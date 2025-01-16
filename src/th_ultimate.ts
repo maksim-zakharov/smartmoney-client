@@ -155,7 +155,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     return ob;
 };
 
-export const calculateTesting = (data: HistoryObject[], withMove: boolean = false, moreBOS: boolean = false, newStructure: boolean = false) => {
+export const calculateTesting = (data: HistoryObject[], withMove: boolean = false, moreBOS: boolean = false, newStructure: boolean = false, showHiddenSwings: boolean = false) => {
     // <-- Копировать в робота
     let { highs, lows, swings: _swings } = tradinghubCalculateSwings(data);
     const { highParts, lowParts } = calculateStructure(
@@ -168,7 +168,7 @@ export const calculateTesting = (data: HistoryObject[], withMove: boolean = fals
         trend,
         boses,
         swings: thSwings,
-    } = tradinghubCalculateTrendNew(_swings, data, moreBOS);
+    } = tradinghubCalculateTrendNew(_swings, data, moreBOS, showHiddenSwings);
     _swings = thSwings;
     highs = thSwings.filter((t) => t?.side === 'high');
     lows = thSwings.filter((t) => t?.side === 'low');
@@ -808,12 +808,15 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
     return boses;
 }
-export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], moreBOS: boolean = false) => {
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], moreBOS: boolean = false, showHiddenSwings: boolean = false) => {
     let boses = markHHLL(candles, swings)
 
     swings = markIFC(candles, swings);
 
-    // swings = deleteEmptySwings(swings);
+    if(!showHiddenSwings){
+        swings = deleteEmptySwings(swings);
+    }
+
     const internal = deleteInternalStructure(swings, boses);
     boses = internal.boses;
     swings = internal.swings;
