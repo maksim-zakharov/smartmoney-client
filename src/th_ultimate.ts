@@ -139,13 +139,26 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     for (let i = 0; i < ob.length; i++) {
         const obItem = ob[i];
         const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+
+        const array = obItem.type === "high" ? highs : lows;
+        let lastSwingIndex = obItem.index;
+
         for (let j = startPositionIndex; j < candles.length - 1; j++) {
             const candle = candles[j];
+
+            if(array[j]){
+                lastSwingIndex = j;
+            }
+
             if (hasHitOB(obItem, candle)) {
                 // debugger
                 obItem.endCandle = candle;
                 obItem.endIndex = j
                 obItem.canTrade = true;
+                // Если новых точек не было - значит это последний правильный откат, а именно IDM/SMT
+                if(lastSwingIndex === obItem.index) {
+                    obItem.text = "SMT"
+                 }
 
                 break;
             }
