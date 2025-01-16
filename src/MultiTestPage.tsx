@@ -77,7 +77,7 @@ export const MultiTestPage = () => {
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([dayjs('2024-10-01T00:00:00Z'), dayjs('2025-10-01T00:00:00Z')])
 
     const positions = useMemo(() => {
-        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS); // , newSMT, showHiddenSwings)
+        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS);
 
         const lotsize = (security?.lotsize || 1)
 
@@ -124,7 +124,7 @@ export const MultiTestPage = () => {
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS); // , newSMT, showHiddenSwings)
+            const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS);
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 

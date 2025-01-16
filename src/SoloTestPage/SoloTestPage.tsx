@@ -139,7 +139,7 @@ export const SoloTestPage = () => {
     }
     
     const {swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS); // , config.newSMT, config.showHiddenSwings)
+        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS);
 
         const fakeouts = calculateFakeout(highParts, lowParts, data)
 
