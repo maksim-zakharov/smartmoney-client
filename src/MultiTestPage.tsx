@@ -40,7 +40,6 @@ import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
 import {
     calculateTesting, notTradingTime,
-    tradinghubCalculateSwings
 } from "./th_ultimate";
 
 export const MultiTestPage = () => {
@@ -59,7 +58,9 @@ export const MultiTestPage = () => {
     const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
     const [tradeIFC, setTradeIFC] = useState<boolean>(false);
     const [withMove, setwithMove] = useState<boolean>(false);
-    const [moreBOS, setmoreBOS] = useState<boolean>(false);
+    const [moreBOS, setmoreBOS] = useState<boolean>(true);
+    const [newSMT, setnewSMT] = useState<boolean>(true);
+    const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(false);
     const [tradeOB, setTradeOB] = useState<boolean>(true);
     const [limitOrderTrade, setLimitOrderTrade] = useState<boolean>(false);
     const [excludeTrendSFP, setExcludeTrendSFP] = useState<boolean>(false);
@@ -75,25 +76,8 @@ export const MultiTestPage = () => {
     const [token, setToken] = useState();
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([dayjs('2024-10-01T00:00:00Z'), dayjs('2025-10-01T00:00:00Z')])
 
-    const swipCallback = useCallback((...args) => {
-        const swipsMap = {
-            'samurai':calculateSwings,
-            'khrustik': khrustikCalculateSwings,
-            'tradinghub' : tradinghubCalculateSwings
-        }
-        const swipCallback = swipsMap[swipType]  || calculateSwings;
-        return swipCallback(...args)
-    }, [swipType]);
-
-    const swings = useMemo(() => {
-            if(!data.length){
-                return [];
-            }
-            return swipCallback(data);
-    } ,[swipCallback, tf, data])
-
     const positions = useMemo(() => {
-        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS)
+        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS); // , newSMT, showHiddenSwings)
 
         const lotsize = (security?.lotsize || 1)
 
@@ -136,11 +120,11 @@ export const MultiTestPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, trandsType, tradeOB, moreBOS, withMove, limitOrderTrade, tradeIFC, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, trandsType, tradeOB, moreBOS, newSMT, showHiddenSwings, withMove, limitOrderTrade, tradeIFC, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS)
+            const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, withMove, moreBOS); // , newSMT, showHiddenSwings)
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
@@ -181,7 +165,7 @@ export const MultiTestPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, moreBOS, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [swipCallback, trandsType, limitOrderTrade, tradeOB, tradeIFC, moreBOS, newSMT, showHiddenSwings, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -393,6 +377,16 @@ export const MultiTestPage = () => {
                 <Col>
                     <FormItem>
                         <Checkbox checked={moreBOS} onChange={e => setmoreBOS(e.target.checked)}>Более точные BOS</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox checked={newSMT} onChange={e => setnewSMT(e.target.checked)}>Предугадывать SMT</Checkbox>
+                    </FormItem>
+                </Col>
+                <Col>
+                    <FormItem>
+                        <Checkbox checked={showHiddenSwings} onChange={e => setshowHiddenSwings(e.target.checked)}>Показывать скрытые точки</Checkbox>
                     </FormItem>
                 </Col>
                 <Col>

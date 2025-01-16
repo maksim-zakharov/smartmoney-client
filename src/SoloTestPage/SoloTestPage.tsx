@@ -49,7 +49,7 @@ export const SoloTestPage = () => {
         setSearchParams(searchParams)
     }
 
-    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,showRobotOB").split(',');
+    const checkboxValues = (searchParams.get('checkboxes') || "tradeOB,BOS,swings,moreBOS").split(',');
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
@@ -98,6 +98,8 @@ export const SoloTestPage = () => {
         excludeWick: checkboxValues.includes('excludeWick'),
         withMove: checkboxValues.includes('withMove'),
         moreBOS: checkboxValues.includes('moreBOS'),
+        newSMT: checkboxValues.includes('newSMT'),
+        showHiddenSwings: checkboxValues.includes('showHiddenSwings'),
         showRobotOB: checkboxValues.includes('showRobotOB'),
     }), [checkboxValues])
 
@@ -137,7 +139,7 @@ export const SoloTestPage = () => {
     }
     
     const {swings, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS)
+        const {swings, highs, lows, structure, highParts, lowParts, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS); // , config.newSMT, config.showHiddenSwings)
 
         const fakeouts = calculateFakeout(highParts, lowParts, data)
 
@@ -161,7 +163,7 @@ export const SoloTestPage = () => {
         }
 
         return { swings: {highs, lows}, structure, highParts, lowParts, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [isShortSellPossible, swipType, trandsType, structureType, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [isShortSellPossible, swipType, trandsType, structureType, config.newSMT, config.showHiddenSwings, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.removeInternal, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.excludeTrendSFP, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -752,7 +754,9 @@ export const SoloTestPage = () => {
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
             <Checkbox key="moreBOS" value="moreBOS">Более точные BOS</Checkbox>
+            <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
             <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
+            <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
             {/*<Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>*/}
             {/*<Checkbox key="excludeTrendSFP" value="excludeTrendSFP">Исключить Fake BOS</Checkbox>*/}
             {/*<Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>*/}
