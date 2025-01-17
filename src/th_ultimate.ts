@@ -180,10 +180,10 @@ export const calculateTesting = (data: HistoryObject[], withMove: boolean = fals
         trend,
         boses,
         swings: thSwings,
-    } = tradinghubCalculateTrendNew(_swings, data, moreBOS, showHiddenSwings);
+    } = tradinghubCalculateTrendNew(_swings, data, moreBOS, showHiddenSwings, newStructure);
     _swings = thSwings;
-    highs = thSwings.filter((t) => t?.side === 'high');
-    lows = thSwings.filter((t) => t?.side === 'low');
+    highs = thSwings.map((t) => t?.side === 'high' ? t : null);
+    lows = thSwings.map((t) => t?.side === 'low' ? t : null);
 
     // Копировать в робота -->
     const orderBlocks = calculateOB(
@@ -374,6 +374,7 @@ const calculateStructure = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         }
     }
 
+    // Выбирает самый лой и самый хай
     for (let i = 0; i < structure.length - 1; i++) {
         const currStruct = structure[i];
         const nextStruct = structure[i + 1];
@@ -787,7 +788,96 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
     return boses;
 }
-export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], moreBOS: boolean = false, showHiddenSwings: boolean = false) => {
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], moreBOS: boolean = false, showHiddenSwings: boolean = false, newStructure: boolean = false) => {
+
+    if(newStructure) {
+        const isBetween = (p1: Swing, p2: Swing, p3: Swing) => {
+            if (p1.side === 'high' && p2.side === 'low') {
+                return p3.price > p2.price && p3.price < p1.price;
+            }
+            if (p1.side === 'low' && p2.side === 'high') {
+                return p3.price < p2.price && p3.price > p1.price;
+            }
+            return false;
+        }
+
+        const highs = swings.map(s => s?.side === 'high' ? s : null)
+        const lows = swings.map(s => s?.side === 'low' ? s : null)
+
+        const nonEmptySwings = swings.filter(Boolean);
+        // Фильтровать структуру
+        for (let i = 0; i < nonEmptySwings.length - 3; i++) {
+            const [s1, s2, s3, s4] = nonEmptySwings.slice(i, i + 4);
+            if (isBetween(s1, s2, s3) && isBetween(s1, s2, s4)) {
+                swings[s3.index] = null;
+                swings[s4.index] = null;
+
+                nonEmptySwings.splice(i + 2, 2);
+                i--;
+            }
+        }
+
+        // Выбирает самый лой и самый хай
+        let lastSwingIndex: number = null;
+        for (let i = 0; i < swings.length - 1; i++) {
+            const currStruct = swings[i];
+            if(!currStruct){
+                continue;
+            }
+            if(!lastSwingIndex){
+                lastSwingIndex = i;
+                continue;
+            }
+            const lastStruct = swings[lastSwingIndex];
+
+            const idx = 0; // было 1 теперь ок
+
+            if (currStruct.side === 'low') {
+                const batch = lows.slice(lastStruct.index + 1, currStruct.index + 2);
+                const index = batch.reduce((acc, curr) => {
+                    if (curr && candles[acc].low > curr.price) {
+                        return curr.index + idx;
+                    }
+                    return acc;
+                }, lastStruct.index + idx);
+
+                const lowest = candles[index];
+                if (lowest && index !== i) {
+                    swings[i] = null;
+
+                    swings[index] = {index, price: lowest.low, time: lowest.time, side: currStruct.side};
+
+                    lastSwingIndex = index;
+
+                    continue;
+                }
+            }
+
+            if (currStruct.side === 'high') {
+                const batch = highs.slice(lastStruct.index + 1, currStruct.index + 2);
+                const index = batch.reduce((acc, curr) => {
+                    if (curr && candles[acc].high < curr.price) {
+                        return curr.index + idx;
+                    }
+                    return acc;
+                }, lastStruct.index + idx);
+
+                const lowest = candles[index];
+                if (lowest && index !== i) {
+                    swings[i] = null;
+
+                    swings[index] = {index, price: lowest.high, time: lowest.time, side: currStruct.side};
+
+                    lastSwingIndex = index;
+
+                    continue;
+                }
+            }
+
+            lastSwingIndex = i;
+        }
+    }
+
     let boses = markHHLL(candles, swings)
 
     swings = markIFC(candles, swings);
