@@ -31,6 +31,7 @@ export interface OrderBlock {
     endCandle?: HistoryObject;
     endIndex?: number;
     text?: string;
+    isSMT?: boolean;
 }
 
 /**
@@ -67,15 +68,18 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const bossIndex = orderBlock.firstImbalanceIndex + index;
             const boss = boses[bossIndex];
             let text = 'OB';
+            let isSMT = false;
             if (!newSMT && (boss || (lastHighIDMIndex
                 && boses[lastHighIDMIndex].from.index <= i
                 && boses[lastHighIDMIndex].to.index > i))
             ) {
                 text = 'SMT';
+                isSMT = true;
             }
 
             ob.push({
                 text,
+                isSMT,
                 type: orderBlock.type,
                 index,
                 time: orderBlock.orderblock.time,
@@ -110,15 +114,18 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const bossIndex = orderBlock.firstImbalanceIndex + index;
             const boss = boses[bossIndex];
             let text = 'OB';
+            let isSMT = false;
             if (!newSMT && (boss || (lastLowIDMIndex
                 && boses[lastLowIDMIndex].from.index <= i
                 && boses[lastLowIDMIndex].to.index > i))
             ) {
                 text = 'SMT';
+                isSMT = true;
             }
 
             ob.push({
                 text,
+                isSMT,
                 type: orderBlock.type,
                 index,
                 time: orderBlock.orderblock.time,
@@ -157,6 +164,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
                 if(newSMT && lastSwingIndex === obItem.index){
                     obItem.text = 'SMT';
+                    obItem.isSMT = true;
                 }
 
                 break;
@@ -205,7 +213,7 @@ export const calculateProduction = (data: HistoryObject[]) => {
 
     // orderBlocks.push(...IFCtoOB(thSwings, candles));
 
-    return orderBlocks.filter((obItem) => obItem.text !== 'SMT');
+    return orderBlocks; // .filter((obItem) => !obItem.isSMT);
 };
 
 export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
