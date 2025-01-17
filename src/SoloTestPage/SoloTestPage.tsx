@@ -120,7 +120,7 @@ export const SoloTestPage = () => {
     }
     
     const {swings, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS, config.newStructure, config.showHiddenSwings);
+        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS, config.newStructure, config.showHiddenSwings, config.newSMT);
 
         const fakeouts = calculateFakeout(highs, lows, data)
 
