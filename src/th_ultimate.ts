@@ -175,7 +175,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     return ob;
 };
 
-export const calculateTesting = (data: HistoryObject[], withMove: boolean = false, moreBOS: boolean = false, newStructure: boolean = false, showHiddenSwings: boolean = false, newSMT: boolean = false) => {
+export const calculateTesting = (data: HistoryObject[], withMove: boolean = false, moreBOS: boolean = false, newStructure: boolean = false, showHiddenSwings: boolean = false, newSMT: boolean = false, showIFC: boolean = false) => {
     // <-- Копировать в робота
     let { highs, lows, swings: _swings } = tradinghubCalculateSwings(data);
     const { highParts, lowParts } = calculateStructure(
@@ -188,7 +188,7 @@ export const calculateTesting = (data: HistoryObject[], withMove: boolean = fals
         trend,
         boses,
         swings: thSwings,
-    } = tradinghubCalculateTrendNew(_swings, data, moreBOS, showHiddenSwings, newStructure);
+    } = tradinghubCalculateTrendNew(_swings, data, moreBOS, showHiddenSwings, newStructure, showIFC);
     _swings = thSwings;
     highs = thSwings.map((t) => t?.side === 'high' ? t : null);
     lows = thSwings.map((t) => t?.side === 'low' ? t : null);
@@ -796,7 +796,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
     return boses;
 }
-export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], moreBOS: boolean = false, showHiddenSwings: boolean = false, newStructure: boolean = false) => {
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], moreBOS: boolean = false, showHiddenSwings: boolean = false, newStructure: boolean = false, showIFC: boolean = false) => {
 
     if(newStructure) {
         const isBetween = (p1: Swing, p2: Swing, p3: Swing) => {
@@ -888,6 +888,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
 
     let boses = markHHLL(candles, swings)
 
+    if(showIFC)
     swings = markIFC(candles, swings);
 
     if(!showHiddenSwings){
