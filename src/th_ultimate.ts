@@ -153,7 +153,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         for (let j = startPositionIndex; j < candles.length - 1; j++) {
             const candle = candles[j];
 
-            if(array[j]){
+            if (array[j]) {
                 lastSwingIndex = j;
             }
 
@@ -162,7 +162,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 obItem.endIndex = j
                 obItem.canTrade = true;
 
-                if(newSMT && lastSwingIndex === obItem.index){
+                if (newSMT && lastSwingIndex === obItem.index) {
                     obItem.text = 'SMT';
                     obItem.isSMT = true;
                 }
@@ -175,10 +175,14 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     return ob;
 };
 
-export const calculateTesting = (data: HistoryObject[], withMove: boolean = false, moreBOS: boolean = false, newStructure: boolean = false, showHiddenSwings: boolean = false, newSMT: boolean = false, showIFC: boolean = false) => {
+export const calculateTesting = (data: HistoryObject[], {
+    moreBOS, showHiddenSwings, newStructure, showIFC,
+    withMove,
+    newSMT
+}: THConfig) => {
     // <-- Копировать в робота
-    let { highs, lows, swings: _swings } = tradinghubCalculateSwings(data);
-    const { highParts, lowParts } = calculateStructure(
+    let {highs, lows, swings: _swings} = tradinghubCalculateSwings(data);
+    const {highParts, lowParts} = calculateStructure(
         highs,
         lows,
         data,
@@ -207,9 +211,23 @@ export const calculateTesting = (data: HistoryObject[], withMove: boolean = fals
     return {swings: _swings, highs, lows, trend, boses, orderBlocks};
 }
 
+export interface THConfig {
+    withMove?: boolean;
+    moreBOS?: boolean;
+    newStructure?: boolean;
+    showHiddenSwings?: boolean;
+    newSMT?: boolean;
+    showIFC?: boolean;
+}
+
 // Точка входа в торговлю
 export const calculateProduction = (data: HistoryObject[]) => {
-    const {orderBlocks} = calculateTesting(data, false, true);
+    const config: THConfig = {
+        withMove: false,
+        moreBOS: true
+    }
+
+    const {orderBlocks} = calculateTesting(data, config);
 
     // orderBlocks.push(...IFCtoOB(thSwings, candles));
 
@@ -277,7 +295,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
         const lowPullback = hasLowValidPullback(prevCandle, currentCandle, nextCandle)
 
 
-        if(!diff || hasLowValidPullback(currentCandle, nextCandle)){
+        if (!diff || hasLowValidPullback(currentCandle, nextCandle)) {
             const swing: Swing = {
                 side: (highPullback || '') as any,
                 time: currentCandle.time,
@@ -288,7 +306,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
             swings[i] = highPullback ? swing : swings[i];
         }
 
-        if(!diff || hasHighValidPullback(currentCandle, nextCandle)){
+        if (!diff || hasHighValidPullback(currentCandle, nextCandle)) {
             const swing: Swing = {
                 side: (lowPullback || '') as any,
                 time: currentCandle.time,
@@ -319,7 +337,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
                 swings[lastSwingIndex] = null;
                 highs[lastSwingIndex] = null;
                 lastSwingIndex = i;
-            } else if(!lows[i]) {
+            } else if (!lows[i]) {
                 // Убираем хай подряд
                 swings[i] = null;
                 highs[i] = null;
@@ -331,7 +349,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
                 swings[lastSwingIndex] = null;
                 lows[lastSwingIndex] = null;
                 lastSwingIndex = i;
-            } else if(!highs[i]) {
+            } else if (!highs[i]) {
                 // Обновляем лой подряд
                 swings[i] = null;
                 lows[i] = null;
@@ -631,8 +649,8 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
     const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
     let liquidityCandleMap: Record<'high' | 'low', HistoryObject> = {
-      high: null,
-      low: null
+        high: null,
+        low: null
     }
 
     let prelastBosSwingMap: Record<'high' | 'low', number> = {
@@ -661,7 +679,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
             prelastBosSwingMap[type] = lastBosSwingMap[type];
             lastBosSwingMap[type] = i;
 
-            if(moreBOS) {
+            if (moreBOS) {
                 lastBosSwingMapSet[type].add(lastBosSwingMap[type])
             }
 
@@ -727,7 +745,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
             swings[lastBosSwingMap['low']] = null;
             swings[lastBosSwingMap['high']] = null;
 
-            if(moreBOS) {
+            if (moreBOS) {
                 lastBosSwingMapSet['low'].delete(lastBosSwingMap['low'])
                 lastBosSwingMapSet['high'].delete(lastBosSwingMap['high'])
 
@@ -744,17 +762,17 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
         }
 
         // BOS сверху
-        if(moreBOS) {
-            lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['low'],'high'))
+        if (moreBOS) {
+            lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['low'], 'high'))
         } else {
             confirmBOS(i, lastBosSwingMap['high'], lastBosSwingMap['low'], 'high');
         }
 
         // BOS снизу
-        if(moreBOS) {
-            lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['high'],'low'))
+        if (moreBOS) {
+            lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['high'], 'low'))
         } else {
-            confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'],'low');
+            confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'], 'low');
         }
 
         updateLastSwing(i, 'high', 'HH');
@@ -767,7 +785,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
         .forEach((curr: any, i, array) => {
             for (let j = 0; j < i; j++) {
                 const prev = array[j];
-                if(isInternalBOS(curr, prev)){
+                if (isInternalBOS(curr, prev)) {
                     boses[curr.from.index] = null;
                     break;
                 }
@@ -780,7 +798,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
         .forEach((curr: any, i, array) => {
             for (let j = 0; j < i; j++) {
                 const prev = array[j];
-                if(isInternalBOS(curr, prev)){
+                if (isInternalBOS(curr, prev)) {
                     boses[curr.from.index] = null;
                     break;
                 }
@@ -798,7 +816,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 }
 export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], moreBOS: boolean = false, showHiddenSwings: boolean = false, newStructure: boolean = false, showIFC: boolean = false) => {
 
-    if(newStructure) {
+    if (newStructure) {
         const isBetween = (p1: Swing, p2: Swing, p3: Swing) => {
             if (p1.side === 'high' && p2.side === 'low') {
                 return p3.price > p2.price && p3.price < p1.price;
@@ -829,10 +847,10 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
         let lastSwingIndex: number = null;
         for (let i = 0; i < swings.length - 1; i++) {
             const currStruct = swings[i];
-            if(!currStruct){
+            if (!currStruct) {
                 continue;
             }
-            if(!lastSwingIndex){
+            if (!lastSwingIndex) {
                 lastSwingIndex = i;
                 continue;
             }
@@ -888,10 +906,10 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
 
     let boses = markHHLL(candles, swings)
 
-    if(showIFC)
-    swings = markIFC(candles, swings);
+    if (showIFC)
+        swings = markIFC(candles, swings);
 
-    if(!showHiddenSwings){
+    if (!showHiddenSwings) {
         swings = deleteEmptySwings(swings);
     }
 
@@ -919,7 +937,7 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
         const to = !nextBos ? trend.length : nextBos.to.index;
 
         // Если текущий бос внутри предыдущего боса - то текущий бос нужно выпилить и не учитывать в тренде
-        if(curBos?.from.index > prevBos?.from.index && curBos?.to.index < prevBos?.to.index){
+        if (curBos?.from.index > prevBos?.from.index && curBos?.to.index < prevBos?.to.index) {
             boses[curBos.from.index] = null;
             continue;
         }
@@ -942,7 +960,7 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
         const nextBos = onlyBOSes[i + 1];
 
         // Если оба боса подтвердились одной свечой, значит второй бос лишний и оставляем самый длинный
-        if(curBos.to.index === nextBos?.to.index){
+        if (curBos.to.index === nextBos?.to.index) {
             boses[nextBos.from.index] = null;
         }
     }

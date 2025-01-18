@@ -121,7 +121,7 @@ export const SoloTestPage = () => {
     }
     
     const {swings, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, config.withMove, config.moreBOS, config.newStructure, config.showHiddenSwings, config.newSMT, config.showIFC);
+        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, config);
 
         const fakeouts = calculateFakeout(highs, lows, data)
 
@@ -489,14 +489,14 @@ export const SoloTestPage = () => {
         <Space>
             <Row>
                 <Form.Item label="Риск на сделку">
-                    <Input value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
+                    <Input style={{width: 80}} value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
                 </Form.Item>
                 <Form.Item label="Risk Rate">
                     <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop} min={1} max={10} step={1}/>
                 </Form.Item>
-                <Form.Item label="Percent Rate">
-                    <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
-                </Form.Item>
+                {/*<Form.Item label="Percent Rate">*/}
+                {/*    <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0} max={1} step={0.1}/>*/}
+                {/*</Form.Item>*/}
                 <Space>
                     <div>Профит: {new Intl.NumberFormat('ru-RU', {
                         style: 'currency',

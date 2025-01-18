@@ -14,7 +14,7 @@ import {testData1, testData2} from "./test_data";
 type MenuItem = Required<MenuProps>['items'][number] & {description?: string, candles: HistoryObject[]};
 
 const BOSChart = ({data, showSwings, showStructure, showOrderblock, mockHighs, mockLows, mockBoses, mockOrderBlocks}: {data: HistoryObject[]}) => {
-    let {highs, lows, boses, orderBlocks} = calculateTesting(data, false, true);
+    let {highs, lows, boses, orderBlocks} = calculateTesting(data, {withMove: false, moreBOS: true});
 
     if(mockHighs){
         highs = mockHighs;
