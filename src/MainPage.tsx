@@ -446,11 +446,11 @@ const MainPage: React.FC = () => {
             symbol,
             tf,
             emaPeriod: 100,
-            from: moment(selectedPattern?.liquidSweepTime).add(-(Number(selectedPattern?.timeframe) / 1800), "w").unix().toString(),
+            from: moment(selectedPattern?.liquidSweepTime).add(-2, "hour").unix().toString(),
             to
         }, {
             skip: !symbol || !selectedPattern,
-            pollingInterval: 10000,
+            // pollingInterval: 10000,
         });
 
         const {data: security} = useSecurityQuery({symbol});
@@ -545,7 +545,7 @@ const MainPage: React.FC = () => {
             width > 1200 && {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS`}
+                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS%2CshowHiddenSwings%2CnewSMT`}
                                  target="_blank">Тестер</Link>;
                 }
             }
@@ -626,7 +626,7 @@ const MainPage: React.FC = () => {
             {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS`}
+                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS%2CshowHiddenSwings%2CnewSMT`}
                                  target="_blank">Тестер</Link>;
                 }
             }
@@ -757,7 +757,7 @@ const MainPage: React.FC = () => {
                 title: "Действия",
                 render: (value, row) => {
                     return row?.type !== 'summary' ?
-                        <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS`}
+                        <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS%2CshowHiddenSwings%2CnewSMT`}
                               target="_blank">Тестер</Link> : '';
                 }
             }
@@ -876,11 +876,12 @@ const MainPage: React.FC = () => {
         const orderBlock = useMemo(() => {
             if (selectedPattern?.orderblockHigh && selectedPattern?.orderblockLow && selectedPattern?.orderblockTime) {
                 let rightTime;
+
                 if (position)
                     rightTime = (roundTime(position.date, tf, false) + Number(tf) * 4) * 1000;
                 if (lastCandle)
                     rightTime = (roundTime((lastCandle?.time * 1000), tf, false)) * 1000;
-                if (!rightTime) {
+                if(!rightTime) {
                     return undefined;
                 }
 
@@ -1085,8 +1086,8 @@ const MainPage: React.FC = () => {
             })), []);
 
             return <Space>
-                <InputNumber placeholder="Stop from" value={stopFrom} onChange={setStopFrom} />
-                <InputNumber placeholder="Stop to" value={stopTo} onChange={setStopTo} />
+                {/*<InputNumber placeholder="Stop from" value={stopFrom} onChange={setStopFrom} />*/}
+                {/*<InputNumber placeholder="Stop to" value={stopTo} onChange={setStopTo} />*/}
                 <Select style={{width: 200}} allowClear placeholder="Выберите тикер" options={tickerOptions}
                         value={selectedTicker} onChange={setSelectedTicker}/>
                 <Select style={{width: 200}} allowClear placeholder="Выберите паттерн" options={nameOptions}

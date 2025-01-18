@@ -153,10 +153,6 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         for (let j = startPositionIndex; j < candles.length - 1; j++) {
             const candle = candles[j];
 
-            if (array[j]) {
-                lastSwingIndex = j;
-            }
-
             if (hasHitOB(obItem, candle)) {
                 obItem.endCandle = candle;
                 obItem.endIndex = j
@@ -168,6 +164,10 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 }
 
                 break;
+            }
+
+            if (array[j]) {
+                lastSwingIndex = j;
             }
         }
     }
@@ -192,7 +192,7 @@ export const calculateTesting = (data: HistoryObject[], {
         trend,
         boses,
         swings: thSwings,
-    } = tradinghubCalculateTrendNew(_swings, data, moreBOS, showHiddenSwings, newStructure, showIFC);
+    } = tradinghubCalculateTrendNew(_swings, data, {moreBOS, showHiddenSwings, showIFC, newStructure});
     _swings = thSwings;
     highs = thSwings.map((t) => t?.side === 'high' ? t : null);
     lows = thSwings.map((t) => t?.side === 'low' ? t : null);
@@ -477,7 +477,9 @@ export const deleteEmptySwings = (swings: Swing[]) => {
 
     return swings;
 }
-export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
+export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[], boses: Cross[], {
+    newStructure
+}: THConfig) => {
     let preLastHighIndex = null;
     let lastHighIndex = null;
 
@@ -486,25 +488,97 @@ export const deleteInternalStructure = (swings: Swing[], boses: Cross[]) => {
 
     let deletedSwingIndexes = new Set([]);
 
-    for (let i = 0; i < swings.length; i++) {
-        if (swings[i] && swings[i].side === 'high' && swings[i].text === 'HH') {
-            preLastHighIndex = lastHighIndex;
-            lastHighIndex = i;
+    if(!newStructure){
+        // Это не правильно
+        for (let i = 0; i < swings.length; i++) {
+            if (swings[i] && swings[i].side === 'high' && swings[i].text === 'HH') {
+                preLastHighIndex = lastHighIndex;
+                lastHighIndex = i;
+            }
+            if (swings[i] && swings[i].side === 'low' && swings[i].text === 'LL') {
+                preLastLowIndex = lastLowIndex;
+                lastLowIndex = i;
+            }
+
+            if (swings[preLastHighIndex]?.price > swings[lastHighIndex]?.price && swings[preLastLowIndex]?.price < swings[lastLowIndex]?.price) {
+                swings[lastLowIndex] = null;
+                swings[lastHighIndex] = null;
+
+                deletedSwingIndexes.add(lastLowIndex)
+                deletedSwingIndexes.add(lastHighIndex)
+
+                lastLowIndex = preLastLowIndex;
+                lastHighIndex = preLastHighIndex;
+            }
         }
-        if (swings[i] && swings[i].side === 'low' && swings[i].text === 'LL') {
-            preLastLowIndex = lastLowIndex;
-            lastLowIndex = i;
-        }
+    } else {
 
-        if (swings[preLastHighIndex]?.price > swings[lastHighIndex]?.price && swings[preLastLowIndex]?.price < swings[lastLowIndex]?.price) {
-            swings[lastLowIndex] = null;
-            swings[lastHighIndex] = null;
+        // Алгоритм такой
+        /**
+         * Если в рамках первых двух точек я нахожу следующие 2 точки внутренними, то записываю их внутренними до тех пор, пока хотя бы одна точка не станет внешней.
+         * Если внешняя точка снизу и вторая точка была тоже снизу - из внутренних ищу самую высокую.
+         * Если внешняя точка сверху и вторая точка была тоже сверху - из внутренних ищу самую низкую.
+         *
+         * Остальные удаляются
+         */
+        for (let i = 0; i < swings.length; i++) {
+            // Оставить лойный лой
+            if (swings[preLastHighIndex]?.price < candles[i].high) {
+                const batch = swings.slice(preLastHighIndex + 1, i);
+                const minIndex = batch.reduce((acc, idx, i) => {
+                    if(!acc && idx){
+                        acc = idx;
+                    } else if (idx && acc.price > idx.price) {
+                        acc = idx;
+                    }
+                    return acc;
+                }, batch[0])
 
-            deletedSwingIndexes.add(lastLowIndex)
-            deletedSwingIndexes.add(lastHighIndex)
+                batch
+                    .filter(idx => idx && idx?.index !== minIndex?.index)
+                    .forEach(idx => {
+                        delete swings[idx.index].text;
+                        deletedSwingIndexes.add(idx.index);
+                    })
 
-            lastLowIndex = preLastLowIndex;
-            lastHighIndex = preLastHighIndex;
+                preLastLowIndex = minIndex?.index;
+                preLastHighIndex = null;
+            }
+            //
+            if (swings[preLastLowIndex]?.price > candles[i].low) {
+                const batch = swings.slice(preLastLowIndex + 1, i);
+                const minIndex = batch.reduce((acc, idx, i) => {
+                    if(!acc && idx){
+                        acc = idx;
+                    } else if (idx && acc.price < idx.price) {
+                        acc = idx;
+                    }
+                    return acc;
+                }, batch[0])
+
+                batch
+                    .filter(idx => idx && idx?.index !== minIndex?.index)
+                    .forEach(idx => {
+                        delete swings[idx.index].text;
+                        deletedSwingIndexes.add(idx.index);
+                    })
+
+                preLastHighIndex = minIndex?.index;
+                preLastLowIndex = null;
+            }
+            if (swings[i] && swings[i].side === 'high' && swings[i].text === 'HH') {
+                if (!preLastHighIndex || swings[preLastHighIndex].price < swings[i].price) {
+                    preLastHighIndex = i;
+                }
+
+                lastHighIndex = i;
+            }
+            if (swings[i] && swings[i].side === 'low' && swings[i].text === 'LL') {
+                if (!preLastLowIndex || swings[preLastLowIndex].price > swings[i].price) {
+                    preLastLowIndex = i;
+                }
+                lastLowIndex = i;
+            }
         }
     }
 
@@ -630,6 +704,10 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     }
 
     for (let i = 0; i < swings.length; i++) {
+        // test
+        // if(swings[i]){
+        //     swings[i].text = i.toString();
+        // }
         confirmLowestLow(i)
         confirmHighestHigh(i);
 
@@ -681,9 +759,9 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
             if (moreBOS) {
                 lastBosSwingMapSet[type].add(lastBosSwingMap[type])
+            } else {
+                liquidityCandleMap[type] = null;
             }
-
-            liquidityCandleMap[type] = null;
         }
     }
 
@@ -701,9 +779,10 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
                 if (isClose) {
                     to = {index: i, time: candles[i].time, price: candles[i].close};
                 } else {
-                    liquidityCandleMap[type] = candles[i];
                     if (moreBOS) {
                         liquidityCandleMapMap[type].set(lastBosSwing, liquidityCandleMap[type])
+                    } else {
+                        liquidityCandleMap[type] = candles[i];
                     }
                 }
             }
@@ -727,9 +806,10 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
                     lastBosSwingMapSet[type].delete(lastBosSwing)
                 }
 
-                liquidityCandleMap[type] = null;
                 if (moreBOS) {
                     liquidityCandleMapMap[type].delete(lastBosSwing)
+                } else {
+                    liquidityCandleMap[type] = null;
                 }
             }
         }
@@ -742,10 +822,10 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
             swings[prelastBosSwingMap['high']]?.price > swings[lastBosSwingMap['high']]?.price
             && swings[prelastBosSwingMap['low']]?.price < swings[lastBosSwingMap['low']]?.price
         ) {
-            swings[lastBosSwingMap['low']] = null;
-            swings[lastBosSwingMap['high']] = null;
-
-            if (moreBOS) {
+            if (!moreBOS) {
+                swings[lastBosSwingMap['low']] = null;
+                swings[lastBosSwingMap['high']] = null;
+            } else {
                 lastBosSwingMapSet['low'].delete(lastBosSwingMap['low'])
                 lastBosSwingMapSet['high'].delete(lastBosSwingMap['high'])
 
@@ -814,95 +894,9 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
     return boses;
 }
-export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], moreBOS: boolean = false, showHiddenSwings: boolean = false, newStructure: boolean = false, showIFC: boolean = false) => {
-
-    if (newStructure) {
-        const isBetween = (p1: Swing, p2: Swing, p3: Swing) => {
-            if (p1.side === 'high' && p2.side === 'low') {
-                return p3.price > p2.price && p3.price < p1.price;
-            }
-            if (p1.side === 'low' && p2.side === 'high') {
-                return p3.price < p2.price && p3.price > p1.price;
-            }
-            return false;
-        }
-
-        const highs = swings.map(s => s?.side === 'high' ? s : null)
-        const lows = swings.map(s => s?.side === 'low' ? s : null)
-
-        const nonEmptySwings = swings.filter(Boolean);
-        // Фильтровать структуру
-        for (let i = 0; i < nonEmptySwings.length - 3; i++) {
-            const [s1, s2, s3, s4] = nonEmptySwings.slice(i, i + 4);
-            if (isBetween(s1, s2, s3) && isBetween(s1, s2, s4)) {
-                swings[s3.index] = null;
-                swings[s4.index] = null;
-
-                nonEmptySwings.splice(i + 2, 2);
-                i--;
-            }
-        }
-
-        // Выбирает самый лой и самый хай
-        let lastSwingIndex: number = null;
-        for (let i = 0; i < swings.length - 1; i++) {
-            const currStruct = swings[i];
-            if (!currStruct) {
-                continue;
-            }
-            if (!lastSwingIndex) {
-                lastSwingIndex = i;
-                continue;
-            }
-            const lastStruct = swings[lastSwingIndex];
-
-            const idx = 0; // было 1 теперь ок
-
-            if (currStruct.side === 'low') {
-                const batch = lows.slice(lastStruct.index + 1, currStruct.index + 2);
-                const index = batch.reduce((acc, curr) => {
-                    if (curr && candles[acc].low > curr.price) {
-                        return curr.index + idx;
-                    }
-                    return acc;
-                }, lastStruct.index + idx);
-
-                const lowest = candles[index];
-                if (lowest && index !== i) {
-                    swings[i] = null;
-
-                    swings[index] = {index, price: lowest.low, time: lowest.time, side: currStruct.side};
-
-                    lastSwingIndex = index;
-
-                    continue;
-                }
-            }
-
-            if (currStruct.side === 'high') {
-                const batch = highs.slice(lastStruct.index + 1, currStruct.index + 2);
-                const index = batch.reduce((acc, curr) => {
-                    if (curr && candles[acc].high < curr.price) {
-                        return curr.index + idx;
-                    }
-                    return acc;
-                }, lastStruct.index + idx);
-
-                const lowest = candles[index];
-                if (lowest && index !== i) {
-                    swings[i] = null;
-
-                    swings[index] = {index, price: lowest.high, time: lowest.time, side: currStruct.side};
-
-                    lastSwingIndex = index;
-
-                    continue;
-                }
-            }
-
-            lastSwingIndex = i;
-        }
-    }
+export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], {
+    moreBOS, showHiddenSwings, showIFC, newStructure
+}: THConfig) => {
 
     let boses = markHHLL(candles, swings)
 
@@ -913,7 +907,9 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
         swings = deleteEmptySwings(swings);
     }
 
-    const internal = deleteInternalStructure(swings, boses);
+    const internal = deleteInternalStructure(swings, candles, boses, {
+        newStructure
+    });
     boses = internal.boses;
     swings = internal.swings;
 

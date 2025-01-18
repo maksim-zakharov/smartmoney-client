@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Checkbox, Divider, Form, Input, Row, Slider, SliderSingleProps, Space} from "antd";
+import {Checkbox, Divider, Form, Input, InputNumber, Row, Slider, SliderSingleProps, Space} from "antd";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
@@ -48,6 +48,7 @@ export const SoloTestPage = () => {
     const fromDate = searchParams.get('fromDate') || dayjs('2024-10-01T00:00:00Z').startOf('day').unix();
     const toDate = searchParams.get('toDate') || dayjs('2025-10-01T00:00:00Z').endOf('day').unix();
     const [stopMargin, setStopMargin] = useState(100);
+    const [stopPaddingPercent, setstopPaddingPercent] = useState(0);
     const [security, setSecurity] = useState();
 
     const [riskRate, setRiskRate] = useState();
@@ -128,7 +129,7 @@ export const SoloTestPage = () => {
         let positions = [];
 
         if(config.tradeOB){
-            const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop, config.limitOrderTrade);
+            const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop, config.limitOrderTrade, stopPaddingPercent);
             positions.push(...fakeoutPositions);
         }
         if(config.tradeFakeouts){
@@ -145,7 +146,7 @@ export const SoloTestPage = () => {
         }
 
         return { swings: {highs, lows}, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [isShortSellPossible, config.showIFC, config.newSMT, config.showHiddenSwings, config.newStructure, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [isShortSellPossible, stopPaddingPercent, config.showIFC, config.newSMT, config.showHiddenSwings, config.newStructure, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -490,6 +491,9 @@ export const SoloTestPage = () => {
             <Row>
                 <Form.Item label="Риск на сделку">
                     <Input style={{width: 80}} value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
+                </Form.Item>
+                <Form.Item label="Отступ стопа в %">
+                    <InputNumber style={{width: 80}} value={stopPaddingPercent} onChange={(e) => setstopPaddingPercent(Number(e))}/>
                 </Form.Item>
                 <Form.Item label="Risk Rate">
                     <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop} min={1} max={10} step={1}/>

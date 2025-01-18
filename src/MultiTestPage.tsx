@@ -297,7 +297,7 @@ export const MultiTestPage = () => {
         {
             title: "Действия",
             render: (value, row) => {
-                return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS`}
+                return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS%2CshowHiddenSwings%2CnewSMT`}
                              target="_blank">Тестер</Link>;
             }
         }

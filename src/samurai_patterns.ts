@@ -1052,7 +1052,7 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
     return positions;
 }
 
-export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: HistoryObject[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true) => {
+export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: HistoryObject[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true, stopPaddingPercent: number = 0) => {
     const positions = [];
     for (let i = 0; i < ob.length; i++) {
         const obItem = ob[i];
@@ -1060,8 +1060,12 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
             continue;
         }
         const side = obItem.type === 'high' ? 'short' : 'long';
-        const stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
+        let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
         const openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
+
+        if(stopPaddingPercent){
+            stopLoss *= (1 - stopPaddingPercent / 100);
+        }
 
         const takeProfit = calculateTakeProfit({
             side,
@@ -1082,17 +1086,19 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
             continue;
         }
 
+        const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
+
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
             if (side === 'long' && candles[j].low <= stopLoss) {
                 positions.push({
                     side, name: 'OB', takeProfit, stopLoss,
-                    openPrice, openTime: obItem.endCandle.time, closeTime: candles[j].time, pnl: stopLoss - openPrice
+                    openPrice, openTime, closeTime: candles[j].time, pnl: stopLoss - openPrice
                 });
                 break;
             } else if (side === 'short' && candles[j].high >= stopLoss) {
                 positions.push({
                     side, name: 'OB', takeProfit, stopLoss,
-                    openPrice, openTime: obItem.endCandle.time, closeTime: candles[j].time, pnl: openPrice - stopLoss
+                    openPrice, openTime, closeTime: candles[j].time, pnl: openPrice - stopLoss
                 });
                 break;
             } else if (side === 'long' && candles[j].high >= takeProfit) {
@@ -1102,7 +1108,7 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
                     takeProfit,
                     stopLoss,
                     openPrice,
-                    openTime: obItem.endCandle.time,
+                    openTime,
                     closeTime: candles[j].time,
 
                     pnl: takeProfit - openPrice
@@ -1115,7 +1121,7 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
                     takeProfit,
                     stopLoss,
                     openPrice,
-                    openTime: obItem.endCandle.time,
+                    openTime,
                     closeTime: candles[j].time,
 
                     pnl: openPrice - takeProfit
