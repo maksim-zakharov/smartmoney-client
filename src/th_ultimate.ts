@@ -488,7 +488,7 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
 
     let deletedSwingIndexes = new Set([]);
 
-    if(!newStructure){
+    if (!newStructure) {
         // Это не правильно
         for (let i = 0; i < swings.length; i++) {
             if (swings[i] && swings[i].side === 'high' && swings[i].text === 'HH') {
@@ -526,7 +526,7 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
             if (swings[preLastHighIndex]?.price < candles[i].high) {
                 const batch = swings.slice(preLastHighIndex + 1, i);
                 const minIndex = batch.reduce((acc, idx, i) => {
-                    if(!acc && idx){
+                    if (!acc && idx) {
                         acc = idx;
                     } else if (idx && acc.price > idx.price) {
                         acc = idx;
@@ -548,7 +548,7 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
             if (swings[preLastLowIndex]?.price > candles[i].low) {
                 const batch = swings.slice(preLastLowIndex + 1, i);
                 const minIndex = batch.reduce((acc, idx, i) => {
-                    if(!acc && idx){
+                    if (!acc && idx) {
                         acc = idx;
                     } else if (idx && acc.price < idx.price) {
                         acc = idx;
@@ -1068,7 +1068,21 @@ export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false
 const isInternalBOS = (leftBos: Cross, rightBos: Cross) => leftBos.from.index < rightBos.from.index
     && leftBos.to.index >= rightBos.to.index
 const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
-export const hasHitOB = (ob: OrderBlock, candle: HistoryObject) => (ob.type === 'high' && ob.startCandle.low <= candle.high) || (ob.type === 'low' && ob.startCandle.high >= candle.low);
+
+export const hasHitOB = (ob: OrderBlock, candle: HistoryObject) =>
+    (ob.type === 'high'
+        && ob.startCandle.low > candle.open
+        && ob.startCandle.low <= candle.high
+        && ob.startCandle.low > candle.close
+    )
+    || (ob.type === 'low'
+        // И открытие выше ОБ
+        && ob.startCandle.high < candle.open
+        // Если был прокол
+        && ob.startCandle.high >= candle.low
+        // И закрытие выше ОБ
+        && ob.startCandle.high < candle.close
+    );
 export const notTradingTime = (candle: HistoryObject) => {
     const hours = new Date(candle.time * 1000).getHours();
     const minutes = new Date(candle.time * 1000).getMinutes();

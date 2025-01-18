@@ -1061,7 +1061,12 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
         }
         const side = obItem.type === 'high' ? 'short' : 'long';
         let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
-        const openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
+        let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
+        const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
+
+        if(!limitOrder){
+            openPrice = candles[obItem.endIndex + 1].open;
+        }
 
         if(stopPaddingPercent){
             stopLoss *= (1 - stopPaddingPercent / 100);
@@ -1085,8 +1090,6 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
         if (!limitOrder && side === 'long' && candles[obItem.endIndex].close <= openPrice) {
             continue;
         }
-
-        const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
 
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
             if (side === 'long' && candles[j].low <= stopLoss) {
