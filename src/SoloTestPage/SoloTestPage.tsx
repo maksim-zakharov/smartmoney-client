@@ -68,6 +68,7 @@ export const SoloTestPage = () => {
         removeEmpty: checkboxValues.has('removeEmpty'),
         BOS: checkboxValues.has('BOS'),
         showOB: checkboxValues.has('showOB'),
+        showSMT: checkboxValues.has('showSMT'),
         showEndOB: checkboxValues.has('showEndOB'),
         imbalances: checkboxValues.has('imbalances'),
         showPositions: checkboxValues.has('showPositions'),
@@ -221,6 +222,9 @@ export const SoloTestPage = () => {
                 if(config.showEndOB && Boolean(ob.endCandle)){
                     result = true;
                 }
+                if(ob.text === 'SMT' && !config.showSMT){
+                    result = false;
+                }
                 return result;
             }
             if(config.imbalances){
@@ -327,7 +331,7 @@ export const SoloTestPage = () => {
         }
 
         return _primitives;
-    }, [robotOB, config.showRobotOB, orderBlocks, config.smartTrend, trend, config.imbalances, config.showOB, config.showEndOB, config.imbalances, data])
+    }, [robotOB, config.showRobotOB, orderBlocks, config.smartTrend, trend, config.imbalances, config.showSMT, config.showOB, config.showEndOB, config.imbalances, data])
 
     const poses = useMemo(() => positions.map(s => [{
         color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
@@ -354,6 +358,9 @@ export const SoloTestPage = () => {
                 }
                 if(config.showEndOB && Boolean(ob.endCandle)){
                     result = true;
+                }
+                if(ob.text === 'SMT' && !config.showSMT){
+                    result = false;
                 }
                 return result;
             }
@@ -414,7 +421,7 @@ export const SoloTestPage = () => {
         }
 
         return allMarkers;
-    }, [swings, poses, config.showRobotOB, robotOB, orderBlocks, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings, fakeouts, config.showFakeouts]);
+    }, [swings, poses, config.showRobotOB, robotOB, orderBlocks, config.showSMT, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings, fakeouts, config.showFakeouts]);
 
     const lineSerieses = useMemo(() => {
         const _lineSerieses = [];
@@ -520,6 +527,7 @@ export const SoloTestPage = () => {
             <Checkbox key="swings" value="swings">Swings</Checkbox>
             <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
             <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
+            <Checkbox key="showSMT" value="showSMT">Показывать SMT</Checkbox>
             <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
             <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>

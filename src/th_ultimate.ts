@@ -68,6 +68,11 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const bossIndex = orderBlock.firstImbalanceIndex + index;
             const boss = boses[bossIndex];
             let text = 'OB';
+
+            if(high.text === 'HH'){
+                text = 'Ex OB';
+            }
+
             let isSMT = false;
             if (!newSMT && (boss || (lastHighIDMIndex
                 && boses[lastHighIDMIndex].from.index <= i
@@ -114,6 +119,11 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const bossIndex = orderBlock.firstImbalanceIndex + index;
             const boss = boses[bossIndex];
             let text = 'OB';
+
+            if(low.text === 'LL'){
+                text = 'Ex OB';
+            }
+
             let isSMT = false;
             if (!newSMT && (boss || (lastLowIDMIndex
                 && boses[lastLowIDMIndex].from.index <= i
@@ -157,6 +167,16 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 obItem.endCandle = candle;
                 obItem.endIndex = j
                 obItem.canTrade = true;
+
+                // Если ОБ не только коснулись но и закрылись под ним
+                if(
+                    (obItem.type === 'low' && obItem.startCandle.low > candle.close)
+                    || (obItem.type === 'high' && obItem.startCandle.high < candle.close)
+                ){
+                    obItem.canTrade = false;
+                    obItem.text = 'SMT';
+                    obItem.isSMT = true;
+                }
 
                 if (newSMT && lastSwingIndex === obItem.index) {
                     obItem.text = 'SMT';
@@ -1071,17 +1091,17 @@ const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => l
 
 export const hasHitOB = (ob: OrderBlock, candle: HistoryObject) =>
     (ob.type === 'high'
-        && ob.startCandle.low > candle.open
+        // && ob.startCandle.low > candle.open
         && ob.startCandle.low <= candle.high
-        && ob.startCandle.low > candle.close
+        // && ob.startCandle.low > candle.close
     )
     || (ob.type === 'low'
         // И открытие выше ОБ
-        && ob.startCandle.high < candle.open
+        // && ob.startCandle.high < candle.open
         // Если был прокол
         && ob.startCandle.high >= candle.low
         // И закрытие выше ОБ
-        && ob.startCandle.high < candle.close
+        // && ob.startCandle.high < candle.close
     );
 export const notTradingTime = (candle: HistoryObject) => {
     const hours = new Date(candle.time * 1000).getHours();
