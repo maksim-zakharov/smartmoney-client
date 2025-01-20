@@ -18,8 +18,8 @@ import {useCandlesQuery, usePortfolioQuery, useSecurityQuery} from "./api";
 import {
     ColorType,
     createChart,
-    CrosshairMode,
-    ISeriesApi,
+    CrosshairMode, isBusinessDay,
+    ISeriesApi, isUTCTimestamp,
     LineStyle,
     SeriesMarker,
     SeriesType,
@@ -31,6 +31,15 @@ import {Link, useSearchParams} from "react-router-dom";
 import {Point, Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
 import useWindowDimensions from "./useWindowDimensions";
+import {createRectangle2, createSeries, uniqueBy} from "./utils.ts";
+import {SessionHighlighting} from "./lwc-plugins/session-highlighting.ts";
+import {calculateTesting} from "./th_ultimate.ts";
+import {
+    calculateFakeout,
+    calculatePositionsByFakeouts,
+    calculatePositionsByIFC,
+    calculatePositionsByOrderblocks
+} from "./samurai_patterns.ts";
 
 function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);
@@ -80,6 +89,11 @@ export const createRectangle = (_series: ISeriesApi<SeriesType>, orderBlock, opt
     return rectangle;
 }
 
+const markerColors = {
+    bearColor: "rgb(157, 43, 56)",
+    bullColor: "rgb(20, 131, 92)"
+}
+
 export const ChartComponent = props => {
     const {
         data,
@@ -104,6 +118,142 @@ export const ChartComponent = props => {
 
     const chartContainerRef = useRef<any>();
 
+    const config = {
+        showOB: true,
+        showEndOB: true,
+        imbalances: true,
+        showSMT: false,
+        swings: true,
+        BOS: true
+    }
+
+    const calcStruct = (data) => {
+        let {swings, highs, lows, trend, boses, orderBlocks} =  calculateTesting(data, {moreBOS: true});
+
+        const checkShow = (ob) => {
+            let result = false;
+            if (config.showOB && !Boolean(ob.endCandle)) {
+                result = true;
+            }
+            if (config.showEndOB && Boolean(ob.endCandle)) {
+                result = true;
+            }
+            if (ob.text === 'SMT' && !config.showSMT) {
+                result = false;
+            }
+            return result;
+        }
+
+        const allMarkers = [];
+        if(config.showOB || config.showEndOB || config.imbalances) {
+            allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
+                color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.textTime || s.time) as Time,
+                shape: 'text',
+                position: s.type === 'high' ? 'aboveBar' : 'belowBar',
+                text: s.text
+            })));
+        }
+        if(config.swings){
+            // allMarkers.push(...swings.swings.filter(Boolean).map(s => ({
+            //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+            //     time: (s.time) as Time,
+            //     shape: 'circle',
+            //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+            //     // text: marker.text
+            // })));
+            allMarkers.push(...highs.filter(Boolean).map(s => ({
+                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time) as Time,
+                shape: 'circle',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                text: s.isIFC ? 'IFC' : s.text
+            })));
+            allMarkers.push(...lows.filter(Boolean).map(s => ({
+                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time) as Time,
+                shape: 'circle',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                text: s.isIFC ? 'IFC' : s.text
+            })));
+        }
+
+        const lastCandle = data[data.length - 1];
+        const _primitives = [];
+        if(config.showOB || config.showEndOB || config.imbalances) {
+            if (config.imbalances) {
+                _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock => createRectangle2({
+                    leftTop: {
+                        price: orderBlock.lastOrderblockCandle.high,
+                        time: orderBlock.lastOrderblockCandle.time
+                    },
+                    rightBottom: {
+                        price: orderBlock.lastImbalanceCandle[orderBlock.type],
+                        time: (orderBlock.endCandle || lastCandle).time
+                    }
+                }, {
+                    fillColor: 'rgba(179, 199, 219, .3)',
+                    showLabels: false,
+                    borderLeftWidth: 0,
+                    borderRightWidth: 0,
+                    borderWidth: 2,
+                    borderColor: '#222'
+                })));
+                _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock =>
+                    createRectangle2({
+                            leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
+                            rightBottom: {
+                                price: orderBlock.startCandle.low,
+                                time: (orderBlock.endCandle || lastCandle).time
+                            }
+                        },
+                        {
+                            fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
+                            showLabels: false,
+                            borderWidth: 0,
+                        })));
+            }
+        }
+        const _lineSerieses = [];
+        if(config.BOS){
+            _lineSerieses.push(...boses.filter(Boolean).map(marker => {
+                const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
+                const options = {
+                    color, // Цвет линии
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    lineWidth: 1,
+                    lineStyle: LineStyle.LargeDashed,
+                };
+                let data = [];
+                let markers = [];
+// 5. Устанавливаем данные для линии
+                if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
+                    data = [
+                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+                    ];
+                } else
+                    data = [
+                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                        {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
+                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+                    ].sort((a, b) => a.time - b.time);
+
+                markers = [{
+                    color,
+                    time: (marker.textCandle.time) as Time,
+                    shape: 'text',
+                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
+                    text: marker.text
+                }]
+                return {options, data, markers}
+            }));
+        }
+
+        return {_lineSerieses, _primitives, markers};
+    }
+
     useEffect(
         () => {
             if (!data?.length) return;
@@ -125,7 +275,7 @@ export const ChartComponent = props => {
                         //     return 'Format for business day';
                         // }
 
-                        return moment.unix(businessDayOrTimestamp / 1000).format('MMM D, YYYY HH:mm');
+                        return moment.unix(businessDayOrTimestamp).format('MMM D, YYYY HH:mm');
                     },
                     priceFormatter: price => {
                         const formatter = new Intl.NumberFormat('en-US', {
@@ -194,7 +344,7 @@ export const ChartComponent = props => {
             });
             volumeSeries?.setData(data.map((d: any) => ({
                 ...d,
-                time: d.time * 1000,
+                time: d.time,
                 value: d.volume,
                 color: d.open < d.close ? 'rgb(20, 131, 92)' : 'rgb(157, 43, 56)'
             })));
@@ -245,7 +395,7 @@ export const ChartComponent = props => {
                 });
             }
 
-            newSeries.setData(data.map(t => ({...t, time: t.time * 1000})));
+            newSeries.setData(data);
 
             emas.forEach(({array, color, title}) => {
                 const emaSeries = chart.addLineSeries({
@@ -257,7 +407,7 @@ export const ChartComponent = props => {
                     title,
                     lineWidth: 1
                 });
-                const momentData = data.map((d, i) => ({time: d.time * 1000, value: array[i]}));
+                const momentData = data.map((d, i) => ({time: d.time, value: array[i]}));
                 emaSeries.setData(momentData);
             })
 
@@ -265,8 +415,8 @@ export const ChartComponent = props => {
             // chart.timeScale().fitContent();
             chart.timeScale()
                 .setVisibleRange({
-                    from: moment().add(-5, 'days').unix() * 1000,
-                    to: moment().unix() * 1000,
+                    from: moment().add(-2, 'days').unix(),
+                    to: moment().unix(),
                 });
 
             chart.applyOptions({
@@ -332,6 +482,25 @@ export const ChartComponent = props => {
 
                 sellSeries.setMarkers(sellMarkers);
             }
+
+            const {markers: _markers, _primitives, _lineSerieses} = calcStruct(data);
+
+            newSeries.setMarkers(_markers.sort((a, b) => a.time - b.time));
+
+            _primitives.forEach(primitive => ensureDefined(newSeries).attachPrimitive(primitive))
+
+            _lineSerieses.forEach(lineSeriese => {
+                const ls = createSeries(chart, 'Line', lineSeriese.options)
+
+                const sortedData = lineSeriese.data.sort((a,b) => a.time - b.time);
+
+                // @ts-ignore
+                const unique = uniqueBy(v => v.time, sortedData);
+
+                // @ts-ignore
+                lineSeriese.data && ls.setData(unique);
+                lineSeriese.markers && ls.setMarkers(lineSeriese.markers);
+            })
 
             window.addEventListener("resize", handleResize);
 
@@ -446,7 +615,7 @@ const MainPage: React.FC = () => {
             symbol,
             tf,
             emaPeriod: 100,
-            from: moment(selectedPattern?.liquidSweepTime).add(-2, "hour").unix().toString(),
+            from: moment(selectedPattern?.liquidSweepTime).add(-1, "week").unix().toString(),
             to
         }, {
             skip: !symbol || !selectedPattern,
@@ -859,7 +1028,7 @@ const MainPage: React.FC = () => {
         }, [history]);
 
         const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[selectedPattern?.limitOrderNumber], tradesMap[selectedPattern?.stopTradeId], tradesMap[selectedPattern?.takeTradeId]].filter(Boolean).map(t => ({
-                time: roundTime(t.date, tf, false) * 1000,
+                time: roundTime(t.date, tf, false) ,
                 position: t.side === "buy" ? "belowBar" : "aboveBar",
                 color: t.side === "buy" ? "rgb(19,193,123)" : "rgb(255,117,132)",
                 shape: t.side === "buy" ? "arrowUp" : "arrowDown",
@@ -877,10 +1046,11 @@ const MainPage: React.FC = () => {
             if (selectedPattern?.orderblockHigh && selectedPattern?.orderblockLow && selectedPattern?.orderblockTime) {
                 let rightTime;
 
+                debugger
                 if (position)
-                    rightTime = (roundTime(position.date, tf, false) + Number(tf) * 4) * 1000;
+                    rightTime = (roundTime(position.date, tf, false) + Number(tf) * 4);
                 if (lastCandle)
-                    rightTime = (roundTime((lastCandle?.time * 1000), tf, false)) * 1000;
+                    rightTime = (roundTime((lastCandle?.time * 1000), tf, false));
                 if(!rightTime) {
                     return undefined;
                 }
@@ -889,7 +1059,7 @@ const MainPage: React.FC = () => {
 
                 const leftTop = {
                     price: Number(selectedPattern?.orderblockHigh),
-                    time: (orderblockTime) as Time
+                    time: (orderblockTime / 1000) as Time
                 } as Point
                 const rightBottom = {
                     time: rightTime,
