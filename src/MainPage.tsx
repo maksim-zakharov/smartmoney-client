@@ -536,9 +536,7 @@ const MainPage: React.FC = () => {
             liquidSweepTime: searchParams.get("liquidSweepTime")
         })
 
-        const {data: portfolio = {}} = usePortfolioQuery(undefined, {
-            pollingInterval: 10000
-        });
+        const {data: portfolio = {}} = usePortfolioQuery(undefined);
 
         const ordersMap = useMemo(() => portfolio?.orders?.reduce((acc, curr) => {
             acc[curr.id] = curr;
