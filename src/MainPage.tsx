@@ -32,7 +32,7 @@ import {Point, Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/recta
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
 import useWindowDimensions from "./useWindowDimensions";
 import {createRectangle2, createSeries, uniqueBy} from "./utils.ts";
-import {calculateTesting} from "./th_ultimate.ts";
+import {calculateTesting, notTradingTime} from "./th_ultimate.ts";
 
 function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);
@@ -1342,7 +1342,8 @@ const MainPage: React.FC = () => {
                               tabBarExtraContent={width > 1200 && <TabExtra/>}/>
                     </Col>
                     {width > 1200 && <Col span={8}>
-                        <ChartComponent {...props} data={candles} emas={emas} stop={stop} take={take} tf={tf}
+                        <ChartComponent {...props} data={candles
+                            .filter(candle => !notTradingTime(candle))} emas={emas} stop={stop} take={take} tf={tf}
                                         markers={markers}
                                         orderBlock={orderBlock}
                                         imbalance={imbalance}

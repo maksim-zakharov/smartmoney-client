@@ -58,7 +58,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             lastHighIDMIndex = i;
         }
 
-        if (!high || trends[index]?.trend !== -1) {
+        if (!high) { //  || trends[index]?.trend !== -1) {
             continue;
         }
         const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
@@ -109,7 +109,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             lastLowIDMIndex = i;
         }
 
-        if (!lows[i] || trends[index]?.trend !== 1) {
+        if (!lows[i]) { // || trends[index]?.trend !== 1) {
             continue;
         }
         const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
@@ -192,7 +192,16 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         }
     }
 
-    return ob;
+    return ob
+        .filter(obItem =>  {
+            if(trends[obItem.endIndex]?.trend !== 1 && obItem.type === 'low'){
+                return false;
+            }
+            if(trends[obItem.endIndex]?.trend !== -1 && obItem.type === 'high'){
+                return false;
+            }
+            return true;
+        });
 };
 
 export const calculateTesting = (data: HistoryObject[], {
