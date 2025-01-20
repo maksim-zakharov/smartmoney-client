@@ -128,7 +128,7 @@ export const ChartComponent = props => {
     }
 
     const calcStruct = (data) => {
-        let {swings, highs, lows, trend, boses, orderBlocks} =  calculateTesting(data, {moreBOS: true});
+        let {swings, highs, lows, trend, boses, orderBlocks} =  calculateTesting(data, {newSMT: true, moreBOS: true, showHiddenSwings: true, newStructure: true, withMove: false});
 
         const checkShow = (ob) => {
             let result = false;
@@ -251,7 +251,7 @@ export const ChartComponent = props => {
             }));
         }
 
-        return {_lineSerieses, _primitives, markers};
+        return {_lineSerieses, _primitives, markers: allMarkers};
     }
 
     useEffect(
