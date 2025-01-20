@@ -32,14 +32,7 @@ import {Point, Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/recta
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
 import useWindowDimensions from "./useWindowDimensions";
 import {createRectangle2, createSeries, uniqueBy} from "./utils.ts";
-import {SessionHighlighting} from "./lwc-plugins/session-highlighting.ts";
 import {calculateTesting} from "./th_ultimate.ts";
-import {
-    calculateFakeout,
-    calculatePositionsByFakeouts,
-    calculatePositionsByIFC,
-    calculatePositionsByOrderblocks
-} from "./samurai_patterns.ts";
 
 function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);
@@ -119,7 +112,7 @@ export const ChartComponent = props => {
     const chartContainerRef = useRef<any>();
 
     const config = {
-        showOB: true,
+        showOB: false,
         showEndOB: true,
         imbalances: true,
         showSMT: false,
@@ -349,6 +342,8 @@ export const ChartComponent = props => {
                 color: d.open < d.close ? 'rgb(20, 131, 92)' : 'rgb(157, 43, 56)'
             })));
 
+            const {markers: _markers, _primitives, _lineSerieses} = calcStruct(data);
+
             if (position) {
                 newSeries.createPriceLine({
                     price: position.avgPrice || position.price,
@@ -359,22 +354,22 @@ export const ChartComponent = props => {
             }
 
             if (imbalance) {
-                createRectangle(newSeries, imbalance, {
+                 _primitives.push(createRectangle2(imbalance, {
                     fillColor: 'rgba(179, 199, 219, .2)',
                     showLabels: false,
                     borderLeftWidth: 0,
                     borderRightWidth: 0,
                     borderWidth: 2,
                     borderColor: '#222'
-                })
+                }))
             }
 
             if (orderBlock) {
-                createRectangle(newSeries, orderBlock, {
+                _primitives.push(createRectangle2(orderBlock, {
                     fillColor: 'rgba(255, 100, 219, 0.2)',
                     showLabels: false,
                     borderWidth: 0,
-                })
+                }))
             }
 
             if (take) {
@@ -482,8 +477,6 @@ export const ChartComponent = props => {
 
                 sellSeries.setMarkers(sellMarkers);
             }
-
-            const {markers: _markers, _primitives, _lineSerieses} = calcStruct(data);
 
             newSeries.setMarkers(_markers.sort((a, b) => a.time - b.time));
 
