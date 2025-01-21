@@ -693,7 +693,8 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
                     from,
                     textCandle: candles[textIndex],
                     to,
-                    extremum: lowestLow
+                    extremum: lowestLow,
+                    isConfirmed: !isNonConfirmIDM
                 } as Cross
             }
 
@@ -721,7 +722,8 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
                     from,
                     textCandle: candles[textIndex],
                     to,
-                    extremum: highestHigh
+                    extremum: highestHigh,
+                    isConfirmed: !isNonConfirmIDM
                 } as Cross
             }
 
@@ -802,14 +804,17 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
             const text = 'BOS';
 
             const isTakenOutLiquidity = hasTakenOutLiquidity(type, liquidityCandle, candles[i]);
+            // Если сделали пересвип тенью
             if (isTakenOutLiquidity) {
                 const isClose = hasClose(type, liquidityCandle, candles[i]);
+                // Если закрылись выше прошлой точки
                 if (isClose) {
                     to = {index: i, time: candles[i].time, price: candles[i].close};
                     isConfirmed = true;
                 } else {
+                    // Если закрылись ниже а пересвип был - то теперь нужно закрыться выше нового пересвипа
                     if (moreBOS) {
-                        liquidityCandleMapMap[type].set(lastBosSwing, liquidityCandleMap[type])
+                        liquidityCandleMapMap[type].set(lastBosSwing, candles[i])
                     } else {
                         liquidityCandleMap[type] = candles[i];
                     }
