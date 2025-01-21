@@ -215,8 +215,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                     obIdxes.delete(obIdx);
                     const trendType = trend?.trend === 1 ? 'low' : 'high';
                     if(!trend || trendType !== obItem.type){
-                        obItem.endCandle = candle;
-                        obItem.endIndex = i;
+                        // obItem.endCandle = candle;
+                        // obItem.endIndex = i;
                         obItem.canTrade = false;
                         return;
                     }
