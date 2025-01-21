@@ -8,7 +8,7 @@ import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {fetchCandlesFromAlor} from "./utils.ts";
 import {calculateTesting, notTradingTime} from "./th_ultimate.ts";
-import {Time} from "lightweight-charts";
+import {LineStyle, Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
 import useWindowDimensions from "./useWindowDimensions.tsx";
@@ -50,9 +50,12 @@ const NewTestingPage = () => {
         fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
-    const newStruct = {newStructure: true, showHiddenSwings: true}
+    let newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
+    if(selectedKey === 'swings'){
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
+    }
 
-    const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, {...newStruct});
+    const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, newStruct);
 
     const markers = useMemo(() => {
         const allMarkers = [];
@@ -105,6 +108,47 @@ const NewTestingPage = () => {
         return allMarkers;
     }, [swings, orderBlocks, selectedKey]);
 
+
+    const lineSerieses = useMemo(() => {
+        const _lineSerieses = [];
+        if(selectedKey !== 'swings'){ // config.BOS
+            _lineSerieses.push(...boses.filter(Boolean).map(marker => {
+                const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
+                const options = {
+                    color, // Цвет линии
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    lineWidth: 1,
+                    lineStyle: LineStyle.LargeDashed,
+                };
+                let data = [];
+                let markers = [];
+// 5. Устанавливаем данные для линии
+                if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
+                    data = [
+                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+                    ];
+                } else
+                    data = [
+                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                        {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
+                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+                    ].sort((a, b) => a.time - b.time);
+
+                markers = [{
+                    color,
+                    time: (marker.textCandle.time) as Time,
+                    shape: 'text',
+                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
+                    text: marker.text
+                }]
+                return {options, data, markers}
+            }));
+        }
+        return _lineSerieses;
+    }, [boses, selectedKey]);
+
     const items: ItemType<MenuItemType>[] = [
         {key: 'swings', label: 'Swings'},
         {key: 'idm', label: 'IDM'},
@@ -127,7 +171,7 @@ const NewTestingPage = () => {
                     <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                                  onChange={onChangeRangeDates}/>
                 </Space>
-                <Chart height={height - 126} lineSerieses={[]} hideInternalCandles primitives={[]} markers={markers} data={data}
+                <Chart height={height - 126} lineSerieses={lineSerieses} hideInternalCandles primitives={[]} markers={markers} data={data}
                        ema={[]}/>
             </Content>
         </Layout>

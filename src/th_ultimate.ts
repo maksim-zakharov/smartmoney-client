@@ -69,7 +69,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const boss = boses[bossIndex];
             let text = 'OB';
 
-            if(high.text === 'HH'){
+            if (high.text === 'HH') {
                 text = 'Ex OB';
             }
 
@@ -120,7 +120,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const boss = boses[bossIndex];
             let text = 'OB';
 
-            if(low.text === 'LL'){
+            if (low.text === 'LL') {
                 text = 'Ex OB';
             }
 
@@ -169,10 +169,10 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 obItem.canTrade = true;
 
                 // Если ОБ не только коснулись но и закрылись под ним
-                if(
+                if (
                     (obItem.type === 'low' && obItem.startCandle.low > candle.close)
                     || (obItem.type === 'high' && obItem.startCandle.high < candle.close)
-                ){
+                ) {
                     obItem.canTrade = false;
                     obItem.text = 'SMT';
                     obItem.isSMT = true;
@@ -189,7 +189,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
             // Если ОБ на продажу (high) - то нужно чтобы лоу после индекса проставился 2 раза. Если 1 - то ОБ это IDM.
             if (newSMT && array[j]) {
-                if(!lastSwingIndex){
+                if (!lastSwingIndex) {
                     lastSwingIndex = j;
                 } else {
                     obItem.canTrade = false;
@@ -201,11 +201,11 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     }
 
     return ob
-        .filter(obItem =>  {
-            if(trends[obItem.index]?.trend !== 1 && trends[obItem.endIndex]?.trend !== 1 && obItem.type === 'low'){
+        .filter(obItem => {
+            if (trends[obItem.index]?.trend !== 1 && trends[obItem.endIndex]?.trend !== 1 && obItem.type === 'low') {
                 return false;
             }
-            if(trends[obItem.index]?.trend !== -1 && trends[obItem.endIndex]?.trend !== -1 && obItem.type === 'high'){
+            if (trends[obItem.index]?.trend !== -1 && trends[obItem.endIndex]?.trend !== -1 && obItem.type === 'high') {
                 return false;
             }
             return true;
@@ -624,6 +624,7 @@ export interface Cross {
     extremum?: Swing,
     type: 'low' | 'high',
     text: string
+    isConfirmed?: boolean
 }
 
 export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
@@ -672,11 +673,11 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
         }
     }
 
-    const confirmLowestLow = (index: number) => {
+    const confirmLowestLow = (index: number, isNonConfirmIDM: boolean) => {
         if (lowestLow
             && lowestLow.idmSwing
             && !boses[lowestLow.idmSwing.index]
-            && lowestLow.idmSwing.price < candles[index].high
+            && (isNonConfirmIDM || lowestLow.idmSwing.price < candles[index].high)
         ) {
             lowestLow.text = 'LL';
             confirmLowIndex = index;
@@ -685,7 +686,7 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
 
             const textIndex = from.index + Math.floor((to.index - from.index) / 2);
 
-            if (lowestLow.index !== to.index) {
+            if (isNonConfirmIDM || lowestLow.index !== to.index) {
                 boses[from.index] = {
                     type: 'high',
                     text: 'IDM',
@@ -700,11 +701,11 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
         }
     }
 
-    const confirmHighestHigh = (index: number) => {
+    const confirmHighestHigh = (index: number, isNonConfirmIDM: boolean) => {
         if (highestHigh
             && highestHigh.idmSwing
             && !boses[highestHigh.idmSwing.index]
-            && highestHigh.idmSwing.price > candles[index].low
+            && (isNonConfirmIDM || highestHigh.idmSwing.price > candles[index].low)
         ) {
             highestHigh.text = 'HH';
             confirmHighIndex = index;
@@ -713,7 +714,7 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
 
             const textIndex = from.index + Math.floor((to.index - from.index) / 2);
 
-            if (highestHigh.index !== to.index) {
+            if (isNonConfirmIDM || highestHigh.index !== to.index) {
                 boses[from.index] = {
                     type: 'low',
                     text: 'IDM',
@@ -734,12 +735,8 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     }
 
     for (let i = 0; i < swings.length; i++) {
-        // test
-        // if(swings[i]){
-        //     swings[i].text = i.toString();
-        // }
-        confirmLowestLow(i)
-        confirmHighestHigh(i);
+        confirmLowestLow(i, i === swings.length - 1)
+        confirmHighestHigh(i, i === swings.length - 1);
 
         updateHighestHigh(i, swings[i]);
         updateLowestLow(i, swings[i]);
@@ -795,11 +792,12 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
         }
     }
 
-    const confirmBOS = (i: number, lastBosSwing: number, lastCrossBosSwing: number, type: 'high' | 'low') => {
+    const confirmBOS = (i: number, lastBosSwing: number, lastCrossBosSwing: number, type: 'high' | 'low', isLastCandle: boolean) => {
         if (lastBosSwing && (!boses[lastBosSwing] || boses[lastBosSwing].text === 'IDM')) {
             let from = swings[lastBosSwing];
             let liquidityCandle = (moreBOS ? liquidityCandleMapMap[type].get(lastBosSwing) : liquidityCandleMap[type]) ?? candles[lastBosSwing];
-            let to;
+            let to = isLastCandle ? {index: i, time: candles[i].time, price: candles[i].close} : null;
+            let isConfirmed = false;
 
             const text = 'BOS';
 
@@ -808,6 +806,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
                 const isClose = hasClose(type, liquidityCandle, candles[i]);
                 if (isClose) {
                     to = {index: i, time: candles[i].time, price: candles[i].close};
+                    isConfirmed = true;
                 } else {
                     if (moreBOS) {
                         liquidityCandleMapMap[type].set(lastBosSwing, liquidityCandleMap[type])
@@ -827,7 +826,8 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
                     textCandle: candles[textIndex],
                     type,
                     text,
-                    extremum: swings[lastCrossBosSwing]
+                    extremum: swings[lastCrossBosSwing],
+                    isConfirmed
                 }
 
                 deleteIDM.add(lastCrossBosSwing);
@@ -873,16 +873,16 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
         // BOS сверху
         if (moreBOS) {
-            lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['low'], 'high'))
+            lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['low'], 'high', i === candles.length  - 1))
         } else {
-            confirmBOS(i, lastBosSwingMap['high'], lastBosSwingMap['low'], 'high');
+            confirmBOS(i, lastBosSwingMap['high'], lastBosSwingMap['low'], 'high', i === candles.length  - 1);
         }
 
         // BOS снизу
         if (moreBOS) {
-            lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['high'], 'low'))
+            lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['high'], 'low', i === candles.length  - 1))
         } else {
-            confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'], 'low');
+            confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'], 'low', i === candles.length  - 1);
         }
 
         updateLastSwing(i, 'high', 'HH');
@@ -917,7 +917,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
     for (let i = 0; i < boses.length; i++) {
         const b = boses[i];
-        if (b?.text === 'IDM' && deleteIDM.has(b?.extremum?.index)) {
+        if (b?.isConfirmed && b?.text === 'IDM' && deleteIDM.has(b?.extremum?.index)) {
             boses[i] = null;
         }
     }
