@@ -1037,7 +1037,6 @@ const MainPage: React.FC = () => {
             if (selectedPattern?.orderblockHigh && selectedPattern?.orderblockLow && selectedPattern?.orderblockTime) {
                 let rightTime;
 
-                debugger
                 if (position)
                     rightTime = (roundTime(position.date, tf, false) + Number(tf) * 4);
                 if (lastCandle)

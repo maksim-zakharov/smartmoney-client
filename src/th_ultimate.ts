@@ -157,8 +157,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         const obItem = ob[i];
         const startPositionIndex = obItem.index + obItem.imbalanceIndex;
 
-        const array = obItem.type === 'high' ? highs : lows;
-        let lastSwingIndex = obItem.index;
+        const array = obItem.type === 'high' ? lows : highs;
+        let lastSwingIndex = null;
 
         for (let j = startPositionIndex; j < candles.length - 1; j++) {
             const candle = candles[j];
@@ -179,6 +179,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 }
 
                 if (newSMT && lastSwingIndex === obItem.index) {
+                    obItem.canTrade = false;
                     obItem.text = 'SMT';
                     obItem.isSMT = true;
                 }
@@ -186,8 +187,15 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 break;
             }
 
-            if (array[j]) {
-                lastSwingIndex = j;
+            // Если ОБ на продажу (high) - то нужно чтобы лоу после индекса проставился 2 раза. Если 1 - то ОБ это IDM.
+            if (newSMT && array[j]) {
+                if(!lastSwingIndex){
+                    lastSwingIndex = j;
+                } else {
+                    obItem.canTrade = false;
+                    obItem.text = 'SMT';
+                    obItem.isSMT = true;
+                }
             }
         }
     }
