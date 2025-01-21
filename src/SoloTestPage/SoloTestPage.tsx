@@ -114,9 +114,6 @@ export const SoloTestPage = () => {
     }
 
     const onChangeRangeDates = (value: Dayjs[], dateString) => {
-        console.log('Selected Time: ', value);
-        console.log('Formatted Selected Time: ', dateString);
-
         searchParams.set('fromDate', value[0].startOf('day').unix());
         searchParams.set('toDate', value[1].endOf('day').unix());
         setSearchParams(searchParams);

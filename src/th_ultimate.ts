@@ -549,7 +549,6 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
             }
         }
     } else {
-
         // Алгоритм такой
         /**
          * Если в рамках первых двух точек я нахожу следующие 2 точки внутренними, то записываю их внутренними до тех пор, пока хотя бы одна точка не станет внешней.
@@ -559,50 +558,41 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
          * Остальные удаляются
          */
         for (let i = 0; i < swings.length; i++) {
-            // Оставить лойный лой
+            // Если произошел пересвип хая, ищем между точками лойный лой
             if (swings[preLastHighIndex]?.price < candles[i].high) {
                 const batch = swings.slice(preLastHighIndex + 1, i);
-                const minIndex = batch.reduce((acc, idx, i) => {
-                    if (!acc && idx) {
-                        acc = idx;
-                    } else if (idx && acc.price > idx.price) {
-                        acc = idx;
-                    }
-                    return acc;
-                }, batch[0])
+                const lowestSwing = lowestBy(batch, 'price');
 
+                // Удаляем все лои которые не лойный лой
                 batch
-                    .filter(idx => idx && idx?.index !== minIndex?.index)
+                    .filter(idx => idx && idx?.index !== lowestSwing?.index)
                     .forEach(idx => {
                         delete swings[idx.index].text;
                         deletedSwingIndexes.add(idx.index);
                     })
 
-                preLastLowIndex = minIndex?.index;
+                preLastLowIndex = lowestSwing?.index;
                 preLastHighIndex = null;
             }
-            //
+
+            // Если произошел пересвип лоя, ищем между точками хайный хай
             if (swings[preLastLowIndex]?.price > candles[i].low) {
                 const batch = swings.slice(preLastLowIndex + 1, i);
-                const minIndex = batch.reduce((acc, idx, i) => {
-                    if (!acc && idx) {
-                        acc = idx;
-                    } else if (idx && acc.price < idx.price) {
-                        acc = idx;
-                    }
-                    return acc;
-                }, batch[0])
+                const highestSwing = highestBy(batch, 'price');
 
+                // Удаляем все хаи которые не хайный хай
                 batch
-                    .filter(idx => idx && idx?.index !== minIndex?.index)
+                    .filter(idx => idx && idx?.index !== highestSwing?.index)
                     .forEach(idx => {
                         delete swings[idx.index].text;
                         deletedSwingIndexes.add(idx.index);
                     })
 
-                preLastHighIndex = minIndex?.index;
+                preLastHighIndex = highestSwing?.index;
                 preLastLowIndex = null;
             }
+
+            // updateHighest
             if (swings[i] && swings[i].side === 'high' && swings[i].text === 'HH') {
                 if (!preLastHighIndex || swings[preLastHighIndex].price < swings[i].price) {
                     preLastHighIndex = i;
@@ -610,6 +600,8 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
 
                 lastHighIndex = i;
             }
+
+            // updateLowest
             if (swings[i] && swings[i].side === 'low' && swings[i].text === 'LL') {
                 if (!preLastLowIndex || swings[preLastLowIndex].price > swings[i].price) {
                     preLastLowIndex = i;
@@ -619,6 +611,7 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
         }
     }
 
+    // Удаляем IDM у удаленных LL/HH
     boses = boses.map(b => !deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
 
     return {swings, boses};
@@ -1148,3 +1141,21 @@ export const notTradingTime = (candle: HistoryObject) => {
 
     return false;
 };
+
+const highestBy = <T>(batch: T[], key: keyof T) => batch.reduce((acc, idx, i) => {
+    if (!acc && idx) {
+        acc = idx;
+    } else if (idx && acc[key] < idx[key]) {
+        acc = idx;
+    }
+    return acc;
+}, batch[0])
+
+const lowestBy = <T>(batch: T[], key: keyof T) => batch.reduce((acc, idx, i) => {
+    if (!acc && idx) {
+        acc = idx;
+    } else if (idx && acc[key] > idx[key]) {
+        acc = idx;
+    }
+    return acc;
+}, batch[0])

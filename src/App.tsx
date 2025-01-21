@@ -10,6 +10,7 @@ import {DiscrepancyRatingPage} from "./DiscrepancyRatingPage";
 import {MultiTestPage} from "./MultiTestPage";
 import DemoPage from "./DemoPage/DemoPage";
 import UnitTestPage from "./UnitTestPage";
+import NewTestingPage from "./NewTestingPage.tsx";
 
 export default function App() {
     const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function App() {
         {key: '/testing', label: 'Тестирование', element: <MultiTestPage/>},
         {key: '/demo', label: 'Обучение', element: <DemoPage/>},
         {key: '/unit-testing', label: 'Мок-тестирование', element: <UnitTestPage/>},
+        {key: '/new-testing', label: 'Новые тесты', element: <NewTestingPage/>},
     ]
 
     function onClick(params){
