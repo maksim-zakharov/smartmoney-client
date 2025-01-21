@@ -92,7 +92,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 lastImbalanceCandle: orderBlock.lastImbalanceCandle,
                 firstImbalanceIndex: orderBlock.firstImbalanceIndex,
                 imbalanceIndex: orderBlock.imbalanceIndex,
-                startCandle: orderBlock.orderblock
+                startCandle: orderBlock.orderblock,
+                canTrade: true
             } as OrderBlock
 
             uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
@@ -142,7 +143,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 lastImbalanceCandle: orderBlock.lastImbalanceCandle,
                 firstImbalanceIndex: orderBlock.firstImbalanceIndex,
                 imbalanceIndex: orderBlock.imbalanceIndex,
-                startCandle: orderBlock.orderblock
+                startCandle: orderBlock.orderblock,
+                canTrade: true
             } as OrderBlock;
 
             uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
