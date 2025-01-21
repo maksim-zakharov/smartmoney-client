@@ -1,4 +1,4 @@
-import {Space} from "antd";
+import {Layout, Menu, Space} from "antd";
 import {TickerSelect} from "./TickerSelect.tsx";
 import {TimeframeSelect} from "./TimeframeSelect.tsx";
 import {DatesPicker} from "./DatesPicker.tsx";
@@ -9,6 +9,10 @@ import {useSearchParams} from "react-router-dom";
 import {fetchCandlesFromAlor} from "./utils.ts";
 import {calculateTesting, notTradingTime} from "./th_ultimate.ts";
 import {Time} from "lightweight-charts";
+import Sider from "antd/es/layout/Sider";
+import {Content} from "antd/es/layout/layout";
+import useWindowDimensions from "./useWindowDimensions.tsx";
+import {ItemType, MenuItemType} from "antd/es/menu/interface";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -16,6 +20,8 @@ const markerColors = {
 }
 
 const NewTestingPage = () => {
+    const [selectedKey, setSelectedKey] = useState('swings');
+    const {height, width, isMobile} = useWindowDimensions();
     const [searchParams, setSearchParams] = useSearchParams();
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '300';
@@ -85,30 +91,46 @@ const NewTestingPage = () => {
                 time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.isIFC ? 'IFC' : s.text
+                text: selectedKey !== 'swings' ? s.isIFC ? 'IFC' : s.text : undefined
             })));
             allMarkers.push(...lows.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.isIFC ? 'IFC' : s.text
+                text: selectedKey !== 'swings' ? s.isIFC ? 'IFC' : s.text : undefined
             })));
         // }
 
         return allMarkers;
-    }, [swings, orderBlocks]);
+    }, [swings, orderBlocks, selectedKey]);
 
-    return <>
-        <Space style={{alignItems: 'baseline'}}>
-            <TickerSelect value={ticker} onSelect={onSelectTicker}/>
-            <TimeframeSelect value={tf} onChange={setSize}/>
-            <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-                         onChange={onChangeRangeDates}/>
-        </Space>
-        <Chart lineSerieses={[]} hideInternalCandles primitives={[]} markers={markers} data={data}
-               ema={[]}/>
-    </>
+    const items: ItemType<MenuItemType>[] = [
+        {key: 'swings', label: 'Swings'},
+        {key: 'idm', label: 'IDM'},
+    ]
+
+    return <Layout style={{ height: '100%' }}>
+            <Sider width={200}>
+                <Menu
+                    mode="inline"
+                    defaultSelectedKeys={[selectedKey]}
+                    style={{ height: '100%' }}
+                    items={items}
+                    onSelect={({key}) => setSelectedKey(key)}
+                />
+            </Sider>
+            <Content style={{ minHeight: 280, height: '100%', padding: '8px 8px 16px 16px' }}>
+                <Space style={{alignItems: 'baseline', paddingBottom: '16px'}}>
+                    <TickerSelect value={ticker} onSelect={onSelectTicker}/>
+                    <TimeframeSelect value={tf} onChange={setSize}/>
+                    <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
+                                 onChange={onChangeRangeDates}/>
+                </Space>
+                <Chart height={height - 126} lineSerieses={[]} hideInternalCandles primitives={[]} markers={markers} data={data}
+                       ema={[]}/>
+            </Content>
+        </Layout>
 }
 
 export default NewTestingPage;
