@@ -1094,20 +1094,20 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
             if (side === 'long' && candles[j].low <= stopLoss) {
                 positions.push({
-                    side, name: 'OB', takeProfit, stopLoss,
+                    side, name: obItem.text, takeProfit, stopLoss,
                     openPrice, openTime, closeTime: candles[j].time, pnl: stopLoss - openPrice
                 });
                 break;
             } else if (side === 'short' && candles[j].high >= stopLoss) {
                 positions.push({
-                    side, name: 'OB', takeProfit, stopLoss,
+                    side, name: obItem.text, takeProfit, stopLoss,
                     openPrice, openTime, closeTime: candles[j].time, pnl: openPrice - stopLoss
                 });
                 break;
             } else if (side === 'long' && candles[j].high >= takeProfit) {
                 positions.push({
                     side,
-                    name: 'OB',
+                    name: obItem.text,
                     takeProfit,
                     stopLoss,
                     openPrice,
@@ -1120,7 +1120,7 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
             } else if (side === 'short' && candles[j].low <= takeProfit) {
                 positions.push({
                     side,
-                    name: 'OB',
+                    name: obItem.text,
                     takeProfit,
                     stopLoss,
                     openPrice,

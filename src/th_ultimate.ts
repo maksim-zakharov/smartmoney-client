@@ -43,7 +43,7 @@ export interface OrderBlock {
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
 export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false, newSMT: boolean = false) => {
-    let ob: OrderBlock [] = [];
+    let orderblocks: OrderBlock [] = new Array(candles.length).fill(null);
     // Иногда определяеются несколько ОБ на одной свечке, убираем
     let uniqueOrderBlockTimeSet = new Set();
 
@@ -82,7 +82,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 isSMT = true;
             }
 
-            ob.push({
+            orderblocks[index] = {
                 text,
                 isSMT,
                 type: orderBlock.type,
@@ -94,7 +94,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 firstImbalanceIndex: orderBlock.firstImbalanceIndex,
                 imbalanceIndex: orderBlock.imbalanceIndex,
                 startCandle: orderBlock.orderblock
-            } as OrderBlock)
+            } as OrderBlock
 
             uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
         }
@@ -133,7 +133,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 isSMT = true;
             }
 
-            ob.push({
+            orderblocks[index] = {
                 text,
                 isSMT,
                 type: orderBlock.type,
@@ -144,72 +144,110 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 firstImbalanceIndex: orderBlock.firstImbalanceIndex,
                 imbalanceIndex: orderBlock.imbalanceIndex,
                 startCandle: orderBlock.orderblock
-            } as OrderBlock)
+            } as OrderBlock;
 
             uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
         }
     }
 
-    ob = ob.sort((a, b) => a.index - b.index);
+    if (!newSMT) {
+        // Где начинается позиция TODO для теста, в реальности это точка входа
+        for (let i = 0; i < orderblocks.length; i++) {
+            const obItem = orderblocks[i];
+            if(!obItem){
+                continue;
+            }
+            const startPositionIndex = obItem.index + obItem.imbalanceIndex;
 
-    // Где начинается позиция TODO для теста, в реальности это точка входа
-    for (let i = 0; i < ob.length; i++) {
-        const obItem = ob[i];
-        const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+            const array = obItem.type === 'high' ? lows : highs;
+            let lastSwingIndex = null;
 
-        const array = obItem.type === 'high' ? lows : highs;
-        let lastSwingIndex = null;
+            for (let j = startPositionIndex; j < candles.length - 1; j++) {
+                const candle = candles[j];
 
-        for (let j = startPositionIndex; j < candles.length - 1; j++) {
-            const candle = candles[j];
-
-            if (hasHitOB(obItem, candle)) {
-                obItem.endCandle = candle;
-                obItem.endIndex = j
-                obItem.canTrade = true;
-
-                // Если ОБ не только коснулись но и закрылись под ним
-                if (
-                    (obItem.type === 'low' && obItem.startCandle.low > candle.close)
-                    || (obItem.type === 'high' && obItem.startCandle.high < candle.close)
-                ) {
-                    obItem.canTrade = false;
-                    obItem.text = 'SMT';
-                    obItem.isSMT = true;
+                if (hasHitOB(obItem, candle)) {
+                    obItem.endCandle = candle;
+                    obItem.endIndex = j
+                    obItem.canTrade = true;
+                    break;
                 }
 
-                if (newSMT && lastSwingIndex === obItem.index) {
-                    obItem.canTrade = false;
-                    obItem.text = 'SMT';
-                    obItem.isSMT = true;
+                // Если ОБ на продажу (high) - то нужно чтобы лоу после индекса проставился 2 раза. Если 1 - то ОБ это IDM.
+                if (newSMT && array[j]) {
+                    if (!lastSwingIndex) {
+                        lastSwingIndex = j;
+                    } else {
+                        obItem.canTrade = false;
+                        obItem.text = 'SMT';
+                        obItem.isSMT = true;
+                    }
                 }
+            }
+        }
+    } else {
+        /**
+         * Итерируюсь по свечкам
+         * Записываю нахожусь ли я внутри IDM. Если да - то это SMT
+         * Записываю новые ОБ и закрываю их если было касание
+         */
 
-                break;
+        let lastHighIDMIndexMap: Record<'high' | 'low', number> = {
+            high: null,
+            low: null
+        }
+
+        let obIdxes = new Set<number>([]);
+
+        for (let i = 0; i < candles.length; i++) {
+            const candle = candles[i];
+            const bos = boses[i];
+            const ob = orderblocks[i];
+            const trend = trends[i];
+
+            obIdxes.forEach(obIdx => {
+                const obItem = orderblocks[obIdx];
+                const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+                if (startPositionIndex <= i && hasHitOB(obItem, candle)) {
+                    obIdxes.delete(obIdx);
+                    const trendType = trend?.trend === 1 ? 'low' : 'high';
+                    if(!trend || trendType !== obItem.type){
+                        obItem.canTrade = false;
+                        return;
+                    }
+
+                    obItem.endCandle = candle;
+                    obItem.endIndex = i;
+                    obItem.canTrade = true;
+                }
+            })
+
+            if(ob){
+                obIdxes.add(i);
             }
 
-            // Если ОБ на продажу (high) - то нужно чтобы лоу после индекса проставился 2 раза. Если 1 - то ОБ это IDM.
-            if (newSMT && array[j]) {
-                if (!lastSwingIndex) {
-                    lastSwingIndex = j;
-                } else {
-                    obItem.canTrade = false;
-                    obItem.text = 'SMT';
-                    obItem.isSMT = true;
-                }
+            // Если начался IDM
+            if (bos?.text === 'IDM') {
+                lastHighIDMIndexMap[bos.type] = i;
+            }
+
+            if (ob && lastHighIDMIndexMap[ob.type] && lastHighIDMIndexMap[ob.type] <= i) {
+                ob.text = "SMT";
+                ob.isSMT = true;
+                ob.canTrade = false;
+            }
+
+            if(lastHighIDMIndexMap['high'] && boses[lastHighIDMIndexMap['high']].to?.index - 1 === i){
+                lastHighIDMIndexMap['high'] = null;
+            }
+
+            if(lastHighIDMIndexMap['low'] && boses[lastHighIDMIndexMap['low']].to?.index - 1 === i){
+                lastHighIDMIndexMap['low'] = null;
             }
         }
     }
 
-    return ob
-        .filter(obItem => {
-            if (trends[obItem.index]?.trend !== 1 && trends[obItem.endIndex]?.trend !== 1 && obItem.type === 'low') {
-                return false;
-            }
-            if (trends[obItem.index]?.trend !== -1 && trends[obItem.endIndex]?.trend !== -1 && obItem.type === 'high') {
-                return false;
-            }
-            return true;
-        });
+    return orderblocks
+        .filter(Boolean);
 };
 
 export const calculateTesting = (data: HistoryObject[], {
@@ -260,8 +298,7 @@ export interface THConfig {
 // Точка входа в торговлю
 export const calculateProduction = (data: HistoryObject[]) => {
     const config: THConfig = {
-        withMove: false,
-        moreBOS: true
+        newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true
     }
 
     const {orderBlocks} = calculateTesting(data, config);

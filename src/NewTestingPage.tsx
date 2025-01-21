@@ -6,14 +6,15 @@ import dayjs, {type Dayjs} from "dayjs";
 import {Chart} from "./SoloTestPage/TestChart.tsx";
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {fetchCandlesFromAlor} from "./utils.ts";
+import {createRectangle2, fetchCandlesFromAlor} from "./utils.ts";
 import {calculateTesting, notTradingTime} from "./th_ultimate.ts";
-import {LineStyle, Time} from "lightweight-charts";
+import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
 import useWindowDimensions from "./useWindowDimensions.tsx";
 import {ItemType, MenuItemType} from "antd/es/menu/interface";
-import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+import {LeftOutlined, RightOutlined} from '@ant-design/icons';
+import {SessionHighlighting} from "./lwc-plugins/session-highlighting.ts";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -53,21 +54,82 @@ const NewTestingPage = () => {
         fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
-    let newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
-    if(selectedKey === 'swings'){
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
+    let newStruct = {};
+    if (selectedKey === 'structure') {
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false};
+    }
+    if(selectedKey === 'orderblocks'){
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true};
     }
 
-    const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data.slice(0, data.length - offset), newStruct);
+    const {
+        swings,
+        highs,
+        lows,
+        trend,
+        boses,
+        orderBlocks
+    } = calculateTesting(data.slice(0, data.length - offset), newStruct);
+    const primitives = useMemo(() => {
+        const lastCandle = data[data.length - 1];
+        const _primitives = [];
+        if(selectedKey === 'orderblocks'){
+            const checkShow = (ob) => {
+                let result = true;
+                if(!Boolean(ob.endCandle)){
+                    result = false;
+                }
+                // if(config.showEndOB && Boolean(ob.endCandle)){
+                //     result = true;
+                // }
+                // if(ob.text === 'SMT' && !config.showSMT){
+                //     result = false;
+                // }
+                return result;
+            }
+            if(true){ // config.imbalances
+                _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock => createRectangle2({
+                    leftTop: {
+                        price: orderBlock.lastOrderblockCandle.high,
+                        time: orderBlock.lastOrderblockCandle.time
+                    },
+                    rightBottom: {
+                        price: orderBlock.lastImbalanceCandle[orderBlock.type],
+                        time: (orderBlock.endCandle || lastCandle).time
+                    }
+                }, {
+                    fillColor: 'rgba(179, 199, 219, .3)',
+                    showLabels: false,
+                    borderLeftWidth: 0,
+                    borderRightWidth: 0,
+                    borderWidth: 2,
+                    borderColor: '#222'
+                })));
+            }
+            _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock =>
+                createRectangle2({
+                        leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
+                        rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
+                    },
+                    {
+                        fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
+                        showLabels: false,
+                        borderWidth: 0,
+                    })));
+        }
+
+        return _primitives;
+    }, [orderBlocks, trend, data, selectedKey])
+
 
     const markers = useMemo(() => {
         const allMarkers = [];
-        if(false) {
+        if (selectedKey === 'orderblocks') {
             const checkShow = (ob) => {
                 let result = true;
-                // if(config.showOB && !Boolean(ob.endCandle)){
-                //     result = true;
-                // }
+                if(!Boolean(ob.endCandle)){
+                    result = false;
+                }
                 // if(config.showEndOB && Boolean(ob.endCandle)){
                 //     result = true;
                 // }
@@ -84,29 +146,21 @@ const NewTestingPage = () => {
                 text: s.text
             })));
         }
-        // if(config.swings){
-            // allMarkers.push(...swings.swings.filter(Boolean).map(s => ({
-            //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            //     time: (s.time) as Time,
-            //     shape: 'circle',
-            //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            //     // text: marker.text
-            // })));
-            allMarkers.push(...highs.filter(Boolean).map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'circle',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: selectedKey !== 'swings' ? s.isIFC ? 'IFC' : s.text : undefined
-            })));
-            allMarkers.push(...lows.filter(Boolean).map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'circle',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: selectedKey !== 'swings' ? s.isIFC ? 'IFC' : s.text : undefined
-            })));
-        // }
+
+        allMarkers.push(...highs.filter(Boolean).map(s => ({
+            color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+            time: (s.time) as Time,
+            shape: 'circle',
+            position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+            text: selectedKey !== 'swings' ? s.isIFC ? 'IFC' : s.text : undefined
+        })));
+        allMarkers.push(...lows.filter(Boolean).map(s => ({
+            color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+            time: (s.time) as Time,
+            shape: 'circle',
+            position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+            text: selectedKey !== 'swings' ? s.isIFC ? 'IFC' : s.text : undefined
+        })));
 
         return allMarkers;
     }, [swings, orderBlocks, selectedKey]);
@@ -114,7 +168,7 @@ const NewTestingPage = () => {
 
     const lineSerieses = useMemo(() => {
         const _lineSerieses = [];
-        if(selectedKey !== 'swings'){ // config.BOS
+        if (selectedKey !== 'swings') { // config.BOS
             _lineSerieses.push(...boses.filter(Boolean).map(marker => {
                 const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
                 const options = {
@@ -154,7 +208,8 @@ const NewTestingPage = () => {
 
     const items: ItemType<MenuItemType>[] = [
         {key: 'swings', label: 'Swings'},
-        {key: 'idm', label: 'IDM'},
+        {key: 'structure', label: 'Структура'},
+        {key: 'orderblocks', label: 'Ордер Блоки'},
     ]
     /**
      *
@@ -163,34 +218,38 @@ const NewTestingPage = () => {
      *                         data[nextIndex].color = 'rgba(0, 0, 0, 0)';
      */
 
-    return <Layout style={{ height: '100%' }}>
-            <Sider width={200}>
-                <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[selectedKey]}
-                    style={{ height: '100%' }}
-                    items={items}
-                    onSelect={({key}) => setSelectedKey(key)}
-                />
-            </Sider>
-            <Content style={{ minHeight: 280, height: '100%', padding: '8px 8px 16px 16px' }}>
-                <Space style={{alignItems: 'baseline', paddingBottom: '16px'}}>
-                    <TickerSelect value={ticker} onSelect={onSelectTicker}/>
-                    <TimeframeSelect value={tf} onChange={setSize}/>
-                    <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-                                 onChange={onChangeRangeDates}/>
-                    <Button style={{display: 'block'}} icon={<LeftOutlined />} onClick={() => setOffset(prev => prev+=1)}/>
-                    <Button style={{display: 'block'}} icon={<RightOutlined />} onClick={() => setOffset(prev => prev < 0 ? prev : prev-=1)}/>
-                </Space>
+    return <Layout style={{height: '100%'}}>
+        <Sider width={200}>
+            <Menu
+                mode="inline"
+                defaultSelectedKeys={[selectedKey]}
+                style={{height: '100%'}}
+                items={items}
+                onSelect={({key}) => setSelectedKey(key)}
+            />
+        </Sider>
+        <Content style={{minHeight: 280, height: '100%', padding: '8px 8px 16px 16px'}}>
+            <Space style={{alignItems: 'baseline', paddingBottom: '16px'}}>
+                <TickerSelect value={ticker} onSelect={onSelectTicker}/>
+                <TimeframeSelect value={tf} onChange={setSize}/>
+                <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
+                             onChange={onChangeRangeDates}/>
+                <Button style={{display: 'block'}} icon={<LeftOutlined/>} onClick={() => setOffset(prev => prev += 1)}/>
+                <Button style={{display: 'block'}} icon={<RightOutlined/>}
+                        onClick={() => setOffset(prev => prev < 0 ? prev : prev -= 1)}/>
+            </Space>
 
-                <Chart height={height - 126} lineSerieses={lineSerieses} hideInternalCandles primitives={[]} markers={markers} data={data.map((d, i, array) => i >= array.length - 1 - offset ?
-                    {...d, borderColor: "rgba(44,60,75, 1)",
+            <Chart height={height - 126} lineSerieses={lineSerieses} hideInternalCandles primitives={primitives}
+                   markers={markers} data={data.map((d, i, array) => i >= array.length - 1 - offset ?
+                {
+                    ...d, borderColor: "rgba(44,60,75, 1)",
                     wickColor: "rgba(44,60,75, 1)",
 
-                   color: 'rgba(0, 0, 0, 0)'}  : d)}
-                       ema={[]}/>
-            </Content>
-        </Layout>
+                    color: 'rgba(0, 0, 0, 0)'
+                } : d)}
+                   ema={[]}/>
+        </Content>
+    </Layout>
 }
 
 export default NewTestingPage;
