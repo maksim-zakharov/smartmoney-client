@@ -787,6 +787,14 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
             lastBosSwingMap[type] = i;
 
             if (moreBOS) {
+                // Если новый бос более хайный (или более лольный) - то удаляем прошлый бос
+                if (type === 'high' && swings[prelastBosSwingMap[type]] && swings[lastBosSwingMap[type]].price > swings[prelastBosSwingMap[type]].price) {
+                    lastBosSwingMapSet[type].delete(prelastBosSwingMap[type])
+                }
+                if (type === 'low' && swings[prelastBosSwingMap[type]] && swings[lastBosSwingMap[type]].price < swings[prelastBosSwingMap[type]].price) {
+                    lastBosSwingMapSet[type].delete(prelastBosSwingMap[type])
+                }
+
                 lastBosSwingMapSet[type].add(lastBosSwingMap[type])
             } else {
                 liquidityCandleMap[type] = null;
@@ -878,16 +886,16 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
         // BOS сверху
         if (moreBOS) {
-            lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['low'], 'high', i === candles.length  - 1))
+            lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['low'], 'high', i === candles.length - 1))
         } else {
-            confirmBOS(i, lastBosSwingMap['high'], lastBosSwingMap['low'], 'high', i === candles.length  - 1);
+            confirmBOS(i, lastBosSwingMap['high'], lastBosSwingMap['low'], 'high', i === candles.length - 1);
         }
 
         // BOS снизу
         if (moreBOS) {
-            lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['high'], 'low', i === candles.length  - 1))
+            lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['high'], 'low', i === candles.length - 1))
         } else {
-            confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'], 'low', i === candles.length  - 1);
+            confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'], 'low', i === candles.length - 1);
         }
 
         updateLastSwing(i, 'high', 'HH');
