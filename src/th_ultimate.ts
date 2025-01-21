@@ -16,7 +16,6 @@ export interface HistoryObject {
     volume: number;
 }
 
-
 export interface OrderBlock {
     index: number;
     time: number;
@@ -109,7 +108,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             lastLowIDMIndex = i;
         }
 
-        if (!lows[i]) { // || trends[index]?.trend !== 1) {
+        if (!lows[i]) {
             continue;
         }
         const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
@@ -158,10 +157,6 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 continue;
             }
             const startPositionIndex = obItem.index + obItem.imbalanceIndex;
-
-            const array = obItem.type === 'high' ? lows : highs;
-            let lastSwingIndex = null;
-
             for (let j = startPositionIndex; j < candles.length - 1; j++) {
                 const candle = candles[j];
 
@@ -170,17 +165,6 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                     obItem.endIndex = j
                     obItem.canTrade = true;
                     break;
-                }
-
-                // Если ОБ на продажу (high) - то нужно чтобы лоу после индекса проставился 2 раза. Если 1 - то ОБ это IDM.
-                if (newSMT && array[j]) {
-                    if (!lastSwingIndex) {
-                        lastSwingIndex = j;
-                    } else {
-                        obItem.canTrade = false;
-                        obItem.text = 'SMT';
-                        obItem.isSMT = true;
-                    }
                 }
             }
         }
@@ -191,7 +175,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
          * Записываю новые ОБ и закрываю их если было касание
          */
 
-        let lastHighIDMIndexMap: Record<'high' | 'low', number> = {
+        let lastIDMIndexMap: Record<'high' | 'low', number> = {
             high: null,
             low: null
         }
@@ -203,10 +187,28 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const bos = boses[i];
             const ob = orderblocks[i];
             const trend = trends[i];
+            const high = highs[i];
+            const low = lows[i];
 
             obIdxes.forEach(obIdx => {
                 const obItem = orderblocks[obIdx];
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+
+                const idmType = obItem.type === 'high' ? 'low' : 'high';
+                if(lastIDMIndexMap[idmType] && lastIDMIndexMap[idmType] <= i && obItem.index >= lastIDMIndexMap[idmType]){
+                    obItem.text = "SMT";
+                    obItem.isSMT = true;
+                    obItem.canTrade = false;
+                }
+                if(lastIDMIndexMap[idmType] && boses[lastIDMIndexMap[idmType]].to?.index - 1 <= i){
+                    obItem.text = "OB";
+                    obItem.isSMT = false;
+                    obItem.canTrade = true;
+
+                    if(high?.[obIdx]?.text === 'HH' || low?.[obIdx]?.text === 'LL'){
+                        obItem.text = "Ex OB";
+                    }
+                }
                 if (startPositionIndex <= i && hasHitOB(obItem, candle)) {
                     obIdxes.delete(obIdx);
                     const trendType = trend?.trend === 1 ? 'low' : 'high';
@@ -229,21 +231,15 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
             // Если начался IDM
             if (bos?.text === 'IDM') {
-                lastHighIDMIndexMap[bos.type] = i;
+                lastIDMIndexMap[bos.type] = i;
             }
 
-            if (ob && lastHighIDMIndexMap[ob.type] && lastHighIDMIndexMap[ob.type] <= i) {
-                ob.text = "SMT";
-                ob.isSMT = true;
-                ob.canTrade = false;
+            if(lastIDMIndexMap['high'] && boses[lastIDMIndexMap['high']].to?.index - 1 === i){
+                lastIDMIndexMap['high'] = null;
             }
 
-            if(lastHighIDMIndexMap['high'] && boses[lastHighIDMIndexMap['high']].to?.index - 1 === i){
-                lastHighIDMIndexMap['high'] = null;
-            }
-
-            if(lastHighIDMIndexMap['low'] && boses[lastHighIDMIndexMap['low']].to?.index - 1 === i){
-                lastHighIDMIndexMap['low'] = null;
+            if(lastIDMIndexMap['low'] && boses[lastIDMIndexMap['low']].to?.index - 1 === i){
+                lastIDMIndexMap['low'] = null;
             }
         }
     }
@@ -1154,17 +1150,11 @@ const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => l
 
 export const hasHitOB = (ob: OrderBlock, candle: HistoryObject) =>
     (ob.type === 'high'
-        // && ob.startCandle.low > candle.open
         && ob.startCandle.low <= candle.high
-        // && ob.startCandle.low > candle.close
     )
     || (ob.type === 'low'
-        // И открытие выше ОБ
-        // && ob.startCandle.high < candle.open
         // Если был прокол
         && ob.startCandle.high >= candle.low
-        // И закрытие выше ОБ
-        // && ob.startCandle.high < candle.close
     );
 export const notTradingTime = (candle: HistoryObject) => {
     const hours = new Date(candle.time * 1000).getHours();

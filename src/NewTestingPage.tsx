@@ -22,9 +22,9 @@ const markerColors = {
 }
 
 const NewTestingPage = () => {
-    const [selectedKey, setSelectedKey] = useState('swings');
     const {height, width, isMobile} = useWindowDimensions();
     const [searchParams, setSearchParams] = useSearchParams();
+    const selectedKey = searchParams.get('tab') || 'swings';
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '300';
     const fromDate = searchParams.get('fromDate') || dayjs('2024-10-01T00:00:00Z').startOf('day').unix();
@@ -33,6 +33,11 @@ const NewTestingPage = () => {
     const [data, setData] = useState([]);
 
     const [offset, setOffset] = useState(0);
+
+    const setSelectedKey = (tf: string) => {
+        searchParams.set('tab', tf);
+        setSearchParams(searchParams)
+    }
 
     const setSize = (tf: string) => {
         searchParams.set('tf', tf);

@@ -705,7 +705,7 @@ const MainPage: React.FC = () => {
             width > 1200 && {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS%2CshowHiddenSwings%2CnewSMT`}
+                    return <Link to={`/new-testing?ticker=${row.ticker}&tf=${row.timeframe}&tab=orderblocks`}
                                  target="_blank">Тестер</Link>;
                 }
             }
@@ -786,7 +786,7 @@ const MainPage: React.FC = () => {
             {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS%2CshowHiddenSwings%2CnewSMT`}
+                    return <Link to={`/new-testing?ticker=${row.ticker}&tf=${row.timeframe}&tab=orderblocks`}
                                  target="_blank">Тестер</Link>;
                 }
             }
@@ -917,7 +917,7 @@ const MainPage: React.FC = () => {
                 title: "Действия",
                 render: (value, row) => {
                     return row?.type !== 'summary' ?
-                        <Link to={`/test?ticker=${row.ticker}&trendTF=${row.timeframe}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowOB%2CshowEndOB%2CmoreBOS%2CshowHiddenSwings%2CnewSMT`}
+                        <Link to={`/new-testing?ticker=${row.ticker}&tf=${row.timeframe}&tab=orderblocks`}
                               target="_blank">Тестер</Link> : '';
                 }
             }
