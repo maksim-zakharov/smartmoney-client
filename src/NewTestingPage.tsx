@@ -1,4 +1,4 @@
-import {Layout, Menu, Space} from "antd";
+import {Button, Layout, Menu, Space} from "antd";
 import {TickerSelect} from "./TickerSelect.tsx";
 import {TimeframeSelect} from "./TimeframeSelect.tsx";
 import {DatesPicker} from "./DatesPicker.tsx";
@@ -13,6 +13,7 @@ import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
 import useWindowDimensions from "./useWindowDimensions.tsx";
 import {ItemType, MenuItemType} from "antd/es/menu/interface";
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -29,6 +30,8 @@ const NewTestingPage = () => {
     const toDate = searchParams.get('toDate') || dayjs('2025-10-01T00:00:00Z').endOf('day').unix();
 
     const [data, setData] = useState([]);
+
+    const [offset, setOffset] = useState(0);
 
     const setSize = (tf: string) => {
         searchParams.set('tf', tf);
@@ -55,7 +58,7 @@ const NewTestingPage = () => {
         newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
     }
 
-    const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, newStruct);
+    const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data.slice(0, data.length - offset), newStruct);
 
     const markers = useMemo(() => {
         const allMarkers = [];
@@ -153,6 +156,12 @@ const NewTestingPage = () => {
         {key: 'swings', label: 'Swings'},
         {key: 'idm', label: 'IDM'},
     ]
+    /**
+     *
+     *                         data[nextIndex].borderColor = "rgba(44,60,75, 1)";
+     *                         data[nextIndex].wickColor = "rgba(44,60,75, 1)";
+     *                         data[nextIndex].color = 'rgba(0, 0, 0, 0)';
+     */
 
     return <Layout style={{ height: '100%' }}>
             <Sider width={200}>
@@ -170,8 +179,15 @@ const NewTestingPage = () => {
                     <TimeframeSelect value={tf} onChange={setSize}/>
                     <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                                  onChange={onChangeRangeDates}/>
+                    <Button style={{display: 'block'}} icon={<LeftOutlined />} onClick={() => setOffset(prev => prev+=1)}/>
+                    <Button style={{display: 'block'}} icon={<RightOutlined />} onClick={() => setOffset(prev => prev < 0 ? prev : prev-=1)}/>
                 </Space>
-                <Chart height={height - 126} lineSerieses={lineSerieses} hideInternalCandles primitives={[]} markers={markers} data={data}
+
+                <Chart height={height - 126} lineSerieses={lineSerieses} hideInternalCandles primitives={[]} markers={markers} data={data.map((d, i, array) => i >= array.length - 1 - offset ?
+                    {...d, borderColor: "rgba(44,60,75, 1)",
+                    wickColor: "rgba(44,60,75, 1)",
+
+                   color: 'rgba(0, 0, 0, 0)'}  : d)}
                        ema={[]}/>
             </Content>
         </Layout>

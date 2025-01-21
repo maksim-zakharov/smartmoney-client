@@ -920,6 +920,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
             }
         })
 
+    // Удаляем все IDM у которых BOS сформирован
     for (let i = 0; i < boses.length; i++) {
         const b = boses[i];
         if (b?.isConfirmed && b?.text === 'IDM' && deleteIDM.has(b?.extremum?.index)) {
