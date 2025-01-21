@@ -194,10 +194,10 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
     return ob
         .filter(obItem =>  {
-            if(trends[obItem.endIndex]?.trend !== 1 && obItem.type === 'low'){
+            if(trends[obItem.index]?.trend !== 1 && trends[obItem.endIndex]?.trend !== 1 && obItem.type === 'low'){
                 return false;
             }
-            if(trends[obItem.endIndex]?.trend !== -1 && obItem.type === 'high'){
+            if(trends[obItem.index]?.trend !== -1 && trends[obItem.endIndex]?.trend !== -1 && obItem.type === 'high'){
                 return false;
             }
             return true;
