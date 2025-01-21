@@ -981,12 +981,12 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
     onlyBOSes = boses
         .filter(bos => swings[bos?.from?.index]?.text)
         .sort((a, b) => a.to.index - b.to.index);
-    for (let i = 0; i < onlyBOSes.length; i++) {
+    for (let i = 0; i < onlyBOSes.length - 1; i++) {
         const curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
 
         // Если оба боса подтвердились одной свечой, значит второй бос лишний и оставляем самый длинный
-        if (curBos.to.index === nextBos?.to.index) {
+        if (curBos.isConfirmed && nextBos.isConfirmed && curBos.to.index === nextBos.to.index) {
             boses[nextBos.from.index] = null;
         }
     }
