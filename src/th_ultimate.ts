@@ -332,17 +332,21 @@ export interface THConfig {
     byTrend?: boolean;
 }
 
+export const isNotSMT = (obItem: OrderBlock) => !obItem || (!obItem.isSMT && obItem.text !== 'SMT')
+
+export const defaultConfig: THConfig = {
+    newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, byTrend: true
+}
+
 // Точка входа в торговлю
 export const calculateProduction = (data: HistoryObject[]) => {
-    const config: THConfig = {
-        newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, byTrend: true
-    }
+    const config: THConfig = defaultConfig
 
     const {orderBlocks} = calculateTesting(data, config);
 
     // orderBlocks.push(...IFCtoOB(thSwings, candles));
 
-    return orderBlocks.filter((obItem) => obItem && !obItem.isSMT && obItem.text !== 'SMT');
+    return orderBlocks.filter(isNotSMT);
 };
 
 export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {

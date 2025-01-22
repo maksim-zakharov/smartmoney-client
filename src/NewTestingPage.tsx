@@ -7,7 +7,7 @@ import {Chart} from "./SoloTestPage/TestChart.tsx";
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {createRectangle2, fetchCandlesFromAlor} from "./utils.ts";
-import {calculateTesting, notTradingTime} from "./th_ultimate.ts";
+import {calculateTesting, isNotSMT, notTradingTime} from "./th_ultimate.ts";
 import {LineStyle, Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
@@ -88,10 +88,10 @@ const NewTestingPage = () => {
         // if(config.showEndOB && Boolean(ob.endCandle)){
         //     result = true;
         // }
-        if(ob.text === 'SMT'){
-            result = false;
-        }
-        return result;
+        // if(ob.text === 'SMT'){
+        //     result = false;
+        // }
+        return isNotSMT(ob);
     }
     const primitives = useMemo(() => {
         const lastCandle = data[data.length - 1];
