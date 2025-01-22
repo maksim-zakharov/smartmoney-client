@@ -230,8 +230,6 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
                     const trendType = trend?.trend === 1 ? 'low' : 'high';
                     if(!trend || trendType !== obItem.type){
-                        // obItem.endCandle = candle;
-                        // obItem.endIndex = i;
                         obItem.canTrade = false;
                         return;
                     }
@@ -268,7 +266,19 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         }
     }
 
-    return orderblocks;
+    return orderblocks.map((ob, index) => {
+        if(!ob || !ob.endCandle){
+            return ob;
+        }
+        const trend = trends[index]?.trend;
+        if(trend === 1 && ob?.type === 'low'){
+            return ob;
+        }
+        if(trend === -1 && ob?.type === 'high'){
+            return ob;
+        }
+        return null;
+    });
 };
 
 export const calculateTesting = (data: HistoryObject[], {
