@@ -267,7 +267,9 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     }
 
     return orderblocks.map((ob, index) => {
-        const trend = trends[index]?.trend;
+        // Либо смотрим тренд по закрытию ОБ либо если закрытия нет - по открытию.
+        const obIndex = ob?.endIndex || index;
+        const trend = trends[obIndex]?.trend;
         if(trend === 1 && ob?.type === 'low'){
             return ob;
         }
