@@ -7,7 +7,7 @@ import {Chart} from "./SoloTestPage/TestChart.tsx";
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {createRectangle2, fetchCandlesFromAlor} from "./utils.ts";
-import {calculateTesting, isNotSMT, notTradingTime} from "./th_ultimate.ts";
+import {calculateTesting, defaultConfig, isNotSMT, notTradingTime} from "./th_ultimate.ts";
 import {LineStyle, Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
@@ -76,7 +76,7 @@ const NewTestingPage = () => {
         trend,
         boses,
         orderBlocks
-    } = calculateTesting(data.slice(0, data.length - offset), newStruct);
+    } = calculateTesting(data.slice(0, data.length - offset), defaultConfig);
     const checkShow = (ob) => {
         let result = true;
         if(!ob){

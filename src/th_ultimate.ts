@@ -1052,7 +1052,10 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
         const curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
 
-        const to = !nextBos ? trend.length : nextBos.to.index;
+        let to = !nextBos ? trend.length : nextBos.to.index;
+        if(nextBos && !curBos.isConfirmed && !nextBos.isConfirmed){
+            to = trend.length;
+        }
 
         // Если текущий бос внутри предыдущего боса - то текущий бос нужно выпилить и не учитывать в тренде
         if (curBos?.from.index > prevBos?.from.index && curBos?.to.index < prevBos?.to.index) {
