@@ -267,9 +267,6 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
     }
 
     return orderblocks.map((ob, index) => {
-        if(!ob || !ob.endCandle){
-            return ob;
-        }
         const trend = trends[index]?.trend;
         if(trend === 1 && ob?.type === 'low'){
             return ob;
