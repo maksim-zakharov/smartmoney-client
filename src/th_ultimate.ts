@@ -1001,15 +1001,15 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     if (showIFC)
         swings = markIFC(candles, swings);
 
-    if (!showHiddenSwings) {
-        swings = deleteEmptySwings(swings);
-    }
-
     const internal = deleteInternalStructure(swings, candles, boses, {
         newStructure
     });
     boses = internal.boses;
     swings = internal.swings;
+
+    if (!showHiddenSwings) {
+        swings = deleteEmptySwings(swings);
+    }
 
     boses = drawBOS(candles, swings, boses, moreBOS);
 
