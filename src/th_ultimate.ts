@@ -201,25 +201,17 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const high = highs[i];
             const low = lows[i];
 
-            if(high?.text === 'HH'){
-                lastExtremumIndexMap['high'] = i;
-            }
-
-            if(low?.text === 'LL'){
-                lastExtremumIndexMap['low'] = i;
-            }
-
             obIdxes.forEach(obIdx => {
                 const obItem = orderblocks[obIdx];
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
 
-                const idmType = obItem.type === 'high' ? 'low' : 'high';
+                const idmType = obItem.type;
                 if(lastIDMIndexMap[idmType] && lastIDMIndexMap[idmType] <= i && obItem.index >= lastIDMIndexMap[idmType]){
                     obItem.text = "SMT";
                     obItem.isSMT = true;
                     obItem.canTrade = false;
                 }
-                if(lastIDMIndexMap[idmType] && boses[lastIDMIndexMap[idmType]].to?.index - 1 <= i){
+                if(boses[lastIDMIndexMap[idmType]]?.isConfirmed && lastIDMIndexMap[idmType] && boses[lastIDMIndexMap[idmType]].to?.index - 1 <= i){
                     obItem.text = "OB";
                     obItem.isSMT = false;
                     obItem.canTrade = true;
@@ -245,6 +237,14 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                     }
                 }
             })
+
+            if(high?.text === 'HH'){
+                lastExtremumIndexMap['high'] = i;
+            }
+
+            if(low?.text === 'LL'){
+                lastExtremumIndexMap['low'] = i;
+            }
 
             if(ob){
                 obIdxes.add(i);
