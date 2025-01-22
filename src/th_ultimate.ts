@@ -342,7 +342,7 @@ export const calculateProduction = (data: HistoryObject[]) => {
 
     // orderBlocks.push(...IFCtoOB(thSwings, candles));
 
-    return orderBlocks.filter((obItem) => obItem && !obItem.isSMT);
+    return orderBlocks.filter((obItem) => obItem && !obItem.isSMT && obItem.text !== 'SMT');
 };
 
 export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
