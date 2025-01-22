@@ -34,7 +34,7 @@ export const SoloTestPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState([]);
 
-    const checkboxValues = new Set((searchParams.get('checkboxes') || "showHiddenSwings,tradeOB,BOS,swings,moreBOS,showEndOB").split(','));
+    const checkboxValues = new Set((searchParams.get('checkboxes') || "showHiddenSwings,tradeOB,BOS,swings,moreBOS,showEndOB,newStructure,limitOrderTrade,newSMT").split(','));
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
@@ -127,7 +127,7 @@ export const SoloTestPage = () => {
         let positions = [];
 
         if(config.tradeOB){
-            const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, maxDiff, multiStop, config.limitOrderTrade, stopPaddingPercent);
+            const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, maxDiff, multiStop, config.limitOrderTrade, stopPaddingPercent);
             positions.push(...fakeoutPositions);
         }
         if(config.tradeFakeouts){
@@ -213,6 +213,9 @@ export const SoloTestPage = () => {
         if(config.showOB || config.showEndOB || config.imbalances){
             const checkShow = (ob) => {
                 let result = false;
+                if(!ob){
+                    return false;
+                }
                 if(config.showOB && !Boolean(ob.endCandle)){
                     result = true;
                 }
@@ -350,6 +353,9 @@ export const SoloTestPage = () => {
         if(config.showOB || config.showEndOB || config.imbalances) {
             const checkShow = (ob) => {
                 let result = false;
+                if(!ob){
+                    return false;
+                }
                 if(config.showOB && !Boolean(ob.endCandle)){
                     result = true;
                 }
@@ -502,9 +508,9 @@ export const SoloTestPage = () => {
                 <Form.Item label="Risk Rate">
                     <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop} min={1} max={10} step={1}/>
                 </Form.Item>
-                {/*<Form.Item label="Percent Rate">*/}
-                {/*    <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0} max={1} step={0.1}/>*/}
-                {/*</Form.Item>*/}
+                <Form.Item label="Percent Rate">
+                    <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
+                </Form.Item>
                 <Space>
                     <div>Профит: {new Intl.NumberFormat('ru-RU', {
                         style: 'currency',

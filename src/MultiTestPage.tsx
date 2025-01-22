@@ -91,7 +91,7 @@ export const MultiTestPage = () => {
 
         let positions = [];
         if (tradeOB) {
-            const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
+            const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks,  takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
             positions.push(...fakeoutPositions);
         }
         if (tradeFakeouts) {
@@ -144,7 +144,7 @@ export const MultiTestPage = () => {
 
             let positions = [];
             if(tradeOB){
-                const fakeoutPositions = calculatePositionsByOrderblocks(orderBlocks, data, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
+                const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
                 positions.push(...fakeoutPositions);
             }
             if(tradeFakeouts){

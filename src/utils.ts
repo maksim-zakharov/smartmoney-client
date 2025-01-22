@@ -332,12 +332,12 @@ export const calculateTakeProfit = ({
                                         side,
                                         openPrice,
                                         stopLoss,
-                                        candles,
+                                        maxPrice,
                                         multiStop = 1,
     maxDiff = 1
-                                    }: { multiStop?: number, maxDiff?: number, side: 'short' | 'long', openPrice: number, stopLoss: number, candles: HistoryObject[] }): number => {
+                                    }: { multiStop?: number, maxDiff?: number, side: 'short' | 'long', openPrice: number, stopLoss: number, maxPrice: number }): number => {
     if (maxDiff > 0) {
-        const max = side === 'long' ? Math.max(...candles.map(c => c.high)) : Math.min(...candles.map(c => c.low));
+        const max = maxPrice;
 
         return side === 'long' ? openPrice + (max - openPrice) *  maxDiff : openPrice - (openPrice - max) * maxDiff;
     }

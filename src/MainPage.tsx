@@ -125,6 +125,9 @@ export const ChartComponent = props => {
 
         const checkShow = (ob) => {
             let result = false;
+            if(!ob){
+                return result;
+            }
             if (config.showOB && !Boolean(ob.endCandle)) {
                 result = true;
             }

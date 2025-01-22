@@ -81,6 +81,9 @@ const NewTestingPage = () => {
         if(selectedKey === 'orderblocks'){
             const checkShow = (ob) => {
                 let result = true;
+                if(!ob){
+                    return false;
+                }
                 if(!Boolean(ob.endCandle)){
                     result = false;
                 }
@@ -132,6 +135,9 @@ const NewTestingPage = () => {
         if (selectedKey === 'orderblocks') {
             const checkShow = (ob) => {
                 let result = true;
+                if(!ob){
+                    return false;
+                }
                 if(!Boolean(ob.endCandle)){
                     result = false;
                 }

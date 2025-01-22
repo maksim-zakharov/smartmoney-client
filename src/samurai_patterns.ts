@@ -970,8 +970,6 @@ export const calculateBreakingBlocks = (crosses: Cross[], candles: HistoryObject
     return bb;
 }
 
-const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar.high && candle.low < bar.low;
-
 export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[], trends: Trend[], maxDiff?: number, multiStop?: number) => {
     const positions = [];
     for (let i = 0; i < swings.length; i++) {
@@ -1000,7 +998,7 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
             stopLoss,
             maxDiff,
             multiStop,
-            candles: []
+            maxPrice: 0
         })
         if (Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1) {
             continue;
@@ -1052,17 +1050,32 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
     return positions;
 }
 
-export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: HistoryObject[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true, stopPaddingPercent: number = 0) => {
+export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings: Swing[], ob: OrderBlock[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true, stopPaddingPercent: number = 0) => {
     const positions = [];
-    for (let i = 0; i < ob.length; i++) {
+    let lastExtremumIndexMap: Record<'high' | 'low', number> = {
+        high: null,
+        low: null
+    }
+    for (let i = 0; i < candles.length; i++) {
         const obItem = ob[i];
-        if (!obItem.endCandle || !obItem.canTrade || obItem.text === 'SMT') {
+        const swing = swings[i];
+        if(swing?.text === 'HH'){
+            lastExtremumIndexMap['high'] = i;
+        }
+        if(swing?.text === 'LL'){
+            lastExtremumIndexMap['low'] = i;
+        }
+
+        if (!obItem || !obItem.endCandle || !obItem.canTrade || obItem.text === 'SMT') {
             continue;
         }
+
         const side = obItem.type === 'high' ? 'short' : 'long';
         let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
         let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
         const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
+
+        const lastExtremumIndex = obItem.type === 'high' ? lastExtremumIndexMap['low'] : lastExtremumIndexMap['high'];
 
         if(!limitOrder){
             openPrice = candles[obItem.endIndex + 1].open;
@@ -1072,14 +1085,18 @@ export const calculatePositionsByOrderblocks = (ob: OrderBlock[], candles: Histo
             stopLoss *= (1 - stopPaddingPercent / 100);
         }
 
-        const takeProfit = calculateTakeProfit({
-            side,
-            openPrice,
-            stopLoss,
-            maxDiff,
-            multiStop,
-            candles: candles.slice(obItem.index, obItem.endIndex)
-        })
+        let takeProfit = obItem.takeProfit;
+        if(!maxDiff || !takeProfit){
+            takeProfit = calculateTakeProfit({
+                side,
+                openPrice,
+                stopLoss,
+                maxDiff,
+                multiStop,
+                maxPrice: lastExtremumIndex ? swings[lastExtremumIndex].price : 0
+            })
+        }
+
         if (Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1) {
             continue;
         }
@@ -1211,7 +1228,7 @@ export const calculatePositionsByFakeouts = (fakeouts: Swing[], candles: History
             stopLoss,
             maxDiff: 0,
             multiStop,
-            candles: []
+            maxPrice: 0
         })
         if (Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1) {
             continue;

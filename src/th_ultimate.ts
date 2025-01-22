@@ -31,6 +31,8 @@ export interface OrderBlock {
     endIndex?: number;
     text?: string;
     isSMT?: boolean;
+    tradeOrderType?: 'limit' | 'market'
+    takeProfit?: number;
 }
 
 /**
@@ -184,6 +186,11 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
         let obIdxes = new Set<number>([]);
 
+        let lastExtremumIndexMap: Record<'high' | 'low', number> = {
+            high: null,
+            low: null
+        }
+
         for (let i = 0; i < candles.length; i++) {
             const candle = candles[i];
             const bos = boses[i];
@@ -191,6 +198,14 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const trend = trends[i];
             const high = highs[i];
             const low = lows[i];
+
+            if(high?.text === 'HH'){
+                lastExtremumIndexMap['high'] = i;
+            }
+
+            if(low?.text === 'LL'){
+                lastExtremumIndexMap['low'] = i;
+            }
 
             obIdxes.forEach(obIdx => {
                 const obItem = orderblocks[obIdx];
@@ -229,6 +244,9 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 
             if(ob){
                 obIdxes.add(i);
+
+                // Тейк профит до ближайшего максимума
+                orderblocks[i].takeProfit = orderblocks[i].type === 'high' ? lows[lastExtremumIndexMap['low']]?.price : highs[lastExtremumIndexMap['high']]?.price
             }
 
             // Если начался IDM
@@ -246,8 +264,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         }
     }
 
-    return orderblocks
-        .filter(Boolean);
+    return orderblocks;
 };
 
 export const calculateTesting = (data: HistoryObject[], {
