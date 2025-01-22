@@ -95,7 +95,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 firstImbalanceIndex: orderBlock.firstImbalanceIndex,
                 imbalanceIndex: orderBlock.imbalanceIndex,
                 startCandle: orderBlock.orderblock,
-                canTrade: true
+                canTrade: true,
+                tradeOrderType: 'limit'
             } as OrderBlock
 
             uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
@@ -146,7 +147,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 firstImbalanceIndex: orderBlock.firstImbalanceIndex,
                 imbalanceIndex: orderBlock.imbalanceIndex,
                 startCandle: orderBlock.orderblock,
-                canTrade: true
+                canTrade: true,
+                tradeOrderType: 'limit'
             } as OrderBlock;
 
             uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
@@ -228,6 +230,12 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 }
                 if (startPositionIndex <= i && hasHitOB(obItem, candle)) {
                     obIdxes.delete(obIdx);
+
+                    obItem.endCandle = candle;
+                    obItem.endIndex = i;
+                    obItem.canTrade = true;
+                    obItem.tradeOrderType = 'market';
+
                     const trendType = trend?.trend === 1 ? 'low' : 'high';
                     if(!trend || trendType !== obItem.type){
                         // obItem.endCandle = candle;
@@ -235,10 +243,6 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                         obItem.canTrade = false;
                         return;
                     }
-
-                    obItem.endCandle = candle;
-                    obItem.endIndex = i;
-                    obItem.canTrade = true;
                 }
             })
 

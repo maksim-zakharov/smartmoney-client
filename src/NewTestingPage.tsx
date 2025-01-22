@@ -67,7 +67,7 @@ const NewTestingPage = () => {
         newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false};
     }
     if(selectedKey === 'orderblocks'){
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, byTrend: true};
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true};
     }
 
     const {
