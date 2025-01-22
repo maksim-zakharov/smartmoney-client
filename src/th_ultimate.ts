@@ -322,7 +322,7 @@ export interface THConfig {
 // Точка входа в торговлю
 export const calculateProduction = (data: HistoryObject[]) => {
     const config: THConfig = {
-        newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true
+        newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, byTrend: true
     }
 
     const {orderBlocks} = calculateTesting(data, config);
