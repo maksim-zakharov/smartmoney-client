@@ -8,13 +8,12 @@ import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {createRectangle2, fetchCandlesFromAlor} from "./utils.ts";
 import {calculateTesting, notTradingTime} from "./th_ultimate.ts";
-import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
+import {LineStyle, Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
 import useWindowDimensions from "./useWindowDimensions.tsx";
 import {ItemType, MenuItemType} from "antd/es/menu/interface";
 import {LeftOutlined, RightOutlined} from '@ant-design/icons';
-import {SessionHighlighting} from "./lwc-plugins/session-highlighting.ts";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -27,8 +26,8 @@ const NewTestingPage = () => {
     const selectedKey = searchParams.get('tab') || 'swings';
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '300';
-    const fromDate = searchParams.get('fromDate') || dayjs('2024-10-01T00:00:00Z').startOf('day').unix();
-    const toDate = searchParams.get('toDate') || dayjs('2025-10-01T00:00:00Z').endOf('day').unix();
+    const fromDate = searchParams.get('fromDate') || dayjs().add(-1, "week").unix();
+    const toDate = searchParams.get('toDate') || dayjs().endOf('day').unix();
 
     const [data, setData] = useState([]);
 

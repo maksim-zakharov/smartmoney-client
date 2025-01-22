@@ -1145,7 +1145,7 @@ const MainPage: React.FC = () => {
             }
         ];
 
-        const minDate = moment('2024-12-23T00:00:00.000Z');
+        const minDate = moment('2025-01-20T00:00:00.000Z');
         const min = minDate.unix()
         const max = moment().unix()
 
