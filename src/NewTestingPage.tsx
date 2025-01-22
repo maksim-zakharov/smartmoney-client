@@ -60,6 +60,9 @@ const NewTestingPage = () => {
     }, [tf, ticker, fromDate, toDate]);
 
     let newStruct = {};
+    if (selectedKey === 'swings') {
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
+    }
     if (selectedKey === 'structure') {
         newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false};
     }
