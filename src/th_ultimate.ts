@@ -270,7 +270,8 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
 export const calculateTesting = (data: HistoryObject[], {
     moreBOS, showHiddenSwings, newStructure, showIFC,
     withMove,
-    newSMT
+    newSMT,
+    byTrend
 }: THConfig) => {
     // <-- Копировать в робота
     let {highs, lows, swings: _swings} = tradinghubCalculateSwings(data);
@@ -290,7 +291,7 @@ export const calculateTesting = (data: HistoryObject[], {
     lows = thSwings.map((t) => t?.side === 'low' ? t : null);
 
     // Копировать в робота -->
-    const orderBlocks = calculateOB(
+    let orderBlocks = calculateOB(
         newStructure ? highs : highParts,
         newStructure ? lows : lowParts,
         data,
@@ -299,6 +300,11 @@ export const calculateTesting = (data: HistoryObject[], {
         withMove,
         newSMT
     )
+
+    if(byTrend){
+        const currentTrend = trend[trend.length - 1]?.trend === 1 ? 'low' : 'high';
+        orderBlocks = orderBlocks.filter(ob => ob?.type === currentTrend);
+    }
 
     return {swings: _swings, highs, lows, trend, boses, orderBlocks};
 }
@@ -310,6 +316,7 @@ export interface THConfig {
     showHiddenSwings?: boolean;
     newSMT?: boolean;
     showIFC?: boolean;
+    byTrend?: boolean;
 }
 
 // Точка входа в торговлю

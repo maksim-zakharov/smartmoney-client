@@ -67,7 +67,7 @@ const NewTestingPage = () => {
         newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false};
     }
     if(selectedKey === 'orderblocks'){
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true};
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, byTrend: true};
     }
 
     const {
@@ -78,26 +78,26 @@ const NewTestingPage = () => {
         boses,
         orderBlocks
     } = calculateTesting(data.slice(0, data.length - offset), newStruct);
+    const checkShow = (ob) => {
+        let result = true;
+        if(!ob){
+            return false;
+        }
+        // if(!Boolean(ob.endCandle)){
+        //     result = false;
+        // }
+        // if(config.showEndOB && Boolean(ob.endCandle)){
+        //     result = true;
+        // }
+        if(ob.text === 'SMT'){
+            result = false;
+        }
+        return result;
+    }
     const primitives = useMemo(() => {
         const lastCandle = data[data.length - 1];
         const _primitives = [];
         if(selectedKey === 'orderblocks'){
-            const checkShow = (ob) => {
-                let result = true;
-                if(!ob){
-                    return false;
-                }
-                if(!Boolean(ob.endCandle)){
-                    result = false;
-                }
-                // if(config.showEndOB && Boolean(ob.endCandle)){
-                //     result = true;
-                // }
-                // if(ob.text === 'SMT' && !config.showSMT){
-                //     result = false;
-                // }
-                return result;
-            }
             if(true){ // config.imbalances
                 _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock => createRectangle2({
                     leftTop: {
@@ -136,22 +136,6 @@ const NewTestingPage = () => {
     const markers = useMemo(() => {
         const allMarkers = [];
         if (selectedKey === 'orderblocks') {
-            const checkShow = (ob) => {
-                let result = true;
-                if(!ob){
-                    return false;
-                }
-                if(!Boolean(ob.endCandle)){
-                    result = false;
-                }
-                // if(config.showEndOB && Boolean(ob.endCandle)){
-                //     result = true;
-                // }
-                // if(ob.text === 'SMT' && !config.showSMT){
-                //     result = false;
-                // }
-                return result;
-            }
             allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
                 color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.textTime || s.time) as Time,
