@@ -1,4 +1,4 @@
-import {Button, Layout, Menu, Space} from "antd";
+import {Button, Layout, Menu, Radio, Space} from "antd";
 import {TickerSelect} from "./TickerSelect.tsx";
 import {TimeframeSelect} from "./TimeframeSelect.tsx";
 import {DatesPicker} from "./DatesPicker.tsx";
@@ -7,7 +7,15 @@ import {Chart} from "./SoloTestPage/TestChart.tsx";
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {createRectangle2, fetchCandlesFromAlor} from "./utils.ts";
-import {calculateTesting, defaultConfig, isNotSMT, notTradingTime} from "./th_ultimate.ts";
+import {
+    calculateTesting,
+    defaultConfig,
+    filterNearOrderblock,
+    hasNear,
+    isNotSMT,
+    notTradingTime,
+    Side
+} from "./th_ultimate.ts";
 import {LineStyle, Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
@@ -21,6 +29,7 @@ const markerColors = {
 }
 
 const NewTestingPage = () => {
+    const [env, setEnv] = useState<'dev' | 'prod'>('dev');
     const {height, width, isMobile} = useWindowDimensions();
     const [searchParams, setSearchParams] = useSearchParams();
     const selectedKey = searchParams.get('tab') || 'swings';
@@ -69,14 +78,25 @@ const NewTestingPage = () => {
         newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true};
     }
 
-    const {
+    const currentCandle = data[data.length - 1 - offset];
+
+    let {
         swings,
         highs,
         lows,
         trend,
         boses,
         orderBlocks
-    } = calculateTesting(data.slice(0, data.length - offset), newStruct);
+    } = calculateTesting(data.slice(0, data.length - offset), env === 'prod' ? defaultConfig  : newStruct);
+    orderBlocks = orderBlocks.filter(isNotSMT)
+    if(env === 'prod'){
+        orderBlocks = filterNearOrderblock(
+            // ОБ еще не сформировался
+            // .filter((p) => !p.endCandle)
+            orderBlocks,
+            currentCandle
+        );
+    }
     const checkShow = (ob) => {
         let result = true;
         if(!ob){
@@ -234,6 +254,10 @@ const NewTestingPage = () => {
                 <Button style={{display: 'block'}} icon={<LeftOutlined/>} onClick={() => setOffset(prev => prev += 1)}/>
                 <Button style={{display: 'block'}} icon={<RightOutlined/>}
                         onClick={() => setOffset(prev => prev < 0 ? prev : prev -= 1)}/>
+                <Radio.Group value={env} onChange={(e) => setEnv(e.target.value)}>
+                    <Radio.Button value="dev">Development</Radio.Button>
+                    <Radio.Button value="prod">Production</Radio.Button>\
+                </Radio.Group>
             </Space>
 
             <Chart height={height - 126} lineSerieses={lineSerieses} hideInternalCandles primitives={primitives}

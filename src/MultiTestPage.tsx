@@ -1,19 +1,6 @@
-import {
-    Card,
-    Checkbox,
-    Col,
-    Divider,
-    Form,
-    Input,
-    Radio,
-    Row,
-    Slider,
-    Space,
-    Statistic,
-    Table
-} from "antd";
+import {Card, Checkbox, Col, Divider, Form, Input, Radio, Row, Slider, Space, Statistic, Table} from "antd";
 import {TickerSelect} from "./TickerSelect";
-import React, {useCallback, useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import FormItem from "antd/es/form/FormItem";
 import {TimeframeSelect} from "./TimeframeSelect";
 import type {Dayjs} from 'dayjs';
@@ -24,23 +11,14 @@ import {
     calculateFakeout,
     calculatePositionsByFakeouts,
     calculatePositionsByIFC,
-    calculatePositionsByOrderblocks,
-    calculateSwings,
-    khrustikCalculateSwings
+    calculatePositionsByOrderblocks
 } from "./samurai_patterns";
-import {
-    fetchCandlesFromAlor, fetchRiskRates,
-    getSecurity,
-    persision,
-    refreshToken, uniqueBy
-} from "./utils";
+import {fetchCandlesFromAlor, fetchRiskRates, getSecurity, persision, refreshToken, uniqueBy} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {
-    calculateTesting, notTradingTime,
-} from "./th_ultimate";
+import {calculateTesting, defaultConfig, notTradingTime,} from "./th_ultimate";
 
 export const MultiTestPage = () => {
     const [swipType, setSwipType] = useState('tradinghub');
@@ -58,32 +36,29 @@ export const MultiTestPage = () => {
     const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
     const [tradeIFC, setTradeIFC] = useState<boolean>(false);
     const [withMove, setwithMove] = useState<boolean>(false);
-    const [newStructure, setnewStructure] = useState<boolean>(false);
+    const [newStructure, setnewStructure] = useState<boolean>(true);
     const [moreBOS, setmoreBOS] = useState<boolean>(true);
     const [newSMT, setnewSMT] = useState<boolean>(true);
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(false);
     const [tradeOB, setTradeOB] = useState<boolean>(true);
-    const [limitOrderTrade, setLimitOrderTrade] = useState<boolean>(false);
+    const [limitOrderTrade, setLimitOrderTrade] = useState<boolean>(true);
     const [excludeTrendSFP, setExcludeTrendSFP] = useState<boolean>(false);
     const [excludeWick, setExcludeWick] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
-    const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("default");
-    const [stopMargin, setStopMargin] = useState<number>(50)
+    const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("max");
+    const [stopMargin, setStopMargin] = useState<number>(20)
     const [feePercent, setFeePercent] = useState<number>(0.04)
     const [baseTakePercent, setBaseTakePercent] = useState<number>(5)
     const [maxTakePercent, setMaxTakePercent] = useState<number>(0.5)
     const [security, setSecurity] = useState();
     const [riskRates, setRiskRates] = useState();
     const [token, setToken] = useState();
-    const [dates, onChangeRangeDates] = useState<Dayjs[]>([dayjs('2024-10-01T00:00:00Z'), dayjs('2025-10-01T00:00:00Z')])
+    const fromDate = dayjs().add(-1, "week");
+    const toDate = dayjs().endOf('day');
+    const [dates, onChangeRangeDates] = useState<Dayjs[]>([fromDate, toDate])
 
     const positions = useMemo(() => {
-        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, {
-            moreBOS, withMove,
-            newStructure,
-            showHiddenSwings,
-            newSMT
-        });
+        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, defaultConfig);
 
         const lotsize = (security?.lotsize || 1)
 
@@ -91,7 +66,7 @@ export const MultiTestPage = () => {
 
         let positions = [];
         if (tradeOB) {
-            const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks,  takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
+            const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
             positions.push(...fakeoutPositions);
         }
         if (tradeFakeouts) {
@@ -101,14 +76,14 @@ export const MultiTestPage = () => {
         }
 
         if (tradeIFC) {
-            const fakeoutPositions = calculatePositionsByIFC(data, swings, trend,takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+            const fakeoutPositions = calculatePositionsByIFC(data, swings, trend, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
             positions.push(...fakeoutPositions);
         }
 
         positions = uniqueBy(v => v.openTime, positions);
 
         const isShortSellPossible = riskRates?.isShortSellPossible || false;
-        if(!isShortSellPossible){
+        if (!isShortSellPossible) {
             positions = positions.filter(p => p.side !== 'short');
         }
 
@@ -143,23 +118,23 @@ export const MultiTestPage = () => {
             const fee = feePercent / 100;
 
             let positions = [];
-            if(tradeOB){
+            if (tradeOB) {
                 const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
                 positions.push(...fakeoutPositions);
             }
-            if(tradeFakeouts){
+            if (tradeFakeouts) {
                 const fakeouts = calculateFakeout(highs, lows, data)
                 const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
                 positions.push(...fakeoutPositions);
             }
 
-            if(tradeIFC){
-                const fakeoutPositions = calculatePositionsByIFC(data, swings,trend, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
+            if (tradeIFC) {
+                const fakeoutPositions = calculatePositionsByIFC(data, swings, trend, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
                 positions.push(...fakeoutPositions);
             }
 
             const isShortSellPossible = allRiskRates[ticker]?.isShortSellPossible || false;
-            if(!isShortSellPossible){
+            if (!isShortSellPossible) {
                 positions = positions.filter(p => p.side !== 'short');
             }
 
@@ -167,12 +142,15 @@ export const MultiTestPage = () => {
                 const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
                 const stopLossMarginPerLot = diff * lotsize
                 curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
-                const openFee = curr.openPrice * curr.quantity * lotsize * fee;
-                const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize * fee;
+                curr.openVolume = curr.openPrice * curr.quantity * lotsize
+                curr.closeVolume = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize
+                const openFee = curr.openVolume * fee;
+                const closeFee = curr.closeVolume * fee;
                 curr.fee = openFee + closeFee;
                 curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee;
                 curr.ticker = ticker;
                 curr.timeframe = tf;
+                curr.RR = Math.abs(curr.takeProfit - curr.openPrice) / Math.abs(curr.stopLoss - curr.openPrice);
 
                 return curr;
             });
@@ -187,8 +165,8 @@ export const MultiTestPage = () => {
         const stockSymbols = symbolFuturePairs.map(curr => curr.stockSymbol);
         for (let i = 0; i < stockSymbols.length; i++) {
             result[stockSymbols[i]] = await fetchCandlesFromAlor(stockSymbols[i], tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle)));
-            if(token)
-            result1[stockSymbols[i]] = await getSecurity(stockSymbols[i], token);
+            if (token)
+                result1[stockSymbols[i]] = await getSecurity(stockSymbols[i], token);
             result2[stockSymbols[i]] = await fetchRiskRates(stockSymbols[i]);
         }
         setAllRiskRates(result2)
@@ -198,13 +176,13 @@ export const MultiTestPage = () => {
     }
 
     useEffect(() => {
-        if(isAllTickers){
+        if (isAllTickers) {
             fetchAllTickerCandles();
         }
     }, [isAllTickers, tf, dates, token])
 
     const {PnL, profits, losses, fee} = useMemo(() => {
-        if(!security){
+        if (!security) {
             return {
                 PnL: 0,
                 profits: 0,
@@ -213,7 +191,7 @@ export const MultiTestPage = () => {
             }
         }
 
-        const array = isAllTickers? allPositions : positions;
+        const array = isAllTickers ? allPositions : positions;
 
         return {
             PnL: array.reduce((acc, curr) => acc + curr.newPnl, 0),
@@ -224,10 +202,10 @@ export const MultiTestPage = () => {
     }, [isAllTickers, allPositions, positions, security?.lotsize])
 
     useEffect(() => {
-        if(!isAllTickers && ticker){
+        if (!isAllTickers && ticker) {
 
-                fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData).finally(() =>
-                    setLoading(false));
+            fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData).finally(() =>
+                setLoading(false));
 
         }
     }, [isAllTickers, tf, ticker, dates]);
@@ -241,7 +219,7 @@ export const MultiTestPage = () => {
     }, [ticker, token])
 
     useEffect(() => {
-       fetchRiskRates(ticker).then(setRiskRates)
+        fetchRiskRates(ticker).then(setRiskRates)
     }, [ticker])
 
     const oldOneTickerColumns = [
@@ -249,7 +227,7 @@ export const MultiTestPage = () => {
             title: 'Ticker',
             dataIndex: 'ticker',
             key: 'ticker',
-        },{
+        }, {
             title: 'Name',
             dataIndex: 'name',
             key: 'name',
@@ -261,6 +239,12 @@ export const MultiTestPage = () => {
             render: (val) => dayjs(val * 1000).format('DD.MM.YYYY HH:mm')
         },
         {
+            title: 'Open Volume',
+            dataIndex: 'openVolume',
+            key: 'openVolume',
+            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep), persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep))
+        },
+        {
             title: 'OpenPrice',
             dataIndex: 'openPrice',
             key: 'openPrice',
@@ -269,7 +253,13 @@ export const MultiTestPage = () => {
             title: 'CloseTime',
             dataIndex: 'closeTime',
             key: 'closeTime',
-        render: (val) => dayjs(val * 1000).format('DD.MM.YYYY HH:mm')
+            render: (val) => dayjs(val * 1000).format('DD.MM.YYYY HH:mm')
+        },
+        {
+            title: 'Close Volume',
+            dataIndex: 'closeVolume',
+            key: 'closeVolume',
+            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep), persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep))
         },
         {
             title: 'StopLoss',
@@ -295,6 +285,12 @@ export const MultiTestPage = () => {
             render: (val) => moneyFormat(val, 'RUB', 2, 2)
         },
         {
+            title: 'RR',
+            dataIndex: 'RR',
+            key: 'RR',
+            render: (val) => val?.toFixed(2)
+        },
+        {
             title: "Действия",
             render: (value, row) => {
                 return <Link to={`/new-testing?ticker=${row.ticker}&tf=${row.timeframe}&tab=orderblocks`}
@@ -313,7 +309,7 @@ export const MultiTestPage = () => {
 
         return Object.entries(data.reduce((acc, curr) => {
             const date = moment(curr.openTime * 1000).format('YYYY-MM-DD');
-            if(!acc[date]){
+            if (!acc[date]) {
                 acc[date] = curr.newPnl;
             } else {
                 acc[date] += curr.newPnl;
@@ -323,7 +319,7 @@ export const MultiTestPage = () => {
             .map(([date, PnL]) => ({time: moment(date, 'YYYY-MM-DD').unix(), value: PnL}))
             .sort((a, b) => a.time - b.time)
             .reduce((acc, curr, i) => {
-                if(i === 0){
+                if (i === 0) {
                     acc = [curr];
                 } else {
                     acc.push(({...curr, value: acc[i - 1].value + curr.value}))
@@ -371,7 +367,8 @@ export const MultiTestPage = () => {
             {/*</Col>*/}
             <Col>
                 <FormItem>
-                    <Checkbox checked={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Торговать Ложные
+                    <Checkbox checked={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Торговать
+                        Ложные
                         пробои</Checkbox>
                 </FormItem>
             </Col>
@@ -382,7 +379,8 @@ export const MultiTestPage = () => {
             </Col>
             <Col>
                 <FormItem>
-                    <Checkbox checked={withMove} onChange={e => setwithMove(e.target.checked)}>Двигать к имбалансу</Checkbox>
+                    <Checkbox checked={withMove} onChange={e => setwithMove(e.target.checked)}>Двигать к
+                        имбалансу</Checkbox>
                 </FormItem>
             </Col>
             <Col>
@@ -392,7 +390,8 @@ export const MultiTestPage = () => {
             </Col>
             <Col>
                 <FormItem>
-                    <Checkbox checked={newStructure} onChange={e => setnewStructure(e.target.checked)}>Новая структура</Checkbox>
+                    <Checkbox checked={newStructure} onChange={e => setnewStructure(e.target.checked)}>Новая
+                        структура</Checkbox>
                 </FormItem>
             </Col>
             <Col>
@@ -402,7 +401,8 @@ export const MultiTestPage = () => {
             </Col>
             <Col>
                 <FormItem>
-                    <Checkbox checked={showHiddenSwings} onChange={e => setshowHiddenSwings(e.target.checked)}>Показывать скрытые точки</Checkbox>
+                    <Checkbox checked={showHiddenSwings} onChange={e => setshowHiddenSwings(e.target.checked)}>Показывать
+                        скрытые точки</Checkbox>
                 </FormItem>
             </Col>
             <Col>
@@ -412,7 +412,8 @@ export const MultiTestPage = () => {
             </Col>
             <Col>
                 <FormItem>
-                    <Checkbox checked={limitOrderTrade} onChange={e => setLimitOrderTrade(e.target.checked)}>Торговать лимитками</Checkbox>
+                    <Checkbox checked={limitOrderTrade} onChange={e => setLimitOrderTrade(e.target.checked)}>Торговать
+                        лимитками</Checkbox>
                 </FormItem>
             </Col>
         </Row>
@@ -452,7 +453,8 @@ export const MultiTestPage = () => {
         </Row>
         <Row style={{paddingBottom: '8px'}} gutter={8}>
             <Col span={24}>
-                <Chart height={400} showVolume={false} seriesType="Line" lineSerieses={[]} hideInternalCandles primitives={[]} markers={[]} data={profitChartData}
+                <Chart height={400} showVolume={false} seriesType="Line" lineSerieses={[]} hideInternalCandles
+                       primitives={[]} markers={[]} data={profitChartData}
                        ema={[]}/>
             </Col>
         </Row>
@@ -512,7 +514,8 @@ export const MultiTestPage = () => {
             {/*</Col>*/}
         </Row>
         <Row gutter={8}>
-            <Table style={{width: '100%'}} loading={loading} rowClassName={rowClassName} size="small" columns={oldOneTickerColumns}
+            <Table style={{width: '100%'}} loading={loading} rowClassName={rowClassName} size="small"
+                   columns={oldOneTickerColumns}
                    dataSource={isAllTickers ? allPositions : positions}/>
         </Row>
     </Form>;

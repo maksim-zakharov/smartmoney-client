@@ -1247,3 +1247,48 @@ const lowestBy = <T>(batch: T[], key: keyof T) => batch.reduce((acc, idx, i) => 
     }
     return acc;
 }, batch[0])
+
+export enum Side {
+    Buy = 'buy',
+    Sell = 'sell',
+}
+
+export type CandleWithSide = HistoryObject & { side: Side };
+
+export const filterNearOrderblock = (orderBlocks: OrderBlock[], currentCandle: HistoryObject) => orderBlocks.filter(({ startCandle: { high, low }, type }) =>
+    hasNear(
+        true,
+        { high, low, side: type === 'high' ? Side.Sell : Side.Buy } as any,
+        currentCandle,
+    ),
+)
+    .filter(ob => ob.type === 'high' ? currentCandle.high < ob.startCandle.high : currentCandle.low > ob.startCandle.low)
+    .sort((a, b) => {
+        const aDiff = a.type === 'high' ? a.startCandle.low - currentCandle.high : currentCandle.low - a.startCandle.high;
+        const bDiff = b.type === 'high' ? b.startCandle.low - currentCandle.high : currentCandle.low - b.startCandle.high;
+
+        return aDiff - bDiff;
+    })
+    .slice(0, 1)
+
+export const hasNear = (
+    isNear: boolean,
+    { high, low, side }: CandleWithSide,
+    currentCandle: HistoryObject,
+) => {
+    if (!isNear) {
+        return true;
+    }
+
+    // Близость к цене 0.7%
+    const price = 1.007;
+
+    if (side === Side.Sell && low / currentCandle.high <= price) {
+        return true;
+    }
+    if (side === Side.Buy && currentCandle.low / high <= price) {
+        return true;
+    }
+
+    return false;
+};
