@@ -159,7 +159,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         // Где начинается позиция TODO для теста, в реальности это точка входа
         for (let i = 0; i < orderblocks.length; i++) {
             const obItem = orderblocks[i];
-            if(!obItem){
+            if (!obItem) {
                 continue;
             }
             const startPositionIndex = obItem.index + obItem.imbalanceIndex;
@@ -206,17 +206,17 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
 
                 const idmType = obItem.type;
-                if(lastIDMIndexMap[idmType] && lastIDMIndexMap[idmType] <= i && obItem.index >= lastIDMIndexMap[idmType]){
+                if (lastIDMIndexMap[idmType] && lastIDMIndexMap[idmType] <= i && obItem.index >= lastIDMIndexMap[idmType]) {
                     obItem.text = "SMT";
                     obItem.isSMT = true;
                     obItem.canTrade = false;
                 }
-                if(boses[lastIDMIndexMap[idmType]]?.isConfirmed && lastIDMIndexMap[idmType] && boses[lastIDMIndexMap[idmType]].to?.index - 1 <= i){
+                if (boses[lastIDMIndexMap[idmType]]?.isConfirmed && lastIDMIndexMap[idmType] && boses[lastIDMIndexMap[idmType]].to?.index - 1 <= i) {
                     obItem.text = "OB";
                     obItem.isSMT = false;
                     obItem.canTrade = true;
 
-                    if(high?.[obIdx]?.text === 'HH' || low?.[obIdx]?.text === 'LL'){
+                    if (high?.[obIdx]?.text === 'HH' || low?.[obIdx]?.text === 'LL') {
                         obItem.text = "Ex OB";
                     }
                 }
@@ -229,24 +229,23 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                     obItem.tradeOrderType = 'market';
 
                     const trendType = trend?.trend === 1 ? 'low' : 'high';
-                    if(!trend || trendType !== obItem.type){
+                    if (!trend || trendType !== obItem.type) {
                         obItem.canTrade = false;
                         return;
                     }
                 }
             })
 
-            if(high?.text === 'HH'){
+            if (high?.text === 'HH') {
                 lastExtremumIndexMap['high'] = i;
             }
 
-            if(low?.text === 'LL'){
+            if (low?.text === 'LL') {
                 lastExtremumIndexMap['low'] = i;
             }
 
-            if(ob){
+            if (ob) {
                 obIdxes.add(i);
-
                 // Тейк профит до ближайшего максимума
                 orderblocks[i].takeProfit = orderblocks[i].type === 'high' ? lows[lastExtremumIndexMap['low']]?.price : highs[lastExtremumIndexMap['high']]?.price
             }
@@ -256,11 +255,11 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 lastIDMIndexMap[bos.type] = i;
             }
 
-            if(lastIDMIndexMap['high'] && boses[lastIDMIndexMap['high']].to?.index - 1 === i){
+            if (lastIDMIndexMap['high'] && boses[lastIDMIndexMap['high']].to?.index - 1 === i) {
                 lastIDMIndexMap['high'] = null;
             }
 
-            if(lastIDMIndexMap['low'] && boses[lastIDMIndexMap['low']].to?.index - 1 === i){
+            if (lastIDMIndexMap['low'] && boses[lastIDMIndexMap['low']].to?.index - 1 === i) {
                 lastIDMIndexMap['low'] = null;
             }
         }
@@ -270,10 +269,10 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
         // Либо смотрим тренд по закрытию ОБ либо если закрытия нет - по открытию.
         const obIndex = ob?.endIndex || index;
         const trend = trends[obIndex]?.trend;
-        if(trend === 1 && ob?.type === 'low'){
+        if (trend === 1 && ob?.type === 'low') {
             return ob;
         }
-        if(trend === -1 && ob?.type === 'high'){
+        if (trend === -1 && ob?.type === 'high') {
             return ob;
         }
         return null;
@@ -314,7 +313,7 @@ export const calculateTesting = (data: HistoryObject[], {
         newSMT
     )
 
-    if(byTrend){
+    if (byTrend) {
         const currentTrend = trend[trend.length - 1]?.trend === 1 ? 'low' : 'high';
         orderBlocks = orderBlocks.filter(ob => ob?.type === currentTrend);
     }
@@ -1053,7 +1052,7 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
         const nextBos = onlyBOSes[i + 1];
 
         let to = !nextBos ? trend.length : nextBos.to.index;
-        if(nextBos && !curBos.isConfirmed && !nextBos.isConfirmed){
+        if (nextBos && !curBos.isConfirmed && !nextBos.isConfirmed) {
             to = trend.length;
         }
 

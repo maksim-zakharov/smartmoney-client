@@ -1096,8 +1096,11 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
                 maxPrice: lastExtremumIndex ? swings[lastExtremumIndex].price : 0
             })
         }
+        const profit = Math.abs(takeProfit - openPrice);
+        const loss = Math.abs(stopLoss - openPrice);
+        const RR = profit / loss;
 
-        if (Math.abs(takeProfit - openPrice) / Math.abs(openPrice - stopLoss) < 1) {
+        if (RR < 2) {
             continue;
         }
 

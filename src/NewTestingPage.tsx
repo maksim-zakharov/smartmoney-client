@@ -76,7 +76,7 @@ const NewTestingPage = () => {
         trend,
         boses,
         orderBlocks
-    } = calculateTesting(data.slice(0, data.length - offset), defaultConfig);
+    } = calculateTesting(data.slice(0, data.length - offset), newStruct);
     const checkShow = (ob) => {
         let result = true;
         if(!ob){
