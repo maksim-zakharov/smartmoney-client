@@ -8,13 +8,13 @@ import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {createRectangle2, fetchCandlesFromAlor} from "./utils.ts";
 import {
-    calculateTesting,
+    calculateTesting, calculateTestingIteration,
     defaultConfig,
     filterNearOrderblock,
     hasNear,
     isNotSMT,
     notTradingTime,
-    Side
+    Side, THConfig, tradinghubCalculateSwings
 } from "./th_ultimate.ts";
 import {LineStyle, Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
@@ -67,15 +67,15 @@ const NewTestingPage = () => {
         fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
-    let newStruct = {};
+    let newStruct: THConfig = {};
     if (selectedKey === 'swings') {
         newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
     }
     if (selectedKey === 'structure') {
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, showFake: true, oneIteration: true};
     }
     if(selectedKey === 'orderblocks'){
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true, withMove: false, newSMT: true};
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, showFake: true, oneIteration: true};
     }
 
     const currentCandle = data[data.length - 1 - offset];
@@ -87,7 +87,7 @@ const NewTestingPage = () => {
         trend,
         boses,
         orderBlocks
-    } = calculateTesting(data.slice(0, data.length - offset), env === 'prod' ? defaultConfig  : newStruct);
+    } = (newStruct.oneIteration ? calculateTestingIteration : calculateTesting)(data.slice(0, data.length - offset), env === 'prod' ? defaultConfig  : newStruct);
     orderBlocks = orderBlocks.filter(isNotSMT)
     if(env === 'prod'){
         orderBlocks = filterNearOrderblock(

@@ -1059,11 +1059,8 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
     for (let i = 0; i < candles.length; i++) {
         const obItem = ob[i];
         const swing = swings[i];
-        if(swing?.text === 'HH'){
-            lastExtremumIndexMap['high'] = i;
-        }
-        if(swing?.text === 'LL'){
-            lastExtremumIndexMap['low'] = i;
+        if(swing?.isExtremum){
+            lastExtremumIndexMap[swing?.side] = i;
         }
 
         if (!obItem || !obItem.endCandle || !obItem.canTrade || obItem.text === 'SMT') {
