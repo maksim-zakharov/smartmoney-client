@@ -1255,10 +1255,16 @@ export enum Side {
 
 export type CandleWithSide = HistoryObject & { side: Side };
 
-export const filterNearOrderblock = (orderBlocks: OrderBlock[], currentCandle: HistoryObject) => orderBlocks.filter(({ startCandle: { high, low }, type }) =>
+export const filterNearOrderblock = (orderBlocks: OrderBlock[], currentCandle: HistoryObject) => orderBlocks.filter(({
+                                                                                                                         startCandle: {
+                                                                                                                             high,
+                                                                                                                             low
+                                                                                                                         },
+                                                                                                                         type
+                                                                                                                     }) =>
     hasNear(
         true,
-        { high, low, side: type === 'high' ? Side.Sell : Side.Buy } as any,
+        {high, low, side: type === 'high' ? Side.Sell : Side.Buy} as any,
         currentCandle,
     ),
 )
@@ -1273,7 +1279,7 @@ export const filterNearOrderblock = (orderBlocks: OrderBlock[], currentCandle: H
 
 export const hasNear = (
     isNear: boolean,
-    { high, low, side }: CandleWithSide,
+    {high, low, side}: CandleWithSide,
     currentCandle: HistoryObject,
 ) => {
     if (!isNear) {

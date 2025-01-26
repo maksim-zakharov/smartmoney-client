@@ -72,10 +72,10 @@ const NewTestingPage = () => {
         newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
     }
     if (selectedKey === 'structure') {
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false};
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
     }
     if(selectedKey === 'orderblocks'){
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true};
+        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true, withMove: false, newSMT: true};
     }
 
     const currentCandle = data[data.length - 1 - offset];
@@ -91,9 +91,9 @@ const NewTestingPage = () => {
     orderBlocks = orderBlocks.filter(isNotSMT)
     if(env === 'prod'){
         orderBlocks = filterNearOrderblock(
+            orderBlocks
             // ОБ еще не сформировался
-            // .filter((p) => !p.endCandle)
-            orderBlocks,
+            .filter((p) => !p.endCandle),
             currentCandle
         );
     }
