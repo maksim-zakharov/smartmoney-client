@@ -269,7 +269,7 @@ const StructureMappingPage = () => {
     }, [tf, ticker, fromDate, toDate]);
 
     let {highs, lows, swings, boses} = useMemo(() => {
-        let {highs, lows, swings} = tradinghubCalculateSwings(data)
+        let {swings} = tradinghubCalculateSwings(data)
 
         const {trend, boses, swings: thSwings} = tradinghubCalculateTrendNew(swings, data, {});
 

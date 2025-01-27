@@ -21,7 +21,7 @@ import {
     Trend
 } from "../../th_ultimate";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
-    let {swings, highs, lows} = tradinghubCalculateSwings(data);
+    let {swings} = tradinghubCalculateSwings(data);
 
     let boses = markHHLL(data, swings);
     boses = drawBOS(data, swings, boses);
@@ -66,14 +66,7 @@ const BOSChart = ({data}: {data: HistoryObject[]}) => {
         return {options, data, markers}
     }));
     const allMarkers1 = [];
-    allMarkers1.push(...highs.filter(Boolean).map(s => ({
-        color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-        time: (s.time) as Time,
-        shape: 'circle',
-        position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-        text: s.text
-    })));
-    allMarkers1.push(...lows.filter(Boolean).map(s => ({
+    allMarkers1.push(...swings.filter(Boolean).map(s => ({
         color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
         time: (s.time) as Time,
         shape: 'circle',
@@ -163,7 +156,7 @@ const ImpulseAndCorrectionPage = () => {
             ).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
-    let {highs, lows, swings} = useMemo(() => tradinghubCalculateSwings(data), [data]);
+    let {swings} = useMemo(() => tradinghubCalculateSwings(data), [data]);
 
     const markers = useMemo(() => {
         const markerColors = {
@@ -171,14 +164,7 @@ const ImpulseAndCorrectionPage = () => {
             bullColor: "rgb(20, 131, 92)"
         }
         const allMarkers = [];
-        allMarkers.push(...highs.filter(Boolean).map(s => ({
-            color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            time: (s.time) as Time,
-            shape: 'circle',
-            position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            text: s.text
-        })));
-        allMarkers.push(...lows.filter(Boolean).map(s => ({
+        allMarkers.push(...swings.filter(Boolean).map(s => ({
             color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
             time: (s.time) as Time,
             shape: 'circle',
@@ -187,7 +173,7 @@ const ImpulseAndCorrectionPage = () => {
         })));
 
         return allMarkers;
-    }, [highs, lows, swings]);
+    }, [swings]);
 
     return <>
         <Typography.Paragraph>When Market momentum is very strong to the upside or downside those types strong

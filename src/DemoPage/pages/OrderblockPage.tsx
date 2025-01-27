@@ -18,7 +18,7 @@ import {
 } from "../../th_ultimate";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
-    const {swings: swings1, highs, lows} = tradinghubCalculateSwings(data);
+    const {swings: swings1} = tradinghubCalculateSwings(data);
 
     let bosses1 = markHHLL(data, swings1);
     bosses1 = drawBOS(data, swings1, bosses1);
@@ -61,14 +61,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
         bullColor: "rgb(20, 131, 92)"
     }
     const allMarkers1 = [];
-    allMarkers1.push(...highs.filter(Boolean).map(s => ({
-        color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-        time: (s.time) as Time,
-        shape: 'circle',
-        position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-        text: s.text
-    })));
-    allMarkers1.push(...lows.filter(Boolean).map(s => ({
+    allMarkers1.push(...swings1.filter(Boolean).map(s => ({
         color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
         time: (s.time) as Time,
         shape: 'circle',
