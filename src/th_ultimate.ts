@@ -506,7 +506,7 @@ export const calculateTesting = (data: HistoryObject[], {
     showFake
 }: THConfig) => {
     // <-- Копировать в робота
-    let {highs, lows, swings: _swings} = tradinghubCalculateSwings(data);
+    let {swings} = tradinghubCalculateSwings(data);
     // let {highs, lows, swings: _swings} = calculateTestingIteration(data, {
     //     moreBOS, showHiddenSwings, newStructure, showIFC,
     //     withMove,
@@ -514,24 +514,17 @@ export const calculateTesting = (data: HistoryObject[], {
     //     byTrend,
     //     showFake
     // });
-    const {highParts, lowParts} = calculateStructure(
-        highs,
-        lows,
-        data,
-    );
 
     const {
         trend,
         boses,
         swings: thSwings,
-    } = tradinghubCalculateTrendNew(_swings, data, {moreBOS, showHiddenSwings, showFake, showIFC, newStructure});
-    _swings = thSwings;
-    highs = thSwings.map((t) => t?.side === 'high' ? t : null);
-    lows = thSwings.map((t) => t?.side === 'low' ? t : null);
+    } = tradinghubCalculateTrendNew(swings, data, {moreBOS, showHiddenSwings, showFake, showIFC, newStructure});
+    swings = thSwings;
 
     // Копировать в робота -->
     let orderBlocks = calculateOB(
-        _swings,
+        swings,
         data,
         boses,
         trend,
@@ -545,7 +538,7 @@ export const calculateTesting = (data: HistoryObject[], {
         orderBlocks = orderBlocks.filter(ob => ob?.type === currentTrend);
     }
 
-    return {swings: _swings, highs, lows, trend, boses, orderBlocks};
+    return {swings, trend, boses, orderBlocks};
 }
 
 export interface THConfig {

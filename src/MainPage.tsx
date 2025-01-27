@@ -121,7 +121,7 @@ export const ChartComponent = props => {
     }
 
     const calcStruct = (data) => {
-        let {swings, highs, lows, trend, boses, orderBlocks} =  calculateTesting(data, {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true});
+        let {swings, trend, boses, orderBlocks} =  calculateTesting(data, {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true});
 
         const checkShow = (ob) => {
             let result = false;
@@ -151,21 +151,7 @@ export const ChartComponent = props => {
             })));
         }
         if(config.swings){
-            // allMarkers.push(...swings.swings.filter(Boolean).map(s => ({
-            //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            //     time: (s.time) as Time,
-            //     shape: 'circle',
-            //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            //     // text: marker.text
-            // })));
-            allMarkers.push(...highs.filter(Boolean).map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'circle',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.isIFC ? 'IFC' : s.text
-            })));
-            allMarkers.push(...lows.filter(Boolean).map(s => ({
+            allMarkers.push(...swings.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.time) as Time,
                 shape: 'circle',

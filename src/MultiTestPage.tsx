@@ -38,7 +38,7 @@ export const MultiTestPage = () => {
     const [withMove, setwithMove] = useState<boolean>(false);
     const [newStructure, setnewStructure] = useState<boolean>(true);
     const [moreBOS, setmoreBOS] = useState<boolean>(true);
-    const [showFake, setfakeBOS] = useState<boolean>(true);
+    const [showFake, setfakeBOS] = useState<boolean>(false);
     const [newSMT, setnewSMT] = useState<boolean>(true);
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(false);
     const [tradeOB, setTradeOB] = useState<boolean>(true);
@@ -47,7 +47,7 @@ export const MultiTestPage = () => {
     const [excludeWick, setExcludeWick] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("max");
-    const [stopMargin, setStopMargin] = useState<number>(20)
+    const [stopMargin, setStopMargin] = useState<number>(50)
     const [feePercent, setFeePercent] = useState<number>(0.04)
     const [baseTakePercent, setBaseTakePercent] = useState<number>(5)
     const [maxTakePercent, setMaxTakePercent] = useState<number>(0.5)
@@ -59,7 +59,7 @@ export const MultiTestPage = () => {
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([fromDate, toDate])
 
     const positions = useMemo(() => {
-        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, defaultConfig);
+        const {swings, trend, boses, orderBlocks} = calculateTesting(data, defaultConfig);
 
         const lotsize = (security?.lotsize || 1)
 
@@ -71,7 +71,7 @@ export const MultiTestPage = () => {
             positions.push(...fakeoutPositions);
         }
         if (tradeFakeouts) {
-            const fakeouts = calculateFakeout(highs, lows, data)
+            const fakeouts = calculateFakeout(swings, data)
             const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
             positions.push(...fakeoutPositions);
         }
@@ -106,7 +106,7 @@ export const MultiTestPage = () => {
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, {
+            const {swings, trend, boses, orderBlocks} = calculateTesting(data, {
                 withMove,
                 moreBOS,
                 newStructure,
@@ -125,7 +125,7 @@ export const MultiTestPage = () => {
                 positions.push(...fakeoutPositions);
             }
             if (tradeFakeouts) {
-                const fakeouts = calculateFakeout(highs, lows, data)
+                const fakeouts = calculateFakeout(swings, data)
                 const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
                 positions.push(...fakeoutPositions);
             }

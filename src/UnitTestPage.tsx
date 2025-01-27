@@ -14,15 +14,15 @@ import {testData1, testData2} from "./test_data";
 type MenuItem = Required<MenuProps>['items'][number] & {description?: string, candles: HistoryObject[]};
 
 const BOSChart = ({data, showSwings, showStructure, showOrderblock, mockHighs, mockLows, mockBoses, mockOrderBlocks}: {data: HistoryObject[]}) => {
-    let {highs, lows, boses, orderBlocks} = calculateTesting(data, {withMove: false, moreBOS: true});
+    let {swings, boses, orderBlocks} = calculateTesting(data, {withMove: false, moreBOS: true});
 
-    if(mockHighs){
-        highs = mockHighs;
-    }
-
-    if(mockLows){
-        lows = mockLows;
-    }
+    // if(mockHighs){
+    //     highs = mockHighs;
+    // }
+    //
+    // if(mockLows){
+    //     lows = mockLows;
+    // }
 
     if(mockBoses){
         boses = mockBoses;
@@ -33,8 +33,8 @@ const BOSChart = ({data, showSwings, showStructure, showOrderblock, mockHighs, m
     }
 
     // для копирования в тест
-    const copyData = {highs, lows, boses, orderBlocks};
-    console.log(JSON.stringify(copyData));
+    // const copyData = {highs, lows, boses, orderBlocks};
+    // console.log(JSON.stringify(copyData));
 
     const lastCandle = data[data.length - 1];
     const _primitives = [];
@@ -74,14 +74,7 @@ const BOSChart = ({data, showSwings, showStructure, showOrderblock, mockHighs, m
     }
     const allMarkers1 = [];
     if(showSwings){
-        allMarkers1.push(...highs.filter(Boolean).map(s => ({
-            color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            time: (s.time) as Time,
-            shape: 'circle',
-            position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            text: s.text
-        })));
-        allMarkers1.push(...lows.filter(Boolean).map(s => ({
+        allMarkers1.push(...swings.filter(Boolean).map(s => ({
             color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
             time: (s.time) as Time,
             shape: 'circle',

@@ -1170,43 +1170,29 @@ export const isWickCandle = (candle: HistoryObject, type: 'high' | 'low', wickRa
 /**
  * Прошлый хай пробит, но пробит только хвостом и закрытие было под прошлым хаем
  * @link https://smart-money.trading/smart-money-concept/#%D0%9B%D0%BE%D0%B6%D0%BD%D1%8B%D0%B9_%D0%BF%D1%80%D0%BE%D0%B1%D0%BE%D0%B9_%E2%80%93_%D0%BF%D0%B0%D1%82%D1%82%D0%B5%D1%80%D0%BD_SFP
- * @param highs
- * @param lows
+ * @param swings
  * @param candles
  */
-export const calculateFakeout = (highs: Swing[], lows: Swing[], candles: HistoryObject[]) => {
+export const calculateFakeout = (swings: Swing[], candles: HistoryObject[]) => {
     const fakeouts = [];
 
-    let lastHigh;
-    for (let i = 0; i < highs.length; i++) {
-        if (!highs[i]) {
-            continue;
-        }
-        const currHigh = highs[i];
-        if (lastHigh) {
-            const lastCandle = candles[lastHigh.index];
-            const currCandle = candles[currHigh.index];
-            if (currCandle.high > lastCandle.high && currCandle.close < lastCandle.high && isWickCandle(currCandle, 'high')) {
-                fakeouts.push(currHigh)
-            }
-        }
-        lastHigh = highs[i];
+    let lastSwingMap: Record<'high' | 'low', Swing> = {
+        high: null,
+        low: null
     }
-
-    let lastLow;
-    for (let i = 0; i < lows.length; i++) {
-        if (!lows[i]) {
-            continue;
-        }
-        const currHigh = lows[i];
-        if (lastLow) {
-            const lastCandle = candles[lastLow.index];
-            const currCandle = candles[currHigh.index];
-            if (currCandle.low < lastCandle.low && currCandle.close > lastCandle.low && isWickCandle(currCandle, 'low')) {
-                fakeouts.push(currHigh)
+    for (let i = 0; i < swings.length; i++) {
+        if (swings[i]) {
+            if (lastSwingMap[swings[i].side]) {
+                const lastCandle = candles[lastSwingMap[swings[i].side].index];
+                const currCandle = candles[swings[i].index];
+                const canPushHigh = swings[i].side === 'high' && currCandle.high > lastCandle.high && currCandle.close < lastCandle.high;
+                const canPushLow = swings[i].side === 'low' && currCandle.low < lastCandle.low && currCandle.close > lastCandle.low;
+                if ((canPushHigh || canPushLow) && isWickCandle(currCandle, swings[i].side)) {
+                    fakeouts.push(swings[i])
+                }
             }
+            lastSwingMap[swings[i].side] = swings[i];
         }
-        lastLow = lows[i];
     }
 
     return fakeouts

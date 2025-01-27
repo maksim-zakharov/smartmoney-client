@@ -120,9 +120,9 @@ export const SoloTestPage = () => {
     }
     
     const {swings, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, highs, lows, trend, boses, orderBlocks} = calculateTesting(data, config);
+        const {swings, trend, boses, orderBlocks} = calculateTesting(data, config);
 
-        const fakeouts = calculateFakeout(highs, lows, data)
+        const fakeouts = calculateFakeout(swings, data)
 
         let positions = [];
 
@@ -143,7 +143,7 @@ export const SoloTestPage = () => {
             positions = positions.filter(p => p.side !== 'short');
         }
 
-        return { swings: {highs, lows}, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
+        return { swings, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
     }, [isShortSellPossible, stopPaddingPercent, config.showIFC, config.newSMT, config.showHiddenSwings, config.newStructure, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
@@ -386,21 +386,7 @@ export const SoloTestPage = () => {
             }
         }
         if(config.swings){
-            // allMarkers.push(...swings.swings.filter(Boolean).map(s => ({
-            //     color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            //     time: (s.time) as Time,
-            //     shape: 'circle',
-            //     position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            //     // text: marker.text
-            // })));
-            allMarkers.push(...swings.highs.filter(Boolean).map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'circle',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.isIFC ? 'IFC' : s.text
-            })));
-            allMarkers.push(...swings.lows.filter(Boolean).map(s => ({
+            allMarkers.push(...swings.filter(Boolean).map(s => ({
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.time) as Time,
                 shape: 'circle',
