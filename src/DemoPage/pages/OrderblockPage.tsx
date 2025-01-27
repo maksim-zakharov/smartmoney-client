@@ -25,7 +25,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
 
     const trends = data.map((candle, index) => ({trend, time: candle.time, index}) as Trend);
 
-    const orderBlocks = calculateOB(highs, lows, data, bosses1, trends, true);
+    const orderBlocks = calculateOB(swings1, data, bosses1, trends, true);
     const lastCandle = data[data.length - 1];
     const _primitives = [];
     _primitives.push(...orderBlocks.map(orderBlock => createRectangle2({

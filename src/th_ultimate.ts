@@ -129,115 +129,67 @@ export interface OrderBlock {
  * и только если следующая свеча после структурной дает имбаланс
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
-export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false) => {
+export const calculateOB = (_swings: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false) => {
     let orderblocks: OrderBlock [] = new Array(candles.length).fill(null);
     // Иногда определяеются несколько ОБ на одной свечке, убираем
     let uniqueOrderBlockTimeSet = new Set();
 
     const MAX_CANDLES_COUNT = 10;
 
-    let lastHighIDMIndex = null;
-    for (let i = 0; i < highs.length; i++) {
-        const high = highs[i];
-        const index = high?.index
-
-        if (boses[i]?.type === 'high' && boses[i].isIDM) {
-            lastHighIDMIndex = i;
-        }
-
-        if (!high) {
-            continue;
-        }
-        const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
-        const orderBlock = isOrderblock(candlesBatch, withMove);
-        if (orderBlock?.type === 'high' && !uniqueOrderBlockTimeSet.has(orderBlock.orderblock.time)) {
-            // TODO Не торговать ОБ под IDM
-            const bossIndex = orderBlock.firstImbalanceIndex + index;
-            const hasBoss = Boolean(boses[bossIndex]) && (!showFake || boses[bossIndex].isConfirmed);
-            let text = 'OB';
-
-            if (high.isExtremum) {
-                text = 'Ex OB';
-            }
-
-            let isSMT = false;
-            if (!newSMT && (hasBoss || (lastHighIDMIndex
-                && boses[lastHighIDMIndex].from.index <= i
-                && boses[lastHighIDMIndex].to.index > i))
-            ) {
-                text = 'SMT';
-                isSMT = true;
-            }
-
-            orderblocks[index] = {
-                text,
-                isSMT,
-                type: orderBlock.type,
-                index,
-                time: orderBlock.orderblock.time,
-                // textTime,
-                lastOrderblockCandle: orderBlock.lastOrderblockCandle,
-                lastImbalanceCandle: orderBlock.lastImbalanceCandle,
-                firstImbalanceIndex: orderBlock.firstImbalanceIndex,
-                imbalanceIndex: orderBlock.imbalanceIndex,
-                startCandle: orderBlock.orderblock,
-                canTrade: true,
-                tradeOrderType: 'limit'
-            } as OrderBlock
-
-            uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
-        }
+    let lastIDMIndexMap: Record<'high' | 'low', number> = {
+        high: null,
+        low: null
     }
 
-    let lastLowIDMIndex = null;
-    for (let i = 0; i < lows.length; i++) {
-        const low = lows[i];
-        const index = low?.index
+    for (let i = 0; i < _swings.length; i++) {
+        const swing = _swings[i];
+        const index = swing?.index
 
-        if (boses[i]?.type === 'low' && boses[i].isIDM) {
-            lastLowIDMIndex = i;
+        if (boses[i]?.isIDM) {
+            lastIDMIndexMap[boses[i]?.type] = i;
         }
 
-        if (!lows[i]) {
-            continue;
-        }
-        const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
-        const orderBlock = isOrderblock(candlesBatch, withMove);
-        if (orderBlock?.type === 'low' && !uniqueOrderBlockTimeSet.has(orderBlock.orderblock.time)) {
-            // TODO Не торговать ОБ под IDM
-            const bossIndex = orderBlock.firstImbalanceIndex + index;
-            const hasBoss = Boolean(boses[bossIndex]) && (!showFake || boses[bossIndex].isConfirmed);
-            let text = 'OB';
+        if (swing) {
+            const lastIDMIndex = lastIDMIndexMap[swing?.side]
+            const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
+            const orderBlock = isOrderblock(candlesBatch, withMove);
+            if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.orderblock.time)) {
+                // TODO Не торговать ОБ под IDM
+                const bossIndex = orderBlock.firstImbalanceIndex + index;
+                const hasBoss = Boolean(boses[bossIndex]) && (!showFake || boses[bossIndex].isConfirmed);
+                let text = 'OB';
 
-            if (low.isExtremum) {
-                text = 'Ex OB';
+                if (swing.isExtremum) {
+                    text = 'Ex OB';
+                }
+
+                let isSMT = false;
+                if (!newSMT && (hasBoss || (lastIDMIndex
+                    && boses[lastIDMIndex].from.index <= i
+                    && boses[lastIDMIndex].to.index > i))
+                ) {
+                    text = 'SMT';
+                    isSMT = true;
+                }
+
+                orderblocks[index] = {
+                    text,
+                    isSMT,
+                    type: orderBlock.type,
+                    index,
+                    time: orderBlock.orderblock.time,
+                    // textTime,
+                    lastOrderblockCandle: orderBlock.lastOrderblockCandle,
+                    lastImbalanceCandle: orderBlock.lastImbalanceCandle,
+                    firstImbalanceIndex: orderBlock.firstImbalanceIndex,
+                    imbalanceIndex: orderBlock.imbalanceIndex,
+                    startCandle: orderBlock.orderblock,
+                    canTrade: true,
+                    tradeOrderType: 'limit'
+                } as OrderBlock
+
+                uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
             }
-
-            let isSMT = false;
-            if (!newSMT && (hasBoss || (lastLowIDMIndex
-                && boses[lastLowIDMIndex].from.index <= i
-                && boses[lastLowIDMIndex].to.index > i))
-            ) {
-                text = 'SMT';
-                isSMT = true;
-            }
-
-            orderblocks[index] = {
-                text,
-                isSMT,
-                type: orderBlock.type,
-                index,
-                time: orderBlock.orderblock.time,
-                lastOrderblockCandle: orderBlock.lastOrderblockCandle,
-                lastImbalanceCandle: orderBlock.lastImbalanceCandle,
-                firstImbalanceIndex: orderBlock.firstImbalanceIndex,
-                imbalanceIndex: orderBlock.imbalanceIndex,
-                startCandle: orderBlock.orderblock,
-                canTrade: true,
-                tradeOrderType: 'limit'
-            } as OrderBlock;
-
-            uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
         }
     }
 
@@ -284,8 +236,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
             const bos = boses[i];
             const ob = orderblocks[i];
             const trend = trends[i];
-            const high = highs[i];
-            const low = lows[i];
+            const swing = _swings[i];
 
             obIdxes.forEach(obIdx => {
                 const obItem = orderblocks[obIdx];
@@ -302,7 +253,7 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                     obItem.isSMT = false;
                     obItem.canTrade = true;
 
-                    if (high?.[obIdx]?.isExtremum || low?.[obIdx]?.isExtremum) {
+                    if (swing?.[obIdx]?.isExtremum) {
                         obItem.text = "Ex OB";
                     }
                 }
@@ -322,18 +273,14 @@ export const calculateOB = (highs: Swing[], lows: Swing[], candles: HistoryObjec
                 }
             })
 
-            if (high?.isExtremum) {
-                lastExtremumIndexMap['high'] = i;
-            }
-
-            if (low?.isExtremum) {
-                lastExtremumIndexMap['low'] = i;
+            if (swing?.isExtremum) {
+                lastExtremumIndexMap[swing.side] = i;
             }
 
             if (ob) {
                 obIdxes.add(i);
                 // Тейк профит до ближайшего максимума
-                orderblocks[i].takeProfit = orderblocks[i].type === 'high' ? lows[lastExtremumIndexMap['low']]?.price : highs[lastExtremumIndexMap['high']]?.price
+                orderblocks[i].takeProfit = orderblocks[i].type === 'high' ? _swings[lastExtremumIndexMap['low']]?.price : _swings[lastExtremumIndexMap['high']]?.price
             }
 
             // Если начался IDM
@@ -372,24 +319,84 @@ export const calculateTestingIteration = (candles: HistoryObject[], {
     byTrend,
     showFake
 }: THConfig) => {
+    // tradinghubCalculateSwings
     const swings: (Swing | null)[] = new Array(candles.length).fill(null);
     const highs: (Swing | null)[] = new Array(candles.length).fill(null);
     const lows: (Swing | null)[] = new Array(candles.length).fill(null);
 
+    // markHHLL
+    let boses: Cross[] = new Array(candles.length).fill(null);
+    let lastExtremumMap: Record<'high' | 'low',  (Swing & { idmSwing?: Swing })> = {
+        high: null,
+        low: null
+    }
+    let extraExtremumMap: Record<'high' | 'low',  (Swing & { idmSwing?: Swing })> = {
+        high: null,
+        low: null
+    }
+
+    let confirmIndexMap: Record<'high' | 'low',  number> = {
+        high: -1,
+        low: -1
+    }
+
+    // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
+    const updateExtraExtremum = (index: number, swing: Swing) => {
+        if (swing
+            && (swing.side === 'high' ? (!extraExtremumMap[swing.side] || extraExtremumMap[swing.side].price < swing.price) : (!extraExtremumMap[swing.side] || extraExtremumMap[swing.side].price > swing.price))
+            && (swing.side === 'high' ? confirmIndexMap['low'] : confirmIndexMap['high']) <= index
+        ) {
+            if (extraExtremumMap[swing.side]) {
+                extraExtremumMap[swing.side].unmarkExtremum();
+                if (extraExtremumMap[swing.side].idmSwing)
+                    boses[extraExtremumMap[swing.side].idmSwing.index] = null;
+            }
+            extraExtremumMap[swing.side] = swing;
+            extraExtremumMap[swing.side].idmSwing = swing.side === 'high' ? lastExtremumMap['low'] : lastExtremumMap['high'];
+        }
+    }
+
+    const confirmExtremum = (index: number, type: 'high' | 'low', isNonConfirmIDM: boolean) => {
+        if (extraExtremumMap[type]
+            && extraExtremumMap[type].idmSwing
+            && !boses[extraExtremumMap[type].idmSwing.index]
+            && (isNonConfirmIDM || (type === 'low' ? extraExtremumMap[type].idmSwing.price < candles[index].high : extraExtremumMap[type].idmSwing.price > candles[index].low))
+        ) {
+            extraExtremumMap[type].markExtremum();
+            confirmIndexMap[type] = index;
+            const from = extraExtremumMap[type].idmSwing
+            const to = new Swing({index, time: candles[index].time, price: candles[index].close});
+
+            if (isNonConfirmIDM || extraExtremumMap[type].index !== to.index) {
+                boses[from.index] = new Cross({
+                    from,
+                    to,
+                    type: type === 'low' ? 'high' : 'low',
+                    isIDM: true,
+                    getCandles: () => candles,
+                    extremum: extraExtremumMap[type],
+                    isConfirmed: !isNonConfirmIDM
+                })
+            }
+
+            extraExtremumMap[type === 'low' ? 'high' : 'low'] = null;
+        }
+    }
+
+    const updateLast = (swing: Swing) => {
+        lastExtremumMap['high'] = swing && swing.side === 'high' ? swing : lastExtremumMap['high'];
+        lastExtremumMap['low'] = swing && swing.side === 'low' ? swing : lastExtremumMap['low'];
+    }
+
     // Тупо первая точка
     if (candles.length) {
-        highs[0] = new Swing({
-            side: 'high',
-            time: candles[0].time,
-            price: candles[0].high,
-            index: 0
-        });
         swings[0] = new Swing({
             side: 'high',
             time: candles[0].time,
             price: candles[0].high,
             index: 0
         });
+        highs[0] = swings[0];
     }
 
     // tradinghubCalculateSwings
@@ -466,6 +473,12 @@ export const calculateTestingIteration = (candles: HistoryObject[], {
             }
         }
 
+        // markHHLL
+        // confirmExtremum(currentSwingIndex, 'low', currentSwingIndex === swings.length - 1)
+        // confirmExtremum(currentSwingIndex, 'high', currentSwingIndex === swings.length - 1)
+        // updateExtraExtremum(currentSwingIndex, swing);
+        // updateLast(swings[i])
+
         prevCandleIndex = currentSwingIndex;
         if(!isNextInsideBar){
             currentSwingIndex = null;
@@ -493,14 +506,14 @@ export const calculateTesting = (data: HistoryObject[], {
     showFake
 }: THConfig) => {
     // <-- Копировать в робота
-    // let {highs, lows, swings: _swings} = tradinghubCalculateSwings(data);
-    let {highs, lows, swings: _swings} = calculateTestingIteration(data, {
-        moreBOS, showHiddenSwings, newStructure, showIFC,
-        withMove,
-        newSMT,
-        byTrend,
-        showFake
-    });
+    let {highs, lows, swings: _swings} = tradinghubCalculateSwings(data);
+    // let {highs, lows, swings: _swings} = calculateTestingIteration(data, {
+    //     moreBOS, showHiddenSwings, newStructure, showIFC,
+    //     withMove,
+    //     newSMT,
+    //     byTrend,
+    //     showFake
+    // });
     const {highParts, lowParts} = calculateStructure(
         highs,
         lows,
@@ -518,8 +531,7 @@ export const calculateTesting = (data: HistoryObject[], {
 
     // Копировать в робота -->
     let orderBlocks = calculateOB(
-        newStructure ? highs : highParts,
-        newStructure ? lows : lowParts,
+        _swings,
         data,
         boses,
         trend,
