@@ -633,11 +633,11 @@ export const isNotSMT = (obItem: OrderBlock) => !obItem || (!obItem.isSMT && obI
 
 export const defaultConfig: THConfig = {
     moreBOS: true,
+    newSMT: true,
     showHiddenSwings: false,
     withMove: false,
-    newSMT: true,
     byTrend: true,
-    showFake: true
+    showFake: false
 }
 
 // Точка входа в торговлю
