@@ -777,8 +777,10 @@ export const deleteEmptySwings = (swings: Swing[]) => {
 }
 export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[], boses: Cross[]) => {
     let preLastHighIndex = null;
+    let lastHighIndex = null;
 
     let preLastLowIndex = null;
+    let lastLowIndex = null;
 
     let deletedSwingIndexes = new Set([]);
     // Алгоритм такой
