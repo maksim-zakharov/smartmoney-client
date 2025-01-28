@@ -153,7 +153,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
     // Иногда определяеются несколько ОБ на одной свечке, убираем
     let uniqueOrderBlockTimeSet = new Set();
 
-    const MAX_CANDLES_COUNT = 10;
+    const MAX_CANDLES_COUNT = 20;
 
     let lastIDMIndexMap: Record<'high' | 'low', number> = {
         high: null,
@@ -168,6 +168,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
     let nonConfirmsOrderblocks = new Map<number, {
         swing: Swing,
         firstCandle: HistoryObject,
+        takeProfit: number;
         firstImbalanceIndex: number,
         lastImbalanceIndex?: number;
         status: 'draft' | 'firstImbalanceIndex' | 'lastImbalanceIndex'
@@ -186,20 +187,13 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
         }
 
         if (swing) {
-            // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
-            // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
-
-            nonConfirmsOrderblocks.set(swing.time, {
-                swing,
-                firstCandle: candles[index],
-                firstImbalanceIndex: index,
-                status: 'draft'
-            })
-
             if(!oneIteration){
                 const lastIDMIndex = lastIDMIndexMap[swing?.side]
                 const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
                 const orderBlock = isOrderblock(candlesBatch, withMove);
+                if(swing.index === 484){
+                    debugger
+                }
                 if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
                     // TODO Не торговать ОБ под IDM
                     const bossIndex = orderBlock.firstImbalanceIndex + index;
@@ -219,13 +213,24 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
 
                     uniqueOrderBlockTimeSet.add(orderBlock.startCandle.time);
                 }
+            } else {
+                // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
+                // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
+                nonConfirmsOrderblocks.set(swing.time, {
+                    swing,
+                    firstCandle: candles[index],
+                    firstImbalanceIndex: index,
+                    status: 'draft',
+                    // Тейк профит до ближайшего максимума
+                    takeProfit: swing.side === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
+                })
             }
         }
 
         // Если есть хотя бы 3 свечки
         if (oneIteration && i >= 2) {
             nonConfirmsOrderblocks.forEach((orderblock, time) => {
-                let {swing, firstCandle, firstImbalanceIndex, status, lastImbalanceIndex} = orderblock;
+                let {swing, firstCandle, firstImbalanceIndex, status, takeProfit, lastImbalanceIndex} = orderblock;
                 // Сначала ищем индекс свечки с которой будем искать имбаланс.
                 // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
                 if (status === 'draft' && firstImbalanceIndex < i && !isInsideBar(firstCandle, candles[i])) {
@@ -305,8 +310,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                         swing,
                         canTrade: true,
                         tradeOrderType: 'limit',
-                        // Тейк профит до ближайшего максимума
-                        takeProfit: orderBlock.type === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
+                        takeProfit
                     })
 
                     uniqueOrderBlockTimeSet.add(orderBlock.startCandle.time);
@@ -406,8 +410,13 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
 
     return orderblocks.map((ob, index) => {
         // Либо смотрим тренд по закрытию ОБ либо если закрытия нет - по открытию.
+        const obStartIndex = ob?.index;
         const obIndex = ob?.endIndex || index;
+        const startTrend = trends[obStartIndex]?.trend;
         const trend = trends[obIndex]?.trend;
+        if(startTrend !== trend){
+            return null;
+        }
         if (trend === 1 && ob?.type === 'low') {
             return ob;
         }
@@ -609,7 +618,8 @@ export const calculateTesting = (data: HistoryObject[], {
     withMove,
     newSMT,
     byTrend,
-    showFake
+    showFake,
+    oneIteration
 }: THConfig) => {
     // <-- Копировать в робота
     let {swings} = tradinghubCalculateSwings(data);
@@ -636,8 +646,10 @@ export const calculateTesting = (data: HistoryObject[], {
         trend,
         withMove,
         newSMT,
-        showFake
+        showFake,
+        oneIteration
     )
+    console.time('o1')
     let o1 = calculateOB(
         swings,
         data,
@@ -647,6 +659,8 @@ export const calculateTesting = (data: HistoryObject[], {
         newSMT,
         showFake
     )
+    console.timeLog('o1')
+    console.time('o2')
     let o2 = calculateOB(
         swings,
         data,
@@ -657,20 +671,25 @@ export const calculateTesting = (data: HistoryObject[], {
         showFake,
         true
     )
-    console.log(JSON.stringify(o1) === JSON.stringify(o2));
+    console.timeLog('o2')
 
-    const print = (orderBlocks: OrderBlock[]) => {
-        console.log(orderBlocks.filter(Boolean).map(o => ({
-            index: o.index,
-            type: o.type,
-            firstImbalanceIndex: o.firstImbalanceIndex,
-            lastImbalanceCandle: new Date(o.lastImbalanceCandle.time * 1000),
-            lastOrderblockCandle: new Date(o.lastOrderblockCandle.time * 1000)
-        })))
+    const mapper = (orderBlocks: OrderBlock[]) => orderBlocks.filter(Boolean).map(o => ({
+        // ...o,
+        ...o,
+        // indes: o.index,
+        // takeProfit: o.takeProfit,
+        // lastImbalanceCandle: new Date(o.lastImbalanceCandle.time * 1000),
+        // lastOrderblockCandle: new Date(o.lastOrderblockCandle.time * 1000)
+    }))
+
+    console.log(JSON.stringify(mapper(o1)) === JSON.stringify(mapper(o2)));
+
+    const print = (name, orderBlocks: OrderBlock[]) => {
+        console.log(name, mapper(orderBlocks.filter(Boolean)))
     }
 
-    print(o1);
-    print(o2);
+    print('fori', o1);
+    print('oneIteration', o2);
 
     if (byTrend) {
         const currentTrend = trend[trend.length - 1]?.trend === 1 ? 'low' : 'high';

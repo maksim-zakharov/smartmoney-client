@@ -39,6 +39,7 @@ export const MultiTestPage = () => {
     const [newStructure, setnewStructure] = useState<boolean>(true);
     const [moreBOS, setmoreBOS] = useState<boolean>(true);
     const [showFake, setfakeBOS] = useState<boolean>(false);
+    const [oneIteration, setoneIteration] = useState<boolean>(false);
     const [newSMT, setnewSMT] = useState<boolean>(true);
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(false);
     const [tradeOB, setTradeOB] = useState<boolean>(true);
@@ -102,7 +103,7 @@ export const MultiTestPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, trandsType, tradeOB, showFake, moreBOS, newStructure, newSMT, showHiddenSwings, withMove, limitOrderTrade, tradeIFC, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, trandsType, tradeOB, showFake, moreBOS, newStructure, oneIteration,newSMT, showHiddenSwings, withMove, limitOrderTrade, tradeIFC, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -112,7 +113,8 @@ export const MultiTestPage = () => {
                 newStructure,
                 showHiddenSwings,
                 newSMT,
-                showFake
+                showFake,
+                oneIteration
             });
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
@@ -157,7 +159,7 @@ export const MultiTestPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [trandsType, limitOrderTrade, tradeOB, tradeIFC,showFake, newStructure, moreBOS, newSMT, showHiddenSwings, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [trandsType, limitOrderTrade, tradeOB, tradeIFC,showFake, newStructure, moreBOS, oneIteration, newSMT, showHiddenSwings, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -404,6 +406,11 @@ export const MultiTestPage = () => {
             <Col>
                 <FormItem>
                     <Checkbox checked={newSMT} onChange={e => setnewSMT(e.target.checked)}>Предугадывать SMT</Checkbox>
+                </FormItem>
+            </Col>
+            <Col>
+                <FormItem>
+                    <Checkbox checked={oneIteration} onChange={e => setoneIteration(e.target.checked)}>OB одной итерацией</Checkbox>
                 </FormItem>
             </Col>
             <Col>
