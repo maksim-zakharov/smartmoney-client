@@ -148,12 +148,10 @@ export class OrderBlock {
  * и только если следующая свеча после структурной дает имбаланс
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
-export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false, oneIteration: boolean = false) => {
+export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false) => {
     let orderblocks: OrderBlock [] = new Array(candles.length).fill(null);
     // Иногда определяеются несколько ОБ на одной свечке, убираем
     let uniqueOrderBlockTimeSet = new Set();
-
-    const MAX_CANDLES_COUNT = 110;
 
     let lastIDMIndexMap: Record<'high' | 'low', number> = {
         high: null,
@@ -187,48 +185,20 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
         }
 
         if (swing) {
-            if(!oneIteration){
-                const lastIDMIndex = lastIDMIndexMap[swing?.side]
-                const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
-                const orderBlock = isOrderblock(candlesBatch, withMove);
-                if(index === 872){
-                    debugger
-                }
-                if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
-                    // TODO Не торговать ОБ под IDM
-                    const bossIndex = orderBlock.firstImbalanceIndex + index;
-                    const hasBoss = Boolean(boses[bossIndex]) && (!showFake || boses[bossIndex].isConfirmed);
-
-                    orderblocks[index] = new OrderBlock({
-                        ...orderBlock,
-                        isSMT: !newSMT && (hasBoss || (lastIDMIndex
-                            && boses[lastIDMIndex].from.index <= i
-                            && boses[lastIDMIndex].to.index > i)),
-                        swing,
-                        canTrade: true,
-                        tradeOrderType: 'limit',
-                        // Тейк профит до ближайшего максимума
-                        takeProfit: orderBlock.type === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
-                    })
-
-                    uniqueOrderBlockTimeSet.add(orderBlock.startCandle.time);
-                }
-            } else {
-                // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
-                // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
-                nonConfirmsOrderblocks.set(swing.time, {
-                    swing,
-                    firstCandle: candles[index],
-                    firstImbalanceIndex: index,
-                    status: 'draft',
-                    // Тейк профит до ближайшего максимума
-                    takeProfit: swing.side === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
-                })
-            }
+            // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
+            // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
+            nonConfirmsOrderblocks.set(swing.time, {
+                swing,
+                firstCandle: candles[index],
+                firstImbalanceIndex: index,
+                status: 'draft',
+                // Тейк профит до ближайшего максимума
+                takeProfit: swing.side === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
+            })
         }
 
         // Если есть хотя бы 3 свечки
-        if (oneIteration && i >= 2) {
+        if (i >= 2) {
             nonConfirmsOrderblocks.forEach((orderblock, time) => {
                 let {swing, firstCandle, firstImbalanceIndex, status, takeProfit, lastImbalanceIndex} = orderblock;
                 // Сначала ищем индекс свечки с которой будем искать имбаланс.
@@ -428,7 +398,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
 };
 
 export const calculateTestingIteration = (candles: HistoryObject[], {
-    moreBOS, showHiddenSwings, newStructure, showIFC,
+    moreBOS, showHiddenSwings, showIFC,
     withMove,
     newSMT,
     byTrend,
@@ -614,28 +584,20 @@ export const calculateTestingIteration = (candles: HistoryObject[], {
 }
 
 export const calculateTesting = (data: HistoryObject[], {
-    moreBOS, showHiddenSwings, newStructure, showIFC,
+    moreBOS, showHiddenSwings, showIFC,
     withMove,
     newSMT,
     byTrend,
-    showFake,
-    oneIteration
+    showFake
 }: THConfig) => {
     // <-- Копировать в робота
     let {swings} = tradinghubCalculateSwings(data);
-    // let {highs, lows, swings: _swings} = calculateTestingIteration(data, {
-    //     moreBOS, showHiddenSwings, newStructure, showIFC,
-    //     withMove,
-    //     newSMT,
-    //     byTrend,
-    //     showFake
-    // });
 
     const {
         trend,
         boses,
         swings: thSwings,
-    } = tradinghubCalculateTrendNew(swings, data, {moreBOS, showHiddenSwings, showFake, showIFC, newStructure});
+    } = tradinghubCalculateTrendNew(swings, data, {moreBOS, showHiddenSwings, showFake, showIFC});
     swings = thSwings;
 
     // Копировать в робота -->
@@ -646,51 +608,8 @@ export const calculateTesting = (data: HistoryObject[], {
         trend,
         withMove,
         newSMT,
-        showFake,
-        oneIteration
-    )
-    console.time('o1')
-    let o1 = calculateOB(
-        swings,
-        data,
-        boses,
-        trend,
-        withMove,
-        newSMT,
         showFake
     )
-    console.timeLog('o1')
-    console.time('o2')
-    let o2 = calculateOB(
-        swings,
-        data,
-        boses,
-        trend,
-        withMove,
-        newSMT,
-        showFake,
-        true
-    )
-    console.timeLog('o2')
-
-    const mapper = (orderBlocks: OrderBlock[]) => orderBlocks.filter(Boolean).map(o => ({
-        // ...o,
-        ...o,
-        index: o.index,
-        // indes: o.index,
-        // takeProfit: o.takeProfit,
-        // lastImbalanceCandle: new Date(o.lastImbalanceCandle.time * 1000),
-        // lastOrderblockCandle: new Date(o.lastOrderblockCandle.time * 1000)
-    }))
-
-    console.log(JSON.stringify(mapper(o1)) === JSON.stringify(mapper(o2)));
-
-    const print = (name, orderBlocks: OrderBlock[]) => {
-        console.log(name, mapper(orderBlocks.filter(Boolean)))
-    }
-
-    print('fori', o1);
-    print('oneIteration', o2);
 
     if (byTrend) {
         const currentTrend = trend[trend.length - 1]?.trend === 1 ? 'low' : 'high';
@@ -703,19 +622,16 @@ export const calculateTesting = (data: HistoryObject[], {
 export interface THConfig {
     withMove?: boolean;
     moreBOS?: boolean;
-    newStructure?: boolean;
     showHiddenSwings?: boolean;
     newSMT?: boolean;
     showIFC?: boolean;
     byTrend?: boolean;
     showFake?: boolean;
-    oneIteration?: boolean;
 }
 
 export const isNotSMT = (obItem: OrderBlock) => !obItem || (!obItem.isSMT && obItem.text !== 'SMT')
 
 export const defaultConfig: THConfig = {
-    newStructure: true,
     moreBOS: true,
     showHiddenSwings: false,
     withMove: false,
@@ -859,100 +775,70 @@ export const deleteEmptySwings = (swings: Swing[]) => {
 
     return swings;
 }
-export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[], boses: Cross[], {
-    newStructure
-}: THConfig) => {
+export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[], boses: Cross[]) => {
     let preLastHighIndex = null;
-    let lastHighIndex = null;
 
     let preLastLowIndex = null;
-    let lastLowIndex = null;
 
     let deletedSwingIndexes = new Set([]);
+    // Алгоритм такой
+    /**
+     * Если в рамках первых двух точек я нахожу следующие 2 точки внутренними, то записываю их внутренними до тех пор, пока хотя бы одна точка не станет внешней.
+     * Если внешняя точка снизу и вторая точка была тоже снизу - из внутренних ищу самую высокую.
+     * Если внешняя точка сверху и вторая точка была тоже сверху - из внутренних ищу самую низкую.
+     *
+     * Остальные удаляются
+     */
+    for (let i = 0; i < swings.length; i++) {
+        // Если произошел пересвип хая, ищем между точками лойный лой
+        if (swings[preLastHighIndex]?.price < candles[i].high) {
+            const batch = swings.slice(preLastHighIndex + 1, i);
+            const lowestSwing = lowestBy(batch, 'price');
 
-    if (!newStructure) {
-        // Это не правильно
-        for (let i = 0; i < swings.length; i++) {
-            if (swings[i] && swings[i].side === 'high' && swings[i].isExtremum) {
-                preLastHighIndex = lastHighIndex;
-                lastHighIndex = i;
-            }
-            if (swings[i] && swings[i].side === 'low' && swings[i].isExtremum) {
-                preLastLowIndex = lastLowIndex;
-                lastLowIndex = i;
-            }
+            // Удаляем все лои которые не лойный лой
+            batch
+                .filter(idx => idx && idx?.index !== lowestSwing?.index)
+                .forEach(idx => {
+                    swings[idx.index].unmarkExtremum()
+                    deletedSwingIndexes.add(idx.index);
+                })
 
-            if (swings[preLastHighIndex]?.price > swings[lastHighIndex]?.price && swings[preLastLowIndex]?.price < swings[lastLowIndex]?.price) {
-                swings[lastLowIndex] = null;
-                swings[lastHighIndex] = null;
-
-                deletedSwingIndexes.add(lastLowIndex)
-                deletedSwingIndexes.add(lastHighIndex)
-
-                lastLowIndex = preLastLowIndex;
-                lastHighIndex = preLastHighIndex;
-            }
+            preLastLowIndex = lowestSwing?.index;
+            preLastHighIndex = null;
         }
-    } else {
-        // Алгоритм такой
-        /**
-         * Если в рамках первых двух точек я нахожу следующие 2 точки внутренними, то записываю их внутренними до тех пор, пока хотя бы одна точка не станет внешней.
-         * Если внешняя точка снизу и вторая точка была тоже снизу - из внутренних ищу самую высокую.
-         * Если внешняя точка сверху и вторая точка была тоже сверху - из внутренних ищу самую низкую.
-         *
-         * Остальные удаляются
-         */
-        for (let i = 0; i < swings.length; i++) {
-            // Если произошел пересвип хая, ищем между точками лойный лой
-            if (swings[preLastHighIndex]?.price < candles[i].high) {
-                const batch = swings.slice(preLastHighIndex + 1, i);
-                const lowestSwing = lowestBy(batch, 'price');
 
-                // Удаляем все лои которые не лойный лой
-                batch
-                    .filter(idx => idx && idx?.index !== lowestSwing?.index)
-                    .forEach(idx => {
-                        swings[idx.index].unmarkExtremum()
-                        deletedSwingIndexes.add(idx.index);
-                    })
+        // Если произошел пересвип лоя, ищем между точками хайный хай
+        if (swings[preLastLowIndex]?.price > candles[i].low) {
+            const batch = swings.slice(preLastLowIndex + 1, i);
+            const highestSwing = highestBy(batch, 'price');
 
-                preLastLowIndex = lowestSwing?.index;
-                preLastHighIndex = null;
+            // Удаляем все хаи которые не хайный хай
+            batch
+                .filter(idx => idx && idx?.index !== highestSwing?.index)
+                .forEach(idx => {
+                    swings[idx.index].unmarkExtremum()
+                    deletedSwingIndexes.add(idx.index);
+                })
+
+            preLastHighIndex = highestSwing?.index;
+            preLastLowIndex = null;
+        }
+
+        // updateHighest
+        if (swings[i] && swings[i].side === 'high' && swings[i].isExtremum) {
+            if (!preLastHighIndex || swings[preLastHighIndex].price < swings[i].price) {
+                preLastHighIndex = i;
             }
 
-            // Если произошел пересвип лоя, ищем между точками хайный хай
-            if (swings[preLastLowIndex]?.price > candles[i].low) {
-                const batch = swings.slice(preLastLowIndex + 1, i);
-                const highestSwing = highestBy(batch, 'price');
+            lastHighIndex = i;
+        }
 
-                // Удаляем все хаи которые не хайный хай
-                batch
-                    .filter(idx => idx && idx?.index !== highestSwing?.index)
-                    .forEach(idx => {
-                        swings[idx.index].unmarkExtremum()
-                        deletedSwingIndexes.add(idx.index);
-                    })
-
-                preLastHighIndex = highestSwing?.index;
-                preLastLowIndex = null;
+        // updateLowest
+        if (swings[i] && swings[i].side === 'low' && swings[i].isExtremum) {
+            if (!preLastLowIndex || swings[preLastLowIndex].price > swings[i].price) {
+                preLastLowIndex = i;
             }
-
-            // updateHighest
-            if (swings[i] && swings[i].side === 'high' && swings[i].isExtremum) {
-                if (!preLastHighIndex || swings[preLastHighIndex].price < swings[i].price) {
-                    preLastHighIndex = i;
-                }
-
-                lastHighIndex = i;
-            }
-
-            // updateLowest
-            if (swings[i] && swings[i].side === 'low' && swings[i].isExtremum) {
-                if (!preLastLowIndex || swings[preLastLowIndex].price > swings[i].price) {
-                    preLastLowIndex = i;
-                }
-                lastLowIndex = i;
-            }
+            lastLowIndex = i;
         }
     }
 
@@ -1295,7 +1181,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
     return boses;
 }
 export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObject[], {
-    moreBOS, showHiddenSwings, showIFC, newStructure, showFake
+    moreBOS, showHiddenSwings, showIFC, showFake
 }: THConfig) => {
 
     let boses = markHHLL(candles, swings)
@@ -1303,9 +1189,7 @@ export const tradinghubCalculateTrendNew = (swings: Swing[], candles: HistoryObj
     if (showIFC)
         swings = markIFC(candles, swings);
 
-    const internal = deleteInternalStructure(swings, candles, boses, {
-        newStructure
-    });
+    const internal = deleteInternalStructure(swings, candles, boses);
     boses = internal.boses;
     swings = internal.swings;
 

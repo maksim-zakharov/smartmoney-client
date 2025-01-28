@@ -121,7 +121,7 @@ export const ChartComponent = props => {
     }
 
     const calcStruct = (data) => {
-        let {swings, trend, boses, orderBlocks} =  calculateTesting(data, {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true});
+        let {swings, trend, boses, orderBlocks} =  calculateTesting(data, {moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true});
 
         const checkShow = (ob) => {
             let result = false;

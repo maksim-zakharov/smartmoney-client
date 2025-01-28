@@ -69,25 +69,23 @@ const NewTestingPage = () => {
 
     let newStruct: THConfig = {};
     if (selectedKey === 'swings') {
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: true};
+        newStruct = {moreBOS: true, showHiddenSwings: true};
     }
     if (selectedKey === 'structure') {
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, showFake: true, oneIteration: true};
+        newStruct = {moreBOS: true, showHiddenSwings: false, showFake: true};
     }
     if(selectedKey === 'orderblocks'){
-        newStruct = {newStructure: true, moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, showFake: true, oneIteration: true};
+        newStruct = {moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, showFake: true};
     }
 
     const currentCandle = data[data.length - 1 - offset];
 
     let {
         swings,
-        highs,
-        lows,
         trend,
         boses,
         orderBlocks
-    } = (newStruct.oneIteration ? calculateTestingIteration : calculateTesting)(data.slice(0, data.length - offset), env === 'prod' ? defaultConfig  : newStruct);
+    } = calculateTesting(data.slice(0, data.length - offset), env === 'prod' ? defaultConfig  : newStruct);
     orderBlocks = orderBlocks.filter(isNotSMT)
 
     // const t = useMemo(() => {
