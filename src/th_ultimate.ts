@@ -172,7 +172,11 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
         status: 'draft' | 'firstImbalanceIndex' | 'lastImbalanceIndex'
     }>([]);
 
+    let obIdxes = new Set<number>([]);
+
     for (let i = 0; i < swings.length; i++) {
+        const candle = candles[i];
+        const trend = trends[i];
         const swing = swings[i];
         const index = swing?.index
 
@@ -197,6 +201,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
             })
         }
 
+        // В этом блоке создаем все ОБ
         // Если есть хотя бы 3 свечки
         if (i >= 2) {
             nonConfirmsOrderblocks.forEach((orderblock, time) => {
@@ -282,6 +287,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                         tradeOrderType: 'limit',
                         takeProfit
                     })
+                    obIdxes.add(swing.index);
 
                     uniqueOrderBlockTimeSet.add(orderBlock.startCandle.time);
                 }
@@ -289,47 +295,13 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
             })
         }
 
-    }
-
-    if (!newSMT) {
-        // Где начинается позиция TODO для теста, в реальности это точка входа
-        for (let i = 0; i < orderblocks.length; i++) {
-            const obItem = orderblocks[i];
-            if (!obItem) {
-                continue;
-            }
-            const startPositionIndex = obItem.index + obItem.imbalanceIndex;
-            for (let j = startPositionIndex; j < candles.length - 1; j++) {
-                const candle = candles[j];
-
-                if (hasHitOB(obItem, candle)) {
-                    obItem.endCandle = candle;
-                    obItem.endIndex = j
-                    obItem.canTrade = true;
-                    break;
-                }
-            }
-        }
-    } else {
-        /**
-         * Итерируюсь по свечкам
-         * Записываю нахожусь ли я внутри IDM. Если да - то это SMT
-         * Записываю новые ОБ и закрываю их если было касание
-         */
-
-        let lastIDMIndexMap: Record<'high' | 'low', number> = {
-            high: null,
-            low: null
-        }
-
-        let obIdxes = new Set<number>([]);
-
-        for (let i = 0; i < candles.length; i++) {
-            const candle = candles[i];
-            const bos = boses[i];
-            const ob = orderblocks[i];
-            const trend = trends[i];
-
+        // В этом блоке по всем OB подтверждаем endCandles
+        if(newSMT){
+            /**
+             * Итерируюсь по свечкам
+             * Записываю нахожусь ли я внутри IDM. Если да - то это SMT
+             * Записываю новые ОБ и закрываю их если было касание
+             */
             obIdxes.forEach(obIdx => {
                 const obItem = orderblocks[obIdx];
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
@@ -359,21 +331,33 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                 }
             })
 
-            if (ob) {
-                obIdxes.add(i);
-            }
-
-            // Если начался IDM
-            if (bos?.isIDM) {
-                lastIDMIndexMap[bos.type] = i;
-            }
-
             if (lastIDMIndexMap['high'] && boses[lastIDMIndexMap['high']].to?.index - 1 === i) {
                 lastIDMIndexMap['high'] = null;
             }
 
             if (lastIDMIndexMap['low'] && boses[lastIDMIndexMap['low']].to?.index - 1 === i) {
                 lastIDMIndexMap['low'] = null;
+            }
+        }
+    }
+
+    if (!newSMT) {
+        // Где начинается позиция TODO для теста, в реальности это точка входа
+        for (let i = 0; i < orderblocks.length; i++) {
+            const obItem = orderblocks[i];
+            if (!obItem) {
+                continue;
+            }
+            const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+            for (let j = startPositionIndex; j < candles.length - 1; j++) {
+                const candle = candles[j];
+
+                if (hasHitOB(obItem, candle)) {
+                    obItem.endCandle = candle;
+                    obItem.endIndex = j
+                    obItem.canTrade = true;
+                    break;
+                }
             }
         }
     }
