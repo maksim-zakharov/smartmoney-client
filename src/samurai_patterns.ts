@@ -1,5 +1,15 @@
 import {calculateTakeProfit} from "./utils";
-import {Cross, hasHitOB, HistoryObject, isIFC, isOrderblock, OrderBlock, Swing, Trend} from "./th_ultimate";
+import {
+    Cross,
+    hasHitOB,
+    HistoryObject,
+    isIFC,
+    isInsideBar,
+    OrderBlock,
+    OrderblockPart,
+    Swing,
+    Trend
+} from "./th_ultimate";
 
 export const calculateSwings = (candles: HistoryObject[]) => {
     const swings: (Swing | null)[] = [];
@@ -312,6 +322,82 @@ const deleteNonConfirmed = (swings: Swing[], boses: Cross[]) => {
     return {swings, boses}
 }
 
+/**
+ * Пытаемся найти ордерблок в массиве свечек candles.
+ * @param candles Массив свечек
+ * @param withMove Фича тогл, Будем ли сдвигать начало Ордерблока если имбаланс найден не между свечой 1 и 3, а между например 2 и 4 и тд.
+ */
+export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false): OrderblockPart | null => {
+    // Для создания ордерблока нужно хотя бы 3 свечки. Поиск имбаланса между свечками 1 и 3.
+    if (candles.length < 3) {
+        return null;
+    }
+
+    let firstImbalanceIndex;
+    let firstCandle = candles[0];
+
+    // Сначала ищем индекс свечки с которой будем искать имбаланс.
+    // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
+    for (let i = 1; i < candles.length; i++) {
+        if (!isInsideBar(firstCandle, candles[i])) {
+            firstImbalanceIndex = i - 1;
+            break;
+        }
+    }
+
+    let lastImbalanceIndex;
+    if (withMove) {
+        for (let i = firstImbalanceIndex; i < candles.length - 2; i++) {
+            if (isImbalance(candles[i], candles[i + 2])) {
+                firstCandle = candles[i];
+                firstImbalanceIndex = i;
+
+                lastImbalanceIndex = i + 2;
+                break;
+            }
+        }
+    } else {
+        for (let i = firstImbalanceIndex; i < candles.length - 1; i++) {
+            if (isImbalance(candles[firstImbalanceIndex], candles[i + 1])) {
+                lastImbalanceIndex = i + 1;
+                break;
+            }
+        }
+    }
+
+    // Это на случай если индексы не нашлись
+    const lastImbalanceCandle = candles[lastImbalanceIndex];
+    if (!lastImbalanceCandle) {
+        return null;
+    }
+
+    const lastOrderblockCandle = candles[firstImbalanceIndex];
+
+    // Жестко нужно для БД, не трогать
+    const time = Math.min(firstCandle.time, lastOrderblockCandle.time);
+    const open = firstCandle.time === time ? firstCandle.open : lastOrderblockCandle.open;
+    const close = firstCandle.time !== time ? firstCandle.close : lastOrderblockCandle.close;
+    const type = lastImbalanceCandle.low > firstCandle.high ? 'low' : lastImbalanceCandle.high < firstCandle.low ? 'high' : null;
+
+    if (type) {
+        return {
+            startCandle: {
+                time,
+                open,
+                close,
+                high: Math.max(firstCandle.high, lastOrderblockCandle.high),
+                low: Math.min(firstCandle.low, lastOrderblockCandle.low),
+            } as HistoryObject,
+            lastOrderblockCandle,
+            lastImbalanceCandle,
+            firstImbalanceIndex,
+            imbalanceIndex: lastImbalanceIndex,
+            type,
+        } as OrderblockPart;
+    }
+
+    return null;
+};
 export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryObject[], withMove: boolean = false) => {
     const MAX_CANDLES_COUNT = 10;
 
@@ -1261,3 +1347,5 @@ export const calculatePositionsByFakeouts = (fakeouts: Swing[], candles: History
 
     return positions;
 }
+const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar.high && candle.low < bar.low;
+const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
