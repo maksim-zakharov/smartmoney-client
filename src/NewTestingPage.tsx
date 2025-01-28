@@ -8,7 +8,7 @@ import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {createRectangle2, fetchCandlesFromAlor} from "./utils.ts";
 import {
-    calculateTesting, calculateTestingIteration,
+    calculateTesting,
     defaultConfig,
     filterNearOrderblock,
     hasNear,
@@ -87,23 +87,6 @@ const NewTestingPage = () => {
         orderBlocks
     } = calculateTesting(data.slice(0, data.length - offset), env === 'prod' ? defaultConfig  : newStruct);
     orderBlocks = orderBlocks.filter(isNotSMT)
-
-    // const t = useMemo(() => {
-    //     if(!data.length){
-    //         return;
-    //     }
-    //     let oldSwings = tradinghubCalculateSwings(data)
-    //     let newSwings = calculateTestingIteration(data, newStruct)
-    //
-    //     // let oldBoses = markHHLL(data, oldSwings.swings)
-    //
-    //     console.log('swings',
-    //         JSON.stringify(oldSwings.swings)
-    //         === JSON.stringify(newSwings.swings)
-    //     );
-    //
-    //     // console.log('markHHLL', JSON.stringify(oldBoses) === JSON.stringify(newSwings.boses));
-    // }, [data])
 
     if(env === 'prod'){
         orderBlocks = filterNearOrderblock(

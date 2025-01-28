@@ -80,6 +80,7 @@ export const SoloTestPage = () => {
         excludeWick: checkboxValues.has('excludeWick'),
         withMove: checkboxValues.has('withMove'),
         moreBOS: checkboxValues.has('moreBOS'),
+        oneIteration: checkboxValues.has('oneIteration'),
         newSMT: checkboxValues.has('newSMT'),
         showHiddenSwings: checkboxValues.has('showHiddenSwings'),
         showRobotOB: checkboxValues.has('showRobotOB'),
@@ -143,7 +144,7 @@ export const SoloTestPage = () => {
         }
 
         return { swings, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [isShortSellPossible, stopPaddingPercent, config.showIFC, config.newSMT, config.showHiddenSwings, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [isShortSellPossible, stopPaddingPercent, config.showIFC, config.newSMT, config.showHiddenSwings, config.oneIteration, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -526,6 +527,7 @@ export const SoloTestPage = () => {
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
             <Checkbox key="moreBOS" value="moreBOS">Более точные BOS</Checkbox>
+            <Checkbox key="oneIteration" value="oneIteration">Свинги одной итерацией</Checkbox>
             <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
             <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
             <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
