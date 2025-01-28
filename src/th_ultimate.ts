@@ -103,7 +103,6 @@ export class Cross {
 }
 
 export class OrderBlock {
-    index: number;
     textTime?: number;
     firstImbalanceIndex: number;
     imbalanceIndex: number;
@@ -122,6 +121,10 @@ export class OrderBlock {
 
     constructor(props: Partial<OrderBlock>) {
         Object.assign(this, props);
+    }
+
+    get index(): number {
+        return this.swing.index;
     }
 
     get time(): number {
@@ -145,7 +148,7 @@ export class OrderBlock {
  * и только если следующая свеча после структурной дает имбаланс
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
-export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false) => {
+export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false, oneIteration: boolean = false) => {
     let orderblocks: OrderBlock [] = new Array(candles.length).fill(null);
     // Иногда определяеются несколько ОБ на одной свечке, убираем
     let uniqueOrderBlockTimeSet = new Set();
@@ -162,6 +165,14 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
         low: null
     }
 
+    let nonConfirmsOrderblocks = new Map<number, {
+        swing: Swing,
+        firstCandle: HistoryObject,
+        firstImbalanceIndex: number,
+        lastImbalanceIndex?: number;
+        status: 'draft' | 'firstImbalanceIndex' | 'lastImbalanceIndex'
+    }>([]);
+
     for (let i = 0; i < swings.length; i++) {
         const swing = swings[i];
         const index = swing?.index
@@ -175,30 +186,135 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
         }
 
         if (swing) {
-            const lastIDMIndex = lastIDMIndexMap[swing?.side]
-            const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
-            const orderBlock = isOrderblock(candlesBatch, withMove);
-            if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
-                // TODO Не торговать ОБ под IDM
-                const bossIndex = orderBlock.firstImbalanceIndex + index;
-                const hasBoss = Boolean(boses[bossIndex]) && (!showFake || boses[bossIndex].isConfirmed);
+            // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
+            // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
 
-                orderblocks[index] = new OrderBlock({
-                    ...orderBlock,
-                    isSMT: !newSMT && (hasBoss || (lastIDMIndex
-                        && boses[lastIDMIndex].from.index <= i
-                        && boses[lastIDMIndex].to.index > i)),
-                    swing,
-                    index,
-                    canTrade: true,
-                    tradeOrderType: 'limit',
-                    // Тейк профит до ближайшего максимума
-                    takeProfit: orderBlock.type === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
-                })
+            nonConfirmsOrderblocks.set(swing.time, {
+                swing,
+                firstCandle: candles[index],
+                firstImbalanceIndex: index,
+                status: 'draft'
+            })
 
-                uniqueOrderBlockTimeSet.add(orderBlock.startCandle.time);
+            if(!oneIteration){
+                const lastIDMIndex = lastIDMIndexMap[swing?.side]
+                const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
+                const orderBlock = isOrderblock(candlesBatch, withMove);
+                if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
+                    // TODO Не торговать ОБ под IDM
+                    const bossIndex = orderBlock.firstImbalanceIndex + index;
+                    const hasBoss = Boolean(boses[bossIndex]) && (!showFake || boses[bossIndex].isConfirmed);
+
+                    orderblocks[index] = new OrderBlock({
+                        ...orderBlock,
+                        isSMT: !newSMT && (hasBoss || (lastIDMIndex
+                            && boses[lastIDMIndex].from.index <= i
+                            && boses[lastIDMIndex].to.index > i)),
+                        swing,
+                        canTrade: true,
+                        tradeOrderType: 'limit',
+                        // Тейк профит до ближайшего максимума
+                        takeProfit: orderBlock.type === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
+                    })
+
+                    uniqueOrderBlockTimeSet.add(orderBlock.startCandle.time);
+                }
             }
         }
+
+        // Если есть хотя бы 3 свечки
+        if (oneIteration && i >= 2) {
+            nonConfirmsOrderblocks.forEach((orderblock, time) => {
+                let {swing, firstCandle, firstImbalanceIndex, status, lastImbalanceIndex} = orderblock;
+                // Сначала ищем индекс свечки с которой будем искать имбаланс.
+                // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
+                if (status === 'draft' && firstImbalanceIndex < i && !isInsideBar(firstCandle, candles[i])) {
+                    firstImbalanceIndex = i - 1;
+                    status = 'firstImbalanceIndex';
+                    nonConfirmsOrderblocks.set(time, {...orderblock, firstImbalanceIndex, status})
+                }
+
+                // Все некст свечи внутренние
+                if (status === 'draft') {
+                    return;
+                }
+
+                const num = withMove ? 2 : 1;
+                const firstImbIndex = firstImbalanceIndex + num
+
+                if (firstImbIndex <= i && isImbalance(candles[firstImbalanceIndex], candles[i])) {
+                    if (withMove) {
+                        firstCandle = candles[firstImbIndex];
+                        firstImbalanceIndex = firstImbIndex;
+                    }
+                    lastImbalanceIndex = i;
+                    status = 'lastImbalanceIndex';
+                    nonConfirmsOrderblocks.set(time, {
+                        ...orderblock,
+                        firstImbalanceIndex,
+                        firstCandle,
+                        lastImbalanceIndex,
+                        status,
+                    })
+                }
+
+                // Это на случай если индексы не нашлись
+                if(status === 'firstImbalanceIndex'){
+                    return;
+                }
+
+                const lastImbalanceCandle = candles[lastImbalanceIndex];
+                const lastOrderblockCandle = candles[firstImbalanceIndex];
+
+                // Жестко нужно для БД, не трогать
+                const open = firstCandle.time === time ? firstCandle.open : lastOrderblockCandle.open;
+                const close = firstCandle.time !== time ? firstCandle.close : lastOrderblockCandle.close;
+                const type = lastImbalanceCandle.low > firstCandle.high ? 'low' : lastImbalanceCandle.high < firstCandle.low ? 'high' : null;
+
+                if (!type) {
+                    nonConfirmsOrderblocks.delete(time);
+                    return;
+                }
+
+                const orderBlock = {
+                    startCandle: {
+                        time,
+                        open,
+                        close,
+                        high: Math.max(firstCandle.high, lastOrderblockCandle.high),
+                        low: Math.min(firstCandle.low, lastOrderblockCandle.low),
+                    } as HistoryObject,
+                    lastOrderblockCandle,
+                    lastImbalanceCandle,
+                    firstImbalanceIndex: firstImbalanceIndex - swing.index,
+                    imbalanceIndex: lastImbalanceIndex - swing.index,
+                    type,
+                } as OrderblockPart;
+
+                const lastIDMIndex = lastIDMIndexMap[swing?.side]
+                if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
+                    // TODO Не торговать ОБ под IDM
+                    const bossIndex = orderBlock.firstImbalanceIndex + index;
+                    const hasBoss = Boolean(boses[bossIndex]) && (!showFake || boses[bossIndex].isConfirmed);
+
+                    orderblocks[swing.index] = new OrderBlock({
+                        ...orderBlock,
+                        isSMT: !newSMT && (hasBoss || (lastIDMIndex
+                            && boses[lastIDMIndex].from.index <= i
+                            && boses[lastIDMIndex].to.index > i)),
+                        swing,
+                        canTrade: true,
+                        tradeOrderType: 'limit',
+                        // Тейк профит до ближайшего максимума
+                        takeProfit: orderBlock.type === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
+                    })
+
+                    uniqueOrderBlockTimeSet.add(orderBlock.startCandle.time);
+                }
+                nonConfirmsOrderblocks.delete(time);
+            })
+        }
+
     }
 
     if (!newSMT) {
@@ -522,6 +638,39 @@ export const calculateTesting = (data: HistoryObject[], {
         newSMT,
         showFake
     )
+    let o1 = calculateOB(
+        swings,
+        data,
+        boses,
+        trend,
+        withMove,
+        newSMT,
+        showFake
+    )
+    let o2 = calculateOB(
+        swings,
+        data,
+        boses,
+        trend,
+        withMove,
+        newSMT,
+        showFake,
+        true
+    )
+    console.log(JSON.stringify(o1) === JSON.stringify(o2));
+
+    const print = (orderBlocks: OrderBlock[]) => {
+        console.log(orderBlocks.filter(Boolean).map(o => ({
+            index: o.index,
+            type: o.type,
+            firstImbalanceIndex: o.firstImbalanceIndex,
+            lastImbalanceCandle: new Date(o.lastImbalanceCandle.time * 1000),
+            lastOrderblockCandle: new Date(o.lastOrderblockCandle.time * 1000)
+        })))
+    }
+
+    print(o1);
+    print(o2);
 
     if (byTrend) {
         const currentTrend = trend[trend.length - 1]?.trend === 1 ? 'low' : 'high';
@@ -1223,7 +1372,7 @@ export const isIFC = (side: Swing['side'], candle: HistoryObject) => {
 }
 export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar.high && candle.low < bar.low;
 
-type OrderblockPart = Pick<OrderBlock, 'type' | 'lastOrderblockCandle' | 'lastImbalanceCandle'  | 'firstImbalanceIndex' | 'imbalanceIndex' | 'startCandle'>
+type OrderblockPart = Pick<OrderBlock, 'type' | 'lastOrderblockCandle' | 'lastImbalanceCandle' | 'firstImbalanceIndex' | 'imbalanceIndex' | 'startCandle'>
 
 /**
  * Пытаемся найти ордерблок в массиве свечек candles.
