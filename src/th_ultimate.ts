@@ -153,7 +153,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
     // Иногда определяеются несколько ОБ на одной свечке, убираем
     let uniqueOrderBlockTimeSet = new Set();
 
-    const MAX_CANDLES_COUNT = 20;
+    const MAX_CANDLES_COUNT = 110;
 
     let lastIDMIndexMap: Record<'high' | 'low', number> = {
         high: null,
@@ -191,7 +191,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                 const lastIDMIndex = lastIDMIndexMap[swing?.side]
                 const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
                 const orderBlock = isOrderblock(candlesBatch, withMove);
-                if(swing.index === 484){
+                if(index === 872){
                     debugger
                 }
                 if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
@@ -676,6 +676,7 @@ export const calculateTesting = (data: HistoryObject[], {
     const mapper = (orderBlocks: OrderBlock[]) => orderBlocks.filter(Boolean).map(o => ({
         // ...o,
         ...o,
+        index: o.index,
         // indes: o.index,
         // takeProfit: o.takeProfit,
         // lastImbalanceCandle: new Date(o.lastImbalanceCandle.time * 1000),
