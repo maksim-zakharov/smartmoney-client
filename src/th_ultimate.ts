@@ -664,6 +664,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
     }
 
     let prevCandleIndex = 0
+    let lastSwingIndex = -1;
     for (let i = 1; i < candles.length - 1; i++) {
         const prevCandle = candles[prevCandleIndex];
         const currentCandle = candles[i];
@@ -703,41 +704,27 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[]) => {
             })
             swings[i] = lowPullback ? swing : swings[i];
         }
+
+        // фильтруем вершины подряд
+        const swing = swings[i];
+        if (swing) {
+            if (lastSwingIndex > -1 && swing.side === swings[lastSwingIndex]?.side) {
+                const updateHigh = swing.side === 'high' && swing.price > swings[lastSwingIndex]?.price;
+                const updateLow = swing.side === 'low' && swing.price < swings[lastSwingIndex]?.price;
+                if (swing.side === 'high') {
+                    // Обновляем хай
+                    if (updateHigh || updateLow) {
+                        swings[lastSwingIndex] = null;
+                        lastSwingIndex = i;
+                    }
+                }
+            } else {
+                lastSwingIndex = i;
+            }
+        }
+
         prevCandleIndex = i;
         i += diff;
-    }
-
-    let lastSwingIndex = -1;
-    // фильтруем вершины подряд
-    for (let i = 0; i < swings.length; i++) {
-        if (!swings[i]) {
-            continue;
-        }
-        const swing = swings[i];
-        if (lastSwingIndex === -1 || swing.side !== swings[lastSwingIndex]?.side) {
-            lastSwingIndex = i;
-            continue;
-        }
-        if (swing.side === 'high') {
-            // Обновляем хай
-            if (swing.price > swings[lastSwingIndex]?.price) {
-                swings[lastSwingIndex] = null;
-                lastSwingIndex = i;
-            } else if (!swings[i]) {
-                // Убираем хай подряд
-                swings[i] = null;
-            }
-        }
-        if (swing.side === 'low') {
-            // Обновляем лой
-            if (swing.price < swings[lastSwingIndex]?.price) {
-                swings[lastSwingIndex] = null;
-                lastSwingIndex = i;
-            } else if (!swings[i]) {
-                // Обновляем лой подряд
-                swings[i] = null;
-            }
-        }
     }
 
     return {swings};
