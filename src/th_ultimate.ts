@@ -118,6 +118,7 @@ export class OrderBlock {
     tradeOrderType?: 'limit' | 'market'
     takeProfit?: number;
     swing: Swing;
+    symbol?: string;
 
     constructor(props: Partial<OrderBlock>) {
         Object.assign(this, props);
