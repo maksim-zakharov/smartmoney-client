@@ -492,12 +492,12 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                 const obItem = {
                     type: orderBlock.type,
                     index,
-                    time: orderBlock.orderblock.time,
+                    time: orderBlock.startCandle.time,
                     lastOrderblockCandle: orderBlock.lastOrderblockCandle,
                     lastImbalanceCandle: orderBlock.lastImbalanceCandle,
                     firstImbalanceIndex: orderBlock.firstImbalanceIndex,
                     imbalanceIndex: orderBlock.imbalanceIndex,
-                    startCandle: orderBlock.orderblock
+                    startCandle: orderBlock.startCandle
                 } as any
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
                 for (let j = startPositionIndex; j < candles.length - 1; j++) {
@@ -523,12 +523,12 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                 const obItem = {
                     type: orderBlock.type,
                     index,
-                    time: orderBlock.orderblock.time,
+                    time: orderBlock.startCandle.time,
                     lastOrderblockCandle: orderBlock.lastOrderblockCandle,
                     lastImbalanceCandle: orderBlock.lastImbalanceCandle,
                     firstImbalanceIndex: orderBlock.firstImbalanceIndex,
                     imbalanceIndex: orderBlock.imbalanceIndex,
-                    startCandle: orderBlock.orderblock
+                    startCandle: orderBlock.startCandle
                 } as any
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
                 for (let j = startPositionIndex; j < candles.length - 1; j++) {

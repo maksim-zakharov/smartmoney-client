@@ -124,14 +124,14 @@ export class OrderBlock {
         Object.assign(this, props);
     }
 
-    get time(): number{
+    get time(): number {
         return this.startCandle.time;
     }
 
-    get text(): string{
-        if(this.swing.isExtremum)
+    get text(): string {
+        if (this.swing.isExtremum)
             return 'Ex OB';
-        if(this.isSMT)
+        if (this.isSMT)
             return 'SMT';
         return 'OB';
     }
@@ -178,30 +178,25 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
             const lastIDMIndex = lastIDMIndexMap[swing?.side]
             const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
             const orderBlock = isOrderblock(candlesBatch, withMove);
-            if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.orderblock.time)) {
+            if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
                 // TODO Не торговать ОБ под IDM
                 const bossIndex = orderBlock.firstImbalanceIndex + index;
                 const hasBoss = Boolean(boses[bossIndex]) && (!showFake || boses[bossIndex].isConfirmed);
 
                 orderblocks[index] = new OrderBlock({
+                    ...orderBlock,
                     isSMT: !newSMT && (hasBoss || (lastIDMIndex
                         && boses[lastIDMIndex].from.index <= i
                         && boses[lastIDMIndex].to.index > i)),
                     swing,
-                    type: orderBlock.type,
                     index,
-                    lastOrderblockCandle: orderBlock.lastOrderblockCandle,
-                    lastImbalanceCandle: orderBlock.lastImbalanceCandle,
-                    firstImbalanceIndex: orderBlock.firstImbalanceIndex,
-                    imbalanceIndex: orderBlock.imbalanceIndex,
-                    startCandle: orderBlock.orderblock,
                     canTrade: true,
                     tradeOrderType: 'limit',
                     // Тейк профит до ближайшего максимума
                     takeProfit: orderBlock.type === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
                 })
 
-                uniqueOrderBlockTimeSet.add(orderBlock.orderblock.time);
+                uniqueOrderBlockTimeSet.add(orderBlock.startCandle.time);
             }
         }
     }
@@ -321,16 +316,16 @@ export const calculateTestingIteration = (candles: HistoryObject[], {
 
     // markHHLL
     let boses: Cross[] = new Array(candles.length).fill(null);
-    let lastExtremumMap: Record<'high' | 'low',  (Swing & { idmSwing?: Swing })> = {
+    let lastExtremumMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
         high: null,
         low: null
     }
-    let extraExtremumMap: Record<'high' | 'low',  (Swing & { idmSwing?: Swing })> = {
+    let extraExtremumMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
         high: null,
         low: null
     }
 
-    let confirmIndexMap: Record<'high' | 'low',  number> = {
+    let confirmIndexMap: Record<'high' | 'low', number> = {
         high: -1,
         low: -1
     }
@@ -475,7 +470,7 @@ export const calculateTestingIteration = (candles: HistoryObject[], {
         // updateLast(swings[i])
 
         prevCandleIndex = currentSwingIndex;
-        if(!isNextInsideBar){
+        if (!isNextInsideBar) {
             currentSwingIndex = null;
         }
     }
@@ -801,17 +796,17 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
 export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     let boses: Cross[] = new Array(candles.length).fill(null);
 
-    let lastExtremumMap: Record<'high' | 'low',  (Swing & { idmSwing?: Swing })> = {
+    let lastExtremumMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
         high: null,
         low: null
     }
 
-    let extraExtremumMap: Record<'high' | 'low',  (Swing & { idmSwing?: Swing })> = {
+    let extraExtremumMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
         high: null,
         low: null
     }
 
-    let confirmIndexMap: Record<'high' | 'low',  number> = {
+    let confirmIndexMap: Record<'high' | 'low', number> = {
         high: -1,
         low: -1
     }
@@ -905,8 +900,8 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     }
 
     const updateLast = (swing: Swing) => {
-        if(swing)
-        lastExtremumMap[swing.side] = swing;
+        if (swing)
+            lastExtremumMap[swing.side] = swing;
     }
 
     for (let i = 0; i < swings.length; i++) {
@@ -1227,13 +1222,25 @@ export const isIFC = (side: Swing['side'], candle: HistoryObject) => {
         || (side === 'low' && upWick < downWick && body < downWick)
 }
 export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar.high && candle.low < bar.low;
-export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false) => {
+
+type OrderblockPart = Pick<OrderBlock, 'type' | 'lastOrderblockCandle' | 'lastImbalanceCandle'  | 'firstImbalanceIndex' | 'imbalanceIndex' | 'startCandle'>
+
+/**
+ * Пытаемся найти ордерблок в массиве свечек candles.
+ * @param candles Массив свечек
+ * @param withMove Фича тогл, Будем ли сдвигать начало Ордерблока если имбаланс найден не между свечой 1 и 3, а между например 2 и 4 и тд.
+ */
+export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false): OrderblockPart | null => {
+    // Для создания ордерблока нужно хотя бы 3 свечки. Поиск имбаланса между свечками 1 и 3.
     if (candles.length < 3) {
         return null;
     }
+
     let firstImbalanceIndex;
     let firstCandle = candles[0];
 
+    // Сначала ищем индекс свечки с которой будем искать имбаланс.
+    // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
     for (let i = 1; i < candles.length; i++) {
         if (!isInsideBar(firstCandle, candles[i])) {
             firstImbalanceIndex = i - 1;
@@ -1243,7 +1250,6 @@ export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false
 
     let lastImbalanceIndex;
     if (withMove) {
-        // Берем не только первый имбаланс, а ближайший из 10 свечей
         for (let i = firstImbalanceIndex; i < candles.length - 2; i++) {
             if (isImbalance(candles[i], candles[i + 2])) {
                 firstCandle = candles[i];
@@ -1254,7 +1260,6 @@ export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false
             }
         }
     } else {
-        // Берем не только первый имбаланс, а ближайший из 10 свечей
         for (let i = firstImbalanceIndex; i < candles.length - 1; i++) {
             if (isImbalance(candles[firstImbalanceIndex], candles[i + 1])) {
                 lastImbalanceIndex = i + 1;
@@ -1263,20 +1268,23 @@ export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false
         }
     }
 
+    // Это на случай если индексы не нашлись
     const lastImbalanceCandle = candles[lastImbalanceIndex];
-    const lastOrderblockCandle = candles[firstImbalanceIndex];
     if (!lastImbalanceCandle) {
         return null;
     }
+
+    const lastOrderblockCandle = candles[firstImbalanceIndex];
 
     // Жестко нужно для БД, не трогать
     const time = Math.min(firstCandle.time, lastOrderblockCandle.time);
     const open = firstCandle.time === time ? firstCandle.open : lastOrderblockCandle.open;
     const close = firstCandle.time !== time ? firstCandle.close : lastOrderblockCandle.close;
+    const type = lastImbalanceCandle.low > firstCandle.high ? 'low' : lastImbalanceCandle.high < firstCandle.low ? 'high' : null;
 
-    if (lastImbalanceCandle.low > firstCandle.high) {
+    if (type) {
         return {
-            orderblock: {
+            startCandle: {
                 time,
                 open,
                 close,
@@ -1287,25 +1295,10 @@ export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false
             lastImbalanceCandle,
             firstImbalanceIndex,
             imbalanceIndex: lastImbalanceIndex,
-            type: 'low',
-        };
+            type,
+        } as OrderblockPart;
     }
-    if (lastImbalanceCandle.high < firstCandle.low) {
-        return {
-            orderblock: {
-                time,
-                open,
-                close,
-                high: Math.max(firstCandle.high, lastOrderblockCandle.high),
-                low: Math.min(firstCandle.low, lastOrderblockCandle.low),
-            } as HistoryObject,
-            lastOrderblockCandle,
-            lastImbalanceCandle,
-            firstImbalanceIndex,
-            imbalanceIndex: lastImbalanceIndex,
-            type: 'high',
-        };
-    }
+
     return null;
 };
 
