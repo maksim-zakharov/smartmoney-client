@@ -439,7 +439,8 @@ export const defaultConfig: THConfig = {
     showHiddenSwings: false,
     withMove: false,
     byTrend: true,
-    showFake: false
+    showFake: false,
+    oneIteration: true
 }
 
 // Точка входа в торговлю
