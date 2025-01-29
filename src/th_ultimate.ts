@@ -858,11 +858,126 @@ export const markHHLL = (candles: HistoryObject[], swings: Swing[]) => {
     return boses;
 }
 
+const updateLastSwing = (i: number, type: 'high' | 'low', swings: Swing[]
+                         , liquidityCandleMap: Record<'high' | 'low', HistoryObject>,
+                         prelastBosSwingMap: Record<'high' | 'low', number>,
+                         lastBosSwingMap: Record<'high' | 'low', number>,
+                         lastBosSwingMapSet: Record<'high' | 'low', Set<number>>,
+                         moreBOS: boolean = false
+) => {
+    if (swings[i] && swings[i].side === type && swings[i].isExtremum) {
+        prelastBosSwingMap[type] = lastBosSwingMap[type];
+        lastBosSwingMap[type] = i;
+
+        if (moreBOS) {
+            // Если новый бос более хайный (или более лольный) - то удаляем прошлый бос
+            if (type === 'high' && swings[prelastBosSwingMap[type]] && swings[lastBosSwingMap[type]].price > swings[prelastBosSwingMap[type]].price) {
+                lastBosSwingMapSet[type].delete(prelastBosSwingMap[type])
+            }
+            if (type === 'low' && swings[prelastBosSwingMap[type]] && swings[lastBosSwingMap[type]].price < swings[prelastBosSwingMap[type]].price) {
+                lastBosSwingMapSet[type].delete(prelastBosSwingMap[type])
+            }
+
+            lastBosSwingMapSet[type].add(lastBosSwingMap[type])
+        } else {
+            liquidityCandleMap[type] = null;
+        }
+    }
+}
+
+const confirmBOS = (i: number, type: 'high' | 'low',
+                    candles: HistoryObject[],
+                    swings: Swing[],
+                    boses: Cross[],
+                    lastBosSwing: number,
+                    lastCrossBosSwing: number,
+                    isLastCandle: boolean,
+                    liquidityCandleMapMap: Record<'high' | 'low', Map<number, HistoryObject>>,
+                    liquidityCandleMap: Record<'high' | 'low', HistoryObject>,
+                    lastBosSwingMapSet: Record<'high' | 'low', Set<number>>,
+                    deleteIDM: Set<number>,
+                    moreBOS: boolean = false,
+                    showFake: boolean = false
+) => {
+    if (lastBosSwing && (!boses[lastBosSwing] || boses[lastBosSwing].isIDM)) {
+        let from = swings[lastBosSwing];
+        let liquidityCandle = (moreBOS ? liquidityCandleMapMap[type].get(lastBosSwing) : liquidityCandleMap[type]) ?? candles[lastBosSwing];
+        let to: Swing = isLastCandle ? new Swing({index: i, time: candles[i].time, price: candles[i].close}) : null;
+        let isConfirmed = false;
+        let isSwipedLiquidity = false;
+
+        const isTakenOutLiquidity = hasTakenOutLiquidity(type, liquidityCandle, candles[i]);
+        // Если сделали пересвип тенью
+        if (isTakenOutLiquidity) {
+            if (showFake) {
+                isSwipedLiquidity = true;
+                to = new Swing({index: i, time: candles[i].time, price: candles[i].close});
+            }
+            const isClose = hasClose(type, liquidityCandle, candles[i]);
+            // Если закрылись выше прошлой точки
+            if (isClose) {
+                if (!showFake) {
+                    to = new Swing({index: i, time: candles[i].time, price: candles[i].close});
+                }
+                isConfirmed = true;
+            } else {
+                // Если закрылись ниже а пересвип был - то теперь нужно закрыться выше нового пересвипа
+                if (moreBOS) {
+                    liquidityCandleMapMap[type].set(lastBosSwing, candles[i])
+                } else {
+                    liquidityCandleMap[type] = candles[i];
+                }
+
+                if (showFake) {
+                    swings[i] = new Swing({
+                        side: type,
+                        time: candles[i].time,
+                        price: candles[i][type],
+                        index: i
+                    })
+                    swings[i].markExtremum();
+
+                    swings[lastBosSwing].unmarkExtremum();
+                    deleteIDM.add(lastBosSwing);
+                }
+            }
+        }
+
+        if (to) {
+            boses[lastBosSwing] = new Cross({
+                from,
+                to,
+                type,
+                isBOS: true,
+                isSwipedLiquidity,
+                getCandles: () => candles,
+                extremum: swings[lastCrossBosSwing],
+                isConfirmed
+            })
+
+            if (showFake && boses[lastBosSwing].isSwipedLiquidity && boses[lastBosSwing].isConfirmed)
+                boses[lastBosSwing]?.extremum?.unmarkExtremum();
+
+            deleteIDM.add(lastCrossBosSwing);
+
+            if (moreBOS) {
+                lastBosSwingMapSet[type].delete(lastBosSwing)
+            }
+
+            if (moreBOS) {
+                liquidityCandleMapMap[type].delete(lastBosSwing)
+            } else {
+                liquidityCandleMap[type] = null;
+            }
+        }
+    }
+}
+const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
+
+const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
+
 // Рисует BOS если LL или HH перекрываются
 export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[], moreBOS: boolean = false, showFake: boolean = false) => {
-    const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
-
-    const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
     let liquidityCandleMap: Record<'high' | 'low', HistoryObject> = {
         high: null,
@@ -878,7 +993,7 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
         low: null
     }
 
-    let deleteIDM = new Set([]);
+    let deleteIDM = new Set<number>([]);
 
     let lastBosSwingMapSet: Record<'high' | 'low', Set<number>> = {
         high: new Set<number>([]),
@@ -888,102 +1003,6 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
     let liquidityCandleMapMap: Record<'high' | 'low', Map<number, HistoryObject>> = {
         high: new Map<number, HistoryObject>([]),
         low: new Map<number, HistoryObject>([])
-    }
-
-    const updateLastSwing = (i: number, type: 'high' | 'low') => {
-        if (swings[i] && swings[i].side === type && swings[i].isExtremum) {
-            prelastBosSwingMap[type] = lastBosSwingMap[type];
-            lastBosSwingMap[type] = i;
-
-            if (moreBOS) {
-                // Если новый бос более хайный (или более лольный) - то удаляем прошлый бос
-                if (type === 'high' && swings[prelastBosSwingMap[type]] && swings[lastBosSwingMap[type]].price > swings[prelastBosSwingMap[type]].price) {
-                    lastBosSwingMapSet[type].delete(prelastBosSwingMap[type])
-                }
-                if (type === 'low' && swings[prelastBosSwingMap[type]] && swings[lastBosSwingMap[type]].price < swings[prelastBosSwingMap[type]].price) {
-                    lastBosSwingMapSet[type].delete(prelastBosSwingMap[type])
-                }
-
-                lastBosSwingMapSet[type].add(lastBosSwingMap[type])
-            } else {
-                liquidityCandleMap[type] = null;
-            }
-        }
-    }
-
-    const confirmBOS = (i: number, lastBosSwing: number, lastCrossBosSwing: number, type: 'high' | 'low', isLastCandle: boolean) => {
-        if (lastBosSwing && (!boses[lastBosSwing] || boses[lastBosSwing].isIDM)) {
-            let from = swings[lastBosSwing];
-            let liquidityCandle = (moreBOS ? liquidityCandleMapMap[type].get(lastBosSwing) : liquidityCandleMap[type]) ?? candles[lastBosSwing];
-            let to: Swing = isLastCandle ? new Swing({index: i, time: candles[i].time, price: candles[i].close}) : null;
-            let isConfirmed = false;
-            let isSwipedLiquidity = false;
-
-            const isTakenOutLiquidity = hasTakenOutLiquidity(type, liquidityCandle, candles[i]);
-            // Если сделали пересвип тенью
-            if (isTakenOutLiquidity) {
-                if (showFake) {
-                    isSwipedLiquidity = true;
-                    to = new Swing({index: i, time: candles[i].time, price: candles[i].close});
-                }
-                const isClose = hasClose(type, liquidityCandle, candles[i]);
-                // Если закрылись выше прошлой точки
-                if (isClose) {
-                    if (!showFake) {
-                        to = new Swing({index: i, time: candles[i].time, price: candles[i].close});
-                    }
-                    isConfirmed = true;
-                } else {
-                    // Если закрылись ниже а пересвип был - то теперь нужно закрыться выше нового пересвипа
-                    if (moreBOS) {
-                        liquidityCandleMapMap[type].set(lastBosSwing, candles[i])
-                    } else {
-                        liquidityCandleMap[type] = candles[i];
-                    }
-
-                    if (showFake) {
-                        swings[i] = new Swing({
-                            side: type,
-                            time: candles[i].time,
-                            price: candles[i][type],
-                            index: i
-                        })
-                        swings[i].markExtremum();
-
-                        swings[lastBosSwing].unmarkExtremum();
-                        deleteIDM.add(lastBosSwing);
-                    }
-                }
-            }
-
-            if (to) {
-                boses[lastBosSwing] = new Cross({
-                    from,
-                    to,
-                    type,
-                    isBOS: true,
-                    isSwipedLiquidity,
-                    getCandles: () => candles,
-                    extremum: swings[lastCrossBosSwing],
-                    isConfirmed
-                })
-
-                if (showFake && boses[lastBosSwing].isSwipedLiquidity && boses[lastBosSwing].isConfirmed)
-                    boses[lastBosSwing]?.extremum?.unmarkExtremum();
-
-                deleteIDM.add(lastCrossBosSwing);
-
-                if (moreBOS) {
-                    lastBosSwingMapSet[type].delete(lastBosSwing)
-                }
-
-                if (moreBOS) {
-                    liquidityCandleMapMap[type].delete(lastBosSwing)
-                } else {
-                    liquidityCandleMap[type] = null;
-                }
-            }
-        }
     }
 
     for (let i = 0; i < candles.length; i++) {
@@ -1014,20 +1033,20 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
         // BOS сверху
         if (moreBOS) {
-            lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['low'], 'high', i === candles.length - 1))
+            lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, 'high', candles, swings, boses, lastBosSwing, lastBosSwingMap['low'], i === candles.length - 1, liquidityCandleMapMap, liquidityCandleMap, lastBosSwingMapSet, deleteIDM, moreBOS, showFake))
         } else {
-            confirmBOS(i, lastBosSwingMap['high'], lastBosSwingMap['low'], 'high', i === candles.length - 1);
+            confirmBOS(i, 'high', candles, swings, boses, lastBosSwingMap['high'], lastBosSwingMap['low'], i === candles.length - 1, liquidityCandleMapMap, liquidityCandleMap, lastBosSwingMapSet, deleteIDM, moreBOS, showFake);
         }
 
         // BOS снизу
         if (moreBOS) {
-            lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, lastBosSwing, lastBosSwingMap['high'], 'low', i === candles.length - 1))
+            lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, 'low',candles, swings, boses, lastBosSwing, lastBosSwingMap['high'], i === candles.length - 1, liquidityCandleMapMap, liquidityCandleMap, lastBosSwingMapSet, deleteIDM, moreBOS, showFake))
         } else {
-            confirmBOS(i, lastBosSwingMap['low'], lastBosSwingMap['high'], 'low', i === candles.length - 1);
+            confirmBOS(i, 'low', candles, swings, boses, lastBosSwingMap['low'], lastBosSwingMap['high'], i === candles.length - 1, liquidityCandleMapMap, liquidityCandleMap, lastBosSwingMapSet, deleteIDM, moreBOS, showFake);
         }
 
-        updateLastSwing(i, 'high');
-        updateLastSwing(i, 'low');
+        updateLastSwing(i, 'high', swings, liquidityCandleMap, prelastBosSwingMap, lastBosSwingMap, lastBosSwingMapSet, moreBOS);
+        updateLastSwing(i, 'low', swings, liquidityCandleMap, prelastBosSwingMap, lastBosSwingMap, lastBosSwingMapSet, moreBOS);
     }
 
     boses
