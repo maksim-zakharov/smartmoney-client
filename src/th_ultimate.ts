@@ -1,3 +1,5 @@
+
+
 export interface HistoryObject {
     high: number;
     low: number;
@@ -239,7 +241,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                 }
 
                 // Это на случай если индексы не нашлись
-                if(status === 'firstImbalanceIndex'){
+                if (status === 'firstImbalanceIndex') {
                     return;
                 }
 
@@ -296,7 +298,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
         }
 
         // В этом блоке по всем OB подтверждаем endCandles
-        if(newSMT){
+        if (newSMT) {
             /**
              * Итерируюсь по свечкам
              * Записываю нахожусь ли я внутри IDM. Если да - то это SMT
@@ -368,7 +370,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
         const obIndex = ob?.endIndex || index;
         const startTrend = trends[obStartIndex]?.trend;
         const trend = trends[obIndex]?.trend;
-        if(startTrend !== trend){
+        if (startTrend !== trend) {
             return null;
         }
         if (trend === 1 && ob?.type === 'low') {
@@ -452,19 +454,79 @@ export const calculateProduction = (data: HistoryObject[]) => {
 };
 
 const hasHighValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle?: HistoryObject) => {
-    if (leftCandle.high <= currentCandle.high && (!nextCandle || nextCandle.high < currentCandle.high)
+    if (
+        // Текущая свеча пересвипнула предыдущую
+        leftCandle.high < currentCandle.high
+        // И следующий свечи либо нет либо ее хай ниже текущего
+        && (!nextCandle || nextCandle.high <= currentCandle.high)
     ) {
         return 'high'
     }
     return '';
 };
 const hasLowValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle?: HistoryObject) => {
-    if (leftCandle.low >= currentCandle.low && (!nextCandle || nextCandle.low > currentCandle.low)
+    if (leftCandle.low > currentCandle.low && (!nextCandle || nextCandle.low >= currentCandle.low)
     ) {
         return 'low'
     }
     return '';
 };
+
+const tryCalculatePullback = (index: number, type: 'high' | 'low', diff: number, prevCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject, swings: Swing[]) => {
+    const funcMap: Record<'high' | 'low', Function> = {
+        high: hasHighValidPullback,
+        low: hasLowValidPullback
+    }
+
+    const mainFunc = funcMap[type];
+    const subFunc = funcMap[type === 'high' ? 'low' : 'high'];
+
+    // diff может быть если между текущей свечой и последней есть еще свечки.
+    // В таком случае нужно проверить что последняя свеча не является внутренней для текущей свечи (пересвипнула снизу)
+    if (!diff || subFunc(currentCandle, nextCandle)) {
+        const highPullback = mainFunc(prevCandle, currentCandle, nextCandle)
+        const swing = new Swing({
+            side: type,
+            time: currentCandle.time,
+            price: currentCandle[type],
+            index
+        })
+        swings[index] = highPullback ? swing : swings[index];
+    }
+}
+
+const filterDoubleSwings = (i: number, lastSwingIndex: number, updateLastSwingIndex: (val: number) => void, swings: Swing[]) => {
+    // фильтруем вершины подряд
+    const prevSwing = lastSwingIndex > -1 ? swings[lastSwingIndex] : null;
+    const curSwing = swings[i];
+    let setIndex = i;
+    if (curSwing) {
+        if (curSwing.side === prevSwing?.side) {
+            let toDeleteIndex;
+            if (curSwing.side === 'high') {
+                if (curSwing.price >= prevSwing?.price) {
+                    toDeleteIndex = lastSwingIndex;
+                } else if (curSwing.price < prevSwing?.price) {
+                    toDeleteIndex = i;
+                    setIndex = lastSwingIndex;
+                }
+            }
+            if (curSwing.side === 'low') {
+                if (curSwing.price <= prevSwing?.price) {
+                    toDeleteIndex = lastSwingIndex;
+                } else if (curSwing.price > prevSwing?.price) {
+                    toDeleteIndex = i;
+                    setIndex = lastSwingIndex;
+                }
+            }
+            // Обновляем хай
+            if (toDeleteIndex) {
+                swings[toDeleteIndex] = null;
+            }
+        }
+        updateLastSwingIndex(setIndex);
+    }
+}
 
 export const tradinghubCalculateSwings = (candles: HistoryObject[], oneIteration: boolean = false) => {
     const swings: (Swing | null)[] = new Array(candles.length).fill(null);
@@ -486,103 +548,68 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[], oneIteration
         nextIndex: number,
         status: 'draft' | 'nextIndex'
     }>();
-    for (let i = 1; i < candles.length - 1; i++) {
-        if(oneIteration){
-            if (isInsideBar(candles[i - 1], candles[i])) {
+    for (let rootIndex = 1; rootIndex < candles.length - 1; rootIndex++) {
+        if (oneIteration) {
+            // Если текущая свечка внутренняя для предыдущей - идем дальше
+            if (isInsideBar(candles[rootIndex - 1], candles[rootIndex])) {
                 continue;
             }
-            processingSwings.set(i, {
-                currentCandle: candles[i],
-                nextIndex: i + 1,
+            // Если текущая свечка не внутренняя - начинаем поиск свинга
+            processingSwings.set(rootIndex, {
+                currentCandle: candles[rootIndex],
+                nextIndex: rootIndex + 1,
                 status: 'draft'
             });
 
-            processingSwings.forEach((sw, index) => {
-                let prevCandle = candles[index - 1];
+            for (let i = 0; i < processingSwings.size; i++) {
+                const [processingIndex, sw] = Array.from(processingSwings)[i];
+                // }
+                // processingSwings.forEach((sw, processingIndex) => {
+                let prevCandle = candles[processingIndex - 1];
                 let {
                     currentCandle,
                     nextIndex,
                     status
                 } = sw;
                 let nextCandle = candles[nextIndex]
-                if (nextIndex >= index && status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
+                if (status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
                     status = 'nextIndex';
                 } else {
-                    nextIndex = index + 1;
+                    nextIndex = rootIndex + 1;
                 }
-                processingSwings.set(index, {
+                processingSwings.set(processingIndex, {
                     ...sw,
                     nextIndex,
                     status
                 });
 
-                if(status === 'draft'){
-                    return;
+                if (status === 'draft') {
+                    break;
                 }
 
-                let diff = nextIndex - index - 1;
+                let diff = nextIndex - processingIndex - 1;
                 nextCandle = candles[nextIndex]
-                const highPullback = hasHighValidPullback(prevCandle, currentCandle, nextCandle)
-                const lowPullback = hasLowValidPullback(prevCandle, currentCandle, nextCandle)
 
-                if (!diff || hasLowValidPullback(currentCandle, nextCandle)) {
-                    const swing = new Swing({
-                        side: 'high',
-                        time: currentCandle.time,
-                        price: currentCandle.high,
-                        index: index
-                    })
-                    swings[index] = highPullback ? swing : swings[index];
-                }
+                tryCalculatePullback(processingIndex, 'high', diff, prevCandle, currentCandle, nextCandle, swings);
+                tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, swings);
 
-                if (!diff || hasHighValidPullback(currentCandle, nextCandle)) {
-                    const swing = new Swing({
-                        side: 'low',
-                        time: currentCandle.time,
-                        price: currentCandle.low,
-                        index: index
-                    })
-                    swings[index] = lowPullback ? swing : swings[index];
+                const updateLast = newIndex => {
+                    console.log(`lastSwingIndex: ${lastSwingIndex} --> newIndex: ${newIndex}`)
+                    lastSwingIndex = newIndex
                 }
-                processingSwings.delete(index);
 
                 // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
-                const swing = swings[index];
-                if (swing) {
-                    if (lastSwingIndex > -1 && swing.side === swings[lastSwingIndex]?.side) {
-                        let lastIndex;
-                        if(swing.side === 'high'){
-                            if(swing.price > swings[lastSwingIndex]?.price){
-                                lastIndex = lastSwingIndex;
-                            } else if (swing.price < swings[lastSwingIndex]?.price){
-                                lastIndex = index;
-                            }
-                        }
-                        if(swing.side === 'low'){
-                            if(swing.price < swings[lastSwingIndex]?.price){
-                                lastIndex = lastSwingIndex;
-                            } else if (swing.price > swings[lastSwingIndex]?.price){
-                                lastIndex = index;
-                            }
-                        }
-                        // Обновляем хай
-                        if (lastIndex) {
-                            swings[lastIndex] = null;
-                            lastSwingIndex = index;
-                        }
-                    } else {
-                        lastSwingIndex = index;
-                    }
-                }
-            })
-        } else {
+                filterDoubleSwings(processingIndex, lastSwingIndex, updateLast, swings);
 
+                processingSwings.delete(processingIndex);
+            }
+        } else {
             let prevCandle = candles[prevCandleIndex];
-            const currentCandle = candles[i];
+            const currentCandle = candles[rootIndex];
             if (isInsideBar(prevCandle, currentCandle)) {
                 continue;
             }
-            let nextIndex = i + 1;
+            let nextIndex = rootIndex + 1;
             let nextCandle = candles[nextIndex];
             // TODO в методичке этого нет. После текущего свипа для подтверждения нужно дождаться пока какая-либо свеча пересвипнет текущую.
             for (; nextIndex < candles.length - 1; nextIndex++) {
@@ -591,62 +618,17 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[], oneIteration
                     break;
                 }
             }
-            let diff = nextIndex - i - 1;
+            let diff = nextIndex - rootIndex - 1;
             nextCandle = candles[nextIndex]
-            const highPullback = hasHighValidPullback(prevCandle, currentCandle, nextCandle)
-            const lowPullback = hasLowValidPullback(prevCandle, currentCandle, nextCandle)
 
-            if (!diff || hasLowValidPullback(currentCandle, nextCandle)) {
-                const swing = new Swing({
-                    side: 'high',
-                    time: currentCandle.time,
-                    price: currentCandle.high,
-                    index: i
-                })
-                swings[i] = highPullback ? swing : swings[i];
-            }
-
-            if (!diff || hasHighValidPullback(currentCandle, nextCandle)) {
-                const swing = new Swing({
-                    side: 'low',
-                    time: currentCandle.time,
-                    price: currentCandle.low,
-                    index: i
-                })
-                swings[i] = lowPullback ? swing : swings[i];
-            }
+            tryCalculatePullback(rootIndex, 'high', diff, prevCandle, currentCandle, nextCandle, swings);
+            tryCalculatePullback(rootIndex, 'low', diff, prevCandle, currentCandle, nextCandle, swings);
 
             // фильтруем вершины подряд
-            const swing = swings[i];
-            if (swing) {
-                if (lastSwingIndex > -1 && swing.side === swings[lastSwingIndex]?.side) {
-                    let lastIndex;
-                    if(swing.side === 'high'){
-                        if(swing.price > swings[lastSwingIndex]?.price){
-                            lastIndex = lastSwingIndex;
-                        } else if (swing.price < swings[lastSwingIndex]?.price){
-                            lastIndex = i;
-                        }
-                    }
-                    if(swing.side === 'low'){
-                        if(swing.price < swings[lastSwingIndex]?.price){
-                            lastIndex = lastSwingIndex;
-                        } else if (swing.price > swings[lastSwingIndex]?.price){
-                            lastIndex = i;
-                        }
-                    }
-                    // Обновляем хай
-                    if (lastIndex) {
-                        swings[lastIndex] = null;
-                        lastSwingIndex = i;
-                    }
-                } else {
-                    lastSwingIndex = i;
-                }
-            }
+            filterDoubleSwings(rootIndex, lastSwingIndex, newIndex => lastSwingIndex = newIndex, swings);
 
-            prevCandleIndex = i;
-            i += diff;
+            prevCandleIndex = rootIndex;
+            rootIndex += diff;
         }
     }
 
