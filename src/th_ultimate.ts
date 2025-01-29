@@ -392,7 +392,7 @@ export const calculateTesting = (data: HistoryObject[], {
     oneIteration
 }: THConfig) => {
     // <-- Копировать в робота
-    let {swings} = tradinghubCalculateSwings(data, oneIteration);
+    let swings = tradinghubCalculateSwings(data, oneIteration);
 
     const {
         trend,
@@ -632,7 +632,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[], oneIteration
         }
     }
 
-    return {swings};
+    return swings;
 }
 
 export interface Trend {

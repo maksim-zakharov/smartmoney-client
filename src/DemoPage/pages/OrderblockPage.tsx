@@ -18,7 +18,7 @@ import {
 } from "../../th_ultimate";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
-    const {swings: swings1} = tradinghubCalculateSwings(data);
+    const swings1 = tradinghubCalculateSwings(data);
 
     let bosses1 = markHHLL(data, swings1);
     bosses1 = drawBOS(data, swings1, bosses1);

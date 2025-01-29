@@ -24,7 +24,7 @@ import {
 } from "../../th_ultimate";
 
 const BOSChart = ({data, text = 'LL'}) => {
-    const {swings: swings1} = tradinghubCalculateSwings(data);
+    const swings1 = tradinghubCalculateSwings(data);
 
     const markerColors = {
         bearColor: "rgb(157, 43, 56)",
@@ -269,7 +269,7 @@ const StructureMappingPage = () => {
     }, [tf, ticker, fromDate, toDate]);
 
     let {highs, lows, swings, boses} = useMemo(() => {
-        let {swings} = tradinghubCalculateSwings(data)
+        let swings = tradinghubCalculateSwings(data)
 
         const {trend, boses, swings: thSwings} = tradinghubCalculateTrendNew(swings, data, {});
 

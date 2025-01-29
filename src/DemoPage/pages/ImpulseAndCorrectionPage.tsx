@@ -21,7 +21,7 @@ import {
     Trend
 } from "../../th_ultimate";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
-    let {swings} = tradinghubCalculateSwings(data);
+    let swings = tradinghubCalculateSwings(data);
 
     let boses = markHHLL(data, swings);
     boses = drawBOS(data, swings, boses);
@@ -156,7 +156,7 @@ const ImpulseAndCorrectionPage = () => {
             ).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
-    let {swings} = useMemo(() => tradinghubCalculateSwings(data), [data]);
+    let swings = useMemo(() => tradinghubCalculateSwings(data), [data]);
 
     const markers = useMemo(() => {
         const markerColors = {
