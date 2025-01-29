@@ -595,7 +595,7 @@ export const tradinghubCalculateSwings = (candles: HistoryObject[], oneIteration
                 tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, swings);
 
                 const updateLast = newIndex => {
-                    console.log(`lastSwingIndex: ${lastSwingIndex} --> newIndex: ${newIndex}`)
+                    // console.log(`lastSwingIndex: ${lastSwingIndex} --> newIndex: ${newIndex}`)
                     lastSwingIndex = newIndex
                 }
 
