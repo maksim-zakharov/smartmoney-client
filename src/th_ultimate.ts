@@ -652,12 +652,61 @@ export const deleteEmptySwings = (swings: Swing[]) => {
 
     return swings;
 }
-export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[], boses: Cross[]) => {
-    let preLastHighIndex = null;
-    let lastHighIndex = null;
 
-    let preLastLowIndex = null;
-    let lastLowIndex = null;
+const deleteInternalOneIt = (i: number, type: 'high' | 'low', candles: HistoryObject[], swings: Swing[], preLastIndexMap: Record<'high' | 'low', number>, deletedSwingIndexes: Set<number>) => {
+
+    const funcMap: Record<'high' | 'low', Function> = {
+        high: lowestBy,
+        low: highestBy
+    }
+
+    const crossType = type === 'high' ? 'low' : 'high';
+
+    const condition = type === 'high' ?
+        // Если произошел пересвип хая, ищем между точками лойный лой
+        swings[preLastIndexMap[type]]?.price < candles[i].high
+        // Если произошел пересвип лоя, ищем между точками хайный хай
+        : swings[preLastIndexMap[type]]?.price > candles[i].low;
+
+    // Если произошел пересвип хая, ищем между точками лойный лой
+    if (condition) {
+        const batch = swings.slice(preLastIndexMap[type] + 1, i);
+        const lowestSwing = funcMap[type](batch, 'price');
+
+        // Удаляем все лои которые не лойный лой
+        batch
+            .filter(idx => idx && idx?.index !== lowestSwing?.index)
+            .forEach(idx => {
+                swings[idx.index].unmarkExtremum()
+                deletedSwingIndexes.add(idx.index);
+            })
+
+        preLastIndexMap[crossType] = lowestSwing?.index;
+        preLastIndexMap[type] = null;
+    }
+}
+
+const updateExtremumOneIt = (i: number, type: 'high' | 'low', swings: Swing[], preLastIndexMap: Record<'high' | 'low', number>) => {
+    if(!swings[i]){
+        return;
+    }
+
+    const condition = !preLastIndexMap[type] || (type === 'high' ?
+        // updateHighest
+        swings[preLastIndexMap[type]].price < swings[i].price
+        // updateLowest
+        : swings[preLastIndexMap[type]].price > swings[i].price)
+    if (swings[i].side === type && swings[i].isExtremum && condition) {
+        preLastIndexMap[type] = i;
+    }
+}
+
+export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[], boses: Cross[]) => {
+
+    let preLastIndexMap: Record<'high' | 'low', number> = {
+        high: null,
+        low: null
+    }
 
     let deletedSwingIndexes = new Set([]);
     // Алгоритм такой
@@ -669,56 +718,14 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
      * Остальные удаляются
      */
     for (let i = 0; i < swings.length; i++) {
-        // Если произошел пересвип хая, ищем между точками лойный лой
-        if (swings[preLastHighIndex]?.price < candles[i].high) {
-            const batch = swings.slice(preLastHighIndex + 1, i);
-            const lowestSwing = lowestBy(batch, 'price');
-
-            // Удаляем все лои которые не лойный лой
-            batch
-                .filter(idx => idx && idx?.index !== lowestSwing?.index)
-                .forEach(idx => {
-                    swings[idx.index].unmarkExtremum()
-                    deletedSwingIndexes.add(idx.index);
-                })
-
-            preLastLowIndex = lowestSwing?.index;
-            preLastHighIndex = null;
-        }
-
-        // Если произошел пересвип лоя, ищем между точками хайный хай
-        if (swings[preLastLowIndex]?.price > candles[i].low) {
-            const batch = swings.slice(preLastLowIndex + 1, i);
-            const highestSwing = highestBy(batch, 'price');
-
-            // Удаляем все хаи которые не хайный хай
-            batch
-                .filter(idx => idx && idx?.index !== highestSwing?.index)
-                .forEach(idx => {
-                    swings[idx.index].unmarkExtremum()
-                    deletedSwingIndexes.add(idx.index);
-                })
-
-            preLastHighIndex = highestSwing?.index;
-            preLastLowIndex = null;
-        }
+        deleteInternalOneIt(i, 'high', candles, swings, preLastIndexMap, deletedSwingIndexes);
+        deleteInternalOneIt(i, 'low', candles, swings, preLastIndexMap, deletedSwingIndexes);
 
         // updateHighest
-        if (swings[i] && swings[i].side === 'high' && swings[i].isExtremum) {
-            if (!preLastHighIndex || swings[preLastHighIndex].price < swings[i].price) {
-                preLastHighIndex = i;
-            }
-
-            lastHighIndex = i;
-        }
+        updateExtremumOneIt(i, 'high', swings, preLastIndexMap);
 
         // updateLowest
-        if (swings[i] && swings[i].side === 'low' && swings[i].isExtremum) {
-            if (!preLastLowIndex || swings[preLastLowIndex].price > swings[i].price) {
-                preLastLowIndex = i;
-            }
-            lastLowIndex = i;
-        }
+        updateExtremumOneIt(i, 'low', swings, preLastIndexMap);
     }
 
     // Удаляем IDM у удаленных LL/HH
