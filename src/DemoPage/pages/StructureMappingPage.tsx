@@ -17,26 +17,27 @@ import type { Dayjs } from 'dayjs';
 import {
     drawBOS,
     HistoryObject,
-    markHHLL, notTradingTime,
+    markHHLL, notTradingTime, StateManager,
     Swing,
     tradinghubCalculateSwings,
     tradinghubCalculateTrendNew
 } from "../../th_ultimate";
 
 const BOSChart = ({data, text = 'LL'}) => {
-    const swings1 = tradinghubCalculateSwings(data);
+    const manager = new StateManager(data);
+    const swings1 = tradinghubCalculateSwings(manager);
 
     const markerColors = {
         bearColor: "rgb(157, 43, 56)",
         bullColor: "rgb(20, 131, 92)"
     }
 
-    let bosses1 = markHHLL(data, swings1);
+    let bosses1 = markHHLL(manager);
     swings1[3] = {...swings1[3], text} as Swing;
 
-    bosses1 = drawBOS(data, swings1, bosses1);
+    bosses1 = drawBOS(data, manager.swings, bosses1);
     const allMarkers1 = [];
-    allMarkers1.push(...swings1.filter(Boolean).map(s => ({
+    allMarkers1.push(...manager.swings.filter(Boolean).map(s => ({
         color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
         time: (s.time) as Time,
         shape: 'circle',
@@ -269,9 +270,10 @@ const StructureMappingPage = () => {
     }, [tf, ticker, fromDate, toDate]);
 
     let {highs, lows, swings, boses} = useMemo(() => {
-        let swings = tradinghubCalculateSwings(data)
+        const manager = new StateManager(data);
+        tradinghubCalculateSwings(manager)
 
-        const {trend, boses, swings: thSwings} = tradinghubCalculateTrendNew(swings, data, {});
+        const {trend, boses, swings: thSwings} = tradinghubCalculateTrendNew(manager, data, {});
 
         highs = thSwings.filter(t => t?.side === 'high');
         lows = thSwings.filter(t => t?.side === 'low');

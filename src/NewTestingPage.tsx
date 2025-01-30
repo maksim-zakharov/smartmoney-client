@@ -163,14 +163,7 @@ const NewTestingPage = () => {
             })));
         }
 
-        allMarkers.push(...highs.filter(Boolean).map(s => ({
-            color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            time: (s.time) as Time,
-            shape: 'circle',
-            position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            text: selectedKey !== 'swings' ? s.isIFC ? 'IFC' : s.text : undefined
-        })));
-        allMarkers.push(...lows.filter(Boolean).map(s => ({
+        allMarkers.push(...swings.filter(Boolean).map(s => ({
             color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
             time: (s.time) as Time,
             shape: 'circle',

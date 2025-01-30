@@ -16,15 +16,16 @@ import {
     deleteEmptySwings,
     drawBOS,
     HistoryObject,
-    markHHLL, notTradingTime,
+    markHHLL, notTradingTime, StateManager,
     tradinghubCalculateSwings,
     Trend
 } from "../../th_ultimate";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
-    let swings = tradinghubCalculateSwings(data);
+    const manager = new StateManager(data);
+    let swings = tradinghubCalculateSwings(manager);
 
-    let boses = markHHLL(data, swings);
-    boses = drawBOS(data, swings, boses);
+    let boses = markHHLL(manager);
+    boses = drawBOS(data, manager.swings, boses);
 
     const markerColors = {
         bearColor: "rgb(157, 43, 56)",
@@ -156,7 +157,12 @@ const ImpulseAndCorrectionPage = () => {
             ).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
-    let swings = useMemo(() => tradinghubCalculateSwings(data), [data]);
+    let swings = useMemo(() => {
+        const manager = new StateManager(data);
+        tradinghubCalculateSwings(manager)
+
+        return manager.swings;
+    }, [data]);
 
     const markers = useMemo(() => {
         const markerColors = {

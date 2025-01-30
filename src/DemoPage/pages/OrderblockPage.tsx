@@ -11,21 +11,22 @@ import {
     calculateOB,
     drawBOS,
     HistoryObject,
-    markHHLL,
+    markHHLL, StateManager,
     Swing,
     tradinghubCalculateSwings,
     Trend
 } from "../../th_ultimate";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
-    const swings1 = tradinghubCalculateSwings(data);
+    const manager = new StateManager(data);
+    tradinghubCalculateSwings(manager);
 
-    let bosses1 = markHHLL(data, swings1);
-    bosses1 = drawBOS(data, swings1, bosses1);
+    let bosses1 = markHHLL(manager);
+    bosses1 = drawBOS(data, manager.swings, bosses1);
 
     const trends = data.map((candle, index) => ({trend, time: candle.time, index}) as Trend);
 
-    const orderBlocks = calculateOB(swings1, data, bosses1, trends, true);
+    const orderBlocks = calculateOB(manager.swings, data, bosses1, trends, true);
     const lastCandle = data[data.length - 1];
     const _primitives = [];
     _primitives.push(...orderBlocks.map(orderBlock => createRectangle2({
@@ -61,7 +62,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
         bullColor: "rgb(20, 131, 92)"
     }
     const allMarkers1 = [];
-    allMarkers1.push(...swings1.filter(Boolean).map(s => ({
+    allMarkers1.push(...manager.swings.filter(Boolean).map(s => ({
         color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
         time: (s.time) as Time,
         shape: 'circle',
