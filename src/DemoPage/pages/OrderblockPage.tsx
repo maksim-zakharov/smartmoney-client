@@ -21,12 +21,14 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
     const manager = new StateManager(data);
     tradinghubCalculateSwings(manager);
 
-    let bosses1 = markHHLL(manager);
-    bosses1 = drawBOS(data, manager.swings, bosses1);
+    markHHLL(manager);
+    drawBOS(manager);
+
+    let bosses1 = manager.boses;
 
     const trends = data.map((candle, index) => ({trend, time: candle.time, index}) as Trend);
 
-    const orderBlocks = calculateOB(manager.swings, data, bosses1, trends, true);
+    const orderBlocks = calculateOB(manager, true);
     const lastCandle = data[data.length - 1];
     const _primitives = [];
     _primitives.push(...orderBlocks.map(orderBlock => createRectangle2({

@@ -148,8 +148,7 @@ export class OrderBlock {
  * и только если следующая свеча после структурной дает имбаланс
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
-export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cross[], trends: Trend[], withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false) => {
-    let orderblocks: OrderBlock [] = new Array(candles.length).fill(null);
+export const calculateOB = (manager: StateManager, withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false) => {
     // Иногда определяеются несколько ОБ на одной свечке, убираем
     let uniqueOrderBlockTimeSet = new Set();
 
@@ -174,14 +173,14 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
 
     let obIdxes = new Set<number>([]);
 
-    for (let i = 0; i < swings.length; i++) {
-        const candle = candles[i];
-        const trend = trends[i];
-        const swing = swings[i];
+    for (let i = 0; i < manager.swings.length; i++) {
+        const candle = manager.candles[i];
+        const trend = manager.trends[i];
+        const swing = manager.swings[i];
         const index = swing?.index
 
-        if (boses[i]?.isIDM) {
-            lastIDMIndexMap[boses[i]?.type] = i;
+        if (manager.boses[i]?.isIDM) {
+            lastIDMIndexMap[manager.boses[i]?.type] = i;
         }
 
         if (swing?.isExtremum) {
@@ -193,11 +192,11 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
             // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
             nonConfirmsOrderblocks.set(swing.time, {
                 swing,
-                firstCandle: candles[index],
+                firstCandle: manager.candles[index],
                 firstImbalanceIndex: index,
                 status: 'draft',
                 // Тейк профит до ближайшего максимума
-                takeProfit: swing.side === 'high' ? swings[lastExtremumIndexMap['low']]?.price : swings[lastExtremumIndexMap['high']]?.price
+                takeProfit: swing.side === 'high' ? manager.swings[lastExtremumIndexMap['low']]?.price : manager.swings[lastExtremumIndexMap['high']]?.price
             })
         }
 
@@ -208,7 +207,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                 let {swing, firstCandle, firstImbalanceIndex, status, takeProfit, lastImbalanceIndex} = orderblock;
                 // Сначала ищем индекс свечки с которой будем искать имбаланс.
                 // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
-                if (status === 'draft' && firstImbalanceIndex < i && !isInsideBar(firstCandle, candles[i])) {
+                if (status === 'draft' && firstImbalanceIndex < i && !isInsideBar(firstCandle, manager.candles[i])) {
                     firstImbalanceIndex = i - 1;
                     status = 'firstImbalanceIndex';
                     nonConfirmsOrderblocks.set(time, {...orderblock, firstImbalanceIndex, status})
@@ -222,9 +221,9 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                 const num = withMove ? 2 : 1;
                 const firstImbIndex = firstImbalanceIndex + num
 
-                if (firstImbIndex <= i && isImbalance(candles[firstImbalanceIndex], candles[i])) {
+                if (firstImbIndex <= i && isImbalance(manager.candles[firstImbalanceIndex], manager.candles[i])) {
                     if (withMove) {
-                        firstCandle = candles[firstImbIndex];
+                        firstCandle = manager.candles[firstImbIndex];
                         firstImbalanceIndex = firstImbIndex;
                     }
                     lastImbalanceIndex = i;
@@ -243,8 +242,8 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                     return;
                 }
 
-                const lastImbalanceCandle = candles[lastImbalanceIndex];
-                const lastOrderblockCandle = candles[firstImbalanceIndex];
+                const lastImbalanceCandle = manager.candles[lastImbalanceIndex];
+                const lastOrderblockCandle = manager.candles[firstImbalanceIndex];
 
                 // Жестко нужно для БД, не трогать
                 const open = firstCandle.time === time ? firstCandle.open : lastOrderblockCandle.open;
@@ -275,13 +274,13 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                 if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
                     // TODO Не торговать ОБ под IDM
                     const bossIndex = orderBlock.firstImbalanceIndex + index;
-                    const hasBoss = Boolean(boses[bossIndex]) && (!showFake || boses[bossIndex].isConfirmed);
+                    const hasBoss = Boolean(manager.boses[bossIndex]) && (!showFake || manager.boses[bossIndex].isConfirmed);
 
-                    orderblocks[swing.index] = new OrderBlock({
+                    manager.orderblocks[swing.index] = new OrderBlock({
                         ...orderBlock,
                         isSMT: !newSMT && (hasBoss || (lastIDMIndex
-                            && boses[lastIDMIndex].from.index <= i
-                            && boses[lastIDMIndex].to.index > i)),
+                            && manager.boses[lastIDMIndex].from.index <= i
+                            && manager.boses[lastIDMIndex].to.index > i)),
                         swing,
                         canTrade: true,
                         tradeOrderType: 'limit',
@@ -303,7 +302,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
              * Записываю новые ОБ и закрываю их если было касание
              */
             obIdxes.forEach(obIdx => {
-                const obItem = orderblocks[obIdx];
+                const obItem = manager.orderblocks[obIdx];
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
 
                 const idmType = obItem.type;
@@ -311,7 +310,7 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                     obItem.isSMT = true;
                     obItem.canTrade = false;
                 }
-                if (boses[lastIDMIndexMap[idmType]]?.isConfirmed && lastIDMIndexMap[idmType] && boses[lastIDMIndexMap[idmType]].to?.index - 1 <= i) {
+                if (manager.boses[lastIDMIndexMap[idmType]]?.isConfirmed && lastIDMIndexMap[idmType] && manager.boses[lastIDMIndexMap[idmType]].to?.index - 1 <= i) {
                     obItem.isSMT = false;
                     obItem.canTrade = true;
                 }
@@ -331,11 +330,11 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
                 }
             })
 
-            if (lastIDMIndexMap['high'] && boses[lastIDMIndexMap['high']].to?.index - 1 === i) {
+            if (lastIDMIndexMap['high'] && manager.boses[lastIDMIndexMap['high']].to?.index - 1 === i) {
                 lastIDMIndexMap['high'] = null;
             }
 
-            if (lastIDMIndexMap['low'] && boses[lastIDMIndexMap['low']].to?.index - 1 === i) {
+            if (lastIDMIndexMap['low'] && manager.boses[lastIDMIndexMap['low']].to?.index - 1 === i) {
                 lastIDMIndexMap['low'] = null;
             }
         }
@@ -343,14 +342,14 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
 
     if (!newSMT) {
         // Где начинается позиция TODO для теста, в реальности это точка входа
-        for (let i = 0; i < orderblocks.length; i++) {
-            const obItem = orderblocks[i];
+        for (let i = 0; i < manager.orderblocks.length; i++) {
+            const obItem = manager.orderblocks[i];
             if (!obItem) {
                 continue;
             }
             const startPositionIndex = obItem.index + obItem.imbalanceIndex;
-            for (let j = startPositionIndex; j < candles.length - 1; j++) {
-                const candle = candles[j];
+            for (let j = startPositionIndex; j < manager.candles.length - 1; j++) {
+                const candle = manager.candles[j];
 
                 if (hasHitOB(obItem, candle)) {
                     obItem.endCandle = candle;
@@ -362,12 +361,12 @@ export const calculateOB = (swings: Swing[], candles: HistoryObject[], boses: Cr
         }
     }
 
-    return orderblocks.map((ob, index) => {
+    return manager.orderblocks.map((ob, index) => {
         // Либо смотрим тренд по закрытию ОБ либо если закрытия нет - по открытию.
         const obStartIndex = ob?.index;
         const obIndex = ob?.endIndex || index;
-        const startTrend = trends[obStartIndex]?.trend;
-        const trend = trends[obIndex]?.trend;
+        const startTrend = manager.trend[obStartIndex]?.trend;
+        const trend = manager.trend[obIndex]?.trend;
         if (startTrend !== trend) {
             return null;
         }
@@ -425,30 +424,22 @@ export const calculateTesting = (data: HistoryObject[], {
         // <-- Копировать в робота
     tradinghubCalculateSwings(manager, oneIteration);
 
-    const {
-        trend,
-        boses,
-        swings: thSwings,
-    } = tradinghubCalculateTrendNew(manager, data, {moreBOS, showHiddenSwings, showFake, showIFC});
-    manager.swings = thSwings;
+    tradinghubCalculateTrendNew(manager, {moreBOS, showHiddenSwings, showFake, showIFC});
 
     // Копировать в робота -->
     let orderBlocks = calculateOB(
-        manager.swings,
-        data,
-        boses,
-        trend,
+        manager,
         withMove,
         newSMT,
         showFake
     )
 
     if (byTrend) {
-        const currentTrend = trend[trend.length - 1]?.trend === 1 ? 'low' : 'high';
+        const currentTrend = manager.trend[manager.trend.length - 1]?.trend === 1 ? 'low' : 'high';
         orderBlocks = orderBlocks.filter(ob => ob?.type === currentTrend);
     }
 
-    return {swings: manager.swings, trend, boses, orderBlocks};
+    return {swings: manager.swings, trend: manager.trend, boses: manager.boses, orderBlocks};
 }
 
 export interface THConfig {
@@ -670,18 +661,16 @@ export interface Trend {
     index: number;
 }
 
-export const deleteEmptySwings = (swings: Swing[]) => {
-    for (let i = 0; i < swings.length; i++) {
-        if (!swings[i]?.isExtremum) {
-            swings[i] = null;
+export const deleteEmptySwings = (manager: StateManager) => {
+    for (let i = 0; i < manager.swings.length; i++) {
+        if (!manager.swings[i]?.isExtremum) {
+            manager.swings[i] = null;
             continue;
         }
     }
-
-    return swings;
 }
 
-const deleteInternalOneIt = (i: number, type: 'high' | 'low', candles: HistoryObject[], swings: Swing[], manager: StateManager) => {
+const deleteInternalOneIt = (i: number, type: 'high' | 'low', manager: StateManager) => {
 
     const funcMap: Record<'high' | 'low', Function> = {
         high: lowestBy,
@@ -692,20 +681,20 @@ const deleteInternalOneIt = (i: number, type: 'high' | 'low', candles: HistoryOb
 
     const condition = type === 'high' ?
         // Если произошел пересвип хая, ищем между точками лойный лой
-        swings[manager.preLastIndexMap[type]]?.price < candles[i].high
+        manager.swings[manager.preLastIndexMap[type]]?.price < manager.candles[i].high
         // Если произошел пересвип лоя, ищем между точками хайный хай
-        : swings[manager.preLastIndexMap[type]]?.price > candles[i].low;
+        : manager.swings[manager.preLastIndexMap[type]]?.price > manager.candles[i].low;
 
     // Если произошел пересвип хая, ищем между точками лойный лой
     if (condition) {
-        const batch = swings.slice(manager.preLastIndexMap[type] + 1, i);
+        const batch = manager.swings.slice(manager.preLastIndexMap[type] + 1, i);
         const lowestSwing = funcMap[type](batch, 'price');
 
         // Удаляем все лои которые не лойный лой
         batch
             .filter(idx => idx && idx?.index !== lowestSwing?.index)
             .forEach(idx => {
-                swings[idx.index].unmarkExtremum()
+                manager.swings[idx.index].unmarkExtremum()
                 manager.deletedSwingIndexes.add(idx.index);
             })
 
@@ -714,17 +703,17 @@ const deleteInternalOneIt = (i: number, type: 'high' | 'low', candles: HistoryOb
     }
 }
 
-const updateExtremumOneIt = (i: number, type: 'high' | 'low', swings: Swing[], manager: StateManager) => {
-    if (!swings[i]) {
+const updateExtremumOneIt = (i: number, type: 'high' | 'low', manager: StateManager) => {
+    if (!manager.swings[i]) {
         return;
     }
 
     const condition = !manager.preLastIndexMap[type] || (type === 'high' ?
         // updateHighest
-        swings[manager.preLastIndexMap[type]].price < swings[i].price
+        manager.swings[manager.preLastIndexMap[type]].price < manager.swings[i].price
         // updateLowest
-        : swings[manager.preLastIndexMap[type]].price > swings[i].price)
-    if (swings[i].side === type && swings[i].isExtremum && condition) {
+        : manager.swings[manager.preLastIndexMap[type]].price > manager.swings[i].price)
+    if (manager.swings[i].side === type && manager.swings[i].isExtremum && condition) {
         manager.preLastIndexMap[type] = i;
     }
 }
@@ -734,6 +723,7 @@ export class StateManager {
     swings: (Swing | null)[] = [];
     boses: Cross[] = [];
     trend: Trend[] = [];
+    orderblocks: OrderBlock[] = [];
 
     // deleteInternalStructure
     preLastIndexMap: Record<'high' | 'low', number> = {
@@ -781,15 +771,14 @@ export class StateManager {
 
     constructor(candles: HistoryObject[]) {
         this.candles = candles;
-        this.trend = new Array(candles.length).fill(null)
         this.swings = new Array(candles.length).fill(null);
         this.boses = new Array(candles.length).fill(null);
+        this.trend = new Array(candles.length).fill(null)
+        this.orderblocks = new Array(candles.length).fill(null)
     }
 }
 
-export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[], boses: Cross[]) => {
-
-    const manager = new StateManager(candles);
+export const deleteInternalStructure = (manager: StateManager) => {
     // Алгоритм такой
     /**
      * Если в рамках первых двух точек я нахожу следующие 2 точки внутренними, то записываю их внутренними до тех пор, пока хотя бы одна точка не станет внешней.
@@ -798,21 +787,19 @@ export const deleteInternalStructure = (swings: Swing[], candles: HistoryObject[
      *
      * Остальные удаляются
      */
-    for (let i = 0; i < swings.length; i++) {
-        deleteInternalOneIt(i, 'high', candles, swings, manager);
-        deleteInternalOneIt(i, 'low', candles, swings, manager);
+    for (let i = 0; i < manager.swings.length; i++) {
+        deleteInternalOneIt(i, 'high', manager);
+        deleteInternalOneIt(i, 'low', manager);
 
         // updateHighest
-        updateExtremumOneIt(i, 'high', swings, manager);
+        updateExtremumOneIt(i, 'high', manager);
 
         // updateLowest
-        updateExtremumOneIt(i, 'low', swings, manager);
+        updateExtremumOneIt(i, 'low', manager);
     }
 
     // Удаляем IDM у удаленных LL/HH
-    boses = boses.map(b => !manager.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
-
-    return {swings, boses};
+    manager.boses = manager.boses.map(b => !manager.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
 }
 
 export const markHHLL = (manager: StateManager) => {
@@ -1035,20 +1022,17 @@ const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, c
 const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
 // Рисует BOS если LL или HH перекрываются
-export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[], moreBOS: boolean = false, showFake: boolean = false) => {
-
-    const manager = new StateManager(candles);
-
-    for (let i = 0; i < candles.length; i++) {
+export const drawBOS = (manager: StateManager, moreBOS: boolean = false, showFake: boolean = false) => {
+    for (let i = 0; i < manager.candles.length; i++) {
         // TODO Хз надо ли, выглядит ок но финрез хуже
         // Если сужение - удаляем внутренние босы
         if (
-            swings[manager.prelastBosSwingMap['high']]?.price > swings[manager.lastBosSwingMap['high']]?.price
-            && swings[manager.prelastBosSwingMap['low']]?.price < swings[manager.lastBosSwingMap['low']]?.price
+            manager.swings[manager.prelastBosSwingMap['high']]?.price > manager.swings[manager.lastBosSwingMap['high']]?.price
+            && manager.swings[manager.prelastBosSwingMap['low']]?.price < manager.swings[manager.lastBosSwingMap['low']]?.price
         ) {
             if (!moreBOS) {
-                swings[manager.lastBosSwingMap['low']] = null;
-                swings[manager.lastBosSwingMap['high']] = null;
+                manager.swings[manager.lastBosSwingMap['low']] = null;
+                manager.swings[manager.lastBosSwingMap['high']] = null;
             } else {
                 manager.lastBosSwingMapSet['low'].delete(manager.lastBosSwingMap['low'])
                 manager.lastBosSwingMapSet['high'].delete(manager.lastBosSwingMap['high'])
@@ -1067,87 +1051,77 @@ export const drawBOS = (candles: HistoryObject[], swings: Swing[], boses: Cross[
 
         // BOS сверху
         if (moreBOS) {
-            manager.lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, 'high', candles, swings, boses, lastBosSwing, manager.lastBosSwingMap['low'], i === candles.length - 1, manager, moreBOS, showFake))
+            manager.lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, 'high', manager.candles, manager.swings, manager.boses, lastBosSwing, manager.lastBosSwingMap['low'], i === manager.candles.length - 1, manager, moreBOS, showFake))
         } else {
-            confirmBOS(i, 'high', candles, swings, boses, manager.lastBosSwingMap['high'], manager.lastBosSwingMap['low'], i === candles.length - 1, manager, moreBOS, showFake);
+            confirmBOS(i, 'high', manager.candles, manager.swings, manager.boses, manager.lastBosSwingMap['high'], manager.lastBosSwingMap['low'], i === manager.candles.length - 1, manager, moreBOS, showFake);
         }
 
         // BOS снизу
         if (moreBOS) {
-            manager.lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, 'low', candles, swings, boses, lastBosSwing, manager.lastBosSwingMap['high'], i === candles.length - 1, manager, moreBOS, showFake))
+            manager.lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, 'low', manager.candles, manager.swings, manager.boses, lastBosSwing, manager.lastBosSwingMap['high'], i === manager.candles.length - 1, manager, moreBOS, showFake))
         } else {
-            confirmBOS(i, 'low', candles, swings, boses, manager.lastBosSwingMap['low'], manager.lastBosSwingMap['high'], i === candles.length - 1, manager, moreBOS, showFake);
+            confirmBOS(i, 'low', manager.candles, manager.swings, manager.boses, manager.lastBosSwingMap['low'], manager.lastBosSwingMap['high'], i === manager.candles.length - 1, manager, moreBOS, showFake);
         }
 
-        updateLastSwing(i, 'high', swings, manager, moreBOS);
-        updateLastSwing(i, 'low', swings, manager, moreBOS);
+        updateLastSwing(i, 'high', manager.swings, manager, moreBOS);
+        updateLastSwing(i, 'low', manager.swings, manager, moreBOS);
     }
 
-    boses
+    manager.boses
         .filter(b => b?.type === 'high' && !b?.isIDM)
         .sort((a, b) => a.from.price - b.from.price)
         .forEach((curr: any, i, array) => {
             for (let j = 0; j < i; j++) {
                 const prev = array[j];
                 if (isInternalBOS(curr, prev)) {
-                    boses[curr.from.index] = null;
+                    manager.boses[curr.from.index] = null;
                     break;
                 }
             }
         })
 
-    boses
+    manager.boses
         .filter(b => b?.type === 'low' && !b?.isIDM)
         .sort((a, b) => b.from.price - a.from.price)
         .forEach((curr: any, i, array) => {
             for (let j = 0; j < i; j++) {
                 const prev = array[j];
                 if (isInternalBOS(curr, prev)) {
-                    boses[curr.from.index] = null;
+                    manager.boses[curr.from.index] = null;
                     break;
                 }
             }
         })
 
     // Удаляем все IDM у которых BOS сформирован
-    for (let i = 0; i < boses.length; i++) {
-        const b = boses[i];
+    for (let i = 0; i < manager.boses.length; i++) {
+        const b = manager.boses[i];
         if (b?.isConfirmed && b?.isIDM && manager.deleteIDM.has(b?.extremum?.index)) {
-            boses[i] = null;
+            manager.boses[i] = null;
         }
     }
-
-    return boses;
 }
-export const tradinghubCalculateTrendNew = (manager: StateManager, candles: HistoryObject[], {
+export const tradinghubCalculateTrendNew = (manager: StateManager, {
     moreBOS, showHiddenSwings, showIFC, showFake
 }: THConfig) => {
 
-    let boses = markHHLL(manager)
+    markHHLL(manager)
 
     if (showIFC)
-        manager.swings = markIFC(candles, manager.swings);
+        markIFC(manager);
 
-    const internal = deleteInternalStructure(manager.swings, candles, boses);
-    boses = internal.boses;
-    manager.swings = internal.swings;
+    deleteInternalStructure(manager);
 
     if (!showHiddenSwings) {
-        manager.swings = deleteEmptySwings(manager.swings);
+        deleteEmptySwings(manager);
     }
 
-    boses = drawBOS(candles, manager.swings, boses, moreBOS, showFake);
+    drawBOS(manager, moreBOS, showFake);
 
-    const withTrend = drawTrend(candles, manager.swings, boses);
-    const trend = withTrend.trend
-    boses = withTrend.boses;
-
-    return {trend, boses, swings: manager.swings};
+    drawTrend(manager);
 };
-const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) => {
-    const manager = new StateManager(candles);
-
-    let onlyBOSes = boses.filter(bos => swings[bos?.from?.index]?.isExtremum);
+const drawTrend = (manager: StateManager) => {
+    let onlyBOSes = manager.boses.filter(bos => manager.swings[bos?.from?.index]?.isExtremum);
     for (let i = 0; i < onlyBOSes.length; i++) {
         const prevBos = onlyBOSes[i - 1];
         const curBos = onlyBOSes[i];
@@ -1160,17 +1134,17 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
 
         // Если текущий бос внутри предыдущего боса - то текущий бос нужно выпилить и не учитывать в тренде
         if (curBos?.from.index > prevBos?.from.index && curBos?.to.index < prevBos?.to.index) {
-            boses[curBos.from.index] = null;
+            manager.boses[curBos.from.index] = null;
             continue;
         }
 
         for (let j = curBos.to.index; j < to; j++) {
             const type = curBos.type;
-            manager.trend[j] = {time: candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
+            manager.trend[j] = {time: manager.candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
 
             // Удаляем IDM у точек которые являются босами
-            if (boses[j]?.isIDM && boses[j]?.type === type) {
-                boses[j] = null;
+            if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {
+                manager.boses[j] = null;
             }
         }
 
@@ -1179,8 +1153,8 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
         }
     }
 
-    onlyBOSes = boses
-        .filter(bos => swings[bos?.from?.index]?.isExtremum)
+    onlyBOSes = manager.boses
+        .filter(bos => manager.swings[bos?.from?.index]?.isExtremum)
         .sort((a, b) => a.to.index - b.to.index);
     for (let i = 0; i < onlyBOSes.length - 1; i++) {
         const curBos = onlyBOSes[i];
@@ -1188,22 +1162,18 @@ const drawTrend = (candles: HistoryObject[], swings: Swing[], boses: Cross[]) =>
 
         // Если оба боса подтвердились одной свечой, значит второй бос лишний и оставляем самый длинный
         if (curBos.isConfirmed && nextBos.isConfirmed && curBos.to.index === nextBos.to.index) {
-            boses[nextBos.from.index] = null;
+            manager.boses[nextBos.from.index] = null;
         }
     }
-
-    return {trend: manager.trend, boses};
 }
-const markIFC = (candles: HistoryObject[], swings: Swing[]) => {
+const markIFC = (manager: StateManager) => {
 
-    for (let i = 0; i < swings.length; i++) {
-        const bos = swings[i];
-        if (bos && isIFC(bos.side, candles[bos.index])) {
+    for (let i = 0; i < manager.swings.length; i++) {
+        const bos = manager.swings[i];
+        if (bos && isIFC(bos.side, manager.candles[bos.index])) {
             bos.isIFC = true
         }
     }
-
-    return swings;
 }
 export const isIFC = (side: Swing['side'], candle: HistoryObject) => {
     const body = Math.abs(candle.open - candle.close);
