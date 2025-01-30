@@ -175,7 +175,7 @@ export const calculateOB = (manager: StateManager, withMove: boolean = false, ne
 
     for (let i = 0; i < manager.swings.length; i++) {
         const candle = manager.candles[i];
-        const trend = manager.trends[i];
+        const trend = manager.trend[i];
         const swing = manager.swings[i];
         const index = swing?.index
 
