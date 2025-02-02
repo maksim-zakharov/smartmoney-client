@@ -271,10 +271,12 @@ export const calculateOB = (manager: StateManager, withMove: boolean = false, ne
                 } as OrderblockPart;
 
                 const lastIDMIndex = lastIDMIndexMap[swing?.side]
-                if (orderBlock?.type === swing?.side && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
+                if (orderBlock?.type === swing?.side && swing?.isExtremum && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
                     // TODO Не торговать ОБ под IDM
                     const bossIndex = orderBlock.firstImbalanceIndex + index;
                     const hasBoss = Boolean(manager.boses[bossIndex]) && (!showFake || manager.boses[bossIndex].isConfirmed);
+
+                    debugger
 
                     manager.orderblocks[swing.index] = new OrderBlock({
                         ...orderBlock,
@@ -422,7 +424,7 @@ export const calculateTesting = (data: HistoryObject[], {
      */
     const manager = new StateManager(data);
     // <-- Копировать в робота
-    if(oneIteration){
+    if (oneIteration) {
         manager.calculate();
     } else {
         tradinghubCalculateSwings(manager);
@@ -1149,7 +1151,7 @@ export const tradinghubCalculateTrendNew = (manager: StateManager, {
     drawTrend(manager);
 };
 const drawTrend = (manager: StateManager) => {
-    let onlyBOSes = manager.boses.filter(bos => manager.swings[bos?.from?.index]?.isExtremum);
+    let onlyBOSes = manager.boses.filter(bos => manager.swings[bos?.from?.index]);
     for (let i = 0; i < onlyBOSes.length; i++) {
         const prevBos = onlyBOSes[i - 1];
         const curBos = onlyBOSes[i];
@@ -1166,25 +1168,27 @@ const drawTrend = (manager: StateManager) => {
             continue;
         }
 
-        if(curBos.isConfirmed){
-            for (let j = curBos.to.index; j < to; j++) {
-                const type = curBos.type;
-                manager.trend[j] = {time: manager.candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
+        for (let j = curBos.to.index; j < to; j++) {
+            const type = curBos.type;
+            const isNewTrend = curBos.isConfirmed ? type === 'high' ? 1 : -1 : manager.trend[j - 1]?.trend;
+            manager.trend[j] = {time: manager.candles[j].time, trend: isNewTrend, index: i}
 
-                // Удаляем IDM у точек которые являются босами
-                if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {
-                    manager.boses[j] = null;
-                }
+            // Удаляем IDM у точек которые являются босами
+            if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {
+                manager.boses[j] = null;
             }
         }
 
-        if (nextBos && curBos.type !== nextBos.type && curBos.to.index < nextBos.to.index) {
+        // либо сменился тренд, либо был фейк чоч, и нужно проверить следующий чоч
+        const isTrendChanged = nextBos && curBos.type !== nextBos.type;
+        const isAfterFake = nextBos && curBos.isCHoCH && !curBos.isConfirmed && curBos.type === nextBos.type
+        if ((isTrendChanged || isAfterFake) && curBos.to.index < nextBos.to.index) {
             nextBos.markCHoCH()
         }
     }
 
     onlyBOSes = manager.boses
-        .filter(bos => manager.swings[bos?.from?.index]?.isExtremum)
+        .filter(bos => manager.swings[bos?.from?.index])
         .sort((a, b) => a.to.index - b.to.index);
     for (let i = 0; i < onlyBOSes.length - 1; i++) {
         const curBos = onlyBOSes[i];
