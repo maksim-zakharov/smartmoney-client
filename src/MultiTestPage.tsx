@@ -1,4 +1,4 @@
-import {Card, Checkbox, Col, Divider, Form, Input, Radio, Row, Slider, Space, Statistic, Table} from "antd";
+import {Card, Checkbox, Col, Divider, Form, Input, Progress, Radio, Row, Slider, Space, Statistic, Table} from "antd";
 import {TickerSelect} from "./TickerSelect";
 import React, {useEffect, useMemo, useState} from "react";
 import FormItem from "antd/es/form/FormItem";
@@ -25,6 +25,7 @@ export const MultiTestPage = () => {
     const [trandsType, setTrandsType] = useState('tradinghub');
     const [loading, setLoading] = useState(true);
     const [allData, setAllData] = useState({});
+    const [successSymbols, setSuccessSymbols] = useState<{ current: number, total: number }>({current: 0, total: 0});
     const [allSecurity, setAllSecurity] = useState({});
     const [allRiskRates, setAllRiskRates] = useState({});
     const [data, setData] = useState([]);
@@ -170,6 +171,7 @@ export const MultiTestPage = () => {
             if (token)
                 result1[stockSymbols[i]] = await getSecurity(stockSymbols[i], token);
             result2[stockSymbols[i]] = await fetchRiskRates(stockSymbols[i]);
+            setSuccessSymbols({total: stockSymbols.length, current: i + 1});
         }
         setAllRiskRates(result2)
         setAllSecurity(result1)
@@ -521,7 +523,10 @@ export const MultiTestPage = () => {
             {/*</Col>*/}
         </Row>
         <Row gutter={8}>
-            <Table style={{width: '100%'}} loading={loading} rowClassName={rowClassName} size="small"
+            <Table style={{width: '100%'}} loading={{
+                percent: +(successSymbols.current * 100 / successSymbols.total).toFixed(2),
+                spinning: loading
+            }} rowClassName={rowClassName} size="small"
                    columns={oldOneTickerColumns}
                    dataSource={isAllTickers ? allPositions : positions}/>
         </Row>

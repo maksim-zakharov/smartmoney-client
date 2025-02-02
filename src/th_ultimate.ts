@@ -421,8 +421,12 @@ export const calculateTesting = (data: HistoryObject[], {
      *     return manager.orderBlocks;
      */
     const manager = new StateManager(data);
-        // <-- Копировать в робота
-    tradinghubCalculateSwings(manager, oneIteration);
+    // <-- Копировать в робота
+    if(oneIteration){
+        manager.calculate();
+    } else {
+        tradinghubCalculateSwings(manager);
+    }
 
     tradinghubCalculateTrendNew(manager, {moreBOS, showHiddenSwings, showFake, showIFC});
 
@@ -551,8 +555,7 @@ const filterDoubleSwings = (i: number, lastSwingIndex: number, updateLastSwingIn
     }
 }
 
-export const tradinghubCalculateSwings = (manager: StateManager, oneIteration: boolean = false) => {
-
+export const tradinghubCalculateSwings = (manager: StateManager) => {
     // Тупо первая точка
     if (manager.candles.length) {
         manager.swings[0] = new Swing({
@@ -565,93 +568,32 @@ export const tradinghubCalculateSwings = (manager: StateManager, oneIteration: b
 
     let prevCandleIndex = 0
     let lastSwingIndex = -1;
-    const processingSwings = new Map<number, {
-        currentCandle: HistoryObject,
-        nextIndex: number,
-        status: 'draft' | 'nextIndex'
-    }>();
     for (let rootIndex = 1; rootIndex < manager.candles.length - 1; rootIndex++) {
-        if (oneIteration) {
-            // Если текущая свечка внутренняя для предыдущей - идем дальше
-            if (isInsideBar(manager.candles[rootIndex - 1], manager.candles[rootIndex])) {
-                continue;
-            }
-            // Если текущая свечка не внутренняя - начинаем поиск свинга
-            processingSwings.set(rootIndex, {
-                currentCandle: manager.candles[rootIndex],
-                nextIndex: rootIndex + 1,
-                status: 'draft'
-            });
-
-            for (let i = 0; i < processingSwings.size; i++) {
-                const [processingIndex, sw] = Array.from(processingSwings)[i];
-                // }
-                // processingSwings.forEach((sw, processingIndex) => {
-                let prevCandle = manager.candles[processingIndex - 1];
-                let {
-                    currentCandle,
-                    nextIndex,
-                    status
-                } = sw;
-                let nextCandle = manager.candles[nextIndex]
-                if (status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
-                    status = 'nextIndex';
-                } else {
-                    nextIndex = rootIndex + 1;
-                }
-                processingSwings.set(processingIndex, {
-                    ...sw,
-                    nextIndex,
-                    status
-                });
-
-                if (status === 'draft') {
-                    break;
-                }
-
-                let diff = nextIndex - processingIndex - 1;
-                nextCandle = manager.candles[nextIndex]
-
-                tryCalculatePullback(processingIndex, 'high', diff, prevCandle, currentCandle, nextCandle, manager.swings);
-                tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, manager.swings);
-
-                const updateLast = newIndex => {
-                    // console.log(`lastSwingIndex: ${lastSwingIndex} --> newIndex: ${newIndex}`)
-                    lastSwingIndex = newIndex
-                }
-
-                // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
-                filterDoubleSwings(processingIndex, lastSwingIndex, updateLast, manager.swings);
-
-                processingSwings.delete(processingIndex);
-            }
-        } else {
-            let prevCandle = manager.candles[prevCandleIndex];
-            const currentCandle = manager.candles[rootIndex];
-            if (isInsideBar(prevCandle, currentCandle)) {
-                continue;
-            }
-            let nextIndex = rootIndex + 1;
-            let nextCandle = manager.candles[nextIndex];
-            // TODO в методичке этого нет. После текущего свипа для подтверждения нужно дождаться пока какая-либо свеча пересвипнет текущую.
-            for (; nextIndex < manager.candles.length - 1; nextIndex++) {
-                nextCandle = manager.candles[nextIndex]
-                if (!isInsideBar(currentCandle, nextCandle)) {
-                    break;
-                }
-            }
-            let diff = nextIndex - rootIndex - 1;
-            nextCandle = manager.candles[nextIndex]
-
-            tryCalculatePullback(rootIndex, 'high', diff, prevCandle, currentCandle, nextCandle, manager.swings);
-            tryCalculatePullback(rootIndex, 'low', diff, prevCandle, currentCandle, nextCandle, manager.swings);
-
-            // фильтруем вершины подряд
-            filterDoubleSwings(rootIndex, lastSwingIndex, newIndex => lastSwingIndex = newIndex, manager.swings);
-
-            prevCandleIndex = rootIndex;
-            rootIndex += diff;
+        let prevCandle = manager.candles[prevCandleIndex];
+        const currentCandle = manager.candles[rootIndex];
+        if (isInsideBar(prevCandle, currentCandle)) {
+            continue;
         }
+        let nextIndex = rootIndex + 1;
+        let nextCandle = manager.candles[nextIndex];
+        // TODO в методичке этого нет. После текущего свипа для подтверждения нужно дождаться пока какая-либо свеча пересвипнет текущую.
+        for (; nextIndex < manager.candles.length - 1; nextIndex++) {
+            nextCandle = manager.candles[nextIndex]
+            if (!isInsideBar(currentCandle, nextCandle)) {
+                break;
+            }
+        }
+        let diff = nextIndex - rootIndex - 1;
+        nextCandle = manager.candles[nextIndex]
+
+        tryCalculatePullback(rootIndex, 'high', diff, prevCandle, currentCandle, nextCandle, manager.swings);
+        tryCalculatePullback(rootIndex, 'low', diff, prevCandle, currentCandle, nextCandle, manager.swings);
+
+        // фильтруем вершины подряд
+        filterDoubleSwings(rootIndex, lastSwingIndex, newIndex => lastSwingIndex = newIndex, manager.swings);
+
+        prevCandleIndex = rootIndex;
+        rootIndex += diff;
     }
 }
 
@@ -725,6 +667,14 @@ export class StateManager {
     trend: Trend[] = [];
     orderblocks: OrderBlock[] = [];
 
+    // tradinghubCalculateSwings
+    lastSwingIndex: number = -1;
+    processingSwings = new Map<number, {
+        currentCandle: HistoryObject,
+        nextIndex: number,
+        status: 'draft' | 'nextIndex'
+    }>()
+
     // deleteInternalStructure
     preLastIndexMap: Record<'high' | 'low', number> = {
         high: null,
@@ -775,6 +725,84 @@ export class StateManager {
         this.boses = new Array(candles.length).fill(null);
         this.trend = new Array(candles.length).fill(null)
         this.orderblocks = new Array(candles.length).fill(null)
+    }
+
+    calculate() {
+        for (let i = 0; i < this.candles.length; i++) {
+            this.calculateSwings(i);
+        }
+    }
+
+    calculateSwings(rootIndex: number) {
+        // Тупо первая точка
+        if (rootIndex === 0 && this.candles.length) {
+            this.swings[0] = new Swing({
+                side: 'high',
+                time: this.candles[0].time,
+                price: this.candles[0].high,
+                index: 0
+            });
+            return;
+        }
+
+        // Если текущая свечка внутренняя для предыдущей - идем дальше
+        if (isInsideBar(this.candles[rootIndex - 1], this.candles[rootIndex])) {
+            return;
+        }
+        // Если текущая свечка не внутренняя - начинаем поиск свинга
+        this.processingSwings.set(rootIndex, {
+            currentCandle: this.candles[rootIndex],
+            nextIndex: rootIndex + 1,
+            status: 'draft'
+        });
+
+        for (let i = 0; i < this.processingSwings.size; i++) {
+            const [processingIndex, sw] = Array.from(this.processingSwings)[i];
+            // }
+            // processingSwings.forEach((sw, processingIndex) => {
+            let prevCandle = this.candles[processingIndex - 1];
+            let {
+                currentCandle,
+                nextIndex,
+                status
+            } = sw;
+            let nextCandle = this.candles[nextIndex]
+
+            if (!nextCandle) {
+                break;
+            }
+
+            if (status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
+                status = 'nextIndex';
+            } else {
+                nextIndex = rootIndex + 1;
+            }
+            this.processingSwings.set(processingIndex, {
+                ...sw,
+                nextIndex,
+                status
+            });
+
+            if (status === 'draft') {
+                break;
+            }
+
+            let diff = nextIndex - processingIndex - 1;
+            nextCandle = this.candles[nextIndex]
+
+            tryCalculatePullback(processingIndex, 'high', diff, prevCandle, currentCandle, nextCandle, this.swings);
+            tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
+
+            const updateLast = newIndex => {
+                // console.log(`lastSwingIndex: ${lastSwingIndex} --> newIndex: ${newIndex}`)
+                this.lastSwingIndex = newIndex
+            }
+
+            // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
+            filterDoubleSwings(processingIndex, this.lastSwingIndex, updateLast, this.swings);
+
+            this.processingSwings.delete(processingIndex);
+        }
     }
 }
 
