@@ -694,7 +694,7 @@ const MainPage: React.FC = () => {
             width > 1200 && {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/new-testing?ticker=${row.ticker}&tf=${row.timeframe}&tab=orderblocks`}
+                    return <Link to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
                                  target="_blank">Тестер</Link>;
                 }
             }
@@ -775,7 +775,7 @@ const MainPage: React.FC = () => {
             {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/new-testing?ticker=${row.ticker}&tf=${row.timeframe}&tab=orderblocks`}
+                    return <Link to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
                                  target="_blank">Тестер</Link>;
                 }
             }
@@ -906,7 +906,7 @@ const MainPage: React.FC = () => {
                 title: "Действия",
                 render: (value, row) => {
                     return row?.type !== 'summary' ?
-                        <Link to={`/new-testing?ticker=${row.ticker}&tf=${row.timeframe}&tab=orderblocks`}
+                        <Link to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
                               target="_blank">Тестер</Link> : '';
                 }
             }
@@ -1035,13 +1035,14 @@ const MainPage: React.FC = () => {
                 }
 
                 const orderblockTime = new Date(selectedPattern?.orderblockTime).getTime();
+                const imbalanceTime = new Date(selectedPattern?.imbalanceTime).getTime();
 
                 const leftTop = {
                     price: Number(selectedPattern?.orderblockHigh),
                     time: (orderblockTime / 1000) as Time
                 } as Point
                 const rightBottom = {
-                    time: rightTime,
+                    time: imbalanceTime,
                     price: Number(selectedPattern?.orderblockLow)
                 } as Point
 
