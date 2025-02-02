@@ -85,6 +85,7 @@ export const SoloTestPage = () => {
         moreBOS: checkboxValues.has('moreBOS'),
         oneIteration: checkboxValues.has('oneIteration'),
         newSMT: checkboxValues.has('newSMT'),
+        showFake: checkboxValues.has('showFake'),
         showHiddenSwings: checkboxValues.has('showHiddenSwings'),
         showRobotOB: checkboxValues.has('showRobotOB'),
         showIFC: checkboxValues.has('showIFC'),
@@ -147,7 +148,7 @@ export const SoloTestPage = () => {
         }
 
         return { swings, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.newSMT, config.showHiddenSwings, config.oneIteration, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -535,6 +536,7 @@ export const SoloTestPage = () => {
             <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
             <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
             <Checkbox key="showIFC" value="showIFC">Показывать IFC</Checkbox>
+            <Checkbox key="showFake" value="showFake">Fake BOS</Checkbox>
             {/*<Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>*/}
             {/*<Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>*/}
             {/*<Checkbox key="removeEmpty" value="removeEmpty">Удалить пустые точки</Checkbox>*/}
