@@ -1166,13 +1166,15 @@ const drawTrend = (manager: StateManager) => {
             continue;
         }
 
-        for (let j = curBos.to.index; j < to; j++) {
-            const type = curBos.type;
-            manager.trend[j] = {time: manager.candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
+        if(curBos.isConfirmed){
+            for (let j = curBos.to.index; j < to; j++) {
+                const type = curBos.type;
+                manager.trend[j] = {time: manager.candles[j].time, trend: type === 'high' ? 1 : -1, index: i}
 
-            // Удаляем IDM у точек которые являются босами
-            if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {
-                manager.boses[j] = null;
+                // Удаляем IDM у точек которые являются босами
+                if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {
+                    manager.boses[j] = null;
+                }
             }
         }
 

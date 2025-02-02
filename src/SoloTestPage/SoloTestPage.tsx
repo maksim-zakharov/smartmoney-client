@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Checkbox, Divider, Form, Input, InputNumber, Row, Slider, SliderSingleProps, Space} from "antd";
+import {Button, Checkbox, Divider, Form, Input, InputNumber, Radio, Row, Slider, SliderSingleProps, Space} from "antd";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
@@ -24,6 +24,7 @@ import {
     calculateTesting, notTradingTime
 } from "../th_ultimate";
 import {useOrderblocksQuery} from "../api";
+import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -31,6 +32,8 @@ const markerColors = {
 }
 
 export const SoloTestPage = () => {
+    const [env, setEnv] = useState<'dev' | 'prod'>('dev');
+    const [offset, setOffset] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState([]);
 
@@ -120,7 +123,7 @@ export const SoloTestPage = () => {
     }
     
     const {swings, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, trend, boses, orderBlocks} = calculateTesting(data, config);
+        const {swings, trend, boses, orderBlocks} = calculateTesting(data.slice(0, data.length - offset), config);
 
         const fakeouts = calculateFakeout(swings, data)
 
@@ -144,7 +147,7 @@ export const SoloTestPage = () => {
         }
 
         return { swings, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [isShortSellPossible, stopPaddingPercent, config.showIFC, config.newSMT, config.showHiddenSwings, config.oneIteration, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.newSMT, config.showHiddenSwings, config.oneIteration, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -542,8 +545,21 @@ export const SoloTestPage = () => {
             <TimeframeSelect value={tf} onChange={setSize}/>
             <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                          onChange={onChangeRangeDates}/>
+            <Button style={{display: 'block'}} icon={<LeftOutlined/>} onClick={() => setOffset(prev => prev += 1)}/>
+            <Button style={{display: 'block'}} icon={<RightOutlined/>}
+                    onClick={() => setOffset(prev => prev < 0 ? prev : prev -= 1)}/>
+            <Radio.Group value={env} onChange={(e) => setEnv(e.target.value)}>
+                <Radio.Button value="dev">Development</Radio.Button>
+                <Radio.Button value="prod">Production</Radio.Button>\
+            </Radio.Group>
         </Space>
-        <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers} data={data}
+        <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers} data={data.map((d, i, array) => i >= array.length - 1 - offset ?
+            {
+                ...d, borderColor: "rgba(44,60,75, 1)",
+                wickColor: "rgba(44,60,75, 1)",
+
+                color: 'rgba(0, 0, 0, 0)'
+            } : d)}
                ema={[]}/>
     </>;
 }
