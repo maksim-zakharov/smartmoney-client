@@ -102,12 +102,30 @@ export class Cross {
     }
 }
 
-export class OrderBlock {
+enum POIType {
+    // IDM IFC (свип IDM свечей IFC)
+    IDM_IFC = 'IDM_IFC',
+    // OB IDM (первый ОБ над IDM)
+    OB_IDM = 'OB_IDM',
+    // OB IDM IFC (свип OB IDM свечой IFC)
+    OB_IDM_IFC = 'OB_IDM_IFC',
+    // LQ IFC (свип любого свинга свечой IFC)
+    LQ_IFC = 'LQ_IFC',
+    // EXT LQ IFC (свип экстремума свечой IFC)
+    EXT_LQ_IFC = 'EXT_LQ_IFC',
+    // OB EXT (OB На экстремуме)
+    OB_EXT = 'OB_EXT',
+    // CHOCH IFC (свич чоч свечой IFC)
+    CHOCH_IFC = 'CHOCH_IFC',
+}
+
+export class POI {
     textTime?: number;
     firstImbalanceIndex: number;
     imbalanceIndex: number;
-    type: 'high' | 'low';
     lastOrderblockCandle: HistoryObject;
+    // Направление: high - рисуем сверху (шорт на отбой), low - рисуем снизу - (лонг на отбой)
+    side: 'high' | 'low';
     lastImbalanceCandle: HistoryObject;
     startCandle: HistoryObject;
     // TODO только для теста
@@ -115,11 +133,11 @@ export class OrderBlock {
     endCandle?: HistoryObject;
     endIndex?: number;
     isSMT?: boolean;
-    tradeOrderType?: 'limit' | 'market'
     takeProfit?: number;
     swing: Swing;
+    type: POIType;
 
-    constructor(props: Partial<OrderBlock>) {
+    constructor(props: Partial<POI>) {
         Object.assign(this, props);
     }
 
@@ -129,6 +147,21 @@ export class OrderBlock {
 
     get time(): number {
         return this.startCandle.time;
+    }
+
+    // Все IFC после касания торгуются маркетом. Просто ОБ - лимиткой
+    get tradeOrderType(): 'limit' | 'market'{
+        switch (this.type){
+            case POIType.CHOCH_IFC: return 'market';
+            case POIType.IDM_IFC: return 'market';
+            case POIType.LQ_IFC: return 'market';
+            case POIType.OB_IDM_IFC: return 'market';
+            case POIType.EXT_LQ_IFC: return 'market';
+            case POIType.OB_IDM: return 'limit';
+            case POIType.OB_EXT: return 'limit';
+
+            default: return 'limit';
+        }
     }
 
     get text(): string {
@@ -160,14 +193,13 @@ export class OrderBlock {
  * - EXT LQ IFC (свип экстремума свечой IFC)
  * - OB EXT (OB На экстремуме)
  * - CHOCH IFC (свич чоч свечой IFC)
- * Можно даж сделать в коде типы (эти 7 штук) и свичтмап по названию
  * Хорошо бы на все это тесты написать
  * @param manager
  * @param withMove
  * @param newSMT
  * @param showFake
  */
-export const calculateOB = (manager: StateManager, withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false) => {
+export const calculatePOI = (manager: StateManager, withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false) => {
     // Иногда определяеются несколько ОБ на одной свечке, убираем
     let uniqueOrderBlockTimeSet = new Set();
 
@@ -274,7 +306,7 @@ export const calculateOB = (manager: StateManager, withMove: boolean = false, ne
                     return;
                 }
 
-                const orderBlock = {
+                const orderBlockPart = {
                     startCandle: {
                         time,
                         open,
@@ -286,30 +318,28 @@ export const calculateOB = (manager: StateManager, withMove: boolean = false, ne
                     lastImbalanceCandle,
                     firstImbalanceIndex: firstImbalanceIndex - swing.index,
                     imbalanceIndex: lastImbalanceIndex - swing.index,
-                    type,
+                    side: type,
                 } as OrderblockPart;
 
                 const lastIDMIndex = lastIDMIndexMap[swing?.side]
-                if (orderBlock?.type === swing?.side && swing?.isExtremum && !uniqueOrderBlockTimeSet.has(orderBlock.startCandle.time)) {
+                if (orderBlockPart?.side === swing?.side && swing?.isExtremum && !uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)) {
                     // TODO Не торговать ОБ под IDM
-                    const bossIndex = orderBlock.firstImbalanceIndex + index;
+                    const bossIndex = orderBlockPart.firstImbalanceIndex + index;
                     const hasBoss = Boolean(manager.boses[bossIndex]) && (!showFake || manager.boses[bossIndex].isConfirmed);
 
-                    debugger
-
-                    manager.orderblocks[swing.index] = new OrderBlock({
-                        ...orderBlock,
+                    manager.pois[swing.index] = new POI({
+                        ...orderBlockPart,
                         isSMT: !newSMT && (hasBoss || (lastIDMIndex
                             && manager.boses[lastIDMIndex].from.index <= i
                             && manager.boses[lastIDMIndex].to.index > i)),
                         swing,
                         canTrade: true,
-                        tradeOrderType: 'limit',
-                        takeProfit
+                        takeProfit,
+                        type: POIType.OB_EXT
                     })
                     obIdxes.add(swing.index);
 
-                    uniqueOrderBlockTimeSet.add(orderBlock.startCandle.time);
+                    uniqueOrderBlockTimeSet.add(orderBlockPart.startCandle.time);
                 }
                 nonConfirmsOrderblocks.delete(time);
             })
@@ -323,10 +353,10 @@ export const calculateOB = (manager: StateManager, withMove: boolean = false, ne
              * Записываю новые ОБ и закрываю их если было касание
              */
             obIdxes.forEach(obIdx => {
-                const obItem = manager.orderblocks[obIdx];
+                const obItem = manager.pois[obIdx];
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
 
-                const idmType = obItem.type;
+                const idmType = obItem.side;
                 if (lastIDMIndexMap[idmType] && lastIDMIndexMap[idmType] <= i && obItem.index >= lastIDMIndexMap[idmType]) {
                     obItem.isSMT = true;
                     obItem.canTrade = false;
@@ -341,10 +371,9 @@ export const calculateOB = (manager: StateManager, withMove: boolean = false, ne
                     obItem.endCandle = candle;
                     obItem.endIndex = i;
                     obItem.canTrade = true;
-                    obItem.tradeOrderType = 'market';
 
                     const trendType = trend?.trend === 1 ? 'low' : 'high';
-                    if (!trend || trendType !== obItem.type) {
+                    if (!trend || trendType !== obItem.side) {
                         obItem.canTrade = false;
                         return;
                     }
@@ -363,8 +392,8 @@ export const calculateOB = (manager: StateManager, withMove: boolean = false, ne
 
     if (!newSMT) {
         // Где начинается позиция TODO для теста, в реальности это точка входа
-        for (let i = 0; i < manager.orderblocks.length; i++) {
-            const obItem = manager.orderblocks[i];
+        for (let i = 0; i < manager.pois.length; i++) {
+            const obItem = manager.pois[i];
             if (!obItem) {
                 continue;
             }
@@ -382,7 +411,7 @@ export const calculateOB = (manager: StateManager, withMove: boolean = false, ne
         }
     }
 
-    return manager.orderblocks.map((ob, index) => {
+    return manager.pois.map((ob, index) => {
         // Либо смотрим тренд по закрытию ОБ либо если закрытия нет - по открытию.
         const obStartIndex = ob?.index;
         const obIndex = ob?.endIndex || index;
@@ -391,10 +420,10 @@ export const calculateOB = (manager: StateManager, withMove: boolean = false, ne
         if (startTrend !== trend) {
             return null;
         }
-        if (trend === 1 && ob?.type === 'low') {
+        if (trend === 1 && ob?.side === 'low') {
             return ob;
         }
-        if (trend === -1 && ob?.type === 'high') {
+        if (trend === -1 && ob?.side === 'high') {
             return ob;
         }
         return null;
@@ -452,7 +481,7 @@ export const calculateTesting = (data: HistoryObject[], {
     tradinghubCalculateTrendNew(manager, {moreBOS, showHiddenSwings, showFake, showIFC});
 
     // Копировать в робота -->
-    let orderBlocks = calculateOB(
+    let orderBlocks = calculatePOI(
         manager,
         withMove,
         newSMT,
@@ -461,7 +490,7 @@ export const calculateTesting = (data: HistoryObject[], {
 
     if (byTrend) {
         const currentTrend = manager.trend[manager.trend.length - 1]?.trend === 1 ? 'low' : 'high';
-        orderBlocks = orderBlocks.filter(ob => ob?.type === currentTrend);
+        orderBlocks = orderBlocks.filter(ob => ob?.side === currentTrend);
     }
 
     return {swings: manager.swings, trend: manager.trend, boses: manager.boses, orderBlocks};
@@ -478,7 +507,7 @@ export interface THConfig {
     oneIteration?: boolean;
 }
 
-export const isNotSMT = (obItem: OrderBlock) => !obItem || (!obItem.isSMT && obItem.text !== 'SMT')
+export const isNotSMT = (obItem: POI) => !obItem || (!obItem.isSMT && obItem.text !== 'SMT')
 
 export const defaultConfig: THConfig = {
     moreBOS: true,
@@ -686,7 +715,7 @@ export class StateManager {
     swings: (Swing | null)[] = [];
     boses: Cross[] = [];
     trend: Trend[] = [];
-    orderblocks: OrderBlock[] = [];
+    pois: POI[] = [];
 
     // tradinghubCalculateSwings
     lastSwingIndex: number = -1;
@@ -745,7 +774,7 @@ export class StateManager {
         this.swings = new Array(candles.length).fill(null);
         this.boses = new Array(candles.length).fill(null);
         this.trend = new Array(candles.length).fill(null)
-        this.orderblocks = new Array(candles.length).fill(null)
+        this.pois = new Array(candles.length).fill(null)
     }
 
     calculate() {
@@ -1246,17 +1275,17 @@ export const isIFC = (side: Swing['side'], candle: HistoryObject) => {
 }
 export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar.high && candle.low < bar.low;
 
-export type OrderblockPart = Pick<OrderBlock, 'type' | 'lastOrderblockCandle' | 'lastImbalanceCandle' | 'firstImbalanceIndex' | 'imbalanceIndex' | 'startCandle'>
+export type OrderblockPart = Pick<POI, 'side' | 'lastOrderblockCandle' | 'lastImbalanceCandle' | 'firstImbalanceIndex' | 'imbalanceIndex' | 'startCandle'>
 
 const isInternalBOS = (leftBos: Cross, rightBos: Cross) => leftBos.from.index < rightBos.from.index
     && leftBos.to.index >= rightBos.to.index
 const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
 
-export const hasHitOB = (ob: OrderBlock, candle: HistoryObject) =>
-    (ob.type === 'high'
+export const hasHitOB = (ob: POI, candle: HistoryObject) =>
+    (ob.side === 'high'
         && ob.startCandle.low <= candle.high
     )
-    || (ob.type === 'low'
+    || (ob.side === 'low'
         // Если был прокол
         && ob.startCandle.high >= candle.low
     );
@@ -1314,23 +1343,23 @@ export enum Side {
 
 export type CandleWithSide = HistoryObject & { side: Side };
 
-export const filterNearOrderblock = (orderBlocks: OrderBlock[], currentCandle: HistoryObject) => orderBlocks.filter(({
-                                                                                                                         startCandle: {
-                                                                                                                             high,
-                                                                                                                             low
-                                                                                                                         },
-                                                                                                                         type
-                                                                                                                     }) =>
+export const filterNearOrderblock = (orderBlocks: POI[], currentCandle: HistoryObject) => orderBlocks.filter(({
+                                                                                                                  startCandle: {
+                                                                                                                      high,
+                                                                                                                      low
+                                                                                                                  },
+                                                                                                                  type
+                                                                                                              }) =>
     hasNear(
         true,
         {high, low, side: type === 'high' ? Side.Sell : Side.Buy} as any,
         currentCandle,
     ),
 )
-    .filter(ob => ob.type === 'high' ? currentCandle.high < ob.startCandle.high : currentCandle.low > ob.startCandle.low)
+    .filter(ob => ob.side === 'high' ? currentCandle.high < ob.startCandle.high : currentCandle.low > ob.startCandle.low)
     .sort((a, b) => {
-        const aDiff = a.type === 'high' ? a.startCandle.low - currentCandle.high : currentCandle.low - a.startCandle.high;
-        const bDiff = b.type === 'high' ? b.startCandle.low - currentCandle.high : currentCandle.low - b.startCandle.high;
+        const aDiff = a.side === 'high' ? a.startCandle.low - currentCandle.high : currentCandle.low - a.startCandle.high;
+        const bDiff = b.side === 'high' ? b.startCandle.low - currentCandle.high : currentCandle.low - b.startCandle.high;
 
         return aDiff - bDiff;
     })

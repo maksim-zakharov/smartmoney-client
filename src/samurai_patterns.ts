@@ -5,7 +5,7 @@ import {
     HistoryObject,
     isIFC,
     isInsideBar,
-    OrderBlock,
+    POI,
     OrderblockPart,
     Swing,
     Trend
@@ -392,7 +392,7 @@ export const isOrderblock = (candles: HistoryObject[], withMove: boolean = false
             lastImbalanceCandle,
             firstImbalanceIndex,
             imbalanceIndex: lastImbalanceIndex,
-            type,
+            side: type,
         } as OrderblockPart;
     }
 
@@ -403,7 +403,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
 
     let boses: Cross[] = new Array(candles.length).fill(null);
     let trend: Trend[] = new Array(candles.length).fill(null);
-    let orderBlocks: OrderBlock[] = new Array(candles.length).fill(null);
+    let orderBlocks: POI[] = new Array(candles.length).fill(null);
 
     let lastHigh = null;
     let lastLow = null;
@@ -574,9 +574,9 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
             const orderBlock = isOrderblock(candlesBatch, withMove);
 
-            if (orderBlock?.type === 'high') {
+            if (orderBlock?.side === 'high') {
                 const obItem = {
-                    type: orderBlock.type,
+                    type: orderBlock.side,
                     index,
                     time: orderBlock.startCandle.time,
                     lastOrderblockCandle: orderBlock.lastOrderblockCandle,
@@ -605,9 +605,9 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
             const index = low?.index
             const candlesBatch = candles.slice(index, index + MAX_CANDLES_COUNT);
             const orderBlock = isOrderblock(candlesBatch, withMove);
-            if (orderBlock?.type === 'low') {
+            if (orderBlock?.side === 'low') {
                 const obItem = {
-                    type: orderBlock.type,
+                    type: orderBlock.side,
                     index,
                     time: orderBlock.startCandle.time,
                     lastOrderblockCandle: orderBlock.lastOrderblockCandle,
@@ -1136,7 +1136,7 @@ export const calculatePositionsByIFC = (candles: HistoryObject[], swings: Swing[
     return positions;
 }
 
-export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings: Swing[], ob: OrderBlock[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true, stopPaddingPercent: number = 0) => {
+export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true, stopPaddingPercent: number = 0) => {
     const positions = [];
     let lastExtremumIndexMap: Record<'high' | 'low', number> = {
         high: null,
@@ -1153,12 +1153,12 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
             continue;
         }
 
-        const side = obItem.type === 'high' ? 'short' : 'long';
+        const side = obItem.side === 'high' ? 'short' : 'long';
         let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
         let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
         const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
 
-        const lastExtremumIndex = obItem.type === 'high' ? lastExtremumIndexMap['low'] : lastExtremumIndexMap['high'];
+        const lastExtremumIndex = obItem.side === 'high' ? lastExtremumIndexMap['low'] : lastExtremumIndexMap['high'];
 
         if(!limitOrder){
             openPrice = candles[obItem.endIndex + 1].open;

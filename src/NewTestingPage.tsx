@@ -123,7 +123,7 @@ const NewTestingPage = () => {
                         time: orderBlock.lastOrderblockCandle.time
                     },
                     rightBottom: {
-                        price: orderBlock.lastImbalanceCandle[orderBlock.type],
+                        price: orderBlock.lastImbalanceCandle[orderBlock.side],
                         time: (orderBlock.endCandle || lastCandle).time
                     }
                 }, {
@@ -141,7 +141,7 @@ const NewTestingPage = () => {
                         rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
                     },
                     {
-                        fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
+                        fillColor: orderBlock.side === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
                         showLabels: false,
                         borderWidth: 0,
                     })));
@@ -155,10 +155,10 @@ const NewTestingPage = () => {
         const allMarkers = [];
         if (selectedKey === 'orderblocks') {
             allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
-                color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
+                color: s.side === 'low' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.textTime || s.time) as Time,
                 shape: 'text',
-                position: s.type === 'high' ? 'aboveBar' : 'belowBar',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                 text: s.text
             })));
         }

@@ -45,7 +45,7 @@ const BOSChart = ({data, showSwings, showStructure, showOrderblock, mockHighs, m
                 time: orderBlock.lastOrderblockCandle.time
             },
             rightBottom: {
-                price: orderBlock.lastImbalanceCandle[orderBlock.type],
+                price: orderBlock.lastImbalanceCandle[orderBlock.side],
                 time: (orderBlock.endCandle || lastCandle).time
             }
         }, {
@@ -62,7 +62,7 @@ const BOSChart = ({data, showSwings, showStructure, showOrderblock, mockHighs, m
                     rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
                 },
                 {
-                    fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
+                    fillColor: orderBlock.side === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
                     showLabels: false,
                     borderWidth: 0,
                 })));

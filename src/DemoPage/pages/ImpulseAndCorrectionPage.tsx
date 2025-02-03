@@ -12,7 +12,7 @@ import {DatesPicker} from "../../DatesPicker";
 import type { Dayjs } from 'dayjs';
 import {LineStyle, Time} from "lightweight-charts";
 import {
-    calculateOB,
+    calculatePOI,
     deleteEmptySwings,
     drawBOS,
     HistoryObject,

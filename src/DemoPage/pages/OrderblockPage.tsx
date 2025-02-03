@@ -8,7 +8,7 @@ import {Chart} from "../../SoloTestPage/TestChart";
 import React from "react";
 import {createRectangle2} from "../../utils";
 import {
-    calculateOB,
+    calculatePOI,
     drawBOS,
     HistoryObject,
     markHHLL, StateManager,
@@ -28,7 +28,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
 
     const trends = data.map((candle, index) => ({trend, time: candle.time, index}) as Trend);
 
-    const orderBlocks = calculateOB(manager, true);
+    const orderBlocks = calculatePOI(manager, true);
     const lastCandle = data[data.length - 1];
     const _primitives = [];
     _primitives.push(...orderBlocks.map(orderBlock => createRectangle2({
@@ -37,7 +37,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
             time: orderBlock.lastOrderblockCandle.time
         },
         rightBottom: {
-            price: orderBlock.lastImbalanceCandle[orderBlock.type],
+            price: orderBlock.lastImbalanceCandle[orderBlock.side],
             time: (orderBlock.endCandle || lastCandle).time
         }
     }, {
@@ -54,7 +54,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
                 rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
             },
             {
-                fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
+                fillColor: orderBlock.side === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
                 showLabels: false,
                 borderWidth: 0,
             })));
