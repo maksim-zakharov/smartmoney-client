@@ -165,6 +165,9 @@ export class POI {
     }
 
     get text(): string {
+        if(this.type === 'OB_EXT'){
+            return 'OB_EXT';
+        }
         if (this.swing.isExtremum)
             return 'Ex OB';
         if (this.isSMT)
