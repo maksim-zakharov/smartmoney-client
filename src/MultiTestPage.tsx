@@ -55,12 +55,19 @@ export const MultiTestPage = () => {
     const [security, setSecurity] = useState();
     const [riskRates, setRiskRates] = useState();
     const [token, setToken] = useState();
-    const fromDate = dayjs().add(-1, "week");
+    const fromDate = dayjs().add(-2, "week");
     const toDate = dayjs().endOf('day');
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([fromDate, toDate])
 
     const positions = useMemo(() => {
-        const {swings, trend, boses, orderBlocks} = calculateTesting(data, defaultConfig);
+        const {swings, trend, boses, orderBlocks} = calculateTesting(data, {
+            withMove,
+            moreBOS,
+            showHiddenSwings,
+            newSMT,
+            showFake,
+            oneIteration
+        });
 
         const lotsize = (security?.lotsize || 1)
 
@@ -297,7 +304,7 @@ export const MultiTestPage = () => {
         {
             title: "Действия",
             render: (value, row) => {
-                return <Link to={`/new-testing?ticker=${row.ticker}&tf=${row.timeframe}&tab=orderblocks`}
+                return <Link to={`/new-testing?ticker=${row.ticker || ticker}&tf=${row.timeframe}&tab=orderblocks`}
                              target="_blank">Тестер</Link>;
             }
         }

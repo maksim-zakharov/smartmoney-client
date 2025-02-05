@@ -72,10 +72,10 @@ const NewTestingPage = () => {
         newStruct = {moreBOS: true, showHiddenSwings: true};
     }
     if (selectedKey === 'structure') {
-        newStruct = {moreBOS: true, showHiddenSwings: false, showFake: true};
+        newStruct = {moreBOS: true, showHiddenSwings: false, showFake: false};
     }
     if(selectedKey === 'orderblocks'){
-        newStruct = {moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, showFake: true};
+        newStruct = {moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, showFake: false};
     }
 
     const currentCandle = data[data.length - 1 - offset];

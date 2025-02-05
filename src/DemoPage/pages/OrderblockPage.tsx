@@ -26,7 +26,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
 
     let bosses1 = manager.boses;
 
-    const trends = data.map((candle, index) => ({trend, time: candle.time, index}) as Trend);
+    const trends = data.map((candle, index) => ({trend, time: candle.time}) as Trend);
 
     const orderBlocks = calculatePOI(manager, true);
     const lastCandle = data[data.length - 1];

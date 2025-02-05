@@ -193,16 +193,16 @@ export const calculateTrend = (highs: Swing[], lows: Swing[], candles: HistoryOb
         const noDownWick = (!ignoreWick || candles[prevHigh.index].low > candles[currLow.index].close);
 
         if (prevHigh.price < currHigh.price && currHigh.index === i && (!withTrendConfirm || prevLow.price < currLow.price) && noUpperSFP && noUpperWick) {
-            trend[i] = {time: currHigh.time, trend: 1, index: currHigh.index};
+            trend[i] = {time: currHigh.time, trend: 1};
             highLows[i] = {high: currHigh, low: currLow};
         }
         if (prevLow.price > currLow.price && currLow.index === i && (!withTrendConfirm || prevHigh.price > currHigh.price) && noDownSFP && noDownWick) {
-            trend[i] = {time: currLow.time, trend: -1, index: currLow.index};
+            trend[i] = {time: currLow.time, trend: -1};
             highLows[i] = {high: currHigh, low: currLow};
         }
 
         if (!trend[i] && trend[i - 1]) {
-            trend[i] = {time: candles[i].time, trend: trend[i - 1].trend, index: trend[i - 1].index};
+            trend[i] = {time: candles[i].time, trend: trend[i - 1].trend};
         }
     }
 
@@ -435,7 +435,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                 extremum,
                 textCandle
             }
-            trend[i] = {time: candles[i].time, trend: 1, index: i};
+            trend[i] = {time: candles[i].time, trend: 1};
             if (i > 0 && trend[i - 1] && trend[i].trend !== trend[i - 1].trend) {
                 boses[from.index].text = 'CHoCH';
                 // orderBlocks = orderBlocks.map(ob => ob?.endIndex >= i ? null : ob);
@@ -477,7 +477,7 @@ export const tradinghubCalculateTrendNew2 = (swings: Swing[], candles: HistoryOb
                 extremum,
                 textCandle
             }
-            trend[i] = {time: candles[i].time, trend: -1, index: i};
+            trend[i] = {time: candles[i].time, trend: -1};
             if (i > 0 && trend[i - 1] && trend[i].trend !== trend[i - 1].trend) {
                 boses[from.index].text = 'CHoCH';
                 // orderBlocks = orderBlocks.map(ob => ob?.endIndex >= i ? null : ob);
@@ -686,7 +686,7 @@ export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject
     let lastLow = null;
     for (let i = 0; i < swings.length; i++) {
         if (lastLowestLow && candles[i].close < lastLowestLow.price) {
-            trend[i] = {time: candles[i].time, trend: -1, index: i};
+            trend[i] = {time: candles[i].time, trend: -1};
             lastHighestHigh = highestHigh ?? lastHighestHigh;
             if (lastHighestHigh) {
                 lastHighestHigh.text = 'HH';
@@ -696,7 +696,7 @@ export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject
             lowestLow = null;
             continue;
         } else if (!lastLowestLow && lowestLow && candles[i].close < lowestLow.price) {
-            trend[i] = {time: candles[i].time, trend: -1, index: i};
+            trend[i] = {time: candles[i].time, trend: -1};
             lastHighestHigh = highestHigh ?? lastHighestHigh;
             highestHigh = null;
             lowestLow = null;
@@ -704,7 +704,7 @@ export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject
         }
 
         if (lastHighestHigh && candles[i].close > lastHighestHigh.price) {
-            trend[i] = {time: candles[i].time, trend: 1, index: i};
+            trend[i] = {time: candles[i].time, trend: 1};
             lastLowestLow = lowestLow ?? lastLowestLow;
             if (lastLowestLow) {
                 lastLowestLow.text = 'LL';
@@ -714,7 +714,7 @@ export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject
             highestHigh = null;
             continue;
         } else if (!lastHighestHigh && highestHigh && candles[i].close > highestHigh.price) {
-            trend[i] = {time: candles[i].time, trend: 1, index: i};
+            trend[i] = {time: candles[i].time, trend: 1};
             lastLowestLow = lowestLow ?? lastLowestLow;
             lowestLow = null;
             highestHigh = null;
@@ -761,16 +761,14 @@ export const tradinghubCalculateTrend = (swings: Swing[], candles: HistoryObject
         if (swings[i].side === 'high' && prevHigh) {
             trend[i] = !lastHighestHigh && lastHigh.price > prevHigh.price ? {
                 time: swings[i].time,
-                trend: 1,
-                index: swings[i].index
+                trend: 1
             } : trend[i - 1];
         }
 
         if (swings[i].side === 'low' && prevLow) {
             trend[i] = !lastLowestLow && lastLow.price < prevLow.price ? {
                 time: swings[i].time,
-                trend: -1,
-                index: swings[i].index
+                trend: -1
             } : trend[i - 1];
         }
     }
@@ -1149,7 +1147,7 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
             lastExtremumIndexMap[swing?.side] = i;
         }
 
-        if (!obItem || !obItem.endCandle || !obItem.canTrade || obItem.text === 'SMT') {
+        if (!obItem || !obItem.endCandle || !obItem.canTrade || obItem.isSMT) {
             continue;
         }
 

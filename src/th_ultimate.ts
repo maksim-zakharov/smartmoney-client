@@ -150,28 +150,53 @@ export class POI {
     }
 
     // Все IFC после касания торгуются маркетом. Просто ОБ - лимиткой
-    get tradeOrderType(): 'limit' | 'market'{
-        switch (this.type){
-            case POIType.CHOCH_IFC: return 'market';
-            case POIType.IDM_IFC: return 'market';
-            case POIType.LQ_IFC: return 'market';
-            case POIType.OB_IDM_IFC: return 'market';
-            case POIType.EXT_LQ_IFC: return 'market';
-            case POIType.OB_IDM: return 'limit';
-            case POIType.OB_EXT: return 'limit';
-
-            default: return 'limit';
+    get tradeOrderType(): 'limit' | 'market' {
+        switch (this.type) {
+            case POIType.CHOCH_IFC:
+                return 'market';
+            case POIType.IDM_IFC:
+                return 'market';
+            case POIType.LQ_IFC:
+                return 'market';
+            case POIType.OB_IDM_IFC:
+                return 'market';
+            case POIType.EXT_LQ_IFC:
+                return 'market';
+            case POIType.OB_IDM:
+                return 'limit';
+            case POIType.OB_EXT:
+                return 'limit';
+            default:
+                return 'limit';
         }
     }
 
     get text(): string {
-        if(this.type === 'OB_EXT'){
+        if (this.isSMT)
+            return 'SMT';
+        if (this.type === POIType.OB_EXT) {
             return 'OB_EXT';
+        }
+        if (this.type === POIType.OB_IDM) {
+            return 'OB_IDM';
+        }
+        if (this.type === POIType.OB_IDM_IFC) {
+            return 'OB_IDM_IFC';
+        }
+        if (this.type === POIType.LQ_IFC) {
+            return 'LQ_IFC';
+        }
+        if (this.type === POIType.EXT_LQ_IFC) {
+            return 'EXT_LQ_IFC';
+        }
+        if (this.type === POIType.CHOCH_IFC) {
+            return 'CHOCH_IFC';
+        }
+        if (this.type === POIType.IDM_IFC) {
+            return 'IDM_IFC';
         }
         if (this.swing.isExtremum)
             return 'Ex OB';
-        if (this.isSMT)
-            return 'SMT';
         return 'OB';
     }
 }
@@ -237,6 +262,7 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
             lastIDMIndexMap[manager.boses[i]?.type] = i;
         }
 
+        // Нужно для определения ближайшей цели для TakeProfit
         if (swing?.isExtremum) {
             lastExtremumIndexMap[swing.side] = i;
         }
@@ -326,19 +352,27 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
 
                 const lastIDMIndex = lastIDMIndexMap[swing?.side]
                 if (orderBlockPart?.side === swing?.side && swing?.isExtremum && !uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)) {
+                    debugger
                     // TODO Не торговать ОБ под IDM
                     const bossIndex = orderBlockPart.firstImbalanceIndex + index;
                     const hasBoss = Boolean(manager.boses[bossIndex]) && (!showFake || manager.boses[bossIndex].isConfirmed);
 
+                    const isSMT = !newSMT && (hasBoss || (lastIDMIndex
+                        && manager.boses[lastIDMIndex].from.index <= i
+                        && manager.boses[lastIDMIndex].to.index > i))
+
+                    let type = POIType.LQ_IFC;
+                    if(swing.isExtremum){
+                        type = POIType.OB_EXT;
+                    }
+
                     manager.pois[swing.index] = new POI({
                         ...orderBlockPart,
-                        isSMT: !newSMT && (hasBoss || (lastIDMIndex
-                            && manager.boses[lastIDMIndex].from.index <= i
-                            && manager.boses[lastIDMIndex].to.index > i)),
+                        isSMT,
                         swing,
                         canTrade: true,
                         takeProfit,
-                        type: POIType.OB_EXT
+                        type
                     })
                     obIdxes.add(swing.index);
 
@@ -374,6 +408,10 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
                     obItem.endCandle = candle;
                     obItem.endIndex = i;
                     obItem.canTrade = true;
+
+                    if(isIFC(obItem.side, candle) && ![POIType.OB_EXT, POIType.OB_IDM].includes(obItem.type)){
+                        obItem.canTrade = false;
+                    }
 
                     const trendType = trend?.trend === 1 ? 'low' : 'high';
                     if (!trend || trendType !== obItem.side) {
@@ -475,13 +513,33 @@ export const calculateTesting = (data: HistoryObject[], {
      */
     const manager = new StateManager(data);
     // <-- Копировать в робота
+    // if (oneIteration) {
+    manager.calculate();
+    // } else {
+    //     tradinghubCalculateSwings(manager);
+    // }
+
+    tradinghubCalculateTrendNew(manager, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration});
+
     if (oneIteration) {
-        manager.calculate();
-    } else {
-        tradinghubCalculateSwings(manager);
+        // Потом переписать в просто calculate
+        manager.calculateTrend();
     }
 
-    tradinghubCalculateTrendNew(manager, {moreBOS, showHiddenSwings, showFake, showIFC});
+    // const manager1 = new StateManager(data);
+    // manager1.calculate();
+    // tradinghubCalculateTrendNew(manager1, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration: false});
+    //
+    // const manager2 = new StateManager(data);
+    // manager2.calculate();
+    // tradinghubCalculateTrendNew(manager2, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration: true});
+    // manager2.calculateTrend();
+    //
+    //
+    // console.log('old', manager1.trend)
+    // console.log('new', manager2.trend)
+    // console.log(JSON.stringify(manager1.trend.slice(0)) === JSON.stringify(manager2.trend.slice(0)))
+    // console.log(JSON.stringify(manager1.boses.slice(0)) === JSON.stringify(manager2.boses.slice(0)))
 
     // Копировать в робота -->
     let orderBlocks = calculatePOI(
@@ -510,7 +568,7 @@ export interface THConfig {
     oneIteration?: boolean;
 }
 
-export const isNotSMT = (obItem: POI) => !obItem || (!obItem.isSMT && obItem.text !== 'SMT')
+export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT
 
 export const defaultConfig: THConfig = {
     moreBOS: true,
@@ -653,7 +711,6 @@ export const tradinghubCalculateSwings = (manager: StateManager) => {
 export interface Trend {
     time: number;
     trend: number;
-    index: number;
 }
 
 export const deleteEmptySwings = (manager: StateManager) => {
@@ -772,6 +829,10 @@ export class StateManager {
         low: new Map<number, HistoryObject>([])
     }
 
+    // oneIterationTrend
+    firstBos?: Cross;
+    lastBos?: Cross;
+
     constructor(candles: HistoryObject[]) {
         this.candles = candles;
         this.swings = new Array(candles.length).fill(null);
@@ -783,6 +844,15 @@ export class StateManager {
     calculate() {
         for (let i = 0; i < this.candles.length; i++) {
             this.calculateSwings(i);
+        }
+    }
+
+    calculateTrend() {
+        this.firstBos = null;
+        this.lastBos = null;
+        // Берем только те босы которые строятся от свингов (по сути ж которые не IDM)
+        for (let i = 0; i < this.candles.length; i++) {
+            oneIterationTrend(this, i);
         }
     }
 
@@ -990,20 +1060,19 @@ export const markHHLL = (manager: StateManager) => {
     return manager.boses;
 }
 
-const updateLastSwing = (i: number, type: 'high' | 'low', swings: Swing[]
-    , manager: StateManager,
+const updateLastSwing = (i: number, type: 'high' | 'low', manager: StateManager,
                          moreBOS: boolean = false
 ) => {
-    if (swings[i] && swings[i].side === type && swings[i].isExtremum) {
+    if (manager.swings[i] && manager.swings[i].side === type && manager.swings[i].isExtremum) {
         manager.prelastBosSwingMap[type] = manager.lastBosSwingMap[type];
         manager.lastBosSwingMap[type] = i;
 
         if (moreBOS) {
             // Если новый бос более хайный (или более лольный) - то удаляем прошлый бос
-            if (type === 'high' && swings[manager.prelastBosSwingMap[type]] && swings[manager.lastBosSwingMap[type]].price > swings[manager.prelastBosSwingMap[type]].price) {
+            if (type === 'high' && manager.swings[manager.prelastBosSwingMap[type]] && manager.swings[manager.lastBosSwingMap[type]].price > manager.swings[manager.prelastBosSwingMap[type]].price) {
                 manager.lastBosSwingMapSet[type].delete(manager.prelastBosSwingMap[type])
             }
-            if (type === 'low' && swings[manager.prelastBosSwingMap[type]] && swings[manager.lastBosSwingMap[type]].price < swings[manager.prelastBosSwingMap[type]].price) {
+            if (type === 'low' && manager.swings[manager.prelastBosSwingMap[type]] && manager.swings[manager.lastBosSwingMap[type]].price < manager.swings[manager.prelastBosSwingMap[type]].price) {
                 manager.lastBosSwingMapSet[type].delete(manager.prelastBosSwingMap[type])
             }
 
@@ -1107,6 +1176,8 @@ export const drawBOS = (manager: StateManager, moreBOS: boolean = false, showFak
     for (let i = 0; i < manager.candles.length; i++) {
         // TODO Хз надо ли, выглядит ок но финрез хуже
         // Если сужение - удаляем внутренние босы
+        // TODO Здесь удаляются IDM которые нужны для LL и HH (которые подтерждаются не босами), нужно их оставлять
+        // TODO по хорошему это нужно удалять после объявления тренда
         if (
             manager.swings[manager.prelastBosSwingMap['high']]?.price > manager.swings[manager.lastBosSwingMap['high']]?.price
             && manager.swings[manager.prelastBosSwingMap['low']]?.price < manager.swings[manager.lastBosSwingMap['low']]?.price
@@ -1144,8 +1215,8 @@ export const drawBOS = (manager: StateManager, moreBOS: boolean = false, showFak
             confirmBOS(i, 'low', manager.candles, manager.swings, manager.boses, manager.lastBosSwingMap['low'], manager.lastBosSwingMap['high'], i === manager.candles.length - 1, manager, moreBOS, showFake);
         }
 
-        updateLastSwing(i, 'high', manager.swings, manager, moreBOS);
-        updateLastSwing(i, 'low', manager.swings, manager, moreBOS);
+        updateLastSwing(i, 'high',  manager, moreBOS);
+        updateLastSwing(i, 'low', manager, moreBOS);
     }
 
     manager.boses
@@ -1183,7 +1254,7 @@ export const drawBOS = (manager: StateManager, moreBOS: boolean = false, showFak
     }
 }
 export const tradinghubCalculateTrendNew = (manager: StateManager, {
-    moreBOS, showHiddenSwings, showIFC, showFake
+    moreBOS, showHiddenSwings, showIFC, showFake, oneIteration
 }: THConfig) => {
 
     markHHLL(manager)
@@ -1199,8 +1270,90 @@ export const tradinghubCalculateTrendNew = (manager: StateManager, {
 
     drawBOS(manager, moreBOS, showFake);
 
-    drawTrend(manager);
+    if (!oneIteration) {
+        drawTrend(manager);
+    }
 };
+
+const oneIterationTrend = (manager: StateManager, rootIndex: number) => {
+    const curBos = manager.boses[rootIndex];
+    const lastBos = manager.lastBos;
+    const firstBos = manager.firstBos;
+
+    const log = (...args) => {
+        return;
+        console.log(args);
+    }
+
+    // Если бос ИДМ - просто повторяем тренд который был
+    if (curBos && curBos.isIDM && lastBos) {
+        const isNewTrend = lastBos.type === 'high' ? 1 : -1;
+        manager.trend[rootIndex] = {time: manager.candles[rootIndex].time, trend: isNewTrend}
+        log(rootIndex,  'Если бос ИДМ - просто повторяем тренд который был');
+        return;
+    }
+
+    // Если первый бос/чоч случился а нового пока нет - рисуем тренд первого
+    if(lastBos && !firstBos && rootIndex >= lastBos.to.index){
+        const isNewTrend = lastBos.type === 'high' ? 1 : -1;
+        manager.trend[rootIndex] = {time: manager.candles[rootIndex].time, trend: isNewTrend}
+        log(rootIndex,  'Если первый бос/чоч случился а нового пока нет - рисуем тренд первого');
+    }
+
+    // Если текущий бос внутри предыдущего боса - то текущий бос нужно выпилить и не учитывать в тренде
+    if (firstBos && lastBos && lastBos.from.index > firstBos.from.index && lastBos.to.index < firstBos.to.index) {
+        manager.boses[lastBos.from.index] = null;
+        return;
+    }
+
+    // Если оба боса подтвердились одной свечой, значит второй бос лишний и оставляем самый длинный
+    if (firstBos && lastBos && firstBos.isConfirmed && lastBos.isConfirmed && firstBos.to.index === lastBos.to.index) {
+        manager.boses[lastBos.from.index] = null;
+        manager.lastBos = null;
+        return;
+    }
+
+    // Если есть текущий бос и прошлый, но текущий еще не закончился - рисуем тренд прошлого
+    if(firstBos && lastBos && lastBos?.to.index > rootIndex){
+        const isNewTrend = firstBos.type === 'high' ? 1 : -1;
+        manager.trend[rootIndex] = {time: manager.candles[rootIndex].time, trend: isNewTrend}
+        log(rootIndex,  'Если есть текущий бос и прошлый, но текущий еще не закончился - рисуем тренд прошлого');
+    }
+
+    // Если есть текущий бос и прошлый, но оба еще не закончились - рисуем предыдущий тренд
+    if(firstBos && lastBos && lastBos?.to.index > rootIndex && firstBos?.to.index > rootIndex && manager.trend[rootIndex - 1]?.trend){
+        manager.trend[rootIndex] = {time: manager.candles[rootIndex].time, trend: manager.trend[rootIndex - 1]?.trend}
+        log(rootIndex,  'Если есть текущий бос и прошлый, но оба еще не закончились - рисуем предыдущий тренд');
+    }
+
+    // Если в прошлом был БОС - то нужно рисовать его тренд.
+    if (lastBos && rootIndex >= lastBos.to.index) {
+        manager.trend[rootIndex] = {time: manager.candles[rootIndex].time, trend: lastBos.type === 'high' ? 1 : -1}
+        log(rootIndex, 'Если в прошлом был БОС - то нужно рисовать его тренд.');
+    }
+
+    // Удаляем IDM у точек которые являются босами
+    if (lastBos && manager.boses[rootIndex]?.isIDM && manager.boses[rootIndex]?.type === lastBos.type) {
+        manager.boses[rootIndex] = null;
+    }
+
+    // либо первый чоч, либо сменился тренд, либо был фейк чоч и нужно проверить следующий чоч
+    const isFirstCHoCH = !lastBos;
+    const isTrendChanged = lastBos && curBos && curBos.type !== lastBos.type;
+    const isAfterFake = Boolean(lastBos) && curBos && Boolean(curBos.isCHoCH) && !curBos.isConfirmed && curBos.type === lastBos.type
+    if (curBos && !curBos.isIDM && (isFirstCHoCH || ((isTrendChanged || isAfterFake) && curBos.to.index > lastBos.to.index))) {
+        curBos.markCHoCH()
+    }
+
+    if (curBos && !curBos.isIDM && curBos.isConfirmed) {
+        if (manager.lastBos){
+            manager.firstBos = manager.lastBos;
+            log(rootIndex,  'Записали firstBos', `${manager.firstBos.from.index} - ${manager.firstBos.to.index}`)
+        }
+        manager.lastBos = curBos;
+        log(rootIndex,  'Записали lastBos', `${curBos.from.index} - ${curBos.to.index}`)
+    }
+}
 
 /**
  * TODO
@@ -1210,7 +1363,7 @@ export const tradinghubCalculateTrendNew = (manager: StateManager, {
  * @param manager
  */
 const drawTrend = (manager: StateManager) => {
-    let onlyBOSes = manager.boses.filter(bos => manager.swings[bos?.from?.index]);
+    let onlyBOSes = manager.boses.filter(bos => manager.swings[bos?.from?.index]?.isExtremum);
     for (let i = 0; i < onlyBOSes.length; i++) {
         const prevBos = onlyBOSes[i - 1];
         const curBos = onlyBOSes[i];
@@ -1230,7 +1383,7 @@ const drawTrend = (manager: StateManager) => {
         for (let j = curBos.to.index; j < to; j++) {
             const type = curBos.type;
             const isNewTrend = curBos.isConfirmed ? type === 'high' ? 1 : -1 : manager.trend[j - 1]?.trend;
-            manager.trend[j] = {time: manager.candles[j].time, trend: isNewTrend, index: i}
+            manager.trend[j] = {time: manager.candles[j].time, trend: isNewTrend}
 
             // Удаляем IDM у точек которые являются босами
             if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {
@@ -1247,7 +1400,7 @@ const drawTrend = (manager: StateManager) => {
     }
 
     onlyBOSes = manager.boses
-        .filter(bos => manager.swings[bos?.from?.index])
+        .filter(bos => manager.swings[bos?.from?.index]?.isExtremum)
         .sort((a, b) => a.to.index - b.to.index);
     for (let i = 0; i < onlyBOSes.length - 1; i++) {
         const curBos = onlyBOSes[i];

@@ -32,7 +32,7 @@ import {Point, Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/recta
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
 import useWindowDimensions from "./useWindowDimensions";
 import {createRectangle2, createSeries, uniqueBy} from "./utils.ts";
-import {calculateTesting, notTradingTime} from "./th_ultimate.ts";
+import {calculateTesting, defaultConfig, notTradingTime} from "./th_ultimate.ts";
 
 function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);
@@ -121,7 +121,7 @@ export const ChartComponent = props => {
     }
 
     const calcStruct = (data) => {
-        let {swings, trend, boses, orderBlocks} =  calculateTesting(data, {moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true});
+        let {swings, trend, boses, orderBlocks} =  calculateTesting(data, defaultConfig);
 
         const checkShow = (ob) => {
             let result = false;
@@ -134,7 +134,7 @@ export const ChartComponent = props => {
             if (config.showEndOB && Boolean(ob.endCandle)) {
                 result = true;
             }
-            if (ob.text === 'SMT' && !config.showSMT) {
+            if (ob.isSMT && !config.showSMT) {
                 result = false;
             }
             return result;
@@ -1132,7 +1132,7 @@ const MainPage: React.FC = () => {
             }
         ];
 
-        const minDate = moment('2025-01-20T00:00:00.000Z');
+        const minDate = moment('2025-02-03T00:00:00.000Z');
         const min = minDate.unix()
         const max = moment().unix()
 

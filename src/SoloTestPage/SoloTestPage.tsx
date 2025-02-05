@@ -37,20 +37,20 @@ export const SoloTestPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState([]);
 
-    const checkboxValues = new Set((searchParams.get('checkboxes') || "showHiddenSwings,tradeOB,BOS,swings,moreBOS,showEndOB,limitOrderTrade,newSMT").split(','));
+    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,moreBOS,showEndOB,limitOrderTrade,newSMT").split(','));
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
     }
 
     const [windowLength, setWindowLength] = useState(5);
-    const [maxDiff, setMaxDiff] = useState(0);
+    const [maxDiff, setMaxDiff] = useState(1);
     const [multiStop, setMultiStop] = useState(5);
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '300';
     const fromDate = searchParams.get('fromDate') || dayjs('2024-10-01T00:00:00Z').startOf('day').unix();
     const toDate = searchParams.get('toDate') || dayjs('2025-10-01T00:00:00Z').endOf('day').unix();
-    const [stopMargin, setStopMargin] = useState(100);
+    const [stopMargin, setStopMargin] = useState(50);
     const [stopPaddingPercent, setstopPaddingPercent] = useState(0);
     const [security, setSecurity] = useState();
 
@@ -226,7 +226,7 @@ export const SoloTestPage = () => {
                 if(config.showEndOB && Boolean(ob.endCandle)){
                     result = true;
                 }
-                if(ob.text === 'SMT' && !config.showSMT){
+                if(ob.isSMT && !config.showSMT){
                     result = false;
                 }
                 return result;
@@ -366,7 +366,7 @@ export const SoloTestPage = () => {
                 if(config.showEndOB && Boolean(ob.endCandle)){
                     result = true;
                 }
-                if(ob.text === 'SMT' && !config.showSMT){
+                if(ob.isSMT && !config.showSMT){
                     result = false;
                 }
                 return result;
