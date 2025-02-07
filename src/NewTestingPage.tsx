@@ -14,7 +14,7 @@ import {
     hasNear,
     isNotSMT, markHHLL,
     notTradingTime,
-    Side, THConfig, tradinghubCalculateSwings
+    Side, THConfig
 } from "./th_ultimate.ts";
 import {LineStyle, Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";

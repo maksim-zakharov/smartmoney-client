@@ -19,23 +19,22 @@ import {
     HistoryObject,
     markHHLL, notTradingTime, StateManager,
     Swing,
-    tradinghubCalculateSwings,
     tradinghubCalculateTrendNew
 } from "../../th_ultimate";
 
 const BOSChart = ({data, text = 'LL'}) => {
     const manager = new StateManager(data);
-    const swings1 = tradinghubCalculateSwings(manager);
+    manager.calculateSwingsOld();
 
     const markerColors = {
         bearColor: "rgb(157, 43, 56)",
         bullColor: "rgb(20, 131, 92)"
     }
 
-    let bosses1 = markHHLL(manager);
-    swings1[3] = {...swings1[3], text} as Swing;
+    markHHLL(manager);
+    manager.swings[3] = {...manager.swings[3], text} as Swing;
 
-    bosses1 = drawBOS(data, manager.swings, bosses1);
+     drawBOS(manager);
     const allMarkers1 = [];
     allMarkers1.push(...manager.swings.filter(Boolean).map(s => ({
         color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
@@ -46,7 +45,7 @@ const BOSChart = ({data, text = 'LL'}) => {
     })));
 
     const _lineSerieses1 = [];
-    _lineSerieses1.push(...bosses1.filter(Boolean).map(marker => {
+    _lineSerieses1.push(...manager.boses.filter(Boolean).map(marker => {
         const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
         const options = {
             color, // Цвет линии
@@ -269,16 +268,13 @@ const StructureMappingPage = () => {
             ).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
-    let {highs, lows, swings, boses} = useMemo(() => {
+    let {swings, boses} = useMemo(() => {
         const manager = new StateManager(data);
-        tradinghubCalculateSwings(manager)
+        manager.calculateSwingsOld()
 
-        const {trend, boses, swings: thSwings} = tradinghubCalculateTrendNew(manager, data, {});
+         tradinghubCalculateTrendNew(manager, {});
 
-        highs = thSwings.filter(t => t?.side === 'high');
-        lows = thSwings.filter(t => t?.side === 'low');
-
-        return {trend, boses, highs, lows, swings: thSwings}
+        return {trend: manager.trend, boses: manager.boses, swings: manager.swings}
     }, [data]);
 
     const markers = useMemo(() => {
@@ -287,14 +283,7 @@ const StructureMappingPage = () => {
             bullColor: "rgb(20, 131, 92)"
         }
         const allMarkers = [];
-        allMarkers.push(...highs.filter(Boolean).map(s => ({
-            color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            time: (s.time) as Time,
-            shape: 'circle',
-            position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            text: s.text
-        })));
-        allMarkers.push(...lows.filter(Boolean).map(s => ({
+        allMarkers.push(...swings.filter(Boolean).map(s => ({
             color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
             time: (s.time) as Time,
             shape: 'circle',
@@ -303,7 +292,7 @@ const StructureMappingPage = () => {
         })));
 
         return allMarkers;
-    }, [highs, lows, swings]);
+    }, [swings]);
 
     const lineSerieses = useMemo(() => {
         const markerColors = {

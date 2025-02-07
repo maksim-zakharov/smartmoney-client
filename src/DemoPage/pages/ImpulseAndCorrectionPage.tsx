@@ -17,15 +17,13 @@ import {
     drawBOS,
     HistoryObject,
     markHHLL, notTradingTime, StateManager,
-    tradinghubCalculateSwings,
-    Trend
 } from "../../th_ultimate";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
     const manager = new StateManager(data);
-    let swings = tradinghubCalculateSwings(manager);
+    manager.calculateSwingsOld();
 
-    let boses = markHHLL(manager);
-    boses = drawBOS(data, manager.swings, boses);
+    markHHLL(manager);
+    drawBOS(manager);
 
     const markerColors = {
         bearColor: "rgb(157, 43, 56)",
@@ -33,7 +31,7 @@ const BOSChart = ({data}: {data: HistoryObject[]}) => {
     }
 
     const _lineSerieses1 = [];
-    _lineSerieses1.push(...boses.filter(Boolean).map(marker => {
+    _lineSerieses1.push(...manager.boses.filter(Boolean).map(marker => {
         const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
         const options = {
             color, // Цвет линии
@@ -67,7 +65,7 @@ const BOSChart = ({data}: {data: HistoryObject[]}) => {
         return {options, data, markers}
     }));
     const allMarkers1 = [];
-    allMarkers1.push(...swings.filter(Boolean).map(s => ({
+    allMarkers1.push(...manager.swings.filter(Boolean).map(s => ({
         color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
         time: (s.time) as Time,
         shape: 'circle',
@@ -159,7 +157,7 @@ const ImpulseAndCorrectionPage = () => {
 
     let swings = useMemo(() => {
         const manager = new StateManager(data);
-        tradinghubCalculateSwings(manager)
+        manager.calculateSwingsOld()
 
         return manager.swings;
     }, [data]);

@@ -12,19 +12,15 @@ import {
     drawBOS,
     HistoryObject,
     markHHLL, StateManager,
-    Swing,
-    tradinghubCalculateSwings,
     Trend
 } from "../../th_ultimate";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
     const manager = new StateManager(data);
-    tradinghubCalculateSwings(manager);
+    manager.calculateSwingsOld();
 
     markHHLL(manager);
     drawBOS(manager);
-
-    let bosses1 = manager.boses;
 
     const trends = data.map((candle, index) => ({trend, time: candle.time}) as Trend);
 

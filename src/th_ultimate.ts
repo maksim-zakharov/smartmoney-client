@@ -210,6 +210,7 @@ export class POI {
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
 /**
+ * @deprecated
  * TODO
  * Переписать на calculatePOI
  * Зона POI шире чем ордерблок
@@ -362,7 +363,7 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
                         && manager.boses[lastIDMIndex].to.index > i))
 
                     let type = POIType.LQ_IFC;
-                    if(swing.isExtremum){
+                    if (swing.isExtremum) {
                         type = POIType.OB_EXT;
                     }
 
@@ -409,7 +410,7 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
                     obItem.endIndex = i;
                     obItem.canTrade = true;
 
-                    if(isIFC(obItem.side, candle) && ![POIType.OB_EXT, POIType.OB_IDM].includes(obItem.type)){
+                    if (isIFC(obItem.side, candle) && ![POIType.OB_EXT, POIType.OB_IDM].includes(obItem.type)) {
                         obItem.canTrade = false;
                     }
 
@@ -479,52 +480,20 @@ export const calculateTesting = (data: HistoryObject[], {
     showFake,
     oneIteration
 }: THConfig) => {
-    /**
-     * class StateManager(){
-     *     swings: Swing[] = [];
-     *     bosses: Cross[] = [];
-     *     trends: Trend[] = [];
-     *     orderBlocks: Orderblock[] = [];
-     *
-     *     _config: THConfig = {};
-     *
-     *     readonly candles: HistoryObject[] = [];
-     *
-     *      constructor(candles: HistoryObject[], config: THConfig){
-     *          Object.assign(this._config, config);
-     *          this.candles = candles;
-     *      }
-     *
-     *     calculate() {
-     *     for (let i = 0; i < this.candles.length; i++) {
-     *      this.calculateSwings(i, candles);
-     *      this.calculateStructure(i, candles);
-     *      this.calculateTrend(i, candles);
-     *      this.calculateOB(i, candles);
-     *     }
-     *     }
-     * }
-     *
-     *     const manager = new StateManager(candles, config);
-     *
-     *     manager.calculate();
-     *
-     *     return manager.orderBlocks;
-     */
-    const manager = new StateManager(data);
+    const manager = new StateManager(data, {oneIteration});
     // <-- Копировать в робота
-    // if (oneIteration) {
-    manager.calculate();
-    // } else {
-    //     tradinghubCalculateSwings(manager);
-    // }
+    if (oneIteration) {
+        manager.calculate();
+    } else {
+        manager.calculateSwingsOld();
+    }
 
     tradinghubCalculateTrendNew(manager, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration});
 
-    if (oneIteration) {
-        // Потом переписать в просто calculate
-        manager.calculateTrend();
-    }
+    // if (oneIteration) {
+    //     // Потом переписать в просто calculate
+    //     manager.calculateTrend();
+    // }
 
     // const manager1 = new StateManager(data);
     // manager1.calculate();
@@ -666,53 +635,15 @@ const filterDoubleSwings = (i: number, lastSwingIndex: number, updateLastSwingIn
     }
 }
 
-export const tradinghubCalculateSwings = (manager: StateManager) => {
-    // Тупо первая точка
-    if (manager.candles.length) {
-        manager.swings[0] = new Swing({
-            side: 'high',
-            time: manager.candles[0].time,
-            price: manager.candles[0].high,
-            index: 0
-        });
-    }
-
-    let prevCandleIndex = 0
-    let lastSwingIndex = -1;
-    for (let rootIndex = 1; rootIndex < manager.candles.length - 1; rootIndex++) {
-        let prevCandle = manager.candles[prevCandleIndex];
-        const currentCandle = manager.candles[rootIndex];
-        if (isInsideBar(prevCandle, currentCandle)) {
-            continue;
-        }
-        let nextIndex = rootIndex + 1;
-        let nextCandle = manager.candles[nextIndex];
-        // TODO в методичке этого нет. После текущего свипа для подтверждения нужно дождаться пока какая-либо свеча пересвипнет текущую.
-        for (; nextIndex < manager.candles.length - 1; nextIndex++) {
-            nextCandle = manager.candles[nextIndex]
-            if (!isInsideBar(currentCandle, nextCandle)) {
-                break;
-            }
-        }
-        let diff = nextIndex - rootIndex - 1;
-        nextCandle = manager.candles[nextIndex]
-
-        tryCalculatePullback(rootIndex, 'high', diff, prevCandle, currentCandle, nextCandle, manager.swings);
-        tryCalculatePullback(rootIndex, 'low', diff, prevCandle, currentCandle, nextCandle, manager.swings);
-
-        // фильтруем вершины подряд
-        filterDoubleSwings(rootIndex, lastSwingIndex, newIndex => lastSwingIndex = newIndex, manager.swings);
-
-        prevCandleIndex = rootIndex;
-        rootIndex += diff;
-    }
-}
-
 export interface Trend {
     time: number;
     trend: number;
 }
 
+/**
+ * @deprecated
+ * @param manager
+ */
 export const deleteEmptySwings = (manager: StateManager) => {
     for (let i = 0; i < manager.swings.length; i++) {
         if (!manager.swings[i]?.isExtremum) {
@@ -769,6 +700,102 @@ const updateExtremumOneIt = (i: number, type: 'high' | 'low', manager: StateMana
         manager.preLastIndexMap[type] = i;
     }
 }
+// Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
+const updateHighestHigh = (manager: StateManager, index: number, swing: Swing) => {
+    if (swing
+        && swing.side === 'high'
+        && (!manager.extraExtremumMap[swing.side] || manager.extraExtremumMap[swing.side].price < swing.price)
+        && manager.confirmIndexMap['low'] <= index
+    ) {
+        if (manager.extraExtremumMap[swing.side]) {
+            manager.extraExtremumMap[swing.side].unmarkExtremum();
+            if (manager.extraExtremumMap[swing.side].idmSwing)
+                manager.boses[manager.extraExtremumMap[swing.side].idmSwing.index] = null;
+        }
+        manager.extraExtremumMap[swing.side] = swing;
+        if (manager.lastExtremumMap['low']) {
+            manager.extraExtremumMap[swing.side].idmSwing = manager.lastExtremumMap['low'];
+        }
+    }
+}
+
+const updateLowestLow = (manager: StateManager, index: number, swing: Swing) => {
+    if (swing
+        && swing.side === 'low'
+        && (!manager.extraExtremumMap[swing.side] || manager.extraExtremumMap[swing.side].price > swing.price)
+        && manager.confirmIndexMap['high'] <= index
+    ) {
+        if (manager.extraExtremumMap[swing.side]) {
+            manager.extraExtremumMap[swing.side].unmarkExtremum();
+            if (manager.extraExtremumMap[swing.side].idmSwing)
+                manager.boses[manager.extraExtremumMap[swing.side].idmSwing.index] = null;
+        }
+
+        manager.extraExtremumMap[swing.side] = swing;
+        if (manager.lastExtremumMap['high']) {
+            manager.extraExtremumMap[swing.side].idmSwing = manager.lastExtremumMap['high'];
+        }
+    }
+}
+
+const confirmLowestLow = (manager: StateManager, index: number, isNonConfirmIDM: boolean) => {
+    if (manager.extraExtremumMap['low']
+        && manager.extraExtremumMap['low'].idmSwing
+        && !manager.boses[manager.extraExtremumMap['low'].idmSwing.index]
+        && (isNonConfirmIDM || manager.extraExtremumMap['low'].idmSwing.price < manager.candles[index].high)
+    ) {
+        manager.extraExtremumMap['low'].markExtremum();
+        manager.confirmIndexMap['low'] = index;
+        const from = manager.extraExtremumMap['low'].idmSwing
+        const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
+
+        if (isNonConfirmIDM || manager.extraExtremumMap['low'].index !== to.index) {
+            manager.boses[from.index] = new Cross({
+                from,
+                to,
+                type: 'high',
+                isIDM: true,
+                getCandles: () => manager.candles,
+                extremum: manager.extraExtremumMap['low'],
+                isConfirmed: !isNonConfirmIDM
+            })
+        }
+
+        manager.extraExtremumMap['high'] = null;
+    }
+}
+
+const confirmHighestHigh = (manager: StateManager, index: number, isNonConfirmIDM: boolean) => {
+    if (manager.extraExtremumMap['high']
+        && manager.extraExtremumMap['high'].idmSwing
+        && !manager.boses[manager.extraExtremumMap['high'].idmSwing.index]
+        && (isNonConfirmIDM || manager.extraExtremumMap['high'].idmSwing.price > manager.candles[index].low)
+    ) {
+        manager.extraExtremumMap['high'].markExtremum();
+        manager.confirmIndexMap['high'] = index;
+        const from = manager.extraExtremumMap['high'].idmSwing
+        const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
+
+        if (isNonConfirmIDM || manager.extraExtremumMap['high'].index !== to.index) {
+            manager.boses[from.index] = new Cross({
+                from,
+                to,
+                type: 'low',
+                isIDM: true,
+                getCandles: () => manager.candles,
+                extremum: manager.extraExtremumMap['high'],
+                isConfirmed: !isNonConfirmIDM
+            })
+        }
+
+        manager.extraExtremumMap['low'] = null;
+    }
+}
+
+const updateLast = (manager: StateManager, swing: Swing) => {
+    if (swing)
+        manager.lastExtremumMap[swing.side] = swing;
+}
 
 export class StateManager {
     candles: HistoryObject[] = [];
@@ -776,6 +803,8 @@ export class StateManager {
     boses: Cross[] = [];
     trend: Trend[] = [];
     pois: POI[] = [];
+
+    config: THConfig = {};
 
     // tradinghubCalculateSwings
     lastSwingIndex: number = -1;
@@ -833,18 +862,34 @@ export class StateManager {
     firstBos?: Cross;
     lastBos?: Cross;
 
-    constructor(candles: HistoryObject[]) {
+    constructor(candles: HistoryObject[], config?: THConfig) {
         this.candles = candles;
         this.swings = new Array(candles.length).fill(null);
         this.boses = new Array(candles.length).fill(null);
         this.trend = new Array(candles.length).fill(null)
         this.pois = new Array(candles.length).fill(null)
+
+        Object.assign(this.config, config || {});
     }
 
     calculate() {
         for (let i = 0; i < this.candles.length; i++) {
             this.calculateSwings(i);
+
+            // markHHLL
+            // if(this.config.oneIteration)
+            // this.markHHLLOneIt(i);
         }
+    }
+
+    markHHLLOneIt = (i: number) => {
+        confirmLowestLow(this, i, i === this.swings.length - 1)
+        confirmHighestHigh(this, i, i === this.swings.length - 1);
+
+        updateHighestHigh(this, i, this.swings[i]);
+        updateLowestLow(this, i, this.swings[i]);
+
+        updateLast(this, this.swings[i])
     }
 
     calculateTrend() {
@@ -856,6 +901,54 @@ export class StateManager {
         }
     }
 
+    /**
+     * @deprecated
+     */
+    calculateSwingsOld = () => {
+        // Тупо первая точка
+        if (this.candles.length) {
+            this.swings[0] = new Swing({
+                side: 'high',
+                time: this.candles[0].time,
+                price: this.candles[0].high,
+                index: 0
+            });
+        }
+
+        let prevCandleIndex = 0
+        let lastSwingIndex = -1;
+        for (let rootIndex = 1; rootIndex < this.candles.length - 1; rootIndex++) {
+            let prevCandle = this.candles[prevCandleIndex];
+            const currentCandle = this.candles[rootIndex];
+            if (isInsideBar(prevCandle, currentCandle)) {
+                continue;
+            }
+            let nextIndex = rootIndex + 1;
+            let nextCandle = this.candles[nextIndex];
+            // TODO в методичке этого нет. После текущего свипа для подтверждения нужно дождаться пока какая-либо свеча пересвипнет текущую.
+            for (; nextIndex < this.candles.length - 1; nextIndex++) {
+                nextCandle = this.candles[nextIndex]
+                if (!isInsideBar(currentCandle, nextCandle)) {
+                    break;
+                }
+            }
+            let diff = nextIndex - rootIndex - 1;
+            nextCandle = this.candles[nextIndex]
+
+            tryCalculatePullback(rootIndex, 'high', diff, prevCandle, currentCandle, nextCandle, this.swings);
+            tryCalculatePullback(rootIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
+
+            // фильтруем вершины подряд
+            filterDoubleSwings(rootIndex, lastSwingIndex, newIndex => lastSwingIndex = newIndex, this.swings);
+
+            prevCandleIndex = rootIndex;
+            rootIndex += diff;
+        }
+    }
+
+    externalCandle?: HistoryObject;
+
+    // Проверил: точно ок
     calculateSwings(rootIndex: number) {
         // Тупо первая точка
         if (rootIndex === 0 && this.candles.length) {
@@ -868,21 +961,9 @@ export class StateManager {
             return;
         }
 
-        // Если текущая свечка внутренняя для предыдущей - идем дальше
-        if (isInsideBar(this.candles[rootIndex - 1], this.candles[rootIndex])) {
-            return;
-        }
-        // Если текущая свечка не внутренняя - начинаем поиск свинга
-        this.processingSwings.set(rootIndex, {
-            currentCandle: this.candles[rootIndex],
-            nextIndex: rootIndex + 1,
-            status: 'draft'
-        });
-
         for (let i = 0; i < this.processingSwings.size; i++) {
             const [processingIndex, sw] = Array.from(this.processingSwings)[i];
-            // }
-            // processingSwings.forEach((sw, processingIndex) => {
+
             let prevCandle = this.candles[processingIndex - 1];
             let {
                 currentCandle,
@@ -892,7 +973,7 @@ export class StateManager {
             let nextCandle = this.candles[nextIndex]
 
             if (!nextCandle) {
-                break;
+                continue;
             }
 
             if (status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
@@ -907,7 +988,7 @@ export class StateManager {
             });
 
             if (status === 'draft') {
-                break;
+                continue;
             }
 
             let diff = nextIndex - processingIndex - 1;
@@ -917,7 +998,6 @@ export class StateManager {
             tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
 
             const updateLast = newIndex => {
-                // console.log(`lastSwingIndex: ${lastSwingIndex} --> newIndex: ${newIndex}`)
                 this.lastSwingIndex = newIndex
             }
 
@@ -926,9 +1006,28 @@ export class StateManager {
 
             this.processingSwings.delete(processingIndex);
         }
+
+        // Если текущая свечка внутренняя для предыдущей - идем дальше
+        const leftCandle = this.externalCandle ?? this.candles[rootIndex - 1];
+        if (isInsideBar(leftCandle, this.candles[rootIndex])) {
+            this.externalCandle = leftCandle;
+            return;
+        }
+        this.externalCandle = null;
+
+        // Если текущая свечка не внутренняя - начинаем поиск свинга
+        this.processingSwings.set(rootIndex, {
+            currentCandle: this.candles[rootIndex],
+            nextIndex: rootIndex + 1,
+            status: 'draft'
+        });
     }
 }
 
+/**
+ * @deprecated
+ * @param manager
+ */
 export const deleteInternalStructure = (manager: StateManager) => {
     // Алгоритм такой
     /**
@@ -953,108 +1052,20 @@ export const deleteInternalStructure = (manager: StateManager) => {
     manager.boses = manager.boses.map(b => !manager.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
 }
 
+/**
+ * @deprecated
+ * @param manager
+ */
 export const markHHLL = (manager: StateManager) => {
-    // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
-    const updateHighestHigh = (index: number, swing: Swing) => {
-        if (swing
-            && swing.side === 'high'
-            && (!manager.extraExtremumMap[swing.side] || manager.extraExtremumMap[swing.side].price < swing.price)
-            && manager.confirmIndexMap['low'] <= index
-        ) {
-            if (manager.extraExtremumMap[swing.side]) {
-                manager.extraExtremumMap[swing.side].unmarkExtremum();
-                if (manager.extraExtremumMap[swing.side].idmSwing)
-                    manager.boses[manager.extraExtremumMap[swing.side].idmSwing.index] = null;
-            }
-            manager.extraExtremumMap[swing.side] = swing;
-            manager.extraExtremumMap[swing.side].idmSwing = manager.lastExtremumMap['low'];
-        }
-    }
-
-    const updateLowestLow = (index: number, swing: Swing) => {
-        if (swing
-            && swing.side === 'low'
-            && (!manager.extraExtremumMap[swing.side] || manager.extraExtremumMap[swing.side].price > swing.price)
-            && manager.confirmIndexMap['high'] <= index
-        ) {
-            if (manager.extraExtremumMap[swing.side]) {
-                manager.extraExtremumMap[swing.side].unmarkExtremum();
-                if (manager.extraExtremumMap[swing.side].idmSwing)
-                    manager.boses[manager.extraExtremumMap[swing.side].idmSwing.index] = null;
-            }
-
-            manager.extraExtremumMap[swing.side] = swing;
-            manager.extraExtremumMap[swing.side].idmSwing = manager.lastExtremumMap['high'];
-        }
-    }
-
-    const confirmLowestLow = (index: number, isNonConfirmIDM: boolean) => {
-        if (manager.extraExtremumMap['low']
-            && manager.extraExtremumMap['low'].idmSwing
-            && !manager.boses[manager.extraExtremumMap['low'].idmSwing.index]
-            && (isNonConfirmIDM || manager.extraExtremumMap['low'].idmSwing.price < manager.candles[index].high)
-        ) {
-            manager.extraExtremumMap['low'].markExtremum();
-            manager.confirmIndexMap['low'] = index;
-            const from = manager.extraExtremumMap['low'].idmSwing
-            const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
-
-            if (isNonConfirmIDM || manager.extraExtremumMap['low'].index !== to.index) {
-                manager.boses[from.index] = new Cross({
-                    from,
-                    to,
-                    type: 'high',
-                    isIDM: true,
-                    getCandles: () => manager.candles,
-                    extremum: manager.extraExtremumMap['low'],
-                    isConfirmed: !isNonConfirmIDM
-                })
-            }
-
-            manager.extraExtremumMap['high'] = null;
-        }
-    }
-
-    const confirmHighestHigh = (index: number, isNonConfirmIDM: boolean) => {
-        if (manager.extraExtremumMap['high']
-            && manager.extraExtremumMap['high'].idmSwing
-            && !manager.boses[manager.extraExtremumMap['high'].idmSwing.index]
-            && (isNonConfirmIDM || manager.extraExtremumMap['high'].idmSwing.price > manager.candles[index].low)
-        ) {
-            manager.extraExtremumMap['high'].markExtremum();
-            manager.confirmIndexMap['high'] = index;
-            const from = manager.extraExtremumMap['high'].idmSwing
-            const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
-
-            if (isNonConfirmIDM || manager.extraExtremumMap['high'].index !== to.index) {
-                manager.boses[from.index] = new Cross({
-                    from,
-                    to,
-                    type: 'low',
-                    isIDM: true,
-                    getCandles: () => manager.candles,
-                    extremum: manager.extraExtremumMap['high'],
-                    isConfirmed: !isNonConfirmIDM
-                })
-            }
-
-            manager.extraExtremumMap['low'] = null;
-        }
-    }
-
-    const updateLast = (swing: Swing) => {
-        if (swing)
-            manager.lastExtremumMap[swing.side] = swing;
-    }
 
     for (let i = 0; i < manager.swings.length; i++) {
-        confirmLowestLow(i, i === manager.swings.length - 1)
-        confirmHighestHigh(i, i === manager.swings.length - 1);
+        confirmLowestLow(manager, i, i === manager.swings.length - 1)
+        confirmHighestHigh(manager, i, i === manager.swings.length - 1);
 
-        updateHighestHigh(i, manager.swings[i]);
-        updateLowestLow(i, manager.swings[i]);
+        updateHighestHigh(manager, i, manager.swings[i]);
+        updateLowestLow(manager, i, manager.swings[i]);
 
-        updateLast(manager.swings[i])
+        updateLast(manager, manager.swings[i])
     }
 
     return manager.boses;
@@ -1171,35 +1182,47 @@ const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, c
 
 const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
+const deleteInternalBOS = (manager: StateManager, moreBOS: boolean = false) => {
+    // TODO Хз надо ли, выглядит ок но финрез хуже
+    // Если сужение - удаляем внутренние босы
+    // TODO Здесь удаляются IDM которые нужны для LL и HH (которые подтерждаются не босами), нужно их оставлять
+    // TODO по хорошему это нужно удалять после объявления тренда
+    if (
+        manager.swings[manager.prelastBosSwingMap['high']]?.price > manager.swings[manager.lastBosSwingMap['high']]?.price
+        && manager.swings[manager.prelastBosSwingMap['low']]?.price < manager.swings[manager.lastBosSwingMap['low']]?.price
+    ) {
+        if (!moreBOS) {
+            manager.swings[manager.lastBosSwingMap['low']] = null;
+            manager.swings[manager.lastBosSwingMap['high']] = null;
+        } else {
+            debugger
+
+            manager.lastBosSwingMapSet['low'].delete(manager.lastBosSwingMap['low'])
+            manager.lastBosSwingMapSet['high'].delete(manager.lastBosSwingMap['high'])
+
+            manager.liquidityCandleMapMap['low'].delete(manager.lastBosSwingMap['low'])
+            manager.liquidityCandleMapMap['high'].delete(manager.lastBosSwingMap['high'])
+        }
+
+        manager.deleteIDM.add(manager.lastBosSwingMap['low']);
+        manager.deleteIDM.add(manager.lastBosSwingMap['high']);
+
+        manager.lastBosSwingMap['low'] = manager.prelastBosSwingMap['low'];
+        manager.lastBosSwingMap['high'] = manager.prelastBosSwingMap['high'];
+    }
+}
+
 // Рисует BOS если LL или HH перекрываются
+/**
+ * @deprecated
+ * @param manager
+ * @param moreBOS
+ * @param showFake
+ */
 export const drawBOS = (manager: StateManager, moreBOS: boolean = false, showFake: boolean = false) => {
     for (let i = 0; i < manager.candles.length; i++) {
-        // TODO Хз надо ли, выглядит ок но финрез хуже
-        // Если сужение - удаляем внутренние босы
-        // TODO Здесь удаляются IDM которые нужны для LL и HH (которые подтерждаются не босами), нужно их оставлять
-        // TODO по хорошему это нужно удалять после объявления тренда
-        if (
-            manager.swings[manager.prelastBosSwingMap['high']]?.price > manager.swings[manager.lastBosSwingMap['high']]?.price
-            && manager.swings[manager.prelastBosSwingMap['low']]?.price < manager.swings[manager.lastBosSwingMap['low']]?.price
-        ) {
-            if (!moreBOS) {
-                manager.swings[manager.lastBosSwingMap['low']] = null;
-                manager.swings[manager.lastBosSwingMap['high']] = null;
-            } else {
-                manager.lastBosSwingMapSet['low'].delete(manager.lastBosSwingMap['low'])
-                manager.lastBosSwingMapSet['high'].delete(manager.lastBosSwingMap['high'])
 
-                manager.liquidityCandleMapMap['low'].delete(manager.lastBosSwingMap['low'])
-                manager.liquidityCandleMapMap['high'].delete(manager.lastBosSwingMap['high'])
-            }
-
-            manager.deleteIDM.add(manager.lastBosSwingMap['low']);
-            manager.deleteIDM.add(manager.lastBosSwingMap['high']);
-
-            manager.lastBosSwingMap['low'] = manager.prelastBosSwingMap['low'];
-            manager.lastBosSwingMap['high'] = manager.prelastBosSwingMap['high'];
-            continue;
-        }
+        deleteInternalBOS(manager, moreBOS)
 
         // BOS сверху
         if (moreBOS) {
@@ -1215,7 +1238,7 @@ export const drawBOS = (manager: StateManager, moreBOS: boolean = false, showFak
             confirmBOS(i, 'low', manager.candles, manager.swings, manager.boses, manager.lastBosSwingMap['low'], manager.lastBosSwingMap['high'], i === manager.candles.length - 1, manager, moreBOS, showFake);
         }
 
-        updateLastSwing(i, 'high',  manager, moreBOS);
+        updateLastSwing(i, 'high', manager, moreBOS);
         updateLastSwing(i, 'low', manager, moreBOS);
     }
 
@@ -1270,9 +1293,7 @@ export const tradinghubCalculateTrendNew = (manager: StateManager, {
 
     drawBOS(manager, moreBOS, showFake);
 
-    if (!oneIteration) {
-        drawTrend(manager);
-    }
+    drawTrend(manager);
 };
 
 const oneIterationTrend = (manager: StateManager, rootIndex: number) => {
@@ -1289,15 +1310,15 @@ const oneIterationTrend = (manager: StateManager, rootIndex: number) => {
     if (curBos && curBos.isIDM && lastBos) {
         const isNewTrend = lastBos.type === 'high' ? 1 : -1;
         manager.trend[rootIndex] = {time: manager.candles[rootIndex].time, trend: isNewTrend}
-        log(rootIndex,  'Если бос ИДМ - просто повторяем тренд который был');
+        log(rootIndex, 'Если бос ИДМ - просто повторяем тренд который был');
         return;
     }
 
     // Если первый бос/чоч случился а нового пока нет - рисуем тренд первого
-    if(lastBos && !firstBos && rootIndex >= lastBos.to.index){
+    if (lastBos && !firstBos && rootIndex >= lastBos.to.index) {
         const isNewTrend = lastBos.type === 'high' ? 1 : -1;
         manager.trend[rootIndex] = {time: manager.candles[rootIndex].time, trend: isNewTrend}
-        log(rootIndex,  'Если первый бос/чоч случился а нового пока нет - рисуем тренд первого');
+        log(rootIndex, 'Если первый бос/чоч случился а нового пока нет - рисуем тренд первого');
     }
 
     // Если текущий бос внутри предыдущего боса - то текущий бос нужно выпилить и не учитывать в тренде
@@ -1314,16 +1335,16 @@ const oneIterationTrend = (manager: StateManager, rootIndex: number) => {
     }
 
     // Если есть текущий бос и прошлый, но текущий еще не закончился - рисуем тренд прошлого
-    if(firstBos && lastBos && lastBos?.to.index > rootIndex){
+    if (firstBos && lastBos && lastBos?.to.index > rootIndex) {
         const isNewTrend = firstBos.type === 'high' ? 1 : -1;
         manager.trend[rootIndex] = {time: manager.candles[rootIndex].time, trend: isNewTrend}
-        log(rootIndex,  'Если есть текущий бос и прошлый, но текущий еще не закончился - рисуем тренд прошлого');
+        log(rootIndex, 'Если есть текущий бос и прошлый, но текущий еще не закончился - рисуем тренд прошлого');
     }
 
     // Если есть текущий бос и прошлый, но оба еще не закончились - рисуем предыдущий тренд
-    if(firstBos && lastBos && lastBos?.to.index > rootIndex && firstBos?.to.index > rootIndex && manager.trend[rootIndex - 1]?.trend){
+    if (firstBos && lastBos && lastBos?.to.index > rootIndex && firstBos?.to.index > rootIndex && manager.trend[rootIndex - 1]?.trend) {
         manager.trend[rootIndex] = {time: manager.candles[rootIndex].time, trend: manager.trend[rootIndex - 1]?.trend}
-        log(rootIndex,  'Если есть текущий бос и прошлый, но оба еще не закончились - рисуем предыдущий тренд');
+        log(rootIndex, 'Если есть текущий бос и прошлый, но оба еще не закончились - рисуем предыдущий тренд');
     }
 
     // Если в прошлом был БОС - то нужно рисовать его тренд.
@@ -1346,16 +1367,17 @@ const oneIterationTrend = (manager: StateManager, rootIndex: number) => {
     }
 
     if (curBos && !curBos.isIDM && curBos.isConfirmed) {
-        if (manager.lastBos){
+        if (manager.lastBos) {
             manager.firstBos = manager.lastBos;
-            log(rootIndex,  'Записали firstBos', `${manager.firstBos.from.index} - ${manager.firstBos.to.index}`)
+            log(rootIndex, 'Записали firstBos', `${manager.firstBos.from.index} - ${manager.firstBos.to.index}`)
         }
         manager.lastBos = curBos;
-        log(rootIndex,  'Записали lastBos', `${curBos.from.index} - ${curBos.to.index}`)
+        log(rootIndex, 'Записали lastBos', `${curBos.from.index} - ${curBos.to.index}`)
     }
 }
 
 /**
+ * @deprecated
  * TODO
  * Переписать на oneIteration
  * Сравнивать не cur/next а prev/cur
@@ -1504,11 +1526,11 @@ export const filterNearOrderblock = (orderBlocks: POI[], currentCandle: HistoryO
                                                                                                                       high,
                                                                                                                       low
                                                                                                                   },
-                                                                                                                  type
+                                                                                                                  side
                                                                                                               }) =>
     hasNear(
         true,
-        {high, low, side: type === 'high' ? Side.Sell : Side.Buy} as any,
+        {high, low, side: side === 'high' ? Side.Sell : Side.Buy} as any,
         currentCandle,
     ),
 )
