@@ -885,7 +885,7 @@ export class StateManager {
 
     calculate() {
         for (let i = 0; i < this.candles.length; i++) {
-            this.calculateSwings(i, this.config.oneIteration);
+            this.calculateSwings(i);
         }
     }
 
@@ -961,7 +961,7 @@ export class StateManager {
     externalCandle?: HistoryObject;
 
     // Проверил: точно ок
-    calculateSwings(rootIndex: number, oneIterationHHLL: boolean = false) {
+    calculateSwings(rootIndex: number) {
         // Тупо первая точка
         if (rootIndex === 0 && this.candles.length) {
             this.swings[0] = new Swing({
@@ -1009,22 +1009,20 @@ export class StateManager {
             tryCalculatePullback(processingIndex, 'high', diff, prevCandle, currentCandle, nextCandle, this.swings);
             tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
 
-            if(oneIterationHHLL){
-                updateLast(this, this.swings[processingIndex]);
-            }
+            // markHHLL
+            updateLast(this, this.swings[processingIndex]);
 
             // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
             filterDoubleSwings(processingIndex, this.lastSwingIndex, newIndex => this.lastSwingIndex = newIndex, this.swings);
 
             this.processingSwings.delete(processingIndex);
 
-            if(oneIterationHHLL) {
-                updateExtremum(this, rootIndex, 'high', this.swings[processingIndex]);
-                updateExtremum(this, rootIndex, 'low', this.swings[processingIndex]);
+            // markHHLL
+            updateExtremum(this, rootIndex, 'high', this.swings[processingIndex]);
+            updateExtremum(this, rootIndex, 'low', this.swings[processingIndex]);
 
-                confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
-                confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
-            }
+            confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
+            confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
         }
 
         // Если текущая свечка внутренняя для предыдущей - идем дальше
@@ -1278,9 +1276,6 @@ export const drawBOS = (manager: StateManager, moreBOS: boolean = false, showFak
 export const tradinghubCalculateTrendNew = (manager: StateManager, {
     moreBOS, showHiddenSwings, showIFC, showFake, oneIteration
 }: THConfig) => {
-
-    if(!oneIteration)
-    manager.markHHLLOld()
 
     if (showIFC)
         markIFC(manager);
