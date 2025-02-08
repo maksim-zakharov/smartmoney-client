@@ -702,78 +702,94 @@ const updateExtremumOneIt = (i: number, type: 'high' | 'low', manager: StateMana
 }
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
 const updateExtremum = (manager: StateManager, index: number, side: Swing['side'], swing: Swing) => {
+    // Проверяем свинг по выбранной стороне
+    if(!swing || swing.side !== side){
+        return;
+    }
+
     const versusSide = side === 'low' ? 'high' : 'low';
-    if (swing
-        && swing.side === side
-        && (!manager.extraExtremumMap[swing.side] || (side === 'high' ? manager.extraExtremumMap[swing.side].price < swing.price  : manager.extraExtremumMap[swing.side].price > swing.price))
-        && manager.confirmIndexMap[versusSide] <= index
-    ) {
-        if (manager.extraExtremumMap[swing.side]) {
-            manager.extraExtremumMap[swing.side].unmarkExtremum();
-            if (manager.extraExtremumMap[swing.side].idmSwing)
-                manager.boses[manager.extraExtremumMap[swing.side].idmSwing.index] = null;
-        }
-        manager.extraExtremumMap[swing.side] = swing;
-        if (manager.lastExtremumMap[versusSide]) {
-            manager.extraExtremumMap[swing.side].idmSwing = manager.lastExtremumMap[versusSide];
-        }
+    if(manager.confirmIndexMap[versusSide] > index){
+        return;
+    }
+
+    const isHighestHigh = !manager.extremumMap[swing.side] || side === 'high' && manager.extremumMap[swing.side].price < swing.price;
+    const isLowestLow = !manager.extremumMap[swing.side] || side === 'low' && manager.extremumMap[swing.side].price > swing.price;
+
+    // Здесь проверяем что либо еще нет HH/LL, либо прошлый HH ниже нового или прошлый LL выше нового
+    if(!isLowestLow && !isHighestHigh){
+        return;
+    }
+
+    // Сначала чистим экстремум. На текущем свинге убираем флаг экстремума
+    if (manager.extremumMap[swing.side]) {
+        manager.extremumMap[swing.side].unmarkExtremum();
+        // Если по нему был IDM - убираем IDM
+        if (manager.extremumMap[swing.side].idmSwing)
+            manager.boses[manager.extremumMap[swing.side].idmSwing.index] = null;
+    }
+
+    // Обновляем новый экстремум и помечаем по нему IDM
+    manager.extremumMap[swing.side] = swing;
+    if (manager.lastExtremumMap[versusSide]) {
+        manager.extremumMap[swing.side].idmSwing = manager.lastExtremumMap[versusSide];
     }
 }
 
 const confirmLowestLow = (manager: StateManager, index: number, isNonConfirmIDM: boolean) => {
-    if (manager.extraExtremumMap['low']
-        && manager.extraExtremumMap['low'].idmSwing
-        && !manager.boses[manager.extraExtremumMap['low'].idmSwing.index]
-        && (isNonConfirmIDM || manager.extraExtremumMap['low'].idmSwing.price < manager.candles[index].high)
+    if (manager.extremumMap['low']
+        && manager.extremumMap['low'].idmSwing
+        && !manager.boses[manager.extremumMap['low'].idmSwing.index]
+        && (isNonConfirmIDM || manager.extremumMap['low'].idmSwing.price < manager.candles[index].high)
     ) {
-        manager.extraExtremumMap['low'].markExtremum();
+        manager.extremumMap['low'].markExtremum();
         manager.confirmIndexMap['low'] = index;
-        const from = manager.extraExtremumMap['low'].idmSwing
+        const from = manager.extremumMap['low'].idmSwing
         const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
 
-        if (isNonConfirmIDM || manager.extraExtremumMap['low'].index !== to.index) {
+        if (isNonConfirmIDM || manager.extremumMap['low'].index !== to.index) {
             manager.boses[from.index] = new Cross({
                 from,
                 to,
                 type: 'high',
                 isIDM: true,
                 getCandles: () => manager.candles,
-                extremum: manager.extraExtremumMap['low'],
+                extremum: manager.extremumMap['low'],
                 isConfirmed: !isNonConfirmIDM
             })
         }
 
-        manager.extraExtremumMap['high'] = null;
+        manager.extremumMap['high'] = null;
     }
 }
 
 const confirmHighestHigh = (manager: StateManager, index: number, isNonConfirmIDM: boolean) => {
-    if (manager.extraExtremumMap['high']
-        && manager.extraExtremumMap['high'].idmSwing
-        && !manager.boses[manager.extraExtremumMap['high'].idmSwing.index]
-        && (isNonConfirmIDM || manager.extraExtremumMap['high'].idmSwing.price > manager.candles[index].low)
+    if (manager.extremumMap['high']
+        && manager.extremumMap['high'].idmSwing
+        && !manager.boses[manager.extremumMap['high'].idmSwing.index]
+        && (isNonConfirmIDM || manager.extremumMap['high'].idmSwing.price > manager.candles[index].low)
     ) {
-        manager.extraExtremumMap['high'].markExtremum();
+        manager.extremumMap['high'].markExtremum();
         manager.confirmIndexMap['high'] = index;
-        const from = manager.extraExtremumMap['high'].idmSwing
+        const from = manager.extremumMap['high'].idmSwing
         const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
 
-        if (isNonConfirmIDM || manager.extraExtremumMap['high'].index !== to.index) {
+        if (isNonConfirmIDM || manager.extremumMap['high'].index !== to.index) {
             manager.boses[from.index] = new Cross({
                 from,
                 to,
                 type: 'low',
                 isIDM: true,
                 getCandles: () => manager.candles,
-                extremum: manager.extraExtremumMap['high'],
+                extremum: manager.extremumMap['high'],
                 isConfirmed: !isNonConfirmIDM
             })
         }
 
-        manager.extraExtremumMap['low'] = null;
+        manager.extremumMap['low'] = null;
     }
 }
 
+// Фиксируем последний свинг который нашли сверху или снизу
 const updateLast = (manager: StateManager, swing: Swing) => {
     if (swing)
         manager.lastExtremumMap[swing.side] = swing;
@@ -808,7 +824,7 @@ export class StateManager {
         high: null,
         low: null
     }
-    extraExtremumMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
+    extremumMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
         high: null,
         low: null
     }
@@ -979,12 +995,8 @@ export class StateManager {
             tryCalculatePullback(processingIndex, 'high', diff, prevCandle, currentCandle, nextCandle, this.swings);
             tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
 
-            const updateLast = newIndex => {
-                this.lastSwingIndex = newIndex
-            }
-
             // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
-            filterDoubleSwings(processingIndex, this.lastSwingIndex, updateLast, this.swings);
+            filterDoubleSwings(processingIndex, this.lastSwingIndex, newIndex => this.lastSwingIndex = newIndex, this.swings);
 
             this.processingSwings.delete(processingIndex);
         }
