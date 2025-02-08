@@ -735,6 +735,52 @@ const updateExtremum = (manager: StateManager, index: number, side: Swing['side'
     }
 }
 
+const confirmExtremum = (manager: StateManager, index: number, side: Swing['side'], isNonConfirmIDM: boolean) => {
+    const versusSide = side === 'low' ? 'high' : 'low';
+    // Если экстремума нет - не смотрим
+    if(!manager.extremumMap[side]){
+        return;
+    }
+    // Экстремум есть но нет IDM - не смотрим
+    if(!manager.extremumMap[side].idmSwing){
+        return;
+    }
+
+    // Если на месте IDM он уже подтвержден - не смотрим
+    if(manager.boses[manager.extremumMap[side].idmSwing.index]){
+        return;
+    }
+
+    const isHighIDMConfirmed = isNonConfirmIDM || manager.extremumMap[side].idmSwing.price > manager.candles[index].low;
+    const isLowIDMConfirmed = isNonConfirmIDM || manager.extremumMap[side].idmSwing.price < manager.candles[index].high;
+
+    // Если IDM не подтвержден - не смотрим
+    if(!isLowIDMConfirmed && !isHighIDMConfirmed){
+        return;
+    }
+
+    // Помечаем экстремум как подтвержденный
+    manager.extremumMap[side].markExtremum();
+    manager.confirmIndexMap[side] = index;
+
+    // Рисуем IDM
+    const from = manager.extremumMap[side].idmSwing
+    const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
+    if (isNonConfirmIDM || manager.extremumMap[side].index !== to.index) {
+        manager.boses[from.index] = new Cross({
+            from,
+            to,
+            type: versusSide,
+            isIDM: true,
+            getCandles: () => manager.candles,
+            extremum: manager.extremumMap[side],
+            isConfirmed: !isNonConfirmIDM
+        })
+    }
+
+    manager.extremumMap[versusSide] = null;
+}
+
 const confirmLowestLow = (manager: StateManager, index: number, isNonConfirmIDM: boolean) => {
     if (manager.extremumMap['low']
         && manager.extremumMap['low'].idmSwing
