@@ -701,11 +701,12 @@ const updateExtremumOneIt = (i: number, type: 'high' | 'low', manager: StateMana
     }
 }
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
-const updateHighestHigh = (manager: StateManager, index: number, swing: Swing) => {
+const updateExtremum = (manager: StateManager, index: number, side: Swing['side'], swing: Swing) => {
+    const versusSide = side === 'low' ? 'high' : 'low';
     if (swing
-        && swing.side === 'high'
-        && (!manager.extraExtremumMap[swing.side] || manager.extraExtremumMap[swing.side].price < swing.price)
-        && manager.confirmIndexMap['low'] <= index
+        && swing.side === side
+        && (!manager.extraExtremumMap[swing.side] || (side === 'high' ? manager.extraExtremumMap[swing.side].price < swing.price  : manager.extraExtremumMap[swing.side].price > swing.price))
+        && manager.confirmIndexMap[versusSide] <= index
     ) {
         if (manager.extraExtremumMap[swing.side]) {
             manager.extraExtremumMap[swing.side].unmarkExtremum();
@@ -713,27 +714,8 @@ const updateHighestHigh = (manager: StateManager, index: number, swing: Swing) =
                 manager.boses[manager.extraExtremumMap[swing.side].idmSwing.index] = null;
         }
         manager.extraExtremumMap[swing.side] = swing;
-        if (manager.lastExtremumMap['low']) {
-            manager.extraExtremumMap[swing.side].idmSwing = manager.lastExtremumMap['low'];
-        }
-    }
-}
-
-const updateLowestLow = (manager: StateManager, index: number, swing: Swing) => {
-    if (swing
-        && swing.side === 'low'
-        && (!manager.extraExtremumMap[swing.side] || manager.extraExtremumMap[swing.side].price > swing.price)
-        && manager.confirmIndexMap['high'] <= index
-    ) {
-        if (manager.extraExtremumMap[swing.side]) {
-            manager.extraExtremumMap[swing.side].unmarkExtremum();
-            if (manager.extraExtremumMap[swing.side].idmSwing)
-                manager.boses[manager.extraExtremumMap[swing.side].idmSwing.index] = null;
-        }
-
-        manager.extraExtremumMap[swing.side] = swing;
-        if (manager.lastExtremumMap['high']) {
-            manager.extraExtremumMap[swing.side].idmSwing = manager.lastExtremumMap['high'];
+        if (manager.lastExtremumMap[versusSide]) {
+            manager.extraExtremumMap[swing.side].idmSwing = manager.lastExtremumMap[versusSide];
         }
     }
 }
@@ -886,8 +868,8 @@ export class StateManager {
         confirmLowestLow(this, i, i === this.swings.length - 1)
         confirmHighestHigh(this, i, i === this.swings.length - 1);
 
-        updateHighestHigh(this, i, this.swings[i]);
-        updateLowestLow(this, i, this.swings[i]);
+        updateExtremum(this, i, 'high', this.swings[i]);
+        updateExtremum(this, i,'low', this.swings[i]);
 
         updateLast(this, this.swings[i])
     }
@@ -1062,8 +1044,8 @@ export const markHHLL = (manager: StateManager) => {
         confirmLowestLow(manager, i, i === manager.swings.length - 1)
         confirmHighestHigh(manager, i, i === manager.swings.length - 1);
 
-        updateHighestHigh(manager, i, manager.swings[i]);
-        updateLowestLow(manager, i, manager.swings[i]);
+        updateExtremum(manager, i, 'high', manager.swings[i]);
+        updateExtremum(manager, i, 'low', manager.swings[i]);
 
         updateLast(manager, manager.swings[i])
     }
