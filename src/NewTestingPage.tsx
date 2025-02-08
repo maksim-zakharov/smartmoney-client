@@ -12,7 +12,7 @@ import {
     defaultConfig,
     filterNearOrderblock,
     hasNear,
-    isNotSMT, markHHLL,
+    isNotSMT,
     notTradingTime,
     Side, THConfig
 } from "./th_ultimate.ts";

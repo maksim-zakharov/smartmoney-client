@@ -17,7 +17,7 @@ import type { Dayjs } from 'dayjs';
 import {
     drawBOS,
     HistoryObject,
-    markHHLL, notTradingTime, StateManager,
+    notTradingTime, StateManager,
     Swing,
     tradinghubCalculateTrendNew
 } from "../../th_ultimate";
@@ -31,7 +31,7 @@ const BOSChart = ({data, text = 'LL'}) => {
         bullColor: "rgb(20, 131, 92)"
     }
 
-    markHHLL(manager);
+    manager.markHHLLOld();
     manager.swings[3] = {...manager.swings[3], text} as Swing;
 
      drawBOS(manager);

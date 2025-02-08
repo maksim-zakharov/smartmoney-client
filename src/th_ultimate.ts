@@ -882,6 +882,18 @@ export class StateManager {
         updateLast(this, this.swings[i])
     }
 
+    markHHLLOld = () => {
+        for (let i = 0; i < this.swings.length; i++) {
+            confirmExtremum(this, i, 'low', i === this.swings.length - 1)
+            confirmExtremum(this, i, 'high', i === this.swings.length - 1);
+
+            updateExtremum(this, i, 'high', this.swings[i]);
+            updateExtremum(this, i, 'low', this.swings[i]);
+
+            updateLast(this, this.swings[i])
+        }
+    }
+
     calculateTrend() {
         this.firstBos = null;
         this.lastBos = null;
@@ -1036,25 +1048,6 @@ export const deleteInternalStructure = (manager: StateManager) => {
 
     // Удаляем IDM у удаленных LL/HH
     manager.boses = manager.boses.map(b => !manager.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
-}
-
-/**
- * @deprecated
- * @param manager
- */
-export const markHHLL = (manager: StateManager) => {
-
-    for (let i = 0; i < manager.swings.length; i++) {
-        confirmExtremum(manager, i, 'low', i === manager.swings.length - 1)
-        confirmExtremum(manager, i, 'high', i === manager.swings.length - 1);
-
-        updateExtremum(manager, i, 'high', manager.swings[i]);
-        updateExtremum(manager, i, 'low', manager.swings[i]);
-
-        updateLast(manager, manager.swings[i])
-    }
-
-    return manager.boses;
 }
 
 const updateLastSwing = (i: number, type: 'high' | 'low', manager: StateManager,
@@ -1266,7 +1259,7 @@ export const tradinghubCalculateTrendNew = (manager: StateManager, {
     moreBOS, showHiddenSwings, showIFC, showFake, oneIteration
 }: THConfig) => {
 
-    markHHLL(manager)
+    manager.markHHLLOld()
 
     if (showIFC)
         markIFC(manager);

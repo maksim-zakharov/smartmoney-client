@@ -4,7 +4,7 @@ import img_1 from "../../assets/img_1.png"
 import img_2 from "../../assets/img_2.png"
 import {Chart} from "../../SoloTestPage/TestChart";
 import React, {useEffect, useMemo, useState} from "react";
-import {createRectangle2, fetchCandlesFromAlor} from "../../utils";
+import {fetchCandlesFromAlor} from "../../utils";
 import dayjs from 'dayjs';
 import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
@@ -12,17 +12,15 @@ import {DatesPicker} from "../../DatesPicker";
 import type { Dayjs } from 'dayjs';
 import {LineStyle, Time} from "lightweight-charts";
 import {
-    calculatePOI,
-    deleteEmptySwings,
     drawBOS,
     HistoryObject,
-    markHHLL, notTradingTime, StateManager,
+    notTradingTime, StateManager,
 } from "../../th_ultimate";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
     const manager = new StateManager(data);
     manager.calculateSwingsOld();
 
-    markHHLL(manager);
+    manager.markHHLLOld();
     drawBOS(manager);
 
     const markerColors = {

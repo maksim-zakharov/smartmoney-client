@@ -11,7 +11,7 @@ import {
     calculatePOI,
     drawBOS,
     HistoryObject,
-    markHHLL, StateManager,
+    StateManager,
     Trend
 } from "../../th_ultimate";
 
@@ -19,7 +19,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
     const manager = new StateManager(data);
     manager.calculateSwingsOld();
 
-    markHHLL(manager);
+    manager.markHHLLOld();
     drawBOS(manager);
 
     const trends = data.map((candle, index) => ({trend, time: candle.time}) as Trend);
