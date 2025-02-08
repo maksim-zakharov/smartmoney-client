@@ -30,7 +30,7 @@ export class Swing {
     get text() {
         let _text = '';
 
-        if(this._isExtremum){
+        if (this._isExtremum) {
             _text = this.side === 'high' ? 'HH' : 'LL';
         }
 
@@ -41,7 +41,7 @@ export class Swing {
         return _text;
     }
 
-    setDebug(){
+    setDebug() {
         this._isDebug = true;
     }
 
@@ -493,7 +493,7 @@ export const calculateTesting = (data: HistoryObject[], {
     showFake,
     oneIteration
 }: THConfig) => {
-    const manager = new StateManager(data, {oneIteration});
+    const manager = new StateManager(data, {oneIteration, showIFC});
     // <-- Копировать в робота
     manager.calculate();
 
@@ -617,7 +617,7 @@ const filterDoubleSwings = (i: number, lastSwingIndex: number, updateLastSwingIn
     const curSwing = swings[i];
     let setIndex = i;
 
-    if(!curSwing){
+    if (!curSwing) {
         return;
     }
 
@@ -771,7 +771,7 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
         return;
     }
 
-    if(side === 'high'){
+    if (side === 'high') {
         debugger
     }
 
@@ -801,7 +801,7 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
 
 // Фиксируем последний свинг который нашли сверху или снизу
 const updateLast = (manager: StateManager, swing: Swing) => {
-    if(!swing){
+    if (!swing) {
         return;
     }
 
@@ -895,6 +895,22 @@ export class StateManager {
         // Берем только те босы которые строятся от свингов (по сути ж которые не IDM)
         for (let i = 0; i < this.candles.length; i++) {
             oneIterationTrend(this, i);
+        }
+    }
+
+    markIFCOneIt = (index: number) => {
+        const bos = this.swings[index];
+        if (bos && isIFC(bos.side, this.candles[bos.index])) {
+            bos.isIFC = true
+        }
+    }
+
+    /**
+     * @deprecated
+     */
+    markIFCOld = () => {
+        for (let i = 0; i < this.swings.length; i++) {
+            this.markIFCOneIt(i);
         }
     }
 
@@ -1023,6 +1039,9 @@ export class StateManager {
 
             confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
             confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
+
+            if (this.config.showIFC)
+                this.markIFCOneIt(processingIndex);
         }
 
         // Если текущая свечка внутренняя для предыдущей - идем дальше
@@ -1274,12 +1293,8 @@ export const drawBOS = (manager: StateManager, moreBOS: boolean = false, showFak
     }
 }
 export const tradinghubCalculateTrendNew = (manager: StateManager, {
-    moreBOS, showHiddenSwings, showIFC, showFake, oneIteration
+    moreBOS, showHiddenSwings, showFake
 }: THConfig) => {
-
-    if (showIFC)
-        markIFC(manager);
-
     deleteInternalStructure(manager);
 
     if (!showHiddenSwings) {
@@ -1429,15 +1444,7 @@ const drawTrend = (manager: StateManager) => {
         }
     }
 }
-const markIFC = (manager: StateManager) => {
 
-    for (let i = 0; i < manager.swings.length; i++) {
-        const bos = manager.swings[i];
-        if (bos && isIFC(bos.side, manager.candles[bos.index])) {
-            bos.isIFC = true
-        }
-    }
-}
 export const isIFC = (side: Swing['side'], candle: HistoryObject) => {
     const body = Math.abs(candle.open - candle.close);
     const upWick = candle.high - Math.max(candle.open, candle.close);
