@@ -353,7 +353,6 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
 
                 const lastIDMIndex = lastIDMIndexMap[swing?.side]
                 if (orderBlockPart?.side === swing?.side && swing?.isExtremum && !uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)) {
-                    debugger
                     // TODO Не торговать ОБ под IDM
                     const bossIndex = orderBlockPart.firstImbalanceIndex + index;
                     const hasBoss = Boolean(manager.boses[bossIndex]) && (!showFake || manager.boses[bossIndex].isConfirmed);
@@ -482,11 +481,7 @@ export const calculateTesting = (data: HistoryObject[], {
 }: THConfig) => {
     const manager = new StateManager(data, {oneIteration});
     // <-- Копировать в робота
-    if (oneIteration) {
-        manager.calculate();
-    } else {
-        manager.calculateSwingsOld();
-    }
+    manager.calculate();
 
     tradinghubCalculateTrendNew(manager, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration});
 
@@ -607,32 +602,35 @@ const filterDoubleSwings = (i: number, lastSwingIndex: number, updateLastSwingIn
     const prevSwing = lastSwingIndex > -1 ? swings[lastSwingIndex] : null;
     const curSwing = swings[i];
     let setIndex = i;
-    if (curSwing) {
-        if (curSwing.side === prevSwing?.side) {
-            let toDeleteIndex;
-            if (curSwing.side === 'high') {
-                if (curSwing.price >= prevSwing?.price) {
-                    toDeleteIndex = lastSwingIndex;
-                } else if (curSwing.price < prevSwing?.price) {
-                    toDeleteIndex = i;
-                    setIndex = lastSwingIndex;
-                }
-            }
-            if (curSwing.side === 'low') {
-                if (curSwing.price <= prevSwing?.price) {
-                    toDeleteIndex = lastSwingIndex;
-                } else if (curSwing.price > prevSwing?.price) {
-                    toDeleteIndex = i;
-                    setIndex = lastSwingIndex;
-                }
-            }
-            // Обновляем хай
-            if (toDeleteIndex) {
-                swings[toDeleteIndex] = null;
+
+    if(!curSwing){
+        return;
+    }
+
+    if (curSwing.side === prevSwing?.side) {
+        let toDeleteIndex;
+        if (curSwing.side === 'high') {
+            if (curSwing.price >= prevSwing?.price) {
+                toDeleteIndex = lastSwingIndex;
+            } else if (curSwing.price < prevSwing?.price) {
+                toDeleteIndex = i;
+                setIndex = lastSwingIndex;
             }
         }
-        updateLastSwingIndex(setIndex);
+        if (curSwing.side === 'low') {
+            if (curSwing.price <= prevSwing?.price) {
+                toDeleteIndex = lastSwingIndex;
+            } else if (curSwing.price > prevSwing?.price) {
+                toDeleteIndex = i;
+                setIndex = lastSwingIndex;
+            }
+        }
+        // Обновляем хай
+        if (toDeleteIndex) {
+            swings[toDeleteIndex] = null;
+        }
     }
+    updateLastSwingIndex(setIndex);
 }
 
 export interface Trend {
@@ -712,8 +710,8 @@ const updateExtremum = (manager: StateManager, index: number, side: Swing['side'
         return;
     }
 
-    const isHighestHigh = !manager.extremumMap[swing.side] || side === 'high' && manager.extremumMap[swing.side].price < swing.price;
-    const isLowestLow = !manager.extremumMap[swing.side] || side === 'low' && manager.extremumMap[swing.side].price > swing.price;
+    const isHighestHigh = !manager.lastExtremumMap[swing.side] || side === 'high' && manager.lastExtremumMap[swing.side].price < swing.price;
+    const isLowestLow = !manager.lastExtremumMap[swing.side] || side === 'low' && manager.lastExtremumMap[swing.side].price > swing.price;
 
     // Здесь проверяем что либо еще нет HH/LL, либо прошлый HH ниже нового или прошлый LL выше нового
     if (!isLowestLow && !isHighestHigh) {
@@ -721,38 +719,38 @@ const updateExtremum = (manager: StateManager, index: number, side: Swing['side'
     }
 
     // Сначала чистим экстремум. На текущем свинге убираем флаг экстремума
-    if (manager.extremumMap[swing.side]) {
-        manager.extremumMap[swing.side].unmarkExtremum();
+    if (manager.lastExtremumMap[swing.side]) {
+        manager.lastExtremumMap[swing.side].unmarkExtremum();
         // Если по нему был IDM - убираем IDM
-        if (manager.extremumMap[swing.side].idmSwing)
-            manager.boses[manager.extremumMap[swing.side].idmSwing.index] = null;
+        if (manager.lastExtremumMap[swing.side].idmSwing)
+            manager.boses[manager.lastExtremumMap[swing.side].idmSwing.index] = null;
     }
 
     // Обновляем новый экстремум и помечаем по нему IDM
-    manager.extremumMap[swing.side] = swing;
-    if (manager.lastExtremumMap[versusSide]) {
-        manager.extremumMap[swing.side].idmSwing = manager.lastExtremumMap[versusSide];
+    manager.lastExtremumMap[swing.side] = swing;
+    if (manager.lastSwingMap[versusSide]) {
+        manager.lastExtremumMap[swing.side].idmSwing = manager.lastSwingMap[versusSide];
     }
 }
 
 const confirmExtremum = (manager: StateManager, index: number, side: Swing['side'], isNonConfirmIDM: boolean) => {
     const versusSide = side === 'low' ? 'high' : 'low';
     // Если экстремума нет - не смотрим
-    if (!manager.extremumMap[side]) {
+    if (!manager.lastExtremumMap[side]) {
         return;
     }
     // Экстремум есть но нет IDM - не смотрим
-    if (!manager.extremumMap[side].idmSwing) {
+    if (!manager.lastExtremumMap[side].idmSwing) {
         return;
     }
 
     // Если на месте IDM он уже подтвержден - не смотрим
-    if (manager.boses[manager.extremumMap[side].idmSwing.index]) {
+    if (manager.boses[manager.lastExtremumMap[side].idmSwing.index]) {
         return;
     }
 
-    const isHighIDMConfirmed = isNonConfirmIDM || side === 'high' && manager.extremumMap[side].idmSwing.price > manager.candles[index].low;
-    const isLowIDMConfirmed = isNonConfirmIDM || side === 'low' && manager.extremumMap[side].idmSwing.price < manager.candles[index].high;
+    const isHighIDMConfirmed = isNonConfirmIDM || side === 'high' && manager.lastExtremumMap[side].idmSwing.price > manager.candles[index].low;
+    const isLowIDMConfirmed = isNonConfirmIDM || side === 'low' && manager.lastExtremumMap[side].idmSwing.price < manager.candles[index].high;
 
     // Если IDM не подтвержден - не смотрим
     if (!isLowIDMConfirmed && !isHighIDMConfirmed) {
@@ -760,31 +758,34 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
     }
 
     // Помечаем экстремум как подтвержденный
-    manager.extremumMap[side].markExtremum();
+    manager.lastExtremumMap[side].markExtremum();
     manager.confirmIndexMap[side] = index;
 
     // Рисуем IDM
-    const from = manager.extremumMap[side].idmSwing
+    const from = manager.lastExtremumMap[side].idmSwing
     const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
-    if (isNonConfirmIDM || manager.extremumMap[side].index !== to.index) {
+    if (isNonConfirmIDM || manager.lastExtremumMap[side].index !== to.index) {
         manager.boses[from.index] = new Cross({
             from,
             to,
             type: versusSide,
             isIDM: true,
             getCandles: () => manager.candles,
-            extremum: manager.extremumMap[side],
+            extremum: manager.lastExtremumMap[side],
             isConfirmed: !isNonConfirmIDM
         })
     }
 
-    manager.extremumMap[versusSide] = null;
+    manager.lastExtremumMap[versusSide] = null;
 }
 
 // Фиксируем последний свинг который нашли сверху или снизу
 const updateLast = (manager: StateManager, swing: Swing) => {
-    if (swing)
-        manager.lastExtremumMap[swing.side] = swing;
+    if(!swing){
+        return;
+    }
+
+    manager.lastSwingMap[swing.side] = swing;
 }
 
 export class StateManager {
@@ -812,11 +813,11 @@ export class StateManager {
     deletedSwingIndexes = new Set([]);
 
     // markHHLL
-    lastExtremumMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
+    lastSwingMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
         high: null,
         low: null
     }
-    extremumMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
+    lastExtremumMap: Record<'high' | 'low', (Swing & { idmSwing?: Swing })> = {
         high: null,
         low: null
     }
@@ -864,33 +865,7 @@ export class StateManager {
 
     calculate() {
         for (let i = 0; i < this.candles.length; i++) {
-            this.calculateSwings(i);
-
-            // markHHLL
-            // if(this.config.oneIteration)
-            // this.markHHLLOneIt(i);
-        }
-    }
-
-    markHHLLOneIt = (i: number) => {
-        confirmExtremum(this, i, 'low', i === this.swings.length - 1)
-        confirmExtremum(this, i, 'high', i === this.swings.length - 1);
-
-        updateExtremum(this, i, 'high', this.swings[i]);
-        updateExtremum(this, i, 'low', this.swings[i]);
-
-        updateLast(this, this.swings[i])
-    }
-
-    markHHLLOld = () => {
-        for (let i = 0; i < this.swings.length; i++) {
-            confirmExtremum(this, i, 'low', i === this.swings.length - 1)
-            confirmExtremum(this, i, 'high', i === this.swings.length - 1);
-
-            updateExtremum(this, i, 'high', this.swings[i]);
-            updateExtremum(this, i, 'low', this.swings[i]);
-
-            updateLast(this, this.swings[i])
+            this.calculateSwings(i, this.config.oneIteration);
         }
     }
 
@@ -900,6 +875,21 @@ export class StateManager {
         // Берем только те босы которые строятся от свингов (по сути ж которые не IDM)
         for (let i = 0; i < this.candles.length; i++) {
             oneIterationTrend(this, i);
+        }
+    }
+
+    /**
+     * @deprecated
+     */
+    markHHLLOld = () => {
+        for (let i = 0; i < this.swings.length; i++) {
+            confirmExtremum(this, i, 'low', i === this.swings.length - 1)
+            confirmExtremum(this, i, 'high', i === this.swings.length - 1);
+
+            updateExtremum(this, i, 'high', this.swings[i]);
+            updateExtremum(this, i, 'low', this.swings[i]);
+
+            updateLast(this, this.swings[i])
         }
     }
 
@@ -951,7 +941,7 @@ export class StateManager {
     externalCandle?: HistoryObject;
 
     // Проверил: точно ок
-    calculateSwings(rootIndex: number) {
+    calculateSwings(rootIndex: number, oneIterationHHLL: boolean = false) {
         // Тупо первая точка
         if (rootIndex === 0 && this.candles.length) {
             this.swings[0] = new Swing({
@@ -999,10 +989,23 @@ export class StateManager {
             tryCalculatePullback(processingIndex, 'high', diff, prevCandle, currentCandle, nextCandle, this.swings);
             tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
 
+            // TODO Вот тут если по processingIndex появился свинг, то для HH LL нужно делать updateLast
+            if(oneIterationHHLL){
+                updateLast(this, this.swings[processingIndex]);
+            }
+
             // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
             filterDoubleSwings(processingIndex, this.lastSwingIndex, newIndex => this.lastSwingIndex = newIndex, this.swings);
 
             this.processingSwings.delete(processingIndex);
+
+            if(oneIterationHHLL) {
+                confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
+                confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
+
+                updateExtremum(this, rootIndex, 'high', this.swings[processingIndex]);
+                updateExtremum(this, rootIndex, 'low', this.swings[processingIndex]);
+            }
         }
 
         // Если текущая свечка внутренняя для предыдущей - идем дальше
@@ -1174,8 +1177,6 @@ const deleteInternalBOS = (manager: StateManager, moreBOS: boolean = false) => {
             manager.swings[manager.lastBosSwingMap['low']] = null;
             manager.swings[manager.lastBosSwingMap['high']] = null;
         } else {
-            debugger
-
             manager.lastBosSwingMapSet['low'].delete(manager.lastBosSwingMap['low'])
             manager.lastBosSwingMapSet['high'].delete(manager.lastBosSwingMap['high'])
 
@@ -1259,6 +1260,7 @@ export const tradinghubCalculateTrendNew = (manager: StateManager, {
     moreBOS, showHiddenSwings, showIFC, showFake, oneIteration
 }: THConfig) => {
 
+    if(!oneIteration)
     manager.markHHLLOld()
 
     if (showIFC)
