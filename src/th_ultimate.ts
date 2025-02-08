@@ -16,6 +16,9 @@ export class Swing {
 
     protected _isExtremum: boolean = false;
 
+    // Для подсчета на графике, только для тестов
+    protected _isDebug: boolean = false;
+
     constructor(props: Partial<Swing>) {
         Object.assign(this, props)
     }
@@ -25,10 +28,21 @@ export class Swing {
     }
 
     get text() {
-        if (!this._isExtremum) {
-            return undefined;
+        let _text = '';
+
+        if(this._isExtremum){
+            _text = this.side === 'high' ? 'HH' : 'LL';
         }
-        return this.side === 'high' ? 'HH' : 'LL';
+
+        if (this._isDebug) {
+            _text += ` ${this.index?.toFixed()}`;
+        }
+
+        return _text;
+    }
+
+    setDebug(){
+        this._isDebug = true;
     }
 
     markExtremum() {
@@ -757,6 +771,10 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
         return;
     }
 
+    if(side === 'high'){
+        debugger
+    }
+
     // Помечаем экстремум как подтвержденный
     manager.lastExtremumMap[side].markExtremum();
     manager.confirmIndexMap[side] = index;
@@ -764,6 +782,8 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
     // Рисуем IDM
     const from = manager.lastExtremumMap[side].idmSwing
     const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
+
+    // На случай если и хай и лоу будет на одной свече, нужно подтверждение жестко с предыдущей свечки
     if (isNonConfirmIDM || manager.lastExtremumMap[side].index !== to.index) {
         manager.boses[from.index] = new Cross({
             from,
@@ -989,7 +1009,6 @@ export class StateManager {
             tryCalculatePullback(processingIndex, 'high', diff, prevCandle, currentCandle, nextCandle, this.swings);
             tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
 
-            // TODO Вот тут если по processingIndex появился свинг, то для HH LL нужно делать updateLast
             if(oneIterationHHLL){
                 updateLast(this, this.swings[processingIndex]);
             }
@@ -1003,8 +1022,8 @@ export class StateManager {
                 updateExtremum(this, rootIndex, 'high', this.swings[processingIndex]);
                 updateExtremum(this, rootIndex, 'low', this.swings[processingIndex]);
 
-                confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
                 confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
+                confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
             }
         }
 
