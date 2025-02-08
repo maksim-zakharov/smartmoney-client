@@ -1000,11 +1000,11 @@ export class StateManager {
             this.processingSwings.delete(processingIndex);
 
             if(oneIterationHHLL) {
-                confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
-                confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
-
                 updateExtremum(this, rootIndex, 'high', this.swings[processingIndex]);
                 updateExtremum(this, rootIndex, 'low', this.swings[processingIndex]);
+
+                confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
+                confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
             }
         }
 
