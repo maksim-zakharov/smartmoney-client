@@ -1085,31 +1085,37 @@ export const deleteInternalStructure = (manager: StateManager) => {
         updateExtremumOneIt(i, 'low', manager);
     }
 
-    // Удаляем IDM у удаленных LL/HH
+    // Удаляем IDM у удаленных LL/HH TODO нужно переместить в цикл выше
     manager.boses = manager.boses.map(b => !manager.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
 }
 
-const updateLastSwing = (i: number, type: 'high' | 'low', manager: StateManager,
-                         moreBOS: boolean = false
-) => {
-    if (manager.swings[i] && manager.swings[i].side === type && manager.swings[i].isExtremum) {
-        manager.prelastBosSwingMap[type] = manager.lastBosSwingMap[type];
-        manager.lastBosSwingMap[type] = i;
-
-        if (moreBOS) {
-            // Если новый бос более хайный (или более лольный) - то удаляем прошлый бос
-            if (type === 'high' && manager.swings[manager.prelastBosSwingMap[type]] && manager.swings[manager.lastBosSwingMap[type]].price > manager.swings[manager.prelastBosSwingMap[type]].price) {
-                manager.lastBosSwingMapSet[type].delete(manager.prelastBosSwingMap[type])
-            }
-            if (type === 'low' && manager.swings[manager.prelastBosSwingMap[type]] && manager.swings[manager.lastBosSwingMap[type]].price < manager.swings[manager.prelastBosSwingMap[type]].price) {
-                manager.lastBosSwingMapSet[type].delete(manager.prelastBosSwingMap[type])
-            }
-
-            manager.lastBosSwingMapSet[type].add(manager.lastBosSwingMap[type])
-        } else {
-            manager.liquidityCandleMap[type] = null;
-        }
+const updateLastSwing = (i: number, side: 'high' | 'low', manager: StateManager) => {
+    // Если свинга нет - пропускаем
+    if (!manager.swings[i]) {
+        return;
     }
+    // Если свинг другого типа - пропускаем
+    if (manager.swings[i].side !== side) {
+        return;
+    }
+    // Если это не HH/LL - пропускаем
+    if (!manager.swings[i].isExtremum) {
+        return;
+    }
+
+    // Фиксируем прошлый свинг
+    manager.prelastBosSwingMap[side] = manager.lastBosSwingMap[side];
+    // Фиксируем текущий свинг
+    manager.lastBosSwingMap[side] = i;
+
+    // Если новый бос более хайный (или более лольный) - то удаляем прошлый бос
+    const isHighestBos = side === 'high' && manager.swings[manager.prelastBosSwingMap[side]] && manager.swings[manager.lastBosSwingMap[side]].price > manager.swings[manager.prelastBosSwingMap[side]].price;
+    const isLowestBos = side === 'low' && manager.swings[manager.prelastBosSwingMap[side]] && manager.swings[manager.lastBosSwingMap[side]].price < manager.swings[manager.prelastBosSwingMap[side]].price
+    if (isHighestBos || isLowestBos) {
+        manager.lastBosSwingMapSet[side].delete(manager.prelastBosSwingMap[side])
+    }
+
+    manager.lastBosSwingMapSet[side].add(manager.lastBosSwingMap[side])
 }
 
 const confirmBOS = (i: number, type: 'high' | 'low',
@@ -1200,7 +1206,7 @@ const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, c
 
 const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) => type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
-const deleteInternalBOS = (manager: StateManager, moreBOS: boolean = false) => {
+const deleteInternalBOS = (manager: StateManager) => {
     // TODO Хз надо ли, выглядит ок но финрез хуже
     // Если сужение - удаляем внутренние босы
     // TODO Здесь удаляются IDM которые нужны для LL и HH (которые подтерждаются не босами), нужно их оставлять
@@ -1209,16 +1215,11 @@ const deleteInternalBOS = (manager: StateManager, moreBOS: boolean = false) => {
         manager.swings[manager.prelastBosSwingMap['high']]?.price > manager.swings[manager.lastBosSwingMap['high']]?.price
         && manager.swings[manager.prelastBosSwingMap['low']]?.price < manager.swings[manager.lastBosSwingMap['low']]?.price
     ) {
-        if (!moreBOS) {
-            manager.swings[manager.lastBosSwingMap['low']] = null;
-            manager.swings[manager.lastBosSwingMap['high']] = null;
-        } else {
-            manager.lastBosSwingMapSet['low'].delete(manager.lastBosSwingMap['low'])
-            manager.lastBosSwingMapSet['high'].delete(manager.lastBosSwingMap['high'])
+        manager.lastBosSwingMapSet['low'].delete(manager.lastBosSwingMap['low'])
+        manager.lastBosSwingMapSet['high'].delete(manager.lastBosSwingMap['high'])
 
-            manager.liquidityCandleMapMap['low'].delete(manager.lastBosSwingMap['low'])
-            manager.liquidityCandleMapMap['high'].delete(manager.lastBosSwingMap['high'])
-        }
+        manager.liquidityCandleMapMap['low'].delete(manager.lastBosSwingMap['low'])
+        manager.liquidityCandleMapMap['high'].delete(manager.lastBosSwingMap['high'])
 
         manager.deleteIDM.add(manager.lastBosSwingMap['low']);
         manager.deleteIDM.add(manager.lastBosSwingMap['high']);
@@ -1238,21 +1239,13 @@ const deleteInternalBOS = (manager: StateManager, moreBOS: boolean = false) => {
 export const drawBOS = (manager: StateManager, moreBOS: boolean = false, showFake: boolean = false) => {
     for (let i = 0; i < manager.candles.length; i++) {
 
-        deleteInternalBOS(manager, moreBOS)
+        deleteInternalBOS(manager)
 
         // BOS сверху
-        if (moreBOS) {
-            manager.lastBosSwingMapSet['high'].forEach(lastBosSwing => confirmBOS(i, 'high', manager.candles, manager.swings, manager.boses, lastBosSwing, manager.lastBosSwingMap['low'], i === manager.candles.length - 1, manager, moreBOS, showFake))
-        } else {
-            confirmBOS(i, 'high', manager.candles, manager.swings, manager.boses, manager.lastBosSwingMap['high'], manager.lastBosSwingMap['low'], i === manager.candles.length - 1, manager, moreBOS, showFake);
-        }
+        confirmBOS(i, 'high', manager.candles, manager.swings, manager.boses, manager.lastBosSwingMap['high'], manager.lastBosSwingMap['low'], i === manager.candles.length - 1, manager, moreBOS, showFake);
 
         // BOS снизу
-        if (moreBOS) {
-            manager.lastBosSwingMapSet['low'].forEach(lastBosSwing => confirmBOS(i, 'low', manager.candles, manager.swings, manager.boses, lastBosSwing, manager.lastBosSwingMap['high'], i === manager.candles.length - 1, manager, moreBOS, showFake))
-        } else {
-            confirmBOS(i, 'low', manager.candles, manager.swings, manager.boses, manager.lastBosSwingMap['low'], manager.lastBosSwingMap['high'], i === manager.candles.length - 1, manager, moreBOS, showFake);
-        }
+        confirmBOS(i, 'low', manager.candles, manager.swings, manager.boses, manager.lastBosSwingMap['low'], manager.lastBosSwingMap['high'], i === manager.candles.length - 1, manager, moreBOS, showFake);
 
         updateLastSwing(i, 'high', manager, moreBOS);
         updateLastSwing(i, 'low', manager, moreBOS);
