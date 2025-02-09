@@ -547,9 +547,9 @@ export const defaultConfig: THConfig = {
 export const calculateProduction = (data: HistoryObject[]) => {
     const config: THConfig = defaultConfig
 
-    const {orderBlocks} = calculateTesting(data, config);
+    let {orderBlocks} = calculateTesting(data, config);
 
-    // orderBlocks.push(...IFCtoOB(thSwings, candles));
+    orderBlocks = orderBlocks.filter(o => o?.type !== POIType.OB_IDM)
 
     return orderBlocks.filter(isNotSMT);
 };

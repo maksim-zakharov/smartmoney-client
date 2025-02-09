@@ -1,6 +1,19 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {Button, Checkbox, Divider, Form, Input, InputNumber, Radio, Row, Slider, SliderSingleProps, Space} from "antd";
+import {
+    Button,
+    Checkbox,
+    Col,
+    Divider,
+    Form,
+    Input,
+    InputNumber,
+    Radio,
+    Row,
+    Slider,
+    SliderSingleProps,
+    Space
+} from "antd";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
@@ -21,10 +34,11 @@ import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 import {
-    calculateTesting, notTradingTime
+    calculateTesting, notTradingTime, POIType
 } from "../th_ultimate";
 import {useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
+import FormItem from "antd/es/form/FormItem";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -79,6 +93,7 @@ export const SoloTestPage = () => {
         tradeIFC: checkboxValues.has('tradeIFC'),
         limitOrderTrade: checkboxValues.has('limitOrderTrade'),
         tradeOB: checkboxValues.has('tradeOB'),
+        tradeOBIDM: checkboxValues.has('tradeOBIDM'),
         showFakeouts: checkboxValues.has('showFakeouts'),
         excludeWick: checkboxValues.has('excludeWick'),
         withMove: checkboxValues.has('withMove'),
@@ -123,7 +138,8 @@ export const SoloTestPage = () => {
     }
     
     const {swings, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
-        const {swings, trend, boses, orderBlocks} = calculateTesting(data.slice(0, data.length - offset), config);
+        let {swings, trend, boses, orderBlocks} = calculateTesting(data.slice(0, data.length - offset), config);
+        orderBlocks = orderBlocks.filter(o => config.tradeOBIDM || o?.type !== POIType.OB_IDM)
 
         const fakeouts = calculateFakeout(swings, data)
 
@@ -147,7 +163,7 @@ export const SoloTestPage = () => {
         }
 
         return { swings, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -526,6 +542,7 @@ export const SoloTestPage = () => {
             <Checkbox key="showPositions" value="showPositions">Сделки</Checkbox>
             <Checkbox key="tradeFakeouts" value="tradeFakeouts">Торговать ложные пробои</Checkbox>
             <Checkbox key="tradeOB" value="tradeOB">Торговать OB</Checkbox>
+            <Checkbox key="tradeOBIDM" value="tradeOBIDM">Торговать OB_IDM</Checkbox>
             <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
