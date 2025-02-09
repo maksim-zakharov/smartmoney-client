@@ -69,13 +69,13 @@ const NewTestingPage = () => {
 
     let newStruct: THConfig = {};
     if (selectedKey === 'swings') {
-        newStruct = {moreBOS: true, showHiddenSwings: true};
+        newStruct = {showHiddenSwings: true};
     }
     if (selectedKey === 'structure') {
-        newStruct = {moreBOS: true, showHiddenSwings: false, showFake: false};
+        newStruct = {showHiddenSwings: false, showFake: false};
     }
     if(selectedKey === 'orderblocks'){
-        newStruct = {moreBOS: true, showHiddenSwings: false, withMove: false, newSMT: true, showFake: false};
+        newStruct = {showHiddenSwings: false, withMove: false, newSMT: true, showFake: false};
     }
 
     const currentCandle = data[data.length - 1 - offset];

@@ -37,7 +37,7 @@ export const SoloTestPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState([]);
 
-    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,moreBOS,showEndOB,limitOrderTrade,newSMT").split(','));
+    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,limitOrderTrade,newSMT").split(','));
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
@@ -82,7 +82,6 @@ export const SoloTestPage = () => {
         showFakeouts: checkboxValues.has('showFakeouts'),
         excludeWick: checkboxValues.has('excludeWick'),
         withMove: checkboxValues.has('withMove'),
-        moreBOS: checkboxValues.has('moreBOS'),
         oneIteration: checkboxValues.has('oneIteration'),
         newSMT: checkboxValues.has('newSMT'),
         showFake: checkboxValues.has('showFake'),
@@ -148,7 +147,7 @@ export const SoloTestPage = () => {
         }
 
         return { swings, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.moreBOS, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -530,7 +529,6 @@ export const SoloTestPage = () => {
             <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
             <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
-            <Checkbox key="moreBOS" value="moreBOS">Более точные BOS</Checkbox>
             <Checkbox key="oneIteration" value="oneIteration">Свинги одной итерацией</Checkbox>
             <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
             <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
