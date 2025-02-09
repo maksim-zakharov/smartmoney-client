@@ -383,6 +383,7 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
                 manager.nonConfirmsOrderblocks.delete(time);
             })
         }
+        manager.calculateOBIDM(i);
 
         // В этом блоке по всем OB подтверждаем endCandles
         if (newSMT) {
@@ -446,6 +447,9 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
     }
 
     return manager.pois.map((ob, index) => {
+        if(!ob){
+            return null;
+        }
         // Либо смотрим тренд по закрытию ОБ либо если закрытия нет - по открытию.
         const obStartIndex = ob?.index;
         const obIndex = ob?.endIndex || index;
@@ -454,10 +458,14 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
         if (startTrend !== trend) {
             return null;
         }
-        if (trend === 1 && ob?.side === 'low') {
-            return ob;
-        }
-        if (trend === -1 && ob?.side === 'high') {
+
+        const isBuy = trend === 1 && ob?.side === 'low';
+        const isSell = trend === -1 && ob?.side === 'high'
+
+        if (isBuy || isSell) {
+            if(ob.type === POIType.OB_IDM){
+                debugger
+            }
             return ob;
         }
         return null;
@@ -896,13 +904,6 @@ export class StateManager {
             return;
         }
 
-        // IDM Есть и он подтвержден свечой IFC
-        const isConfirmedByIFC = bos?.isConfirmed && bos.to.index === index && isIFC(idmSide, this.candles[bos.to.index]);
-
-        if(!isConfirmedByIFC){
-            return;
-        }
-
         const orderBlockPart = {
             startCandle: this.candles[lastIDMIndex],
             lastOrderblockCandle: this.candles[lastIDMIndex],
@@ -911,6 +912,13 @@ export class StateManager {
             imbalanceIndex: index,
             side: idmSide,
         } as OrderblockPart;
+
+        // IDM Есть и он подтвержден свечой IFC
+        const isConfirmedByIFC = bos?.isConfirmed && bos.to.index === index && isIFC(idmSide, this.candles[bos.to.index]) && hasHitOB(orderBlockPart, this.candles[bos.to.index]);
+
+        if(!isConfirmedByIFC){
+            return;
+        }
 
         const swing = this.swings[lastIDMIndex];
         if(!swing){
@@ -932,8 +940,71 @@ export class StateManager {
     }
 
     // Первый OB сразу после IDM, задеваем его свечой (любой) или закрываемся внутри
-    calculateOBIDM() {
+    calculateOBIDM(index: number) {
+    // Нужно запомнить свип который был прям перед IDM
+// Можно просто пойти с конца. Нужно чтобы был последний IDM, от него найти ближайший свинг, это и будет OB IDM (строить от него)
+        // Нужно не просто найти первый IDM и OB IDM от него, нужно чтобы этот OB IDM касался текущей свечой, иначе мимо
+        if(!this.trend[index]){
+            return;
+        }
+        const idmSide = this.trend[index].trend === -1 ? 'high' : 'low';
+        let idm: Cross = null;
+        let OB_IDM_SWING: Swing = null;
+        for(let i = index; i >= 0; i--) {
+            const bos = this.boses[i];
+            const swing = this.swings[i];
+            if(idm && swing && idm.type === swing.side){
+                OB_IDM_SWING = swing;
+                break;
+            }
+            if(!bos){
+                continue; // (b => b?.isIDM && b.to?.index >= index);
+            }
+            if(bos.to?.index >= index){
+               continue;
+            }
 
+            if(!bos.isIDM){
+                continue;
+            }
+            idm = bos;
+        }
+
+        if(!idm){
+            return;
+        }
+
+        if(this.pois[idm.from.index]){
+            return;
+        }
+
+        if(!OB_IDM_SWING){
+            return;
+        }
+
+        const orderBlockPart = {
+            startCandle: this.candles[OB_IDM_SWING.index],
+            lastOrderblockCandle: this.candles[index],
+            lastImbalanceCandle: this.candles[index],
+            firstImbalanceIndex: OB_IDM_SWING.index,
+            imbalanceIndex: index,
+            side: idmSide,
+        } as OrderblockPart;
+
+        if(!hasHitOB(orderBlockPart, this.candles[index])){
+            return;
+        }
+
+        this.pois[idm.from.index] = new POI({
+            ...orderBlockPart,
+            isSMT: false,
+            swing: OB_IDM_SWING,
+            canTrade: true,
+            takeProfit: null,
+            type: isIFC(orderBlockPart.side, this.candles[index]) ? POIType.OB_IDM_IFC : POIType.OB_IDM,
+            endCandle: this.candles[index],
+            endIndex: index,
+        })
     }
 
     // Первый OB сразу после IDM, задеваем его свечой IFC
@@ -1524,7 +1595,7 @@ const isInternalBOS = (leftBos: Cross, rightBos: Cross) => leftBos.from.index < 
     && leftBos.to.index >= rightBos.to.index
 const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) => leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
 
-export const hasHitOB = (ob: POI, candle: HistoryObject) =>
+export const hasHitOB = (ob: OrderblockPart, candle: HistoryObject) =>
     (ob.side === 'high'
         && ob.startCandle.low <= candle.high
     )
