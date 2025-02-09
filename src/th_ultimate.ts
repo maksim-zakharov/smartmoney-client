@@ -116,7 +116,7 @@ export class Cross {
     }
 }
 
-enum POIType {
+export enum POIType {
     // IDM IFC (свип IDM свечей IFC)
     IDM_IFC = 'IDM_IFC',
     // OB IDM (первый ОБ над IDM)
