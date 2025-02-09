@@ -244,28 +244,6 @@ export class POI {
  */
 export const calculatePOI = (manager: StateManager, withMove: boolean = false, newSMT: boolean = false, showFake: boolean = false) => {
     // Иногда определяеются несколько ОБ на одной свечке, убираем
-    let uniqueOrderBlockTimeSet = new Set();
-
-    let lastIDMIndexMap: Record<'high' | 'low', number> = {
-        high: null,
-        low: null
-    }
-
-    let lastExtremumIndexMap: Record<'high' | 'low', number> = {
-        high: null,
-        low: null
-    }
-
-    let nonConfirmsOrderblocks = new Map<number, {
-        swing: Swing,
-        firstCandle: HistoryObject,
-        takeProfit: number;
-        firstImbalanceIndex: number,
-        lastImbalanceIndex?: number;
-        status: 'draft' | 'firstImbalanceIndex' | 'lastImbalanceIndex'
-    }>([]);
-
-    let obIdxes = new Set<number>([]);
 
     for (let i = 0; i < manager.swings.length; i++) {
         const candle = manager.candles[i];
@@ -274,38 +252,48 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
         const index = swing?.index
 
         if (manager.boses[i]?.isIDM) {
-            lastIDMIndexMap[manager.boses[i]?.type] = i;
+            manager.lastIDMIndexMap[manager.boses[i]?.type] = i;
         }
 
         // Нужно для определения ближайшей цели для TakeProfit
         if (swing?.isExtremum) {
-            lastExtremumIndexMap[swing.side] = i;
+            manager.lastExtremumIndexMap[swing.side] = i;
         }
 
         if (swing) {
             // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
             // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
-            nonConfirmsOrderblocks.set(swing.time, {
+            manager.nonConfirmsOrderblocks.set(swing.time, {
                 swing,
                 firstCandle: manager.candles[index],
                 firstImbalanceIndex: index,
                 status: 'draft',
                 // Тейк профит до ближайшего максимума
-                takeProfit: swing.side === 'high' ? manager.swings[lastExtremumIndexMap['low']]?.price : manager.swings[lastExtremumIndexMap['high']]?.price
+                takeProfit: swing.side === 'high' ? manager.swings[manager.lastExtremumIndexMap['low']]?.price : manager.swings[manager.lastExtremumIndexMap['high']]?.price
             })
+        }
+
+        // Важно, только после этого POI можем удалять lastIDMIndexMap;
+        manager.calculateIDMIFC(i);
+        if (manager.lastIDMIndexMap['high'] && manager.boses[manager.lastIDMIndexMap['high']].to?.index === i) {
+            manager.lastIDMIndexMap['high'] = null;
+        }
+
+        if (manager.lastIDMIndexMap['low'] && manager.boses[manager.lastIDMIndexMap['low']].to?.index === i) {
+            manager.lastIDMIndexMap['low'] = null;
         }
 
         // В этом блоке создаем все ОБ
         // Если есть хотя бы 3 свечки
         if (i >= 2) {
-            nonConfirmsOrderblocks.forEach((orderblock, time) => {
+            manager.nonConfirmsOrderblocks.forEach((orderblock, time) => {
                 let {swing, firstCandle, firstImbalanceIndex, status, takeProfit, lastImbalanceIndex} = orderblock;
                 // Сначала ищем индекс свечки с которой будем искать имбаланс.
                 // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
                 if (status === 'draft' && firstImbalanceIndex < i && !isInsideBar(firstCandle, manager.candles[i])) {
                     firstImbalanceIndex = i - 1;
                     status = 'firstImbalanceIndex';
-                    nonConfirmsOrderblocks.set(time, {...orderblock, firstImbalanceIndex, status})
+                    manager.nonConfirmsOrderblocks.set(time, {...orderblock, firstImbalanceIndex, status})
                 }
 
                 // Все некст свечи внутренние
@@ -323,7 +311,7 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
                     }
                     lastImbalanceIndex = i;
                     status = 'lastImbalanceIndex';
-                    nonConfirmsOrderblocks.set(time, {
+                    manager.nonConfirmsOrderblocks.set(time, {
                         ...orderblock,
                         firstImbalanceIndex,
                         firstCandle,
@@ -346,7 +334,7 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
                 const type = lastImbalanceCandle.low > firstCandle.high ? 'low' : lastImbalanceCandle.high < firstCandle.low ? 'high' : null;
 
                 if (!type) {
-                    nonConfirmsOrderblocks.delete(time);
+                    manager.nonConfirmsOrderblocks.delete(time);
                     return;
                 }
 
@@ -365,8 +353,8 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
                     side: type,
                 } as OrderblockPart;
 
-                const lastIDMIndex = lastIDMIndexMap[swing?.side]
-                if (orderBlockPart?.side === swing?.side && swing?.isExtremum && !uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)) {
+                const lastIDMIndex = manager.lastIDMIndexMap[swing?.side]
+                if (orderBlockPart?.side === swing?.side && swing?.isExtremum && !manager.uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)) {
                     // TODO Не торговать ОБ под IDM
                     const bossIndex = orderBlockPart.firstImbalanceIndex + index;
                     const hasBoss = Boolean(manager.boses[bossIndex]) && (!showFake || manager.boses[bossIndex].isConfirmed);
@@ -388,11 +376,11 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
                         takeProfit,
                         type
                     })
-                    obIdxes.add(swing.index);
+                    manager.obIdxes.add(swing.index);
 
-                    uniqueOrderBlockTimeSet.add(orderBlockPart.startCandle.time);
+                    manager.uniqueOrderBlockTimeSet.add(orderBlockPart.startCandle.time);
                 }
-                nonConfirmsOrderblocks.delete(time);
+                manager.nonConfirmsOrderblocks.delete(time);
             })
         }
 
@@ -403,21 +391,20 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
              * Записываю нахожусь ли я внутри IDM. Если да - то это SMT
              * Записываю новые ОБ и закрываю их если было касание
              */
-            obIdxes.forEach(obIdx => {
+            manager.obIdxes.forEach(obIdx => {
                 const obItem = manager.pois[obIdx];
-                const startPositionIndex = obItem.index + obItem.imbalanceIndex;
-
                 const idmType = obItem.side;
-                if (lastIDMIndexMap[idmType] && lastIDMIndexMap[idmType] <= i && obItem.index >= lastIDMIndexMap[idmType]) {
+                const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+                if (manager.lastIDMIndexMap[idmType] && manager.lastIDMIndexMap[idmType] <= i && obItem.index >= manager.lastIDMIndexMap[idmType]) {
                     obItem.isSMT = true;
                     obItem.canTrade = false;
                 }
-                if (manager.boses[lastIDMIndexMap[idmType]]?.isConfirmed && lastIDMIndexMap[idmType] && manager.boses[lastIDMIndexMap[idmType]].to?.index - 1 <= i) {
+                if (manager.boses[manager.lastIDMIndexMap[idmType]]?.isConfirmed && manager.lastIDMIndexMap[idmType] && manager.boses[manager.lastIDMIndexMap[idmType]].to?.index - 1 <= i) {
                     obItem.isSMT = false;
                     obItem.canTrade = true;
                 }
                 if (startPositionIndex <= i && hasHitOB(obItem, candle)) {
-                    obIdxes.delete(obIdx);
+                    manager.obIdxes.delete(obIdx);
 
                     obItem.endCandle = candle;
                     obItem.endIndex = i;
@@ -434,14 +421,6 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
                     }
                 }
             })
-
-            if (lastIDMIndexMap['high'] && manager.boses[lastIDMIndexMap['high']].to?.index - 1 === i) {
-                lastIDMIndexMap['high'] = null;
-            }
-
-            if (lastIDMIndexMap['low'] && manager.boses[lastIDMIndexMap['low']].to?.index - 1 === i) {
-                lastIDMIndexMap['low'] = null;
-            }
         }
     }
 
@@ -769,10 +748,6 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
         return;
     }
 
-    if (side === 'high') {
-        debugger
-    }
-
     // Помечаем экстремум как подтвержденный
     manager.lastExtremumMap[side].markExtremum();
     manager.confirmIndexMap[side] = index;
@@ -871,6 +846,26 @@ export class StateManager {
     firstBos?: Cross;
     lastBos?: Cross;
 
+    // calculatePOI
+    uniqueOrderBlockTimeSet = new Set();
+    lastIDMIndexMap: Record<'high' | 'low', number> = {
+        high: null,
+        low: null
+    }
+    lastExtremumIndexMap: Record<'high' | 'low', number> = {
+        high: null,
+        low: null
+    }
+    nonConfirmsOrderblocks = new Map<number, {
+        swing: Swing,
+        firstCandle: HistoryObject,
+        takeProfit: number;
+        firstImbalanceIndex: number,
+        lastImbalanceIndex?: number;
+        status: 'draft' | 'firstImbalanceIndex' | 'lastImbalanceIndex'
+    }>([]);
+    obIdxes = new Set<number>([]);
+
     constructor(candles: HistoryObject[], config?: THConfig) {
         this.candles = candles;
         this.swings = new Array(candles.length).fill(null);
@@ -885,6 +880,85 @@ export class StateManager {
         for (let i = 0; i < this.candles.length; i++) {
             this.calculateSwings(i);
         }
+    }
+
+    // Есть IDM, задеваем его свечой IFC (или простреливаем), открываем сделку
+    calculateIDMIFC(index: number) {
+        if(!this.trend[index]){
+            return;
+        }
+
+        // На нисходящем тренде нужно искать IFC сверху, на восходящем - снизу
+        const idmSide = this.trend[index].trend === -1 ? 'high' : 'low';
+        const lastIDMIndex = this.lastIDMIndexMap[idmSide];
+        const bos = this.boses[lastIDMIndex];
+        if(!bos){
+            return;
+        }
+
+        // IDM Есть и он подтвержден свечой IFC
+        const isConfirmedByIFC = bos?.isConfirmed && bos.to.index === index && isIFC(idmSide, this.candles[bos.to.index]);
+
+        if(!isConfirmedByIFC){
+            return;
+        }
+
+        const orderBlockPart = {
+            startCandle: this.candles[lastIDMIndex],
+            lastOrderblockCandle: this.candles[lastIDMIndex],
+            lastImbalanceCandle: this.candles[index],
+            firstImbalanceIndex: lastIDMIndex,
+            imbalanceIndex: index,
+            side: idmSide,
+        } as OrderblockPart;
+
+        const swing = this.swings[lastIDMIndex];
+        if(!swing){
+            return;
+        }
+
+        this.pois[lastIDMIndex] = new POI({
+            ...orderBlockPart,
+            isSMT: false,
+            swing,
+            canTrade: true,
+            takeProfit: bos.extremum.price,
+            type: POIType.IDM_IFC,
+            endCandle: this.candles[index],
+            endIndex: index,
+        })
+
+        this.uniqueOrderBlockTimeSet.add(orderBlockPart.startCandle.time);
+    }
+
+    // Первый OB сразу после IDM, задеваем его свечой (любой) или закрываемся внутри
+    calculateOBIDM() {
+
+    }
+
+    // Первый OB сразу после IDM, задеваем его свечой IFC
+    calculateOBIDMIFC() {
+
+    }
+
+    // Просто какой то уровень ликвидности (не OB), строится от свинга, не экстремум, не OB IDM, задеваем свечой IFC
+    calculateLQIFC() {
+
+    }
+
+    // Первый свинг (ликвидность) сразу после HH/LL, задеваем ее свечой IFC
+    calculateEXTLQIFC() {
+
+    }
+
+    // Ордерблок на свече HH/LL, задеваем его свечой (или закрываемся внутри), не IFC
+    calculateOBEXT() {
+
+    }
+
+    // Чоч на свече HH/LL, задеваем его свечой IFC
+    calculateOBEXTIFC() {
+
     }
 
     calculateTrend() {
@@ -1124,17 +1198,20 @@ const confirmBOS = (i: number, type: 'high' | 'low',
     const lastBosSwing = manager.lastBosSwingMap[type];
     const lastCrossBosSwing = manager.lastBosSwingMap[type === 'high' ? 'low' : 'high'];
 
-    if(!lastBosSwing){
+    if (!lastBosSwing) {
         return;
     }
 
-    if(manager.boses[lastBosSwing] && !manager.boses[lastBosSwing].isIDM){
+    if (manager.boses[lastBosSwing] && !manager.boses[lastBosSwing].isIDM) {
         return;
     }
 
-    let from = manager.swings[lastBosSwing];
     let liquidityCandle = manager.liquidityCandleMapMap[type].get(lastBosSwing) ?? manager.candles[lastBosSwing];
-    let to: Swing = isLastCandle ? new Swing({index: i, time: manager.candles[i].time, price: manager.candles[i].close}) : null;
+    let to: Swing = isLastCandle ? new Swing({
+        index: i,
+        time: manager.candles[i].time,
+        price: manager.candles[i].close
+    }) : null;
     let isConfirmed = false;
     let isSwipedLiquidity = false;
 
@@ -1171,10 +1248,11 @@ const confirmBOS = (i: number, type: 'high' | 'low',
         }
     }
 
-    if(!to){
+    if (!to) {
         return;
     }
 
+    let from = manager.swings[lastBosSwing];
     manager.boses[lastBosSwing] = new Cross({
         from,
         to,
