@@ -650,7 +650,7 @@ export const deleteEmptySwings = (manager: StateManager) => {
     }
 }
 
-const deleteInternalOneIt = (i: number, side: 'high' | 'low', manager: StateManager) => {
+const deleteInternalOneIt = (index: number, side: 'high' | 'low', manager: StateManager) => {
 
     const funcMap: Record<'high' | 'low', Function> = {
         high: lowestBy,
@@ -660,13 +660,13 @@ const deleteInternalOneIt = (i: number, side: 'high' | 'low', manager: StateMana
     const crossType = side === 'high' ? 'low' : 'high';
 
     // Если произошел пересвип хая, ищем между точками лойный лой
-    const updateHighest = side === 'high' && manager.swings[manager.preLastIndexMap[side]]?.price < manager.candles[i].high;
+    const updateHighest = side === 'high' && manager.swings[manager.preLastIndexMap[side]]?.price < manager.candles[index].high;
     // Если произошел пересвип лоя, ищем между точками хайный хай
-    const updateLowest = side === 'low' && manager.swings[manager.preLastIndexMap[side]]?.price > manager.candles[i].low;
+    const updateLowest = side === 'low' && manager.swings[manager.preLastIndexMap[side]]?.price > manager.candles[index].low;
 
     // Если произошел пересвип хая, ищем между точками лойный лой
     if (updateHighest || updateLowest) {
-        const batch = manager.swings.slice(manager.preLastIndexMap[side] + 1, i);
+        const batch = manager.swings.slice(manager.preLastIndexMap[side] + 1, index);
         const lowestSwing = funcMap[side](batch, 'price');
 
         // Удаляем все лои которые не лойный лой
@@ -682,8 +682,12 @@ const deleteInternalOneIt = (i: number, side: 'high' | 'low', manager: StateMana
     }
 }
 
-const updateExtremumOneIt = (i: number, side: 'high' | 'low', manager: StateManager) => {
-    if (!manager.swings[i]) {
+const updateExtremumOneIt = (index: number, side: 'high' | 'low', manager: StateManager) => {
+    if (!manager.swings[index]) {
+        return;
+    }
+
+    if (!manager.swings[index].isExtremum) {
         return;
     }
 
@@ -694,16 +698,16 @@ const updateExtremumOneIt = (i: number, side: 'high' | 'low', manager: StateMana
     const isDeletedSwing = !manager.swings[manager.preLastIndexMap[side]]
 
     // Новый свинг больше старого
-    const updateHighest = !isDeletedSwing && side === 'high' && manager.swings[manager.preLastIndexMap[side]].price < manager.swings[i].price;
+    const updateHighest = !isDeletedSwing && side === 'high' && manager.swings[manager.preLastIndexMap[side]].price < manager.swings[index].price;
     // Новый свинг меньше старого
-    const updateLowest = !isDeletedSwing && side === 'low' && manager.swings[manager.preLastIndexMap[side]].price > manager.swings[i].price;
+    const updateLowest = !isDeletedSwing && side === 'low' && manager.swings[manager.preLastIndexMap[side]].price > manager.swings[index].price;
 
     // Если это тотже тип
-    const isSameSide = manager.swings[i].side === side;
+    const isSameSide = manager.swings[index].side === side;
 
     const needUpdate = isNewSwing || isDeletedSwing || updateHighest || updateLowest;
-    if (isSameSide && manager.swings[i].isExtremum && needUpdate) {
-        manager.preLastIndexMap[side] = i;
+    if (isSameSide && needUpdate) {
+        manager.preLastIndexMap[side] = index;
     }
 }
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
@@ -1202,6 +1206,11 @@ export class StateManager {
 
             if (this.config.showIFC)
                 this.markIFCOneIt(processingIndex);
+        }
+
+        if(this.config.oneIteration) {
+            // Удаляем IDM у удаленных LL/HH TODO нужно переместить в цикл выше
+            this.boses = this.boses.map(b => !this.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
         }
 
         // Если текущая свечка внутренняя для предыдущей - идем дальше
