@@ -650,25 +650,24 @@ export const deleteEmptySwings = (manager: StateManager) => {
     }
 }
 
-const deleteInternalOneIt = (i: number, type: 'high' | 'low', manager: StateManager) => {
+const deleteInternalOneIt = (i: number, side: 'high' | 'low', manager: StateManager) => {
 
     const funcMap: Record<'high' | 'low', Function> = {
         high: lowestBy,
         low: highestBy
     }
 
-    const crossType = type === 'high' ? 'low' : 'high';
-
-    const condition = type === 'high' ?
-        // Если произошел пересвип хая, ищем между точками лойный лой
-        manager.swings[manager.preLastIndexMap[type]]?.price < manager.candles[i].high
-        // Если произошел пересвип лоя, ищем между точками хайный хай
-        : manager.swings[manager.preLastIndexMap[type]]?.price > manager.candles[i].low;
+    const crossType = side === 'high' ? 'low' : 'high';
 
     // Если произошел пересвип хая, ищем между точками лойный лой
-    if (condition) {
-        const batch = manager.swings.slice(manager.preLastIndexMap[type] + 1, i);
-        const lowestSwing = funcMap[type](batch, 'price');
+    const updateHighest = side === 'high' && manager.swings[manager.preLastIndexMap[side]].price < manager.candles[i].high;
+    // Если произошел пересвип лоя, ищем между точками хайный хай
+    const updateLowest = side === 'low' && manager.swings[manager.preLastIndexMap[side]].price > manager.candles[i].low;
+
+    // Если произошел пересвип хая, ищем между точками лойный лой
+    if (updateHighest || updateLowest) {
+        const batch = manager.swings.slice(manager.preLastIndexMap[side] + 1, i);
+        const lowestSwing = funcMap[side](batch, 'price');
 
         // Удаляем все лои которые не лойный лой
         batch
@@ -679,7 +678,7 @@ const deleteInternalOneIt = (i: number, type: 'high' | 'low', manager: StateMana
             })
 
         manager.preLastIndexMap[crossType] = lowestSwing?.index;
-        manager.preLastIndexMap[type] = null;
+        manager.preLastIndexMap[side] = null;
     }
 }
 
