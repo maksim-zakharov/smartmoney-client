@@ -660,9 +660,9 @@ const deleteInternalOneIt = (i: number, side: 'high' | 'low', manager: StateMana
     const crossType = side === 'high' ? 'low' : 'high';
 
     // Если произошел пересвип хая, ищем между точками лойный лой
-    const updateHighest = side === 'high' && manager.swings[manager.preLastIndexMap[side]].price < manager.candles[i].high;
+    const updateHighest = side === 'high' && manager.swings[manager.preLastIndexMap[side]]?.price < manager.candles[i].high;
     // Если произошел пересвип лоя, ищем между точками хайный хай
-    const updateLowest = side === 'low' && manager.swings[manager.preLastIndexMap[side]].price > manager.candles[i].low;
+    const updateLowest = side === 'low' && manager.swings[manager.preLastIndexMap[side]]?.price > manager.candles[i].low;
 
     // Если произошел пересвип хая, ищем между точками лойный лой
     if (updateHighest || updateLowest) {
