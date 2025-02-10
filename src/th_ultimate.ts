@@ -683,18 +683,28 @@ const deleteInternalOneIt = (i: number, type: 'high' | 'low', manager: StateMana
     }
 }
 
-const updateExtremumOneIt = (i: number, type: 'high' | 'low', manager: StateManager) => {
+const updateExtremumOneIt = (i: number, side: 'high' | 'low', manager: StateManager) => {
     if (!manager.swings[i]) {
         return;
     }
 
-    const condition = !manager.preLastIndexMap[type] || (type === 'high' ?
-        // updateHighest
-        manager.swings[manager.preLastIndexMap[type]].price < manager.swings[i].price
-        // updateLowest
-        : manager.swings[manager.preLastIndexMap[type]].price > manager.swings[i].price)
-    if (manager.swings[i].side === type && manager.swings[i].isExtremum && condition) {
-        manager.preLastIndexMap[type] = i;
+    // Это первый свинг
+    const isNewSwing = !manager.preLastIndexMap[side]
+
+    // Или прошлый записанный свинг стерли
+    const isDeletedSwing = !manager.swings[manager.preLastIndexMap[side]]
+
+    // Новый свинг больше старого
+    const updateHighest = !isDeletedSwing && side === 'high' && manager.swings[manager.preLastIndexMap[side]].price < manager.swings[i].price;
+    // Новый свинг меньше старого
+    const updateLowest = !isDeletedSwing && side === 'low' && manager.swings[manager.preLastIndexMap[side]].price > manager.swings[i].price;
+
+    // Если это тотже тип
+    const isSameSide = manager.swings[i].side === side;
+
+    const needUpdate = isNewSwing || isDeletedSwing || updateHighest || updateLowest;
+    if (isSameSide && manager.swings[i].isExtremum && needUpdate) {
+        manager.preLastIndexMap[side] = i;
     }
 }
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
@@ -1183,6 +1193,14 @@ export class StateManager {
             confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
             confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
 
+            if(this.config.oneIteration){
+                deleteInternalOneIt(processingIndex, 'high', this);
+                deleteInternalOneIt(processingIndex, 'low', this);
+
+                updateExtremumOneIt(processingIndex, 'high', this);
+                updateExtremumOneIt(processingIndex, 'low', this);
+            }
+
             if (this.config.showIFC)
                 this.markIFCOneIt(processingIndex);
         }
@@ -1427,8 +1445,9 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
     }
 }
 export const tradinghubCalculateTrendNew = (manager: StateManager, {
-    showHiddenSwings, showFake
+    showHiddenSwings, showFake, oneIteration
 }: THConfig) => {
+    if(!oneIteration)
     deleteInternalStructure(manager);
 
     if (!showHiddenSwings) {
