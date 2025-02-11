@@ -12,7 +12,6 @@ import {DatesPicker} from "../../DatesPicker";
 import type { Dayjs } from 'dayjs';
 import {LineStyle, Time} from "lightweight-charts";
 import {
-    drawBOS,
     HistoryObject,
     notTradingTime, StateManager,
 } from "../../th_ultimate";
@@ -21,7 +20,7 @@ const BOSChart = ({data}: {data: HistoryObject[]}) => {
     manager.calculateSwingsOld();
 
     manager.markHHLLOld();
-    drawBOS(manager);
+    manager.drawBOSOld();
 
     const markerColors = {
         bearColor: "rgb(157, 43, 56)",

@@ -15,7 +15,6 @@ import {Chart} from "../../SoloTestPage/TestChart";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {
-    drawBOS,
     HistoryObject,
     notTradingTime, StateManager,
     Swing,
@@ -34,7 +33,7 @@ const BOSChart = ({data, text = 'LL'}) => {
     manager.markHHLLOld();
     manager.swings[3] = {...manager.swings[3], text} as Swing;
 
-     drawBOS(manager);
+    manager.drawBOSOld();
     const allMarkers1 = [];
     allMarkers1.push(...manager.swings.filter(Boolean).map(s => ({
         color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,

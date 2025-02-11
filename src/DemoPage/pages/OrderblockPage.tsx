@@ -9,7 +9,6 @@ import React from "react";
 import {createRectangle2} from "../../utils";
 import {
     calculatePOI,
-    drawBOS,
     HistoryObject,
     StateManager,
     Trend
@@ -20,7 +19,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
     manager.calculateSwingsOld();
 
     manager.markHHLLOld();
-    drawBOS(manager);
+    manager.drawBOSOld();
 
     const trends = data.map((candle, index) => ({trend, time: candle.time}) as Trend);
 

@@ -480,31 +480,10 @@ export const calculateTesting = (data: HistoryObject[], {
     showFake,
     oneIteration
 }: THConfig) => {
-    const manager = new StateManager(data, {oneIteration, showIFC});
-    // <-- Копировать в робота
+    const manager = new StateManager(data, {oneIteration, showIFC, showFake});
     manager.calculate();
 
-    tradinghubCalculateTrendNew(manager, {showHiddenSwings, showFake, showIFC, oneIteration});
-
-    // if (oneIteration) {
-    //     // Потом переписать в просто calculate
-    //     manager.calculateTrend();
-    // }
-
-    // const manager1 = new StateManager(data);
-    // manager1.calculate();
-    // tradinghubCalculateTrendNew(manager1, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration: false});
-    //
-    // const manager2 = new StateManager(data);
-    // manager2.calculate();
-    // tradinghubCalculateTrendNew(manager2, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration: true});
-    // manager2.calculateTrend();
-    //
-    //
-    // console.log('old', manager1.trend)
-    // console.log('new', manager2.trend)
-    // console.log(JSON.stringify(manager1.trend.slice(0)) === JSON.stringify(manager2.trend.slice(0)))
-    // console.log(JSON.stringify(manager1.boses.slice(0)) === JSON.stringify(manager2.boses.slice(0)))
+    tradinghubCalculateTrendNew(manager, {showHiddenSwings, showIFC, oneIteration});
 
     // Копировать в робота -->
     let orderBlocks = calculatePOI(
@@ -828,10 +807,6 @@ export class StateManager {
     }
 
     // drawBOS
-    liquidityCandleMap: Record<'high' | 'low', HistoryObject> = {
-        high: null,
-        low: null
-    }
     prelastBosSwingMap: Record<'high' | 'low', number> = {
         high: null,
         low: null
@@ -1055,9 +1030,62 @@ export class StateManager {
         this.swings[i] = null;
     }
 
+    // Рисует BOS если LL или HH перекрываются
     /**
      * @deprecated
-     * @param manager
+     */
+    drawBOSOld = () => {
+        for (let i = 0; i < this.candles.length; i++) {
+
+            deleteInternalBOS(this)
+
+            // BOS сверху
+            confirmBOS(i, 'high', this, i === this.candles.length - 1, this.config.showFake);
+
+            // BOS снизу
+            confirmBOS(i, 'low', this, i === this.candles.length - 1, this.config.showFake);
+
+            updateLastSwing(i, 'high', this);
+            updateLastSwing(i, 'low', this);
+        }
+
+        this.boses
+            .filter(b => b?.type === 'high' && !b?.isIDM)
+            .sort((a, b) => a.from.price - b.from.price)
+            .forEach((curr: any, i, array) => {
+                for (let j = 0; j < i; j++) {
+                    const prev = array[j];
+                    if (isInternalBOS(curr, prev)) {
+                        this.boses[curr.from.index] = null;
+                        break;
+                    }
+                }
+            })
+
+        this.boses
+            .filter(b => b?.type === 'low' && !b?.isIDM)
+            .sort((a, b) => b.from.price - a.from.price)
+            .forEach((curr: any, i, array) => {
+                for (let j = 0; j < i; j++) {
+                    const prev = array[j];
+                    if (isInternalBOS(curr, prev)) {
+                        this.boses[curr.from.index] = null;
+                        break;
+                    }
+                }
+            })
+
+        // Удаляем все IDM у которых BOS сформирован
+        for (let i = 0; i < this.boses.length; i++) {
+            const b = this.boses[i];
+            if (b?.isConfirmed && b?.isIDM && this.deleteIDM.has(b?.extremum?.index)) {
+                this.boses[i] = null;
+            }
+        }
+    }
+
+    /**
+     * @deprecated
      */
     deleteInternalStructureOld = () => {
         // Алгоритм такой
@@ -1227,6 +1255,7 @@ export class StateManager {
             confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
             confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
 
+            // deleteInternalStructure
             if (this.config.oneIteration) {
                 deleteInternalOneIt(processingIndex, 'high', this);
                 deleteInternalOneIt(processingIndex, 'low', this);
@@ -1400,63 +1429,8 @@ const deleteInternalBOS = (manager: StateManager) => {
     }
 }
 
-// Рисует BOS если LL или HH перекрываются
-/**
- * @deprecated
- * @param manager
- * @param showFake
- */
-export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
-    for (let i = 0; i < manager.candles.length; i++) {
-
-        deleteInternalBOS(manager)
-
-        // BOS сверху
-        confirmBOS(i, 'high', manager, i === manager.candles.length - 1, showFake);
-
-        // BOS снизу
-        confirmBOS(i, 'low', manager, i === manager.candles.length - 1, showFake);
-
-        updateLastSwing(i, 'high', manager);
-        updateLastSwing(i, 'low', manager);
-    }
-
-    manager.boses
-        .filter(b => b?.type === 'high' && !b?.isIDM)
-        .sort((a, b) => a.from.price - b.from.price)
-        .forEach((curr: any, i, array) => {
-            for (let j = 0; j < i; j++) {
-                const prev = array[j];
-                if (isInternalBOS(curr, prev)) {
-                    manager.boses[curr.from.index] = null;
-                    break;
-                }
-            }
-        })
-
-    manager.boses
-        .filter(b => b?.type === 'low' && !b?.isIDM)
-        .sort((a, b) => b.from.price - a.from.price)
-        .forEach((curr: any, i, array) => {
-            for (let j = 0; j < i; j++) {
-                const prev = array[j];
-                if (isInternalBOS(curr, prev)) {
-                    manager.boses[curr.from.index] = null;
-                    break;
-                }
-            }
-        })
-
-    // Удаляем все IDM у которых BOS сформирован
-    for (let i = 0; i < manager.boses.length; i++) {
-        const b = manager.boses[i];
-        if (b?.isConfirmed && b?.isIDM && manager.deleteIDM.has(b?.extremum?.index)) {
-            manager.boses[i] = null;
-        }
-    }
-}
 export const tradinghubCalculateTrendNew = (manager: StateManager, {
-    showHiddenSwings, showFake, oneIteration
+    showHiddenSwings, oneIteration
 }: THConfig) => {
     if (!oneIteration)
         manager.deleteInternalStructureOld();
@@ -1465,7 +1439,7 @@ export const tradinghubCalculateTrendNew = (manager: StateManager, {
         manager.deleteEmptySwingsOld();
     }
 
-    drawBOS(manager, showFake);
+    manager.drawBOSOld();
 
     drawTrend(manager);
 };
