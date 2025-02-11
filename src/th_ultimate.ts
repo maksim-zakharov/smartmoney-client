@@ -447,7 +447,7 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
     }
 
     return manager.pois.map((ob, index) => {
-        if(!ob){
+        if (!ob) {
             return null;
         }
         // Либо смотрим тренд по закрытию ОБ либо если закрытия нет - по открытию.
@@ -463,7 +463,7 @@ export const calculatePOI = (manager: StateManager, withMove: boolean = false, n
         const isSell = trend === -1 && ob?.side === 'high'
 
         if (isBuy || isSell) {
-            if(ob.type === POIType.OB_IDM){
+            if (ob.type === POIType.OB_IDM) {
                 debugger
             }
             return ob;
@@ -635,19 +635,6 @@ const filterDoubleSwings = (i: number, lastSwingIndex: number, updateLastSwingIn
 export interface Trend {
     time: number;
     trend: number;
-}
-
-/**
- * @deprecated
- * @param manager
- */
-export const deleteEmptySwings = (manager: StateManager) => {
-    for (let i = 0; i < manager.swings.length; i++) {
-        if (!manager.swings[i]?.isExtremum) {
-            manager.swings[i] = null;
-            continue;
-        }
-    }
 }
 
 const deleteInternalOneIt = (index: number, side: 'high' | 'low', manager: StateManager) => {
@@ -905,7 +892,7 @@ export class StateManager {
 
     // Есть IDM, задеваем его свечой IFC (или простреливаем), открываем сделку
     calculateIDMIFC(index: number) {
-        if(!this.trend[index]){
+        if (!this.trend[index]) {
             return;
         }
 
@@ -913,7 +900,7 @@ export class StateManager {
         const idmSide = this.trend[index].trend === -1 ? 'high' : 'low';
         const lastIDMIndex = this.lastIDMIndexMap[idmSide];
         const bos = this.boses[lastIDMIndex];
-        if(!bos){
+        if (!bos) {
             return;
         }
 
@@ -929,12 +916,12 @@ export class StateManager {
         // IDM Есть и он подтвержден свечой IFC
         const isConfirmedByIFC = bos?.isConfirmed && bos.to.index === index && isIFC(idmSide, this.candles[bos.to.index]) && hasHitOB(orderBlockPart, this.candles[bos.to.index]);
 
-        if(!isConfirmedByIFC){
+        if (!isConfirmedByIFC) {
             return;
         }
 
         const swing = this.swings[lastIDMIndex];
-        if(!swing){
+        if (!swing) {
             return;
         }
 
@@ -954,44 +941,44 @@ export class StateManager {
 
     // Первый OB сразу после IDM, задеваем его свечой (любой) или закрываемся внутри
     calculateOBIDM(index: number) {
-    // Нужно запомнить свип который был прям перед IDM
+        // Нужно запомнить свип который был прям перед IDM
 // Можно просто пойти с конца. Нужно чтобы был последний IDM, от него найти ближайший свинг, это и будет OB IDM (строить от него)
         // Нужно не просто найти первый IDM и OB IDM от него, нужно чтобы этот OB IDM касался текущей свечой, иначе мимо
-        if(!this.trend[index]){
+        if (!this.trend[index]) {
             return;
         }
         const idmSide = this.trend[index].trend === -1 ? 'high' : 'low';
         let idm: Cross = null;
         let OB_IDM_SWING: Swing = null;
-        for(let i = index; i >= 0; i--) {
+        for (let i = index; i >= 0; i--) {
             const bos = this.boses[i];
             const swing = this.swings[i];
-            if(idm && swing && idm.type === swing.side){
+            if (idm && swing && idm.type === swing.side) {
                 OB_IDM_SWING = swing;
                 break;
             }
-            if(!bos){
+            if (!bos) {
                 continue; // (b => b?.isIDM && b.to?.index >= index);
             }
-            if(bos.to?.index >= index){
-               continue;
+            if (bos.to?.index >= index) {
+                continue;
             }
 
-            if(!bos.isIDM){
+            if (!bos.isIDM) {
                 continue;
             }
             idm = bos;
         }
 
-        if(!idm){
+        if (!idm) {
             return;
         }
 
-        if(this.pois[idm.from.index]){
+        if (this.pois[idm.from.index]) {
             return;
         }
 
-        if(!OB_IDM_SWING){
+        if (!OB_IDM_SWING) {
             return;
         }
 
@@ -1004,7 +991,7 @@ export class StateManager {
             side: idmSide,
         } as OrderblockPart;
 
-        if(!hasHitOB(orderBlockPart, this.candles[index])){
+        if (!hasHitOB(orderBlockPart, this.candles[index])) {
             return;
         }
 
@@ -1058,6 +1045,50 @@ export class StateManager {
         const bos = this.swings[index];
         if (bos && isIFC(bos.side, this.candles[bos.index])) {
             bos.isIFC = true
+        }
+    }
+
+    deleteEmptySwingsOneIt = (i: number) => {
+        if (this.swings[i]?.isExtremum) {
+            return;
+        }
+        this.swings[i] = null;
+    }
+
+    /**
+     * @deprecated
+     * @param manager
+     */
+    deleteInternalStructureOld = () => {
+        // Алгоритм такой
+        /**
+         * Если в рамках первых двух точек я нахожу следующие 2 точки внутренними, то записываю их внутренними до тех пор, пока хотя бы одна точка не станет внешней.
+         * Если внешняя точка снизу и вторая точка была тоже снизу - из внутренних ищу самую высокую.
+         * Если внешняя точка сверху и вторая точка была тоже сверху - из внутренних ищу самую низкую.
+         *
+         * Остальные удаляются
+         */
+        for (let i = 0; i < this.swings.length; i++) {
+            deleteInternalOneIt(i, 'high', this);
+            deleteInternalOneIt(i, 'low', this);
+
+            // updateHighest
+            updateExtremumOneIt(i, 'high', this);
+
+            // updateLowest
+            updateExtremumOneIt(i, 'low', this);
+        }
+
+        // Удаляем IDM у удаленных LL/HH TODO нужно переместить в цикл выше
+        this.boses = this.boses.map(b => !this.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
+    }
+
+    /**
+     * @deprecated
+     */
+    deleteEmptySwingsOld = () => {
+        for (let i = 0; i < this.swings.length; i++) {
+            this.deleteEmptySwingsOneIt(i)
         }
     }
 
@@ -1196,7 +1227,7 @@ export class StateManager {
             confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
             confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
 
-            if(this.config.oneIteration){
+            if (this.config.oneIteration) {
                 deleteInternalOneIt(processingIndex, 'high', this);
                 deleteInternalOneIt(processingIndex, 'low', this);
 
@@ -1208,7 +1239,7 @@ export class StateManager {
                 this.markIFCOneIt(processingIndex);
         }
 
-        if(this.config.oneIteration) {
+        if (this.config.oneIteration) {
             // Удаляем IDM у удаленных LL/HH TODO нужно переместить в цикл выше
             this.boses = this.boses.map(b => !this.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
         }
@@ -1228,34 +1259,6 @@ export class StateManager {
             status: 'draft'
         });
     }
-}
-
-/**
- * @deprecated
- * @param manager
- */
-export const deleteInternalStructure = (manager: StateManager) => {
-    // Алгоритм такой
-    /**
-     * Если в рамках первых двух точек я нахожу следующие 2 точки внутренними, то записываю их внутренними до тех пор, пока хотя бы одна точка не станет внешней.
-     * Если внешняя точка снизу и вторая точка была тоже снизу - из внутренних ищу самую высокую.
-     * Если внешняя точка сверху и вторая точка была тоже сверху - из внутренних ищу самую низкую.
-     *
-     * Остальные удаляются
-     */
-    for (let i = 0; i < manager.swings.length; i++) {
-        deleteInternalOneIt(i, 'high', manager);
-        deleteInternalOneIt(i, 'low', manager);
-
-        // updateHighest
-        updateExtremumOneIt(i, 'high', manager);
-
-        // updateLowest
-        updateExtremumOneIt(i, 'low', manager);
-    }
-
-    // Удаляем IDM у удаленных LL/HH TODO нужно переместить в цикл выше
-    manager.boses = manager.boses.map(b => !manager.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
 }
 
 const updateLastSwing = (i: number, side: 'high' | 'low', manager: StateManager) => {
@@ -1455,11 +1458,11 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
 export const tradinghubCalculateTrendNew = (manager: StateManager, {
     showHiddenSwings, showFake, oneIteration
 }: THConfig) => {
-    if(!oneIteration)
-    deleteInternalStructure(manager);
+    if (!oneIteration)
+        manager.deleteInternalStructureOld();
 
     if (!showHiddenSwings) {
-        deleteEmptySwings(manager);
+        manager.deleteEmptySwingsOld();
     }
 
     drawBOS(manager, showFake);
