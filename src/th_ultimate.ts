@@ -1049,6 +1049,7 @@ export class StateManager {
             updateLastSwing(i, 'low', this);
         }
 
+        // TODO Хорошо бы это сделать в oneIteration
         this.boses
             .filter(b => b?.type === 'high' && !b?.isIDM)
             .sort((a, b) => a.from.price - b.from.price)
