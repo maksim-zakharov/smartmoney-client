@@ -403,7 +403,7 @@ export const SoloTestPage = () => {
         }
 
         return allMarkers;
-    }, [swings, poses, config.showRobotOB, robotOB, orderBlocks, config.showSMT, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings, fakeouts, config.showFakeouts]);
+    }, [swings, poses, config.showRobotOB, robotOB, orderBlocks, config.showSMT, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings]);
 
     const lineSerieses = useMemo(() => {
         const _lineSerieses = [];

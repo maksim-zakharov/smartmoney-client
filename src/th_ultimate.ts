@@ -1,5 +1,3 @@
-import {i} from "vite/dist/node/types.d-aGj9QkWt";
-
 export interface HistoryObject {
     high: number;
     low: number;
@@ -36,7 +34,7 @@ export class Swing {
             _text = this.side === 'high' ? 'HH' : 'LL';
         }
 
-        if(this.isIFC){
+        if (this.isIFC) {
             _text += ' IFC';
         }
 
@@ -271,8 +269,8 @@ export const calculatePOI = (manager: StateManager) => {
         manager.calculateOBEXT(i);
 
         // Важно, только после этого POI можем удалять lastIDMIndexMap;
-        if(manager.config.tradeIDMIFC)
-        manager.calculateIDMIFC(i);
+        if (manager.config.tradeIDMIFC)
+            manager.calculateIDMIFC(i);
 
         if (manager.lastIDMIndexMap['high'] && manager.boses[manager.lastIDMIndexMap['high']].to?.index === i) {
             manager.lastIDMIndexMap['high'] = null;
@@ -282,7 +280,8 @@ export const calculatePOI = (manager: StateManager) => {
             manager.lastIDMIndexMap['low'] = null;
         }
 
-        manager.calculateOBIDM(i);
+        if (manager.config.tradeOBIDM)
+            manager.calculateOBIDM(i);
 
         // В этом блоке создаем все ОБ
         // Если есть хотя бы 3 свечки
@@ -492,6 +491,7 @@ export interface THConfig {
     showFake?: boolean;
     oneIteration?: boolean;
     tradeIDMIFC?: boolean;
+    tradeOBIDM?: boolean;
 }
 
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT
@@ -880,14 +880,20 @@ export class StateManager {
             return;
         }
 
-        if(!isIFC(idmSide, this.candles[index])){
+        if (!isIFC(idmSide, this.candles[index])) {
             return;
         }
 
-        const swing: Swing = new Swing({index, time: this.candles[index].time, side: idmSide, price: this.candles[index][idmSide], isIFC: true});
+        const swing: Swing = new Swing({
+            index,
+            time: this.candles[index].time,
+            side: idmSide,
+            price: this.candles[index][idmSide],
+            isIFC: true
+        });
 
-        if(!this.swings[index])
-        this.swings[index] = swing;
+        if (!this.swings[index])
+            this.swings[index] = swing;
         else
             this.swings[index].isIFC = true;
 
@@ -902,15 +908,7 @@ export class StateManager {
         })
     }
 
-    // Первый OB сразу после IDM, задеваем его свечой (любой) или закрываемся внутри
-    calculateOBIDM(index: number) {
-        // Нужно запомнить свип который был прям перед IDM
-// Можно просто пойти с конца. Нужно чтобы был последний IDM, от него найти ближайший свинг, это и будет OB IDM (строить от него)
-        // Нужно не просто найти первый IDM и OB IDM от него, нужно чтобы этот OB IDM касался текущей свечой, иначе мимо
-        if (!this.trend[index]) {
-            return;
-        }
-        const idmSide = this.trend[index].trend === -1 ? 'high' : 'low';
+    getClosestCross(index: number, options: {isIDM?: boolean, isCHoCH?: boolean} = {}){
         let idm: Cross = null;
         let OB_IDM_SWING: Swing = null;
         for (let i = index; i >= 0; i--) {
@@ -927,11 +925,29 @@ export class StateManager {
                 continue;
             }
 
-            if (!bos.isIDM) {
+            if (options?.isIDM && !bos.isIDM) {
+                continue;
+            }
+
+            if (options?.isCHoCH && !bos.isCHoCH) {
                 continue;
             }
             idm = bos;
         }
+
+        return {idm, OB_IDM_SWING};
+    }
+
+    // Первый OB сразу после IDM, задеваем его свечой (любой) или закрываемся внутри
+    calculateOBIDM(index: number) {
+        // Нужно запомнить свип который был прям перед IDM
+        // Можно просто пойти с конца. Нужно чтобы был последний IDM, от него найти ближайший свинг, это и будет OB IDM (строить от него)
+        // Нужно не просто найти первый IDM и OB IDM от него, нужно чтобы этот OB IDM касался текущей свечой, иначе мимо
+        if (!this.trend[index]) {
+            return;
+        }
+        const idmSide = this.trend[index].trend === -1 ? 'high' : 'low';
+        const {idm, OB_IDM_SWING} = this.getClosestCross(index, {isIDM: true});
 
         if (!idm) {
             return;
@@ -970,13 +986,8 @@ export class StateManager {
         })
     }
 
-    // Первый OB сразу после IDM, задеваем его свечой IFC
-    calculateOBIDMIFC() {
-
-    }
-
     // Просто какой то уровень ликвидности (не OB), строится от свинга, не экстремум, не OB IDM, задеваем свечой IFC
-    calculateLQIFC() {
+    calculateLQIFC(index: number) {
 
     }
 
@@ -988,11 +999,11 @@ export class StateManager {
     // Ордерблок на свече HH/LL, задеваем его свечой (или закрываемся внутри), не IFC
     calculateOBEXT(index: number) {
         const swing = this.swings[index];
-        if(!swing){
+        if (!swing) {
             return
         }
 
-        if(!swing.isExtremum){
+        if (!swing.isExtremum) {
             return;
         }
 

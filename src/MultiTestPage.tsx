@@ -59,6 +59,7 @@ export const MultiTestPage = () => {
             newSMT,
             showFake,
             oneIteration,
+            tradeOBIDM,
             tradeIDMIFC
         });
 
