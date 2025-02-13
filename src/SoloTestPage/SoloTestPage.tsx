@@ -3,7 +3,6 @@ import {useSearchParams} from "react-router-dom";
 import {
     Button,
     Checkbox,
-    Col,
     Divider,
     Form,
     Input,
@@ -27,7 +26,6 @@ import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
 import {
     calculateFakeout,
-    calculatePositionsByFakeouts, calculatePositionsByIFC,
     calculatePositionsByOrderblocks,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
@@ -38,7 +36,6 @@ import {
 } from "../th_ultimate";
 import {useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
-import FormItem from "antd/es/form/FormItem";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -89,12 +86,10 @@ export const SoloTestPage = () => {
         showEndOB: checkboxValues.has('showEndOB'),
         imbalances: checkboxValues.has('imbalances'),
         showPositions: checkboxValues.has('showPositions'),
-        tradeFakeouts: checkboxValues.has('tradeFakeouts'),
-        tradeIFC: checkboxValues.has('tradeIFC'),
         limitOrderTrade: checkboxValues.has('limitOrderTrade'),
         tradeOB: checkboxValues.has('tradeOB'),
         tradeOBIDM: checkboxValues.has('tradeOBIDM'),
-        showFakeouts: checkboxValues.has('showFakeouts'),
+        tradeIDMIFC: checkboxValues.has('tradeIDMIFC'),
         excludeWick: checkboxValues.has('excludeWick'),
         withMove: checkboxValues.has('withMove'),
         oneIteration: checkboxValues.has('oneIteration'),
@@ -137,11 +132,8 @@ export const SoloTestPage = () => {
         setSearchParams(searchParams);
     }
     
-    const {swings, trend, boses, orderBlocks, fakeouts, positions} = useMemo(() => {
+    const {swings, trend, boses, orderBlocks, positions} = useMemo(() => {
         let {swings, trend, boses, orderBlocks} = calculateTesting(data.slice(0, data.length - offset), config);
-        orderBlocks = orderBlocks.filter(o => config.tradeOBIDM || o?.type !== POIType.OB_IDM)
-
-        const fakeouts = calculateFakeout(swings, data)
 
         let positions = [];
 
@@ -149,21 +141,13 @@ export const SoloTestPage = () => {
             const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, maxDiff, multiStop, config.limitOrderTrade, stopPaddingPercent);
             positions.push(...fakeoutPositions);
         }
-        if(config.tradeFakeouts){
-            const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, multiStop);
-            positions.push(...fakeoutPositions);
-        }
-        if(config.tradeIFC){
-            const fakeoutPositions = calculatePositionsByIFC(data, swings, trend, maxDiff, multiStop);
-            positions.push(...fakeoutPositions);
-        }
 
         if(!isShortSellPossible){
             positions = positions.filter(p => p.side !== 'short');
         }
 
-        return { swings, trend, boses, orderBlocks, fakeouts, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+        return { swings, trend, boses, orderBlocks, positions: positions.sort((a, b) => a.openTime - b.openTime)};
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if(!config.showRobotOB || !robotOB.length){
@@ -410,18 +394,8 @@ export const SoloTestPage = () => {
                 time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.isIFC ? 'IFC' : s.text
+                text: s.text
             })));
-        }
-
-        if(config.showFakeouts){
-            allMarkers.push(...fakeouts.map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'text',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: "SFP"
-            })))
         }
 
         if(config.showPositions){
@@ -540,22 +514,16 @@ export const SoloTestPage = () => {
             <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
             <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>
             <Checkbox key="showPositions" value="showPositions">Сделки</Checkbox>
-            <Checkbox key="tradeFakeouts" value="tradeFakeouts">Торговать ложные пробои</Checkbox>
             <Checkbox key="tradeOB" value="tradeOB">Торговать OB</Checkbox>
             <Checkbox key="tradeOBIDM" value="tradeOBIDM">Торговать OB_IDM</Checkbox>
+            <Checkbox key="tradeIDMIFC" value="tradeIDMIFC">Торговать IDM_IFC</Checkbox>
             <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
-            <Checkbox key="tradeIFC" value="tradeIFC">Торговать IFC</Checkbox>
             <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
             <Checkbox key="oneIteration" value="oneIteration">Свинги одной итерацией</Checkbox>
             <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
             <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
             <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
-            <Checkbox key="showIFC" value="showIFC">Показывать IFC</Checkbox>
             <Checkbox key="showFake" value="showFake">Fake BOS</Checkbox>
-            {/*<Checkbox key="showFakeouts" value="showFakeouts">Ложные пробои</Checkbox>*/}
-            {/*<Checkbox key="excludeWick" value="excludeWick">Игнорировать пробитие фитилем</Checkbox>*/}
-            {/*<Checkbox key="removeEmpty" value="removeEmpty">Удалить пустые точки</Checkbox>*/}
-            {/*<Checkbox key="onlyExtremum" value="onlyExtremum">БОСЫ только на экстремумах</Checkbox>*/}
         </Checkbox.Group>
         <Space style={{alignItems: 'baseline'}}>
             <TickerSelect value={ticker} onSelect={onSelectTicker}/>

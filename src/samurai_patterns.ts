@@ -1140,6 +1140,7 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
         high: null,
         low: null
     }
+    debugger
     for (let i = 0; i < candles.length; i++) {
         const obItem = ob[i];
         const swing = swings[i];

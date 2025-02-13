@@ -156,7 +156,7 @@ export const ChartComponent = props => {
                 time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.isIFC ? 'IFC' : s.text
+                text: s.text
             })));
         }
 

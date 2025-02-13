@@ -21,7 +21,6 @@ import {Link} from "react-router-dom";
 import {calculateTesting, defaultConfig, notTradingTime, POIType,} from "./th_ultimate";
 
 export const MultiTestPage = () => {
-    const [swipType, setSwipType] = useState('tradinghub');
     const [trandsType, setTrandsType] = useState('tradinghub');
     const [loading, setLoading] = useState(true);
     const [allData, setAllData] = useState({});
@@ -31,12 +30,8 @@ export const MultiTestPage = () => {
     const [data, setData] = useState([]);
     const [tf, onChangeTF] = useState<string>('300');
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
-    const [removeInternal, setremoveInternal] = useState<boolean>(true);
-    const [onlyExtremum, setonlyExtremum] = useState<boolean>(true);
-    const [confirmTrend, setConfirmTrend] = useState<boolean>(false);
-    const [tradeFakeouts, setTradeFakeouts] = useState<boolean>(false);
-    const [tradeIFC, setTradeIFC] = useState<boolean>(false);
     const [tradeOBIDM, settradeOBIDM] = useState<boolean>(false);
+    const [tradeIDMIFC, settradeIDMIFC] = useState<boolean>(false);
     const [withMove, setwithMove] = useState<boolean>(false);
     const [oneIteration, setoneIteration] = useState<boolean>(true);
     const [showFake, setfakeBOS] = useState<boolean>(false);
@@ -44,8 +39,6 @@ export const MultiTestPage = () => {
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(false);
     const [tradeOB, setTradeOB] = useState<boolean>(true);
     const [limitOrderTrade, setLimitOrderTrade] = useState<boolean>(true);
-    const [excludeTrendSFP, setExcludeTrendSFP] = useState<boolean>(false);
-    const [excludeWick, setExcludeWick] = useState<boolean>(false);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("max");
     const [stopMargin, setStopMargin] = useState<number>(50)
@@ -60,15 +53,14 @@ export const MultiTestPage = () => {
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([fromDate, toDate])
 
     const positions = useMemo(() => {
-        let {swings, trend, boses, orderBlocks} = calculateTesting(data, {
+        let {swings, orderBlocks} = calculateTesting(data, {
             withMove,
             showHiddenSwings,
             newSMT,
             showFake,
-            oneIteration
+            oneIteration,
+            tradeIDMIFC
         });
-
-        orderBlocks = orderBlocks.filter(o => tradeOBIDM || o?.type !== POIType.OB_IDM)
 
         const lotsize = (security?.lotsize || 1)
 
@@ -77,16 +69,6 @@ export const MultiTestPage = () => {
         let positions = [];
         if (tradeOB) {
             const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
-            positions.push(...fakeoutPositions);
-        }
-        if (tradeFakeouts) {
-            const fakeouts = calculateFakeout(swings, data)
-            const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
-            positions.push(...fakeoutPositions);
-        }
-
-        if (tradeIFC) {
-            const fakeoutPositions = calculatePositionsByIFC(data, swings, trend, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
             positions.push(...fakeoutPositions);
         }
 
@@ -111,7 +93,7 @@ export const MultiTestPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, trandsType, tradeOB, showFake, oneIteration, newSMT, showHiddenSwings, withMove, limitOrderTrade, tradeOBIDM, tradeIFC, onlyExtremum, removeInternal, excludeTrendSFP, tradeFakeouts, confirmTrend, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, trandsType, tradeOB, showFake, oneIteration, newSMT, showHiddenSwings, withMove, limitOrderTrade, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -120,10 +102,11 @@ export const MultiTestPage = () => {
                 showHiddenSwings,
                 newSMT,
                 showFake,
-                oneIteration
+                oneIteration,
+                tradeIDMIFC
             });
 
-            orderBlocks = orderBlocks.filter(o => tradeOBIDM || o?.type !== POIType.OB_IDM)
+            orderBlocks = orderBlocks.filter(o => (tradeOBIDM || o?.type !== POIType.OB_IDM) && (tradeIDMIFC || o?.type !== POIType.IDM_IFC))
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
@@ -132,16 +115,6 @@ export const MultiTestPage = () => {
             let positions = [];
             if (tradeOB) {
                 const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
-                positions.push(...fakeoutPositions);
-            }
-            if (tradeFakeouts) {
-                const fakeouts = calculateFakeout(swings, data)
-                const fakeoutPositions = calculatePositionsByFakeouts(fakeouts, data, baseTakePercent);
-                positions.push(...fakeoutPositions);
-            }
-
-            if (tradeIFC) {
-                const fakeoutPositions = calculatePositionsByIFC(data, swings, trend, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent);
                 positions.push(...fakeoutPositions);
             }
 
@@ -167,7 +140,7 @@ export const MultiTestPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [trandsType, limitOrderTrade, tradeOB, tradeOBIDM, tradeIFC, showFake, oneIteration, newSMT, showHiddenSwings, withMove, removeInternal, onlyExtremum, excludeWick, excludeTrendSFP, tradeFakeouts, confirmTrend, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [trandsType, limitOrderTrade, tradeOB, tradeIDMIFC, tradeOBIDM, showFake, oneIteration, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -368,31 +341,14 @@ export const MultiTestPage = () => {
             </Col>
         </Row>
         <Row gutter={8} align="bottom">
-            {/*<Col>*/}
-            {/*    <FormItem>*/}
-            {/*        <Checkbox checked={onlyExtremum} onChange={e => setonlyExtremum(e.target.checked)}>БОСЫ только на экстремумах</Checkbox>*/}
-            {/*    </FormItem>*/}
-            {/*</Col>*/}
-            {/*<Col>*/}
-            {/*    <FormItem>*/}
-            {/*        <Checkbox checked={removeInternal} onChange={e => setremoveInternal(e.target.checked)}>Игнорировать внутреннюю структуру</Checkbox>*/}
-            {/*    </FormItem>*/}
-            {/*</Col>*/}
-            <Col>
-                <FormItem>
-                    <Checkbox checked={tradeFakeouts} onChange={e => setTradeFakeouts(e.target.checked)}>Торговать
-                        Ложные
-                        пробои</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={tradeIFC} onChange={e => setTradeIFC(e.target.checked)}>Торговать IFC</Checkbox>
-                </FormItem>
-            </Col>
             <Col>
                 <FormItem>
                     <Checkbox checked={tradeOBIDM} onChange={e => settradeOBIDM(e.target.checked)}>Торговать OB_IDM</Checkbox>
+                </FormItem>
+            </Col>
+            <Col>
+                <FormItem>
+                    <Checkbox checked={tradeIDMIFC} onChange={e => settradeIDMIFC(e.target.checked)}>Торговать IDM_IFC</Checkbox>
                 </FormItem>
             </Col>
             <Col>

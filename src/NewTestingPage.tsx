@@ -168,7 +168,7 @@ const NewTestingPage = () => {
             time: (s.time) as Time,
             shape: 'circle',
             position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            text: selectedKey !== 'swings' ? s.isIFC ? 'IFC' : s.text : undefined
+            text: selectedKey !== 'swings' ? s.text : undefined
         })));
 
         return allMarkers;
