@@ -244,9 +244,6 @@ export class POI {
  * - CHOCH IFC (свич чоч свечой IFC)
  * Хорошо бы на все это тесты написать
  * @param manager
- * @param withMove
- * @param newSMT
- * @param showFake
  */
 export const calculatePOI = (manager: StateManager) => {
     // Иногда определяеются несколько ОБ на одной свечке, убираем
@@ -355,7 +352,6 @@ export const calculatePOI = (manager: StateManager) => {
 
                 const lastIDMIndex = manager.lastIDMIndexMap[swing?.side]
                 if (orderBlockPart?.side === swing?.side && !manager.uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)) {
-                    // TODO Не торговать ОБ под IDM
                     const bossIndex = orderBlockPart.firstImbalanceIndex + index;
                     const hasBoss = Boolean(manager.boses[bossIndex]) && (!manager.config.showFake || manager.boses[bossIndex].isConfirmed);
 
@@ -369,7 +365,7 @@ export const calculatePOI = (manager: StateManager) => {
                         swing,
                         canTrade: true,
                         takeProfit,
-                        type: orderblock.type
+                        type: orderblock.type,
                     })
                     manager.obIdxes.add(swing.index);
 

@@ -1,4 +1,4 @@
-import {Card, Checkbox, Col, Divider, Form, Input, Progress, Radio, Row, Slider, Space, Statistic, Table} from "antd";
+import {Card, Checkbox, Col, Divider, Form, Input, Radio, Row, Slider, Space, Statistic, Table} from "antd";
 import {TickerSelect} from "./TickerSelect";
 import React, {useEffect, useMemo, useState} from "react";
 import FormItem from "antd/es/form/FormItem";
@@ -8,9 +8,6 @@ import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
 import moment from 'moment';
 import {
-    calculateFakeout,
-    calculatePositionsByFakeouts,
-    calculatePositionsByIFC,
     calculatePositionsByOrderblocks
 } from "./samurai_patterns";
 import {fetchCandlesFromAlor, fetchRiskRates, getSecurity, persision, refreshToken, uniqueBy} from "./utils";
@@ -18,10 +15,9 @@ import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateTesting, defaultConfig, notTradingTime, POIType,} from "./th_ultimate";
+import {calculateTesting, notTradingTime, } from "./th_ultimate";
 
 export const MultiTestPage = () => {
-    const [trandsType, setTrandsType] = useState('tradinghub');
     const [loading, setLoading] = useState(true);
     const [allData, setAllData] = useState({});
     const [successSymbols, setSuccessSymbols] = useState<{ current: number, total: number }>({current: 0, total: 0});
@@ -33,12 +29,10 @@ export const MultiTestPage = () => {
     const [tradeOBIDM, settradeOBIDM] = useState<boolean>(false);
     const [tradeIDMIFC, settradeIDMIFC] = useState<boolean>(false);
     const [withMove, setwithMove] = useState<boolean>(false);
-    const [oneIteration, setoneIteration] = useState<boolean>(true);
+    const [oneIteration, setoneIteration] = useState<boolean>(false);
     const [showFake, setfakeBOS] = useState<boolean>(false);
-    const [newSMT, setnewSMT] = useState<boolean>(true);
+    const [newSMT, setnewSMT] = useState<boolean>(false);
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(false);
-    const [tradeOB, setTradeOB] = useState<boolean>(true);
-    const [limitOrderTrade, setLimitOrderTrade] = useState<boolean>(true);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("max");
     const [stopMargin, setStopMargin] = useState<number>(50)
@@ -67,11 +61,7 @@ export const MultiTestPage = () => {
 
         const fee = feePercent / 100
 
-        let positions = [];
-        if (tradeOB) {
-            const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
-            positions.push(...fakeoutPositions);
-        }
+        let positions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
 
         positions = uniqueBy(v => v.openTime, positions);
 
@@ -94,30 +84,25 @@ export const MultiTestPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, trandsType, tradeOB, showFake, oneIteration, newSMT, showHiddenSwings, withMove, limitOrderTrade, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, showFake, oneIteration, newSMT, showHiddenSwings, withMove, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            let {swings, trend, boses, orderBlocks} = calculateTesting(data, {
+            let {swings, orderBlocks} = calculateTesting(data, {
                 withMove,
                 showHiddenSwings,
                 newSMT,
                 showFake,
                 oneIteration,
+                tradeOBIDM,
                 tradeIDMIFC
             });
-
-            orderBlocks = orderBlocks.filter(o => (tradeOBIDM || o?.type !== POIType.OB_IDM) && (tradeIDMIFC || o?.type !== POIType.IDM_IFC))
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
             const fee = feePercent / 100;
 
-            let positions = [];
-            if (tradeOB) {
-                const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, limitOrderTrade)
-                positions.push(...fakeoutPositions);
-            }
+            let positions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
 
             const isShortSellPossible = allRiskRates[ticker]?.isShortSellPossible || false;
             if (!isShortSellPossible) {
@@ -141,7 +126,7 @@ export const MultiTestPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [trandsType, limitOrderTrade, tradeOB, tradeIDMIFC, tradeOBIDM, showFake, oneIteration, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [tradeIDMIFC, tradeOBIDM, showFake, oneIteration, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -378,17 +363,6 @@ export const MultiTestPage = () => {
                 <FormItem>
                     <Checkbox checked={showHiddenSwings} onChange={e => setshowHiddenSwings(e.target.checked)}>Показывать
                         скрытые точки</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={tradeOB} onChange={e => setTradeOB(e.target.checked)}>Торговать OB</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={limitOrderTrade} onChange={e => setLimitOrderTrade(e.target.checked)}>Торговать
-                        лимитками</Checkbox>
                 </FormItem>
             </Col>
         </Row>
