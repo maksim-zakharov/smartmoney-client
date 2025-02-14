@@ -355,7 +355,6 @@ export const calculatePOI = (manager: StateManager) => {
 
                 const lastIDMIndex = manager.lastIDMIndexMap[swing?.side]
                 if (orderBlockPart?.side === swing?.side && !manager.uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)) {
-                    // TODO Не торговать ОБ под IDM
                     const bossIndex = orderBlockPart.firstImbalanceIndex + index;
                     const hasBoss = Boolean(manager.boses[bossIndex]) && (!manager.config.showFake || manager.boses[bossIndex].isConfirmed);
 
@@ -369,7 +368,7 @@ export const calculatePOI = (manager: StateManager) => {
                         swing,
                         canTrade: true,
                         takeProfit,
-                        type: orderblock.type
+                        type: orderblock.type,
                     })
                     manager.obIdxes.add(swing.index);
 

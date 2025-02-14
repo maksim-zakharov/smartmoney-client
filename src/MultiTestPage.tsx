@@ -1,4 +1,4 @@
-import {Card, Checkbox, Col, Divider, Form, Input, Progress, Radio, Row, Slider, Space, Statistic, Table} from "antd";
+import {Card, Checkbox, Col, Divider, Form, Input, Radio, Row, Slider, Space, Statistic, Table} from "antd";
 import {TickerSelect} from "./TickerSelect";
 import React, {useEffect, useMemo, useState} from "react";
 import FormItem from "antd/es/form/FormItem";
@@ -8,9 +8,6 @@ import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
 import moment from 'moment';
 import {
-    calculateFakeout,
-    calculatePositionsByFakeouts,
-    calculatePositionsByIFC,
     calculatePositionsByOrderblocks
 } from "./samurai_patterns";
 import {fetchCandlesFromAlor, fetchRiskRates, getSecurity, persision, refreshToken, uniqueBy} from "./utils";
@@ -18,10 +15,9 @@ import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateTesting, defaultConfig, notTradingTime, POIType,} from "./th_ultimate";
+import {calculateTesting, notTradingTime, } from "./th_ultimate";
 
 export const MultiTestPage = () => {
-    const [trandsType, setTrandsType] = useState('tradinghub');
     const [loading, setLoading] = useState(true);
     const [allData, setAllData] = useState({});
     const [successSymbols, setSuccessSymbols] = useState<{ current: number, total: number }>({current: 0, total: 0});
@@ -94,20 +90,19 @@ export const MultiTestPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, trandsType, tradeOB, showFake, oneIteration, newSMT, showHiddenSwings, withMove, limitOrderTrade, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, tradeOB, showFake, oneIteration, newSMT, showHiddenSwings, withMove, limitOrderTrade, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            let {swings, trend, boses, orderBlocks} = calculateTesting(data, {
+            let {swings, orderBlocks} = calculateTesting(data, {
                 withMove,
                 showHiddenSwings,
                 newSMT,
                 showFake,
                 oneIteration,
+                tradeOBIDM,
                 tradeIDMIFC
             });
-
-            orderBlocks = orderBlocks.filter(o => (tradeOBIDM || o?.type !== POIType.OB_IDM) && (tradeIDMIFC || o?.type !== POIType.IDM_IFC))
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
@@ -141,7 +136,7 @@ export const MultiTestPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [trandsType, limitOrderTrade, tradeOB, tradeIDMIFC, tradeOBIDM, showFake, oneIteration, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [limitOrderTrade, tradeOB, tradeIDMIFC, tradeOBIDM, showFake, oneIteration, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);

@@ -25,14 +25,13 @@ import {
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
 import {
-    calculateFakeout,
     calculatePositionsByOrderblocks,
 } from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 import {
-    calculateTesting, notTradingTime, POIType
+    calculateTesting, notTradingTime
 } from "../th_ultimate";
 import {useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
