@@ -1,4 +1,4 @@
-import {HistoryObject, notTradingTime, StateManager, Swing} from "./th_ultimate";
+import {defaultConfig, HistoryObject, notTradingTime, StateManager, Swing} from "./th_ultimate";
 import * as day from './stubs/MTLR_M5_1738875600_1738961999.json';
 import * as oneIterationSwing from './stubs/oneIterationSwing.json';
 
@@ -30,7 +30,7 @@ describe('th_ultimate', () => {
     //     expect(manager1.swings).toEqual(manager2.swings);
     // })
     it('only oneIteration Swings day', () => {
-        const manager2 = new StateManager(day.filter(d => !notTradingTime(d)));
+        const manager2 = new StateManager(day.filter(d => !notTradingTime(d)), defaultConfig);
 
         const mockData = oneIterationSwing as any as Swing[];
 
