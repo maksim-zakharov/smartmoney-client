@@ -737,7 +737,6 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
             extremum: manager.lastExtremumMap[side],
             isConfirmed: !isNonConfirmIDM
         })
-        manager.idms[manager.lastExtremumMap[side].index] = manager.boses[from.index];
     }
 
     manager.lastExtremumMap[versusSide] = null;
@@ -756,7 +755,6 @@ export class StateManager {
     candles: HistoryObject[] = [];
     swings: (Swing | null)[] = [];
     boses: Cross[] = [];
-    idms: Cross[] = [];
     trend: Trend[] = [];
     pois: POI[] = [];
 
@@ -800,6 +798,7 @@ export class StateManager {
         high: null,
         low: null
     }
+    deleteIDM = new Set<number>([]);
     lastBosSwingMapSet: Record<'high' | 'low', Set<number>> = {
         high: new Set<number>([]),
         low: new Set<number>([])
@@ -907,19 +906,6 @@ export class StateManager {
             // Тейк профит до ближайшего максимума
             takeProfit: swing.side === 'high' ? this.swings[this.lastExtremumIndexMap['low']]?.price : this.swings[this.lastExtremumIndexMap['high']]?.price
         })
-    }
-
-    deleteConfirmedIDM(index: number){
-        const bos = this.boses[index];
-        if(!bos)
-            return;
-        if(!bos?.isConfirmed)
-            return;
-        if(!bos?.isIDM)
-            return;
-
-        this.idms[bos.extremum?.index] = null;
-        this.boses[index] = null;
     }
 
     getClosestCross(index: number, options: {isIDM?: boolean, isCHoCH?: boolean} = {}){
@@ -1107,6 +1093,14 @@ export class StateManager {
                     }
                 }
             })
+
+        // Удаляем все IDM у которых BOS сформирован
+        for (let i = 0; i < this.boses.length; i++) {
+            const b = this.boses[i];
+            if (b?.isConfirmed && b?.isIDM && this.deleteIDM.has(b?.extremum?.index)) {
+                this.boses[i] = null;
+            }
+        }
     }
 
     /**
@@ -1397,9 +1391,7 @@ const confirmBOS = (i: number, type: 'high' | 'low',
                 manager.swings[i].markExtremum();
 
                 manager.swings[lastBosSwing].unmarkExtremum();
-
-                // Удаляем все IDM у которых BOS сформирован
-                manager.deleteConfirmedIDM(lastBosSwing);
+                manager.deleteIDM.add(lastBosSwing);
             }
         }
     }
@@ -1423,7 +1415,7 @@ const confirmBOS = (i: number, type: 'high' | 'low',
     if (showFake && manager.boses[lastBosSwing].isSwipedLiquidity && manager.boses[lastBosSwing].isConfirmed)
         manager.boses[lastBosSwing]?.extremum?.unmarkExtremum();
 
-    manager.deleteConfirmedIDM(lastCrossBosSwing);
+    manager.deleteIDM.add(lastCrossBosSwing);
 
     manager.lastBosSwingMapSet[type].delete(lastBosSwing)
 
@@ -1448,8 +1440,8 @@ const deleteInternalBOS = (manager: StateManager) => {
         manager.liquidityCandleMapMap['low'].delete(manager.lastBosSwingMap['low'])
         manager.liquidityCandleMapMap['high'].delete(manager.lastBosSwingMap['high'])
 
-        manager.deleteConfirmedIDM(manager.lastBosSwingMap['low']);
-        manager.deleteConfirmedIDM(manager.lastBosSwingMap['high']);
+        manager.deleteIDM.add(manager.lastBosSwingMap['low']);
+        manager.deleteIDM.add(manager.lastBosSwingMap['high']);
 
         manager.lastBosSwingMap['low'] = manager.prelastBosSwingMap['low'];
         manager.lastBosSwingMap['high'] = manager.prelastBosSwingMap['high'];
