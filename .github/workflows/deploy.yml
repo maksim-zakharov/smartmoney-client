@@ -103,3 +103,33 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+  notify:
+    needs: [ test, build, deploy ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compose error message
+        id: compose
+        run: |
+          FAILED_JOBS=""
+          if [[ "${{ needs.test.result }}" == "failure" ]]; then FAILED_JOBS+="Test❌ "; fi
+          if [[ "${{ needs.build.result }}" == "failure" ]]; then FAILED_JOBS+="Build🚫 "; fi
+          if [[ "${{ needs.deploy.result }}" == "failure" ]]; then FAILED_JOBS+="Deploy🛑"; fi
+          
+          MESSAGE="🚨 Workflow Failed: $GITHUB_WORKFLOW #$GITHUB_RUN_NUMBER%0A%0A"
+          MESSAGE+="Failed stages: $FAILED_JOBS%0A"
+          MESSAGE+="Repository: $GITHUB_REPOSITORY%0A"
+          MESSAGE+="Commit: ${GITHUB_SHA:0:7}%0A"
+          MESSAGE+="View run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+          echo "has_errors=$([[ -n "$FAILED_JOBS" ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Send Telegram alert
+        if: steps.compose.outputs.has_errors == 'true'
+        run: |
+          curl -s -X POST \
+            "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="${{ steps.compose.outputs.message }}" \
+            -d parse_mode="HTML"
