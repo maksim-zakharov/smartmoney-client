@@ -1275,13 +1275,13 @@ export class StateManager {
             confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
 
             // deleteInternalStructure
-            if (this.config.oneIteration) {
-                deleteInternalOneIt(processingIndex, 'high', this);
-                deleteInternalOneIt(processingIndex, 'low', this);
-
-                updateExtremumOneIt(processingIndex, 'high', this);
-                updateExtremumOneIt(processingIndex, 'low', this);
-            }
+            // if (this.config.oneIteration) {
+            //     deleteInternalOneIt(processingIndex, 'high', this);
+            //     deleteInternalOneIt(processingIndex, 'low', this);
+            //
+            //     updateExtremumOneIt(processingIndex, 'high', this);
+            //     updateExtremumOneIt(processingIndex, 'low', this);
+            // }
 
             if (this.config.showIFC)
                 this.markIFCOneIt(processingIndex);
