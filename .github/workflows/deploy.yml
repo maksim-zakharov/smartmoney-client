@@ -119,7 +119,7 @@ jobs:
           MESSAGE="🚨 Workflow Failed: $GITHUB_WORKFLOW #$GITHUB_RUN_NUMBER%0A%0A"
           MESSAGE+="Failed stages: $FAILED_JOBS%0A"
           MESSAGE+="Repository: $GITHUB_REPOSITORY%0A"
-          MESSAGE+="Commit: https://github.com/maksim-zakharov/smartmoney-client/commit/${GITHUB_SHA}"
+          MESSAGE+="Commit: https://github.com/maksim-zakharov/smartmoney-client/commit/${GITHUB_SHA}%0A"
           MESSAGE+="View run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           
           echo "message=$MESSAGE" >> $GITHUB_OUTPUT
