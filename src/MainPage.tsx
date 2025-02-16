@@ -1,38 +1,14 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {
-    Card,
-    Col,
-    InputNumber,
-    Row,
-    Select,
-    Slider,
-    SliderSingleProps,
-    Space,
-    Statistic,
-    Table,
-    Tabs,
-    TabsProps,
-    theme
-} from "antd";
+import React, {useCallback, useMemo, useState} from "react";
+import {Card, Col, Row, Select, Slider, SliderSingleProps, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
 import {useCandlesQuery, usePortfolioQuery, useSecurityQuery} from "./api";
-import {
-    ColorType,
-    createChart,
-    CrosshairMode, isBusinessDay,
-    ISeriesApi, isUTCTimestamp,
-    LineStyle,
-    SeriesMarker,
-    SeriesType,
-    Time,
-    UTCTimestamp
-} from "lightweight-charts";
+import {LineStyle, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
 import moment from "moment";
 import {Link, useSearchParams} from "react-router-dom";
-import {Point, Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
-import {ensureDefined} from "./lwc-plugins/helpers/assertions";
+import {Point} from "./lwc-plugins/rectangle-drawing-tool";
 import useWindowDimensions from "./useWindowDimensions";
-import {createRectangle2, createSeries, uniqueBy} from "./utils.ts";
+import {createRectangle2} from "./utils.ts";
 import {calculateTesting, defaultConfig, notTradingTime} from "./th_ultimate.ts";
+import {Chart} from "./SoloTestPage/TestChart.tsx";
 
 function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);
@@ -60,6 +36,12 @@ const roundTime = (date: any, tf: string, utc: boolean = true) => {
     return (utc ? timeToLocal(roundedTimestamp) : roundedTimestamp) as UTCTimestamp;
 };
 
+
+const markerColors = {
+    bearColor: "rgb(157, 43, 56)",
+    bullColor: "rgb(20, 131, 92)"
+}
+
 export const moneyFormat = (
     money: number,
     currency: string = "RUB",
@@ -76,437 +58,12 @@ export const moneyFormat = (
 
     return numberFormat.format(money);
 };
-export const createRectangle = (_series: ISeriesApi<SeriesType>, orderBlock, options: Partial<RectangleDrawingToolOptions>) => {
-    const rectangle = new Rectangle(orderBlock.leftTop, orderBlock.rightBottom, {...options});
-    ensureDefined(_series).attachPrimitive(rectangle);
-    return rectangle;
-}
-
-const markerColors = {
-    bearColor: "rgb(157, 43, 56)",
-    bullColor: "rgb(20, 131, 92)"
-}
-
-export const ChartComponent = props => {
-    const {
-        data,
-        emas,
-        tf,
-        markers,
-        digits,
-        position, take, stop,
-        orderBlock,
-        imbalance,
-        colors: {
-            backgroundColor = "rgb(30,44,57)",
-            color = "rgb(166,189,213)",
-            borderColor = "rgba(44,60,75, 0.6)",
-            // backgroundColor = "white",
-            lineColor = "#2962FF",
-            textColor = "black",
-            areaTopColor = "#2962FF",
-            areaBottomColor = "rgba(41, 98, 255, 0.28)"
-        } = {}
-    } = props;
-
-    const chartContainerRef = useRef<any>();
-
-    const config = {
-        showOB: false,
-        showEndOB: true,
-        imbalances: true,
-        showSMT: false,
-        swings: true,
-        BOS: true
-    }
-
-    const calcStruct = (data) => {
-        let {swings, trend, boses, orderBlocks} =  calculateTesting(data, defaultConfig);
-
-        const checkShow = (ob) => {
-            let result = false;
-            if(!ob){
-                return result;
-            }
-            if (config.showOB && !Boolean(ob.endCandle)) {
-                result = true;
-            }
-            if (config.showEndOB && Boolean(ob.endCandle)) {
-                result = true;
-            }
-            if (ob.isSMT && !config.showSMT) {
-                result = false;
-            }
-            return result;
-        }
-
-        const allMarkers = [];
-        if(config.showOB || config.showEndOB || config.imbalances) {
-            allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
-                color: s.side === 'low' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.textTime || s.time) as Time,
-                shape: 'text',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.text
-            })));
-        }
-        if(config.swings){
-            allMarkers.push(...swings.filter(Boolean).map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'circle',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.text
-            })));
-        }
-
-        const lastCandle = data[data.length - 1];
-        const _primitives = [];
-        if(config.showOB || config.showEndOB || config.imbalances) {
-            if (config.imbalances) {
-                _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock => createRectangle2({
-                    leftTop: {
-                        price: orderBlock.lastOrderblockCandle.high,
-                        time: orderBlock.lastOrderblockCandle.time
-                    },
-                    rightBottom: {
-                        price: orderBlock.lastImbalanceCandle[orderBlock.side],
-                        time: (orderBlock.endCandle || lastCandle).time
-                    }
-                }, {
-                    fillColor: 'rgba(179, 199, 219, .3)',
-                    showLabels: false,
-                    borderLeftWidth: 0,
-                    borderRightWidth: 0,
-                    borderWidth: 2,
-                    borderColor: '#222'
-                })));
-                _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock =>
-                    createRectangle2({
-                            leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
-                            rightBottom: {
-                                price: orderBlock.startCandle.low,
-                                time: (orderBlock.endCandle || lastCandle).time
-                            }
-                        },
-                        {
-                            fillColor: orderBlock.side === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
-                            showLabels: false,
-                            borderWidth: 0,
-                        })));
-            }
-        }
-        const _lineSerieses = [];
-        if(config.BOS){
-            _lineSerieses.push(...boses.filter(Boolean).map(marker => {
-                const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
-                const options = {
-                    color, // Цвет линии
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                    lineWidth: 1,
-                    lineStyle: LineStyle.LargeDashed,
-                };
-                let data = [];
-                let markers = [];
-// 5. Устанавливаем данные для линии
-                if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
-                    data = [
-                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-                    ];
-                } else
-                    data = [
-                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                        {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
-                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-                    ].sort((a, b) => a.time - b.time);
-
-                markers = [{
-                    color,
-                    time: (marker.textCandle.time) as Time,
-                    shape: 'text',
-                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-                    text: marker.text
-                }]
-                return {options, data, markers}
-            }));
-        }
-
-        return {_lineSerieses, _primitives, markers: allMarkers};
-    }
-
-    useEffect(
-        () => {
-            if (!data?.length) return;
-
-            const handleResize = () => {
-                chart.applyOptions({width: chartContainerRef.current.clientWidth});
-            };
-
-            const chart = createChart(chartContainerRef.current, {
-                crosshair: {
-                    mode: CrosshairMode.Normal
-                },
-                localization: {
-                    locale: "ru-RU",
-                    // priceFormatter,
-                    timeFormatter: function (businessDayOrTimestamp) {
-
-                        // if (LightweightCharts.isBusinessDay(businessDayOrTimestamp)) {
-                        //     return 'Format for business day';
-                        // }
-
-                        return moment.unix(businessDayOrTimestamp).format('MMM D, YYYY HH:mm');
-                    },
-                    priceFormatter: price => {
-                        const formatter = new Intl.NumberFormat('en-US', {
-                            minimumFractionDigits: digits,  // Минимальное количество знаков после запятой
-                            maximumFractionDigits: digits,  // Максимальное количество знаков после запятой
-                        });
-                        return formatter.format(price);
-                    },
-                },
-                timeScale: {
-                    rightOffset: 20,  // это создаст отступ на 10 временных единиц вправо
-                    tickMarkFormatter: (time, tickMarkType, locale) => {
-                        // Преобразуем время в формат, используя moment.js
-                        return moment.unix(time / 1000).format('HH:mm'); // Измените формат, если нужно
-                    },
-                },
-                grid: {
-                    vertLines: {
-                        color: borderColor
-                    },
-
-                    horzLines: {
-                        color: borderColor
-                    }
-                },
-                layout: {
-                    // Фон
-                    background: {type: ColorType.Solid, color: "rgb(30,44,57)"},
-                    textColor: color
-                },
-                width: chartContainerRef.current.clientWidth,
-                height: 570
-            });
-
-            const newSeries = chart.addCandlestickSeries({
-                downColor: "rgb(157, 43, 56)",
-                borderDownColor: "rgb(213, 54, 69)",
-                upColor: "rgb(20, 131, 92)",
-                borderUpColor: "rgb(11, 176, 109)",
-                wickUpColor: "rgb(11, 176, 109)",
-                wickDownColor: "rgb(213, 54, 69)",
-                lastValueVisible: false,
-                priceLineVisible: false,
-            });
-            newSeries.priceScale().applyOptions({
-                scaleMargins: {
-                    top: 0.05, // highest point of the series will be 10% away from the top
-                    bottom: 0.3, // lowest point will be 40% away from the bottom
-                },
-            });
-
-            const volumeSeries = chart.addHistogramSeries({
-                lastValueVisible: false,
-                priceLineVisible: false,
-                priceFormat: {
-                    type: 'volume',
-                },
-                priceScaleId: '', // set as an overlay by setting a blank priceScaleId
-            });
-            volumeSeries.priceScale().applyOptions({
-                // set the positioning of the volume series
-                scaleMargins: {
-                    top: 0.7, // highest point of the series will be 70% away from the top
-                    bottom: 0,
-                },
-            });
-            volumeSeries?.setData(data.map((d: any) => ({
-                ...d,
-                time: d.time,
-                value: d.volume,
-                color: d.open < d.close ? 'rgb(20, 131, 92)' : 'rgb(157, 43, 56)'
-            })));
-
-            const {markers: _markers, _primitives, _lineSerieses} = calcStruct(data);
-
-            if (position) {
-                newSeries.createPriceLine({
-                    price: position.avgPrice || position.price,
-                    color: "rgb(166, 189, 213)",
-                    lineStyle: LineStyle.Solid,
-                    lineWidth: 1
-                });
-            }
-
-            if (imbalance) {
-                 _primitives.push(createRectangle2(imbalance, {
-                    fillColor: 'rgba(179, 199, 219, .2)',
-                    showLabels: false,
-                    borderLeftWidth: 0,
-                    borderRightWidth: 0,
-                    borderWidth: 2,
-                    borderColor: '#222'
-                }))
-            }
-
-            if (orderBlock) {
-                _primitives.push(createRectangle2(orderBlock, {
-                    fillColor: 'rgba(255, 100, 219, 0.2)',
-                    showLabels: false,
-                    borderWidth: 0,
-                }))
-            }
-
-            if (take) {
-                newSeries.createPriceLine({
-                    price: take.stopPrice,
-                    color: take.side === "buy" ? "rgb(20, 131, 92)" : "rgb(157, 43, 56)",
-                    lineStyle: LineStyle.Dashed,
-                    lineWidth: 1
-                });
-            }
-
-            if (stop) {
-                newSeries.createPriceLine({
-                    price: stop.stopPrice,
-                    color: stop.side === "buy" ? "rgb(20, 131, 92)" : "rgb(157, 43, 56)",
-                    lineStyle: LineStyle.Dashed,
-                    lineWidth: 1
-                });
-            }
-
-            newSeries.setData(data);
-
-            emas.forEach(({array, color, title}) => {
-                const emaSeries = chart.addLineSeries({
-                    priceLineColor: color,
-                    // baseLineColor: color,
-                    // baseLineVisible: false,
-                    priceLineVisible: false,
-                    color,
-                    title,
-                    lineWidth: 1
-                });
-                const momentData = data.map((d, i) => ({time: d.time, value: array[i]}));
-                emaSeries.setData(momentData);
-            })
-
-            // chart.timeScale()
-            // chart.timeScale().fitContent();
-            chart.timeScale()
-                .setVisibleRange({
-                    from: moment().add(-2, 'days').unix(),
-                    to: moment().unix(),
-                });
-
-            chart.applyOptions({
-                timeScale: {
-                    rightOffset: 16,
-                },
-            })
-
-
-            if (markers && markers.length > 0) {
-                const firstBuy: any = markers.find(p => p.position === "belowBar");
-                const firstSell: any = markers.find(p => p.position === "aboveBar");
-
-                firstBuy && newSeries.createPriceLine({
-                    price: firstBuy.value,
-                    color: "rgb(20, 131, 92)",
-                    lineWidth: 1,
-                    lineStyle: LineStyle.SparseDotted,
-                    axisLabelVisible: true
-                    // title: 'maximum price',
-                });
-
-                firstSell && newSeries.createPriceLine({
-                    price: firstSell.value,
-                    color: "rgb(157, 43, 56)",
-                    lineWidth: 1,
-                    lineStyle: LineStyle.SparseDotted,
-                    axisLabelVisible: true
-                    // title: 'maximum price',
-                });
-
-                const buySeries = chart.addLineSeries({
-                    color: "rgba(255, 255, 255, 0)", // hide or show the line by setting opacity
-                    lineVisible: false,
-                    lastValueVisible: false, // hide value from y axis
-                    priceLineVisible: false
-                });
-
-                const buyMarkers = markers.filter(p => p.position === "belowBar").sort((a: any, b: any) => a.time - b.time);
-
-                buySeries.setData(Object.values<any>(buyMarkers.reduce((acc, curr) => ({
-                    ...acc,
-                    [curr.time as any]: curr
-                }), {})).sort((a: any, b: any) => a.time - b.time));
-
-                buySeries.setMarkers(buyMarkers);
-
-                const sellSeries = chart.addLineSeries({
-                    color: "rgba(255, 255, 255, 0)", // hide or show the line by setting opacity
-                    lineVisible: false,
-                    lastValueVisible: false, // hide value from y axis
-                    priceLineVisible: false
-                });
-
-                const sellMarkers = markers.filter(p => p.position === "aboveBar").sort((a: any, b: any) => a.time - b.time);
-
-                const values = Object.values<any>(sellMarkers.reduce((acc, curr) => ({
-                    ...acc,
-                    [curr.time as any]: curr
-                }), {})).sort((a: any, b: any) => a.time - b.time)
-
-                sellSeries.setData(values);
-
-                sellSeries.setMarkers(sellMarkers);
-            }
-
-            newSeries.setMarkers(_markers.sort((a, b) => a.time - b.time));
-
-            _primitives.forEach(primitive => ensureDefined(newSeries).attachPrimitive(primitive))
-
-            _lineSerieses.forEach(lineSeriese => {
-                const ls = createSeries(chart, 'Line', lineSeriese.options)
-
-                const sortedData = lineSeriese.data.sort((a,b) => a.time - b.time);
-
-                // @ts-ignore
-                const unique = uniqueBy(v => v.time, sortedData);
-
-                // @ts-ignore
-                lineSeriese.data && ls.setData(unique);
-                lineSeriese.markers && ls.setMarkers(lineSeriese.markers);
-            })
-
-            window.addEventListener("resize", handleResize);
-
-            return () => {
-                window.removeEventListener("resize", handleResize);
-
-                chart.remove();
-            };
-        },
-        [position, tf, take, digits, stop, data, emas, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor]
-    );
-
-    return (
-        <div
-            ref={chartContainerRef}
-        />
-    );
-};
 
 const MainPage: React.FC = () => {
-    const [stopFrom ,setStopFrom] = useState(0);
-    const [stopTo ,setStopTo] = useState(100);
+        const [stopFrom, setStopFrom] = useState(0);
+        const [stopTo, setStopTo] = useState(100);
 
-    const {height, width, isMobile} = useWindowDimensions();
+        const {height, width, isMobile} = useWindowDimensions();
         const {
             token: {colorBgContainer, borderRadiusLG}
         } = theme.useToken();
@@ -694,8 +251,9 @@ const MainPage: React.FC = () => {
             width > 1200 && {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
-                                 target="_blank">Тестер</Link>;
+                    return <Link
+                        to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
+                        target="_blank">Тестер</Link>;
                 }
             }
         ].filter(Boolean);
@@ -775,8 +333,9 @@ const MainPage: React.FC = () => {
             {
                 title: "Действия",
                 render: (value, row) => {
-                    return <Link to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
-                                 target="_blank">Тестер</Link>;
+                    return <Link
+                        to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
+                        target="_blank">Тестер</Link>;
                 }
             }
             // {
@@ -906,8 +465,9 @@ const MainPage: React.FC = () => {
                 title: "Действия",
                 render: (value, row) => {
                     return row?.type !== 'summary' ?
-                        <Link to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
-                              target="_blank">Тестер</Link> : '';
+                        <Link
+                            to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
+                            target="_blank">Тестер</Link> : '';
                 }
             }
         ].filter(Boolean);
@@ -939,31 +499,31 @@ const MainPage: React.FC = () => {
 
         const positions = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && p.limitTradeId && p.stopLoss?.status === "working"), [patterns]);
         const orders = useMemo(() => patterns.filter(p => !p.takeTradeId && !p.stopTradeId && !p.limitTradeId), [patterns]);
-    const history = useMemo(() => patterns.filter(p => {
-        const baseBool = (!selectedTicker || p.ticker === selectedTicker)
-            && (!selectedName || p.pattern === selectedName)
-            && (!selectedTF || p.timeframe === selectedTF)
-            && (!!p.takeTradeId || !!p.stopTradeId);
+        const history = useMemo(() => patterns.filter(p => {
+            const baseBool = (!selectedTicker || p.ticker === selectedTicker)
+                && (!selectedName || p.pattern === selectedName)
+                && (!selectedTF || p.timeframe === selectedTF)
+                && (!!p.takeTradeId || !!p.stopTradeId);
 
-        const value = p?.stopLoss;
-        if (!value) {
-            return baseBool;
-        }
+            const value = p?.stopLoss;
+            if (!value) {
+                return baseBool;
+            }
 
-        let percent = p.limitTrade?.price > value?.stopPrice ? p.limitTrade?.price / value?.stopPrice : value?.stopPrice / p.limitTrade?.price;
-        percent = (percent - 1) * 100;
+            let percent = p.limitTrade?.price > value?.stopPrice ? p.limitTrade?.price / value?.stopPrice : value?.stopPrice / p.limitTrade?.price;
+            percent = (percent - 1) * 100;
 
-        return baseBool && percent > stopFrom && percent < stopTo;
-    })
-        .filter(row => row.limitTrade?.price && (row.stopLossTrade?.price || row.takeProfitTrade?.price))
-        .map(row => ({
-            ...row,
-            PnL: row.limitTrade?.side === "buy" ?
-                accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price)
-                : row.limitTrade?.side === "sell" ?
-                    accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
-        }))
-        .sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [stopFrom, stopTo, selectedName, selectedTicker, selectedTF, accTradesOrdernoQtyMap, patterns]);
+            return baseBool && percent > stopFrom && percent < stopTo;
+        })
+            .filter(row => row.limitTrade?.price && (row.stopLossTrade?.price || row.takeProfitTrade?.price))
+            .map(row => ({
+                ...row,
+                PnL: row.limitTrade?.side === "buy" ?
+                    accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price)
+                    : row.limitTrade?.side === "sell" ?
+                        accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
+            }))
+            .sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [stopFrom, stopTo, selectedName, selectedTicker, selectedTF, accTradesOrdernoQtyMap, patterns]);
 
         const historyTableData = useMemo(() => {
             let data = history.map((p: any) => ({
@@ -1007,8 +567,8 @@ const MainPage: React.FC = () => {
             return data;
         }, [history]);
 
-        const markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[selectedPattern?.limitOrderNumber], tradesMap[selectedPattern?.stopTradeId], tradesMap[selectedPattern?.takeTradeId]].filter(Boolean).map(t => ({
-                time: roundTime(t.date, tf, false) ,
+        const _markers: SeriesMarker<Time>[] = useMemo(() => [tradesOrdernoMap[selectedPattern?.limitOrderNumber], tradesMap[selectedPattern?.stopTradeId], tradesMap[selectedPattern?.takeTradeId]].filter(Boolean).map(t => ({
+                time: roundTime(t.date, tf, false),
                 position: t.side === "buy" ? "belowBar" : "aboveBar",
                 color: t.side === "buy" ? "rgb(19,193,123)" : "rgb(255,117,132)",
                 shape: t.side === "buy" ? "arrowUp" : "arrowDown",
@@ -1019,59 +579,6 @@ const MainPage: React.FC = () => {
                 // text: `${t.side === Side.Buy ? 'Buy' : 'Sell'} ${t.qty} lots by ${t.price}`
             }))
             , [tradesOrdernoMap, selectedPattern, tradesMap]);
-
-        const lastCandle = candles?.[candles?.length - 1];
-
-        const orderBlock = useMemo(() => {
-            if (selectedPattern?.orderblockHigh && selectedPattern?.orderblockLow && selectedPattern?.orderblockTime) {
-                let rightTime;
-
-                if (position)
-                    rightTime = (roundTime(position.date, tf, false) + Number(tf) * 4);
-                if (lastCandle)
-                    rightTime = (roundTime((lastCandle?.time * 1000), tf, false));
-                if(!rightTime) {
-                    return undefined;
-                }
-
-                const orderblockTime = new Date(selectedPattern?.orderblockTime).getTime();
-                const imbalanceTime = new Date(selectedPattern?.imbalanceTime).getTime();
-
-                const leftTop = {
-                    price: Number(selectedPattern?.orderblockHigh),
-                    time: (orderblockTime / 1000) as Time
-                } as Point
-                const rightBottom = {
-                    time: imbalanceTime,
-                    price: Number(selectedPattern?.orderblockLow)
-                } as Point
-
-                return {leftTop, rightBottom};
-            }
-
-            return undefined;
-        }, [selectedPattern, position, lastCandle]);
-
-        const imbalance = useMemo(() => {
-            if (selectedPattern?.imbalanceHigh && selectedPattern?.imbalanceLow && selectedPattern?.imbalanceTime && selectedPattern?.orderblockHigh && selectedPattern?.orderblockLow && selectedPattern?.orderblockTime) {
-
-                const orderBlockPrice = selectedPattern?.orderblockLow >= selectedPattern?.imbalanceHigh ? selectedPattern?.orderblockLow : selectedPattern?.orderblockHigh;
-                const imbalancePrice = selectedPattern?.orderblockLow >= selectedPattern?.imbalanceHigh ? selectedPattern?.imbalanceHigh : selectedPattern?.imbalanceLow;
-
-                const orderblockTime = new Date(selectedPattern?.orderblockTime).getTime();
-                const imbalanceTime = new Date(selectedPattern?.imbalanceTime).getTime();
-
-                const leftTop = {
-                    price: Number(orderBlockPrice),
-                    time: Number(orderblockTime) as Time
-                } as Point
-                const rightBottom = {time: Number(imbalanceTime), price: Number(imbalancePrice)} as Point
-
-                return {leftTop, rightBottom}
-            }
-
-            return undefined;
-        }, [selectedPattern]);
 
         const pageSize = 12;
 
@@ -1191,16 +698,6 @@ const MainPage: React.FC = () => {
 
         const names = useMemo(() => Array.from(new Set(filteredHistory.filter(p => p.pattern).map(p => p.pattern))).sort((a, b) => a - b), [filteredHistory]);
 
-        const emas = [{
-            array: data.ema20, color: 'rgba(255, 0, 0, 0.65)', title: 'ema20'
-        }, {
-            array: data.ema50, color: 'rgba(255, 127, 0, 0.65)', title: 'ema50'
-        }, {
-            array: data.ema100, color: 'rgba(0, 255, 255, 0.65)', title: 'ema100'
-        }, {
-            array: data.ema200, color: 'rgba(0, 0, 255, 0.65)', title: 'ema200'
-        }];
-
         const diff = max - min;
         const length = 10;
         const part = Math.floor(diff / length);
@@ -1299,18 +796,147 @@ const MainPage: React.FC = () => {
             </Card>)
         ]
 
-    const _rows = useMemo(() => {
-        const _rows = [];
-        const span = width > 1200 ? 4 : width > 440 ? 8 : 12;
-        const multi = 24 / span;
-        const rowsCount = Math.ceil(_cells.length * span / 24);
-        for (let i = 0; i < rowsCount; i++) {
-            const cells = _cells.slice(i * multi, i * multi + multi);
-            _rows.push(cells.map(c => <Col span={span}>{c}</Col>));
-        }
 
-        return _rows;
-    }, [_cells, width]);
+        const {swings, trend, boses, orderBlocks} = useMemo(() => calculateTesting(candles, defaultConfig), [candles])
+
+        const primitives = useMemo(() => {
+            const lastCandle = candles[candles.length - 1];
+            const _primitives = [];
+            const checkShow = (ob) => {
+                let result = false;
+                if (!ob) {
+                    return false;
+                }
+                if (!Boolean(ob.endCandle)) {
+                    result = true;
+                }
+                if (Boolean(ob.endCandle)) {
+                    result = true;
+                }
+                if (ob.isSMT) {
+                    result = false;
+                }
+                return result;
+            }
+            _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock => createRectangle2({
+                leftTop: {
+                    price: orderBlock.lastOrderblockCandle.high,
+                    time: orderBlock.lastOrderblockCandle.time
+                },
+                rightBottom: {
+                    price: orderBlock.lastImbalanceCandle[orderBlock.side],
+                    time: (orderBlock.endCandle || lastCandle).time
+                }
+            }, {
+                fillColor: 'rgba(179, 199, 219, .3)',
+                showLabels: false,
+                borderLeftWidth: 0,
+                borderRightWidth: 0,
+                borderWidth: 2,
+                borderColor: '#222'
+            })));
+
+            _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock =>
+                createRectangle2({
+                        leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
+                        rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
+                    },
+                    {
+                        fillColor: orderBlock.side === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
+                        showLabels: false,
+                        borderWidth: 0,
+                    })));
+
+            return _primitives;
+        }, [orderBlocks, candles])
+
+        const markers = useMemo(() => {
+            const allMarkers: any[] = [..._markers];
+            const checkShow = (ob) => {
+                let result = false;
+                if (!ob) {
+                    return false;
+                }
+                if (!Boolean(ob.endCandle)) {
+                    result = true;
+                }
+                if (Boolean(ob.endCandle)) {
+                    result = true;
+                }
+                if (ob.isSMT) {
+                    result = false;
+                }
+                return result;
+            }
+            allMarkers.push(...orderBlocks.filter(checkShow).map(s => ({
+                color: s.side === 'low' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.textTime || s.time) as Time,
+                shape: 'text',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                text: s.text
+            })));
+
+            allMarkers.push(...swings.filter(Boolean).map(s => ({
+                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.time) as Time,
+                shape: 'circle',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                text: s.text
+            })));
+
+            return allMarkers;
+        }, [swings, orderBlocks, _markers]);
+
+        const lineSerieses = useMemo(() => {
+            const _lineSerieses = [];
+            _lineSerieses.push(...boses.filter(Boolean).map(marker => {
+                const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
+                const options = {
+                    color, // Цвет линии
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    lineWidth: 1,
+                    lineStyle: LineStyle.LargeDashed,
+                };
+                let data = [];
+                let markers = [];
+// 5. Устанавливаем данные для линии
+                if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
+                    data = [
+                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+                    ];
+                } else
+                    data = [
+                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
+                        {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
+                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
+                    ].sort((a, b) => a.time - b.time);
+
+                markers = [{
+                    color,
+                    time: (marker.textCandle.time) as Time,
+                    shape: 'text',
+                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
+                    text: marker.text
+                }]
+                return {options, data, markers}
+            }));
+            return _lineSerieses;
+        }, [boses]);
+
+        const _rows = useMemo(() => {
+            const _rows = [];
+            const span = width > 1200 ? 4 : width > 440 ? 8 : 12;
+            const multi = 24 / span;
+            const rowsCount = Math.ceil(_cells.length * span / 24);
+            for (let i = 0; i < rowsCount; i++) {
+                const cells = _cells.slice(i * multi, i * multi + multi);
+                _rows.push(cells.map(c => <Col span={span}>{c}</Col>));
+            }
+
+            return _rows;
+        }, [_cells, width]);
 
         return (
             <Space direction="vertical" style={{width: '100%'}}>
@@ -1331,13 +957,9 @@ const MainPage: React.FC = () => {
                               tabBarExtraContent={width > 1200 && <TabExtra/>}/>
                     </Col>
                     {width > 1200 && <Col span={8}>
-                        <ChartComponent {...props} data={candles
-                            .filter(candle => !notTradingTime(candle))} emas={emas} stop={stop} take={take} tf={tf}
-                                        markers={markers}
-                                        orderBlock={orderBlock}
-                                        imbalance={imbalance}
-                                        digits={digits}
-                                        position={position}/>
+                        <Chart {...props} data={candles
+                            .filter(candle => !notTradingTime(candle))} lineSerieses={lineSerieses} primitives={primitives}
+                               ema={[]} markers={markers}/>
                     </Col>}
                 </Row>
             </Space>
