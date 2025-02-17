@@ -24,9 +24,9 @@ const BOSChart = ({data, swings: outerSwings, boses: outerBoses, orderblocks: ou
     if(outerBoses){
         boses = outerBoses;
     }
-    if(outerOrderblocks){
-        orderBlocks = outerOrderblocks;
-    }
+    // if(outerOrderblocks){
+    //     orderBlocks = outerOrderblocks;
+    // }
 
     // для копирования в тест
     // const copyData = {highs, lows, boses, orderBlocks};

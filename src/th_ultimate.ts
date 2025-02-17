@@ -497,7 +497,7 @@ export const defaultConfig: THConfig = {
     showHiddenSwings: true,
     withMove: false,
     byTrend: true,
-    showFake: false,
+    showFake: true,
     oneIteration: true
 }
 
@@ -551,6 +551,7 @@ const tryCalculatePullback = (index: number, type: 'high' | 'low', diff: number,
             index
         })
         swings[index] = highPullback ? swing : swings[index];
+        swings[index]?.setDebug();
     }
 }
 
@@ -767,6 +768,15 @@ export class StateManager {
         nextIndex: number,
         status: 'draft' | 'nextIndex'
     }>()
+
+    prelastInternalSwing: Record<'high' | 'low', Swing> = {
+        high: null,
+        low: null
+    }
+    lastInternalSwing: Record<'high' | 'low', Swing> = {
+        high: null,
+        low: null
+    }
 
     // deleteInternalStructure
     preLastIndexMap: Record<'high' | 'low', number> = {
@@ -1276,11 +1286,11 @@ export class StateManager {
 
             // deleteInternalStructure
             // if (this.config.oneIteration) {
-            //     deleteInternalOneIt(processingIndex, 'high', this);
-            //     deleteInternalOneIt(processingIndex, 'low', this);
-            //
-            //     updateExtremumOneIt(processingIndex, 'high', this);
-            //     updateExtremumOneIt(processingIndex, 'low', this);
+                // deleteInternalOneIt(processingIndex, 'high', this);
+                // deleteInternalOneIt(processingIndex, 'low', this);
+                //
+                // updateExtremumOneIt(processingIndex, 'high', this);
+                // updateExtremumOneIt(processingIndex, 'low', this);
             // }
 
             if (this.config.showIFC)

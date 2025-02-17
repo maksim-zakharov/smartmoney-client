@@ -7,15 +7,21 @@ import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage";
 import moment from 'moment';
-import {
-    calculatePositionsByOrderblocks
-} from "./samurai_patterns";
+import {calculatePositionsByOrderblocks} from "./samurai_patterns";
 import {fetchCandlesFromAlor, fetchRiskRates, getSecurity, persision, refreshToken, uniqueBy} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateTesting, notTradingTime, } from "./th_ultimate";
+import {calculateTesting, HistoryObject, notTradingTime,} from "./th_ultimate";
+import {
+    cacheCandles,
+    cacheRiskRates,
+    cacheSecurity,
+    getCachedCandles,
+    getCachedRiskRates,
+    getCachedSecurity
+} from "./cacheService.ts";
 
 export const MultiTestPage = () => {
     const [loading, setLoading] = useState(true);
@@ -135,10 +141,10 @@ export const MultiTestPage = () => {
         const result2 = {};
         const stockSymbols = symbolFuturePairs.map(curr => curr.stockSymbol);
         for (let i = 0; i < stockSymbols.length; i++) {
-            result[stockSymbols[i]] = await fetchCandlesFromAlor(stockSymbols[i], tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle)));
+            result[stockSymbols[i]] = await loadData(stockSymbols[i], tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle)));
             if (token)
-                result1[stockSymbols[i]] = await getSecurity(stockSymbols[i], token);
-            result2[stockSymbols[i]] = await fetchRiskRates(stockSymbols[i]);
+                result1[stockSymbols[i]] = await loadSecurity(stockSymbols[i], token);
+            result2[stockSymbols[i]] = await loadRiskRate(stockSymbols[i]);
             setSuccessSymbols({total: stockSymbols.length, current: i + 1});
         }
         setAllRiskRates(result2)
@@ -173,11 +179,66 @@ export const MultiTestPage = () => {
         };
     }, [isAllTickers, allPositions, positions, security?.lotsize])
 
+    const loadData = async (ticker: string, tf: string, from: number, to: number, useCache: boolean = true): Promise<HistoryObject[]> => {
+        let data: HistoryObject[] = [];
+        try {
+            if (useCache) {
+                data = await getCachedCandles(ticker);
+            }
+
+            if (!useCache || !data?.length) {
+                data = await fetchCandlesFromAlor(ticker, tf, from, to);
+                await cacheCandles(ticker, data);
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+        return data;
+    };
+
+    const loadSecurity = async (ticker: string, token: string, useCache: boolean = true): Promise<any> => {
+        let data;
+        try {
+            if (useCache) {
+                data = await getCachedSecurity(ticker);
+            }
+
+            if (!useCache || !data) {
+                data = await getSecurity(ticker, token);
+                await cacheSecurity(data);
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+        return data;
+    };
+
+    const loadRiskRate = async (ticker: string, useCache: boolean = true): Promise<any> => {
+        let data;
+        try {
+            if (useCache) {
+                data = await getCachedRiskRates(ticker);
+            }
+
+            if (!useCache || !data) {
+                data = await fetchRiskRates(ticker);
+                await cacheRiskRates(data);
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+        }
+        return data;
+    };
+
     useEffect(() => {
         if (!isAllTickers && ticker) {
 
-            fetchCandlesFromAlor(ticker, tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData).finally(() =>
-                setLoading(false));
+            loadData(ticker, tf, dates[0].unix(), dates[1].unix())
+                .then(candles => candles.filter(candle => !notTradingTime(candle)))
+                .then(setData)
+                .finally(() =>
+                    setLoading(false)
+                );
 
         }
     }, [isAllTickers, tf, ticker, dates]);
@@ -187,11 +248,11 @@ export const MultiTestPage = () => {
     }, [])
 
     useEffect(() => {
-        token && getSecurity(ticker, token).then(setSecurity)
+        token && loadSecurity(ticker, token).then(setSecurity)
     }, [ticker, token])
 
     useEffect(() => {
-        fetchRiskRates(ticker).then(setRiskRates)
+        loadRiskRate(ticker).then(setRiskRates)
     }, [ticker])
 
     const oldOneTickerColumns = [
@@ -329,12 +390,14 @@ export const MultiTestPage = () => {
         <Row gutter={8} align="bottom">
             <Col>
                 <FormItem>
-                    <Checkbox checked={tradeOBIDM} onChange={e => settradeOBIDM(e.target.checked)}>Торговать OB_IDM</Checkbox>
+                    <Checkbox checked={tradeOBIDM} onChange={e => settradeOBIDM(e.target.checked)}>Торговать
+                        OB_IDM</Checkbox>
                 </FormItem>
             </Col>
             <Col>
                 <FormItem>
-                    <Checkbox checked={tradeIDMIFC} onChange={e => settradeIDMIFC(e.target.checked)}>Торговать IDM_IFC</Checkbox>
+                    <Checkbox checked={tradeIDMIFC} onChange={e => settradeIDMIFC(e.target.checked)}>Торговать
+                        IDM_IFC</Checkbox>
                 </FormItem>
             </Col>
             <Col>
