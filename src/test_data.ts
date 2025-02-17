@@ -1,7 +1,5 @@
-
 export const testData1 = {
     candles: [
-
         {
             "time": 1729704900,
             "close": 103.96,
@@ -1067,7 +1065,366 @@ export const testData1 = {
             "volume": 109799
         },
     ],
-    mock: {"highs":[{"side":"high","time":1729706400,"price":104.39,"index":5,"idmSwing":{"side":"low","time":1729705800,"price":103.9,"index":3,"idmSwing":{"side":"high","time":1729705200,"price":104.32,"index":1,"idmSwing":null},"text":"LL"},"text":"HH","isIFC":true},{"side":"high","time":1729712100,"price":104.37,"index":24,"idmSwing":{"side":"low","time":1729710000,"price":103.77,"index":17,"isIFC":true},"text":"HH","isIFC":true},{"side":"high","time":1729753500,"price":104.38,"index":41,"idmSwing":{"side":"low","time":1729753200,"price":103.5,"index":40,"idmSwing":{"side":"high","time":1729714800,"price":104.15,"index":33},"text":"LL"},"text":"HH","isIFC":true},{"side":"high","time":1729767600,"price":104.95,"index":88,"idmSwing":{"side":"low","time":1729767000,"price":103.55,"index":86},"text":"HH"}],"lows":[{"side":"low","time":1729705800,"price":103.9,"index":3,"idmSwing":{"side":"high","time":1729705200,"price":104.32,"index":1,"idmSwing":null},"text":"LL"},{"side":"low","time":1729709400,"price":103.67,"index":15,"idmSwing":{"side":"high","time":1729707600,"price":104.16,"index":9},"text":"LL"},{"side":"low","time":1729753200,"price":103.5,"index":40,"idmSwing":{"side":"high","time":1729714800,"price":104.15,"index":33},"text":"LL"},{"side":"low","time":1729762500,"price":102.44,"index":71,"idmSwing":{"side":"high","time":1729761900,"price":102.91,"index":69},"text":"LL"},{"side":"low","time":1729775100,"price":103.45,"index":113,"idmSwing":{"side":"high","time":1729773000,"price":104.2,"index":106,"isIFC":true},"text":"LL"}],"boses":[null,{"type":"high","text":"IDM","from":{"side":"high","time":1729705200,"price":104.32,"index":1,"idmSwing":null},"textCandle":{"time":1729705800,"close":104.15,"open":103.97,"high":104.28,"low":103.9,"volume":134774},"to":{"index":5,"time":1729706400,"price":104.14},"extremum":{"side":"low","time":1729705800,"price":103.9,"index":3,"idmSwing":{"side":"high","time":1729705200,"price":104.32,"index":1,"idmSwing":null},"text":"LL"}},null,{"from":{"side":"low","time":1729705800,"price":103.9,"index":3,"idmSwing":{"side":"high","time":1729705200,"price":104.32,"index":1,"idmSwing":null},"text":"LL"},"to":{"index":8,"time":1729707300,"price":103.87},"textCandle":{"time":1729706400,"close":104.14,"open":104.17,"high":104.39,"low":104.14,"volume":107656},"type":"low","text":"BOS","extremum":{"side":"high","time":1729706400,"price":104.39,"index":5,"idmSwing":{"side":"low","time":1729705800,"price":103.9,"index":3,"idmSwing":{"side":"high","time":1729705200,"price":104.32,"index":1,"idmSwing":null},"text":"LL"},"text":"HH","isIFC":true}},null,null,null,null,null,{"type":"high","text":"IDM","from":{"side":"high","time":1729707600,"price":104.16,"index":9},"textCandle":{"time":1729709400,"close":103.97,"open":103.69,"high":104.09,"low":103.67,"volume":177517},"to":{"index":22,"time":1729711500,"price":104.21},"extremum":{"side":"low","time":1729709400,"price":103.67,"index":15,"idmSwing":{"side":"high","time":1729707600,"price":104.16,"index":9},"text":"LL"}},null,null,null,null,null,{"from":{"side":"low","time":1729709400,"price":103.67,"index":15,"idmSwing":{"side":"high","time":1729707600,"price":104.16,"index":9},"text":"LL"},"to":{"index":39,"time":1729752900,"price":103.5},"textCandle":{"time":1729713000,"close":104.1,"open":104.16,"high":104.16,"low":104.09,"volume":4768},"type":"low","text":"BOS","extremum":{"side":"high","time":1729712100,"price":104.37,"index":24,"idmSwing":{"side":"low","time":1729710000,"price":103.77,"index":17,"isIFC":true},"text":"HH","isIFC":true}},null,null,null,null,null,null,null,null,{"from":{"side":"high","time":1729712100,"price":104.37,"index":24,"idmSwing":{"side":"low","time":1729710000,"price":103.77,"index":17,"isIFC":true},"text":"HH","isIFC":true},"to":{"index":88,"time":1729767600,"price":104.64},"textCandle":{"time":1729758000,"close":102.96,"open":103.01,"high":103.01,"low":102.92,"volume":39992},"type":"high","text":"CHoCH","extremum":{"side":"low","time":1729762500,"price":102.44,"index":71,"idmSwing":{"side":"high","time":1729761900,"price":102.91,"index":69},"text":"LL"}},null,null,null,null,null,null,null,null,{"type":"high","text":"IDM","from":{"side":"high","time":1729714800,"price":104.15,"index":33},"textCandle":{"time":1729716000,"close":104.01,"open":104.06,"high":104.07,"low":103.91,"volume":57329},"to":{"index":41,"time":1729753500,"price":103.9},"extremum":{"side":"low","time":1729753200,"price":103.5,"index":40,"idmSwing":{"side":"high","time":1729714800,"price":104.15,"index":33},"text":"LL"}},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,{"type":"low","text":"IDM","from":{"side":"low","time":1729767000,"price":103.55,"index":86},"textCandle":{"time":1729770600,"close":104.15,"open":104.11,"high":104.19,"low":103.79,"volume":356213},"to":{"index":110,"time":1729774200,"price":103.64},"extremum":{"side":"high","time":1729767600,"price":104.95,"index":88,"idmSwing":{"side":"low","time":1729767000,"price":103.55,"index":86},"text":"HH"}},null,{"from":{"side":"high","time":1729767600,"price":104.95,"index":88,"idmSwing":{"side":"low","time":1729767000,"price":103.55,"index":86},"text":"HH"},"to":{"index":131,"time":1729780500,"price":105.08},"textCandle":{"time":1729773900,"close":103.71,"open":103.86,"high":103.86,"low":103.69,"volume":70969},"type":"high","text":"BOS","extremum":{"side":"low","time":1729775100,"price":103.45,"index":113,"idmSwing":{"side":"high","time":1729773000,"price":104.2,"index":106,"isIFC":true},"text":"LL"}},null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"orderBlocks":[{"text":"SMT","type":"high","index":10,"time":1729707900,"lastOrderblockCandle":{"time":1729707900,"close":104,"open":104.01,"high":104.11,"low":103.97,"volume":28472},"lastImbalanceCandle":{"time":1729708500,"close":103.81,"open":103.85,"high":103.89,"low":103.8,"volume":75659},"firstImbalanceIndex":0,"imbalanceIndex":2,"startCandle":{"time":1729707900,"open":104.01,"close":104,"high":104.11,"low":103.97},"endCandle":{"time":1729709400,"close":103.97,"open":103.69,"high":104.09,"low":103.67,"volume":177517},"endIndex":15,"canTrade":true},{"text":"OB","type":"high","index":60,"time":1729759200,"lastOrderblockCandle":{"time":1729759200,"close":103.11,"open":103,"high":103.12,"low":102.95,"volume":86532},"lastImbalanceCandle":{"time":1729759800,"close":102.9,"open":102.9,"high":102.94,"low":102.86,"volume":11407},"firstImbalanceIndex":0,"imbalanceIndex":2,"startCandle":{"time":1729759200,"open":103,"close":103.11,"high":103.12,"low":102.95},"endCandle":{"time":1729760100,"close":102.94,"open":102.9,"high":103.04,"low":102.89,"volume":63566},"endIndex":63,"canTrade":true}]}
+    mock: {
+        "highs": [{
+            "side": "high",
+            "time": 1729706400,
+            "price": 104.39,
+            "index": 5,
+            "idmSwing": {
+                "side": "low",
+                "time": 1729705800,
+                "price": 103.9,
+                "index": 3,
+                "idmSwing": {"side": "high", "time": 1729705200, "price": 104.32, "index": 1, "idmSwing": null},
+                "text": "LL"
+            },
+            "text": "HH",
+            "isIFC": true
+        }, {
+            "side": "high",
+            "time": 1729712100,
+            "price": 104.37,
+            "index": 24,
+            "idmSwing": {"side": "low", "time": 1729710000, "price": 103.77, "index": 17, "isIFC": true},
+            "text": "HH",
+            "isIFC": true
+        }, {
+            "side": "high",
+            "time": 1729753500,
+            "price": 104.38,
+            "index": 41,
+            "idmSwing": {
+                "side": "low",
+                "time": 1729753200,
+                "price": 103.5,
+                "index": 40,
+                "idmSwing": {"side": "high", "time": 1729714800, "price": 104.15, "index": 33},
+                "text": "LL"
+            },
+            "text": "HH",
+            "isIFC": true
+        }, {
+            "side": "high",
+            "time": 1729767600,
+            "price": 104.95,
+            "index": 88,
+            "idmSwing": {"side": "low", "time": 1729767000, "price": 103.55, "index": 86},
+            "text": "HH"
+        }],
+        "lows": [{
+            "side": "low",
+            "time": 1729705800,
+            "price": 103.9,
+            "index": 3,
+            "idmSwing": {"side": "high", "time": 1729705200, "price": 104.32, "index": 1, "idmSwing": null},
+            "text": "LL"
+        }, {
+            "side": "low",
+            "time": 1729709400,
+            "price": 103.67,
+            "index": 15,
+            "idmSwing": {"side": "high", "time": 1729707600, "price": 104.16, "index": 9},
+            "text": "LL"
+        }, {
+            "side": "low",
+            "time": 1729753200,
+            "price": 103.5,
+            "index": 40,
+            "idmSwing": {"side": "high", "time": 1729714800, "price": 104.15, "index": 33},
+            "text": "LL"
+        }, {
+            "side": "low",
+            "time": 1729762500,
+            "price": 102.44,
+            "index": 71,
+            "idmSwing": {"side": "high", "time": 1729761900, "price": 102.91, "index": 69},
+            "text": "LL"
+        }, {
+            "side": "low",
+            "time": 1729775100,
+            "price": 103.45,
+            "index": 113,
+            "idmSwing": {"side": "high", "time": 1729773000, "price": 104.2, "index": 106, "isIFC": true},
+            "text": "LL"
+        }],
+        "boses": [null, {
+            "type": "high",
+            "text": "IDM",
+            "from": {"side": "high", "time": 1729705200, "price": 104.32, "index": 1, "idmSwing": null},
+            "textCandle": {
+                "time": 1729705800,
+                "close": 104.15,
+                "open": 103.97,
+                "high": 104.28,
+                "low": 103.9,
+                "volume": 134774
+            },
+            "to": {"index": 5, "time": 1729706400, "price": 104.14},
+            "extremum": {
+                "side": "low",
+                "time": 1729705800,
+                "price": 103.9,
+                "index": 3,
+                "idmSwing": {"side": "high", "time": 1729705200, "price": 104.32, "index": 1, "idmSwing": null},
+                "text": "LL"
+            }
+        }, null, {
+            "from": {
+                "side": "low",
+                "time": 1729705800,
+                "price": 103.9,
+                "index": 3,
+                "idmSwing": {"side": "high", "time": 1729705200, "price": 104.32, "index": 1, "idmSwing": null},
+                "text": "LL"
+            },
+            "to": {"index": 8, "time": 1729707300, "price": 103.87},
+            "textCandle": {
+                "time": 1729706400,
+                "close": 104.14,
+                "open": 104.17,
+                "high": 104.39,
+                "low": 104.14,
+                "volume": 107656
+            },
+            "type": "low",
+            "text": "BOS",
+            "extremum": {
+                "side": "high",
+                "time": 1729706400,
+                "price": 104.39,
+                "index": 5,
+                "idmSwing": {
+                    "side": "low",
+                    "time": 1729705800,
+                    "price": 103.9,
+                    "index": 3,
+                    "idmSwing": {"side": "high", "time": 1729705200, "price": 104.32, "index": 1, "idmSwing": null},
+                    "text": "LL"
+                },
+                "text": "HH",
+                "isIFC": true
+            }
+        }, null, null, null, null, null, {
+            "type": "high",
+            "text": "IDM",
+            "from": {"side": "high", "time": 1729707600, "price": 104.16, "index": 9},
+            "textCandle": {
+                "time": 1729709400,
+                "close": 103.97,
+                "open": 103.69,
+                "high": 104.09,
+                "low": 103.67,
+                "volume": 177517
+            },
+            "to": {"index": 22, "time": 1729711500, "price": 104.21},
+            "extremum": {
+                "side": "low",
+                "time": 1729709400,
+                "price": 103.67,
+                "index": 15,
+                "idmSwing": {"side": "high", "time": 1729707600, "price": 104.16, "index": 9},
+                "text": "LL"
+            }
+        }, null, null, null, null, null, {
+            "from": {
+                "side": "low",
+                "time": 1729709400,
+                "price": 103.67,
+                "index": 15,
+                "idmSwing": {"side": "high", "time": 1729707600, "price": 104.16, "index": 9},
+                "text": "LL"
+            },
+            "to": {"index": 39, "time": 1729752900, "price": 103.5},
+            "textCandle": {
+                "time": 1729713000,
+                "close": 104.1,
+                "open": 104.16,
+                "high": 104.16,
+                "low": 104.09,
+                "volume": 4768
+            },
+            "type": "low",
+            "text": "BOS",
+            "extremum": {
+                "side": "high",
+                "time": 1729712100,
+                "price": 104.37,
+                "index": 24,
+                "idmSwing": {"side": "low", "time": 1729710000, "price": 103.77, "index": 17, "isIFC": true},
+                "text": "HH",
+                "isIFC": true
+            }
+        }, null, null, null, null, null, null, null, null, {
+            "from": {
+                "side": "high",
+                "time": 1729712100,
+                "price": 104.37,
+                "index": 24,
+                "idmSwing": {"side": "low", "time": 1729710000, "price": 103.77, "index": 17, "isIFC": true},
+                "text": "HH",
+                "isIFC": true
+            },
+            "to": {"index": 88, "time": 1729767600, "price": 104.64},
+            "textCandle": {
+                "time": 1729758000,
+                "close": 102.96,
+                "open": 103.01,
+                "high": 103.01,
+                "low": 102.92,
+                "volume": 39992
+            },
+            "type": "high",
+            "text": "CHoCH",
+            "extremum": {
+                "side": "low",
+                "time": 1729762500,
+                "price": 102.44,
+                "index": 71,
+                "idmSwing": {"side": "high", "time": 1729761900, "price": 102.91, "index": 69},
+                "text": "LL"
+            }
+        }, null, null, null, null, null, null, null, null, {
+            "type": "high",
+            "text": "IDM",
+            "from": {"side": "high", "time": 1729714800, "price": 104.15, "index": 33},
+            "textCandle": {
+                "time": 1729716000,
+                "close": 104.01,
+                "open": 104.06,
+                "high": 104.07,
+                "low": 103.91,
+                "volume": 57329
+            },
+            "to": {"index": 41, "time": 1729753500, "price": 103.9},
+            "extremum": {
+                "side": "low",
+                "time": 1729753200,
+                "price": 103.5,
+                "index": 40,
+                "idmSwing": {"side": "high", "time": 1729714800, "price": 104.15, "index": 33},
+                "text": "LL"
+            }
+        }, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, {
+            "type": "low",
+            "text": "IDM",
+            "from": {"side": "low", "time": 1729767000, "price": 103.55, "index": 86},
+            "textCandle": {
+                "time": 1729770600,
+                "close": 104.15,
+                "open": 104.11,
+                "high": 104.19,
+                "low": 103.79,
+                "volume": 356213
+            },
+            "to": {"index": 110, "time": 1729774200, "price": 103.64},
+            "extremum": {
+                "side": "high",
+                "time": 1729767600,
+                "price": 104.95,
+                "index": 88,
+                "idmSwing": {"side": "low", "time": 1729767000, "price": 103.55, "index": 86},
+                "text": "HH"
+            }
+        }, null, {
+            "from": {
+                "side": "high",
+                "time": 1729767600,
+                "price": 104.95,
+                "index": 88,
+                "idmSwing": {"side": "low", "time": 1729767000, "price": 103.55, "index": 86},
+                "text": "HH"
+            },
+            "to": {"index": 131, "time": 1729780500, "price": 105.08},
+            "textCandle": {
+                "time": 1729773900,
+                "close": 103.71,
+                "open": 103.86,
+                "high": 103.86,
+                "low": 103.69,
+                "volume": 70969
+            },
+            "type": "high",
+            "text": "BOS",
+            "extremum": {
+                "side": "low",
+                "time": 1729775100,
+                "price": 103.45,
+                "index": 113,
+                "idmSwing": {"side": "high", "time": 1729773000, "price": 104.2, "index": 106, "isIFC": true},
+                "text": "LL"
+            }
+        }, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        "orderBlocks": [{
+            "text": "SMT",
+            "type": "high",
+            "index": 10,
+            "time": 1729707900,
+            "lastOrderblockCandle": {
+                "time": 1729707900,
+                "close": 104,
+                "open": 104.01,
+                "high": 104.11,
+                "low": 103.97,
+                "volume": 28472
+            },
+            "lastImbalanceCandle": {
+                "time": 1729708500,
+                "close": 103.81,
+                "open": 103.85,
+                "high": 103.89,
+                "low": 103.8,
+                "volume": 75659
+            },
+            "firstImbalanceIndex": 0,
+            "imbalanceIndex": 2,
+            "startCandle": {"time": 1729707900, "open": 104.01, "close": 104, "high": 104.11, "low": 103.97},
+            "endCandle": {
+                "time": 1729709400,
+                "close": 103.97,
+                "open": 103.69,
+                "high": 104.09,
+                "low": 103.67,
+                "volume": 177517
+            },
+            "endIndex": 15,
+            "canTrade": true
+        }, {
+            "text": "OB",
+            "type": "high",
+            "index": 60,
+            "time": 1729759200,
+            "lastOrderblockCandle": {
+                "time": 1729759200,
+                "close": 103.11,
+                "open": 103,
+                "high": 103.12,
+                "low": 102.95,
+                "volume": 86532
+            },
+            "lastImbalanceCandle": {
+                "time": 1729759800,
+                "close": 102.9,
+                "open": 102.9,
+                "high": 102.94,
+                "low": 102.86,
+                "volume": 11407
+            },
+            "firstImbalanceIndex": 0,
+            "imbalanceIndex": 2,
+            "startCandle": {"time": 1729759200, "open": 103, "close": 103.11, "high": 103.12, "low": 102.95},
+            "endCandle": {
+                "time": 1729760100,
+                "close": 102.94,
+                "open": 102.9,
+                "high": 103.04,
+                "low": 102.89,
+                "volume": 63566
+            },
+            "endIndex": 63,
+            "canTrade": true
+        }]
+    }
 }
 
 export const testData2 = {
