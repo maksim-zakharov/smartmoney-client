@@ -1230,6 +1230,7 @@ export class StateManager {
                 price: this.candles[0].high,
                 index: 0
             });
+            this.lastSwingMap[this.swings[0].side] = this.swings[0];
             return;
         }
 

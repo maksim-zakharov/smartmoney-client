@@ -4,7 +4,6 @@ import {useCandlesQuery, usePortfolioQuery, useSecurityQuery} from "./api";
 import {LineStyle, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
 import moment from "moment";
 import {Link, useSearchParams} from "react-router-dom";
-import {Point} from "./lwc-plugins/rectangle-drawing-tool";
 import useWindowDimensions from "./useWindowDimensions";
 import {createRectangle2} from "./utils.ts";
 import {calculateTesting, defaultConfig, notTradingTime} from "./th_ultimate.ts";
@@ -639,7 +638,7 @@ const MainPage: React.FC = () => {
             }
         ];
 
-        const minDate = moment('2025-02-03T00:00:00.000Z');
+        const minDate = moment('2025-02-06T00:00:00.000Z');
         const min = minDate.unix()
         const max = moment().unix()
 
