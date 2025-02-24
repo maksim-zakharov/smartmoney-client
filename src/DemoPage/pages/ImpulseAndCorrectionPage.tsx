@@ -15,6 +15,7 @@ import {
     HistoryObject,
     notTradingTime, StateManager,
 } from "../../th_ultimate";
+import Paragraph from "antd/es/typography/Paragraph";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
     const manager = new StateManager(data);
     manager.calculateSwingsOld();
@@ -177,7 +178,7 @@ const ImpulseAndCorrectionPage = () => {
     }, [swings]);
 
     return <>
-        <Typography.Paragraph>When Market momentum is very strong to the upside or downside those types strong
+        <Typography.Paragraph italic>When Market momentum is very strong to the upside or downside those types strong
 
             unhealthy price action is called Impulsive Move, Price generally move in two way impulse and
 
@@ -188,21 +189,57 @@ const ImpulseAndCorrectionPage = () => {
             particular range. Now i am going to explain you here in details that how its looks.</Typography.Paragraph>
         <img src={img}/>
         <img src={img_1}/>
-        <div style={{    display: 'flex',
+        <Paragraph>
+            <ol>
+                <li>Свеча H одновременно пробила свечу K и снизу и сверху. Это движение называется корректирующим.</li>
+                <li>Это не откат, потому что свечи A и N снова внутри свечи H</li>
+                <li>Это правильный откат, потому что самая низкая свеча это U а не H и свеча B пробила максимум свечи
+                    U.
+                </li>
+            </ol>
+            <ol>
+                <li>Свеча H одновременно пробила свечу K и снизу и сверху. Это движение называется корректирующим.</li>
+                <li>Это не откат, потому что свечи A и N снова внутри свечи H</li>
+                <li>Это правильный откат, потому что самая низкая свеча это U а не H и свеча B пробила максимум свечи
+                    U.
+                </li>
+            </ol>
+        </Paragraph>
+        <div style={{
+            display: 'flex',
 
             flexDirection: 'row',
             gap: '8px',
             marginBottom: '8px'
         }}>
-        <BOSChart data={data1}/>
-        <BOSChart data={data2}/>
+            <BOSChart data={data1}/>
+            <BOSChart data={data2}/>
         </div>
-        <Typography.Paragraph>
+        <Typography.Paragraph italic>
             When Price taken out Prev Candle High / Low then candle colors not matter may be Bullish or bearish in both
             scenarios are valid. one more thing Price taken out High/Low then sometimes candle close or Sweep Prev
             Candle High Low . Both scenarios are valid.
         </Typography.Paragraph>
-        <div style={{    display: 'flex',
+        <Paragraph>
+            <ol>
+                <li>Свеча M является самой высокой свечой движения.</li>
+                <li>Минимум свечи М пробивается свечой K.</li>
+                <li>Поэтому это движение является правильным откатом.</li>
+                <li>Свеча H является самой высокой свечой движения.</li>
+                <li>Свеча A и N являются внутренними свечами для H (не пробивают снизу)</li>
+                <li>Поэтому это движение не является правильным откатом.</li>
+            </ol>
+            <ol>
+                <li>Свеча H является максимальной свечой движения</li>
+                <li>И при этом она пробивает лой предыдущей свечи K.</li>
+                <li>Поэтому это движение является правильным откатом.</li>
+                <li>Свечи A и N внутренние для H, поэтому не являются правильным откатом.</li>
+                <li>Свеча U выше свечи H</li>
+                <li>Свеча B пробивает свечу U снизу, поэтому это движение является правильным откатом.</li>
+            </ol>
+        </Paragraph>
+        <div style={{
+            display: 'flex',
 
             flexDirection: 'row',
             gap: '8px',
