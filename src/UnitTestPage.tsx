@@ -5,7 +5,7 @@ import {Content} from "antd/es/layout/layout";
 import {calculateTesting, Cross, defaultConfig, HistoryObject, POI, Swing} from "./th_ultimate";
 import {LineStyle, Time} from "lightweight-charts";
 import {Chart} from "./SoloTestPage/TestChart";
-import {createRectangle2} from "./utils";
+import {createRectangle2, swingsToMarkers} from "./utils";
 import {testMocks} from "./test.mocks.ts";
 
 type MenuItem = Required<MenuProps>['items'][number] & { description?: string, data: HistoryObject[] };
@@ -67,13 +67,7 @@ const BOSChart = ({data, swings: outerSwings, boses: outerBoses, orderblocks: ou
         bullColor: "rgb(20, 131, 92)"
     }
     const allMarkers1 = [];
-    allMarkers1.push(...swings.filter(Boolean).map(s => ({
-        color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-        time: (s.time) as Time,
-        shape: 'circle',
-        position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-        text: s.text
-    })));
+    allMarkers1.push(...swingsToMarkers(swings));
 
     const _lineSerieses = [];
     _lineSerieses.push(...boses.filter(Boolean).map(marker => {

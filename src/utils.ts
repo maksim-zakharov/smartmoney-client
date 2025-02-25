@@ -24,7 +24,7 @@ import {Options} from "@vitejs/plugin-react";
 import {useEffect, useMemo, useState} from "react";
 import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
-import {HistoryObject, Trend} from "./th_ultimate";
+import {HistoryObject, Swing, Trend} from "./th_ultimate";
 
 
 export class CandlesBuilder{
@@ -848,3 +848,26 @@ export function uniqueBy<T>(selector: (val: T) => T[keyof T], sortedData: T[]){
     }
     return sortedData;
 }
+
+export const swingsToMarkers = (swings: Swing[]) => swings.filter(Boolean).map(s => s.side === 'double' ? [
+    {
+        color: markerColors.bullColor,
+        time: (s.time) as Time,
+        shape: 'circle',
+        position: 'aboveBar',
+        text: s.text
+    },
+    {
+        color: markerColors.bearColor,
+        time: (s.time) as Time,
+        shape: 'circle',
+        position: 'belowBar',
+        text: s.text
+    }
+] : [{
+    color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
+    time: (s.time) as Time,
+    shape: 'circle',
+    position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+    text: s.text
+}]).flat()

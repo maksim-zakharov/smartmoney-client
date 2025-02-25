@@ -6,7 +6,7 @@ import img18 from "../../assets/img_18.png"
 import {LineStyle, Time} from "lightweight-charts";
 import {Chart} from "../../SoloTestPage/TestChart";
 import React from "react";
-import {createRectangle2} from "../../utils";
+import {createRectangle2, swingsToMarkers} from "../../utils";
 import {
     calculatePOI,
     HistoryObject,
@@ -59,13 +59,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
         bullColor: "rgb(20, 131, 92)"
     }
     const allMarkers1 = [];
-    allMarkers1.push(...manager.swings.filter(Boolean).map(s => ({
-        color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-        time: (s.time) as Time,
-        shape: 'circle',
-        position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-        text: s.text
-    })));
+    allMarkers1.push(...swingsToMarkers(manager.swings))
 
     const _lineSerieses1 = [];
 

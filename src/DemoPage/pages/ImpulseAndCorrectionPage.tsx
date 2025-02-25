@@ -4,7 +4,7 @@ import img_1 from "../../assets/img_1.png"
 import img_2 from "../../assets/img_2.png"
 import {Chart} from "../../SoloTestPage/TestChart";
 import React, {useEffect, useMemo, useState} from "react";
-import {fetchCandlesFromAlor} from "../../utils";
+import {fetchCandlesFromAlor, swingsToMarkers} from "../../utils";
 import dayjs from 'dayjs';
 import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
@@ -63,13 +63,8 @@ const BOSChart = ({data}: {data: HistoryObject[]}) => {
         return {options, data, markers}
     }));
     const allMarkers1 = [];
-    allMarkers1.push(...manager.swings.filter(Boolean).map(s => ({
-        color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-        time: (s.time) as Time,
-        shape: 'circle',
-        position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-        text: s.text
-    })));
+
+    allMarkers1.push(...swingsToMarkers(manager.swings));
 
     return <Chart width={300} height={200} markers={allMarkers1} lineSerieses={_lineSerieses1} primitives={[]}
                   data={data} ema={[]}/>
@@ -160,22 +155,7 @@ const ImpulseAndCorrectionPage = () => {
         return manager.swings;
     }, [data]);
 
-    const markers = useMemo(() => {
-        const markerColors = {
-            bearColor: "rgb(157, 43, 56)",
-            bullColor: "rgb(20, 131, 92)"
-        }
-        const allMarkers = [];
-        allMarkers.push(...swings.filter(Boolean).map(s => ({
-            color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            time: (s.time) as Time,
-            shape: 'circle',
-            position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            text: s.text
-        })));
-
-        return allMarkers;
-    }, [swings]);
+    const markers = useMemo(() => swingsToMarkers(swings), [swings]);
 
     return <>
         <Typography.Paragraph italic>When Market momentum is very strong to the upside or downside those types strong

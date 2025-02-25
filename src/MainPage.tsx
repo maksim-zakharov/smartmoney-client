@@ -5,7 +5,7 @@ import {LineStyle, SeriesMarker, Time, UTCTimestamp} from "lightweight-charts";
 import moment from "moment";
 import {Link, useSearchParams} from "react-router-dom";
 import useWindowDimensions from "./useWindowDimensions";
-import {createRectangle2} from "./utils.ts";
+import {createRectangle2, swingsToMarkers} from "./utils.ts";
 import {calculateTesting, defaultConfig, notTradingTime} from "./th_ultimate.ts";
 import {Chart} from "./SoloTestPage/TestChart.tsx";
 
@@ -875,13 +875,7 @@ const MainPage: React.FC = () => {
                 text: s.text
             })));
 
-            allMarkers.push(...swings.filter(Boolean).map(s => ({
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'circle',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.text
-            })));
+            allMarkers.push(...swingsToMarkers(swings))
 
             return allMarkers;
         }, [swings, orderBlocks, _markers]);

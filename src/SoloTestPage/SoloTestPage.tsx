@@ -4,7 +4,14 @@ import {Button, Checkbox, Divider, Form, Input, InputNumber, Radio, Row, Slider,
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
-import {createRectangle2, fetchCandlesFromAlor, fetchRiskRates, getSecurity, refreshToken} from "../utils";
+import {
+    createRectangle2,
+    fetchCandlesFromAlor,
+    fetchRiskRates,
+    getSecurity,
+    refreshToken,
+    swingsToMarkers
+} from "../utils";
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
 import {calculatePositionsByOrderblocks,} from "../samurai_patterns";
@@ -371,28 +378,7 @@ export const SoloTestPage = () => {
             }
         }
         if (config.swings) {
-            allMarkers.push(...swings.filter(Boolean).map(s => s.side === 'double' ? [
-                {
-                    color: markerColors.bullColor,
-                    time: (s.time) as Time,
-                    shape: 'circle',
-                    position: 'aboveBar',
-                    text: s.text
-                },
-                {
-                    color: markerColors.bearColor,
-                    time: (s.time) as Time,
-                    shape: 'circle',
-                    position: 'belowBar',
-                    text: s.text
-                }
-            ] : [{
-                color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-                time: (s.time) as Time,
-                shape: 'circle',
-                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-                text: s.text
-            }]).flat());
+            allMarkers.push(...swingsToMarkers(swings))
         }
 
         if (config.showPositions) {

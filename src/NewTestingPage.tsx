@@ -6,7 +6,7 @@ import dayjs, {type Dayjs} from "dayjs";
 import {Chart} from "./SoloTestPage/TestChart.tsx";
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {createRectangle2, fetchCandlesFromAlor} from "./utils.ts";
+import {createRectangle2, fetchCandlesFromAlor, swingsToMarkers} from "./utils.ts";
 import {
     calculateTesting,
     defaultConfig,
@@ -163,13 +163,7 @@ const NewTestingPage = () => {
             })));
         }
 
-        allMarkers.push(...swings.filter(Boolean).map(s => ({
-            color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            time: (s.time) as Time,
-            shape: 'circle',
-            position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            text: selectedKey !== 'swings' ? s.text : undefined
-        })));
+        allMarkers.push(...swingsToMarkers(swings))
 
         return allMarkers;
     }, [swings, orderBlocks, selectedKey]);

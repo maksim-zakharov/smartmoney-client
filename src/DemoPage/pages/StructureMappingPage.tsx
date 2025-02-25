@@ -6,7 +6,7 @@ import img_6 from "../../assets/img_6.png"
 import img_7 from "../../assets/img_7.png"
 import img_8 from "../../assets/img_8.png"
 import React, {useEffect, useMemo, useState} from "react";
-import {CandlesBuilder, fetchCandlesFromAlor} from "../../utils";
+import {CandlesBuilder, fetchCandlesFromAlor, swingsToMarkers} from "../../utils";
 import {LineStyle, Time} from "lightweight-charts";
 import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
@@ -35,13 +35,7 @@ const BOSChart = ({data, text = 'LL'}) => {
 
     manager.drawBOSOld();
     const allMarkers1 = [];
-    allMarkers1.push(...manager.swings.filter(Boolean).map(s => ({
-        color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-        time: (s.time) as Time,
-        shape: 'circle',
-        position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-        text: s.text
-    })));
+    allMarkers1.push(...swingsToMarkers(manager.swings))
 
     const _lineSerieses1 = [];
     _lineSerieses1.push(...manager.boses.filter(Boolean).map(marker => {
@@ -282,13 +276,7 @@ const StructureMappingPage = () => {
             bullColor: "rgb(20, 131, 92)"
         }
         const allMarkers = [];
-        allMarkers.push(...swings.filter(Boolean).map(s => ({
-            color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
-            time: (s.time) as Time,
-            shape: 'circle',
-            position: s.side === 'high' ? 'aboveBar' : 'belowBar',
-            text: s.text
-        })));
+        allMarkers.push(...swingsToMarkers(swings))
 
         return allMarkers;
     }, [swings]);
