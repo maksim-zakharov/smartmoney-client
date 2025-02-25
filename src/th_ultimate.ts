@@ -8,9 +8,13 @@ export interface HistoryObject {
 }
 
 export class Swing {
-    side?: 'high' | 'low';
+    side?: 'high' | 'low' | 'double';
     time: number;
-    price: number;
+    _sidePrice: Record<'high' | 'low', number> = {
+        high: null,
+        low: null
+    }
+
     index: number;
     isIFC?: boolean;
 
@@ -21,6 +25,10 @@ export class Swing {
 
     constructor(props: Partial<Swing>) {
         Object.assign(this, props)
+    }
+
+    get price() {
+        return this._sidePrice[this.side] || this._sidePrice['high'];
     }
 
     get isExtremum() {
@@ -529,9 +537,66 @@ const hasLowValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryOb
         return 'low'
     }
     return '';
-};
+}
 
-const tryCalculatePullback = (index: number, type: 'high' | 'low', diff: number, prevCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject, swings: Swing[]) => {
+const tryCalculatePullback = (manager: StateManager, index: number, side: Swing['side'], prevCandle: HistoryObject, currentCandle: HistoryObject) => {
+    const funcMap: Record<'high' | 'low', Function> = {
+        high: hasHighValidPullback,
+        low: hasLowValidPullback
+    }
+
+    const mainFunc = funcMap[side];
+    const subFunc = funcMap[side === 'high' ? 'low' : 'high'];
+
+    const isDoubleSwing = Boolean(mainFunc(prevCandle, currentCandle)) && Boolean(subFunc(prevCandle, currentCandle))
+
+    // Проверяем был ли текущей свечой пересвип предыдущей
+    const highPullback = mainFunc(prevCandle, currentCandle)
+    if (!highPullback) {
+        return;
+    }
+    const prelastSwing = manager.swings[manager.prelastSwingIndex];
+    const lastSwing = manager.swings[manager.lastSwingIndex];
+    const currentSide = isDoubleSwing ? 'double' : side
+
+    manager.swings[index] = new Swing({
+        side: currentSide,
+        time: currentCandle.time,
+        _sidePrice: {
+            high: currentCandle.high,
+            low: currentCandle.low
+        },
+        index
+    });
+    manager.swings[index]?.setDebug();
+
+    // Если предыдущий свип был того же типа - удаляем
+    if (lastSwing
+        // Проверяем на той же свече но другой направленности (isDoubleSwing)
+        && lastSwing.index !== index
+        // Если предыдущий свип был того же типа - удаляем
+        && (lastSwing.side === 'double' || lastSwing.side === side || isDoubleSwing)) {
+        if (lastSwing.side === 'double') {
+            // low double high - low double high
+            // high double high - high low high
+            // low double low - low high low
+            if (prelastSwing?.side === currentSide) {
+                manager.swings[lastSwing.index].side = prelastSwing?.side === "high" ? 'low' : 'high'
+            }
+            manager.prelastSwingIndex = manager.lastSwingIndex;
+        } else {
+            manager.swings[lastSwing.index] = null;
+        }
+    } else {
+        if (!isDoubleSwing)
+            manager.prelastSwingIndex = manager.lastSwingIndex;
+    }
+
+    manager.lastSwingIndex = index;
+
+}
+
+const tryCalculatePullbackOld = (index: number, type: 'high' | 'low', diff: number, prevCandle: HistoryObject, currentCandle: HistoryObject, nextCandle: HistoryObject, swings: Swing[]) => {
     const funcMap: Record<'high' | 'low', Function> = {
         high: hasHighValidPullback,
         low: hasLowValidPullback
@@ -547,7 +612,10 @@ const tryCalculatePullback = (index: number, type: 'high' | 'low', diff: number,
         const swing = new Swing({
             side: type,
             time: currentCandle.time,
-            price: currentCandle[type],
+            _sidePrice: {
+                high: currentCandle.high,
+                low: currentCandle.low
+            },
             index
         })
         swings[index] = highPullback ? swing : swings[index];
@@ -585,7 +653,8 @@ const filterDoubleSwings = (i: number, lastSwingIndex: number, updateLastSwingIn
         }
         // Обновляем хай
         if (toDeleteIndex) {
-            swings[toDeleteIndex] = null;
+            // TODO подумать убирать ли
+            // swings[toDeleteIndex] = null;
         }
     }
     updateLastSwingIndex(setIndex);
@@ -662,8 +731,14 @@ const updateExtremumOneIt = (index: number, side: 'high' | 'low', manager: State
 }
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
 const updateExtremum = (manager: StateManager, index: number, side: Swing['side'], swing: Swing) => {
+    if (index === 94) {
+        debugger
+    }
+    if (index === 161) {
+        debugger
+    }
     // Проверяем свинг по выбранной стороне
-    if (!swing || swing.side !== side) {
+    if (!swing || (swing.side !== 'double' && swing.side !== side)) {
         return;
     }
 
@@ -672,8 +747,8 @@ const updateExtremum = (manager: StateManager, index: number, side: Swing['side'
         return;
     }
 
-    const isHighestHigh = !manager.lastExtremumMap[swing.side] || side === 'high' && manager.lastExtremumMap[swing.side].price < swing.price;
-    const isLowestLow = !manager.lastExtremumMap[swing.side] || side === 'low' && manager.lastExtremumMap[swing.side].price > swing.price;
+    const isHighestHigh = !manager.lastExtremumMap[side] || side === 'high' && manager.lastExtremumMap[side]._sidePrice[side] < swing._sidePrice[side];
+    const isLowestLow = !manager.lastExtremumMap[side] || side === 'low' && manager.lastExtremumMap[side]._sidePrice[side] > swing._sidePrice[side];
 
     // Здесь проверяем что либо еще нет HH/LL, либо прошлый HH ниже нового или прошлый LL выше нового
     if (!isLowestLow && !isHighestHigh) {
@@ -681,18 +756,24 @@ const updateExtremum = (manager: StateManager, index: number, side: Swing['side'
     }
 
     // Сначала чистим экстремум. На текущем свинге убираем флаг экстремума
-    if (manager.lastExtremumMap[swing.side]) {
-        manager.lastExtremumMap[swing.side].unmarkExtremum();
+    if (manager.lastExtremumMap[side]) {
+        manager.lastExtremumMap[side].unmarkExtremum();
         // Если по нему был IDM - убираем IDM
-        if (manager.lastExtremumMap[swing.side].idmSwing)
-            manager.boses[manager.lastExtremumMap[swing.side].idmSwing.index] = null;
+        if (manager.lastExtremumMap[side].idmSwing)
+            manager.boses[manager.lastExtremumMap[side].idmSwing.index] = null;
     }
 
-    // Обновляем новый экстремум и помечаем по нему IDM
-    manager.lastExtremumMap[swing.side] = swing;
-    if (manager.lastSwingMap[versusSide]) {
-        manager.lastExtremumMap[swing.side].idmSwing = manager.lastSwingMap[versusSide];
+    let idmSwing = manager.lastExtremumMap[side]?.idmSwing;
+    if(index === 94){
+        debugger
     }
+    // Обновляем новый экстремум и помечаем по нему IDM
+    manager.lastExtremumMap[side] = swing;
+    if(manager.lastExtremumMap[side]?.index !== manager.lastSwingMap[versusSide]?.index){
+        idmSwing = manager.lastSwingMap[versusSide]
+    }
+    manager.lastExtremumMap[side].idmSwing = idmSwing;
+
 }
 
 const confirmExtremum = (manager: StateManager, index: number, side: Swing['side'], isNonConfirmIDM: boolean) => {
@@ -725,7 +806,14 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
 
     // Рисуем IDM
     const from = manager.lastExtremumMap[side].idmSwing
-    const to = new Swing({index, time: manager.candles[index].time, price: manager.candles[index].close});
+    debugger
+    const to = new Swing({
+        index, time: manager.candles[index].time,
+        _sidePrice: {
+            high: manager.candles[index].close,
+            low: manager.candles[index].close
+        }
+    });
 
     // На случай если и хай и лоу будет на одной свече, нужно подтверждение жестко с предыдущей свечки
     if (isNonConfirmIDM || manager.lastExtremumMap[side].index !== to.index) {
@@ -744,12 +832,18 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
 }
 
 // Фиксируем последний свинг который нашли сверху или снизу
-const updateLast = (manager: StateManager, swing: Swing) => {
+const updateLast = (manager: StateManager, index: number) => {
+    const swing = manager.swings[index];
     if (!swing) {
         return;
     }
 
-    manager.lastSwingMap[swing.side] = swing;
+    if(swing.side === 'double'){
+        manager.lastSwingMap.high = swing;
+        manager.lastSwingMap.low = swing;
+    } else {
+        manager.lastSwingMap[swing.side] = swing;
+    }
 }
 
 export class StateManager {
@@ -762,11 +856,11 @@ export class StateManager {
     config: THConfig = {};
 
     // tradinghubCalculateSwings
+    prelastSwingIndex: number = -1;
     lastSwingIndex: number = -1;
     processingSwings = new Map<number, {
-        currentCandle: HistoryObject,
-        nextIndex: number,
-        status: 'draft' | 'nextIndex'
+        prevCandle: HistoryObject,
+        currentCandle: HistoryObject
     }>()
 
     prelastInternalSwing: Record<'high' | 'low', Swing> = {
@@ -899,6 +993,10 @@ export class StateManager {
             time: this.candles[index].time,
             side: idmSide,
             price: this.candles[index][idmSide],
+            _sidePrice: {
+                high: this.candles[index].high,
+                low: this.candles[index].low
+            },
             isIFC: true
         });
 
@@ -918,7 +1016,7 @@ export class StateManager {
         })
     }
 
-    getClosestCross(index: number, options: {isIDM?: boolean, isCHoCH?: boolean} = {}){
+    getClosestCross(index: number, options: { isIDM?: boolean, isCHoCH?: boolean } = {}) {
         let idm: Cross = null;
         let OB_IDM_SWING: Swing = null;
         for (let i = index; i >= 0; i--) {
@@ -1169,7 +1267,7 @@ export class StateManager {
             updateExtremum(this, i, 'high', this.swings[i]);
             updateExtremum(this, i, 'low', this.swings[i]);
 
-            updateLast(this, this.swings[i])
+            updateLast(this, i)
         }
     }
 
@@ -1182,7 +1280,10 @@ export class StateManager {
             this.swings[0] = new Swing({
                 side: 'high',
                 time: this.candles[0].time,
-                price: this.candles[0].high,
+                _sidePrice: {
+                    high: this.candles[0].high,
+                    low: this.candles[0].low
+                },
                 index: 0
             });
         }
@@ -1207,8 +1308,8 @@ export class StateManager {
             let diff = nextIndex - rootIndex - 1;
             nextCandle = this.candles[nextIndex]
 
-            tryCalculatePullback(rootIndex, 'high', diff, prevCandle, currentCandle, nextCandle, this.swings);
-            tryCalculatePullback(rootIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
+            tryCalculatePullbackOld(rootIndex, 'high', diff, prevCandle, currentCandle, nextCandle, this.swings);
+            tryCalculatePullbackOld(rootIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
 
             // фильтруем вершины подряд
             filterDoubleSwings(rootIndex, lastSwingIndex, newIndex => lastSwingIndex = newIndex, this.swings);
@@ -1227,80 +1328,15 @@ export class StateManager {
             this.swings[0] = new Swing({
                 side: 'high',
                 time: this.candles[0].time,
-                price: this.candles[0].high,
+                _sidePrice: {
+                    high: this.candles[0].high,
+                    low: this.candles[0].low
+                },
                 index: 0
             });
             this.lastSwingMap[this.swings[0].side] = this.swings[0];
+            this.lastSwingIndex = 0;
             return;
-        }
-
-        for (let i = 0; i < this.processingSwings.size; i++) {
-            const [processingIndex, sw] = Array.from(this.processingSwings)[i];
-
-            let prevCandle = this.candles[processingIndex - 1];
-            let {
-                currentCandle,
-                nextIndex,
-                status
-            } = sw;
-            let nextCandle = this.candles[nextIndex]
-
-            if (!nextCandle) {
-                continue;
-            }
-
-            if (status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
-                status = 'nextIndex';
-            } else {
-                nextIndex = rootIndex + 1;
-            }
-            this.processingSwings.set(processingIndex, {
-                ...sw,
-                nextIndex,
-                status
-            });
-
-            if (status === 'draft') {
-                continue;
-            }
-
-            let diff = nextIndex - processingIndex - 1;
-            nextCandle = this.candles[nextIndex]
-
-            tryCalculatePullback(processingIndex, 'high', diff, prevCandle, currentCandle, nextCandle, this.swings);
-            tryCalculatePullback(processingIndex, 'low', diff, prevCandle, currentCandle, nextCandle, this.swings);
-
-            // markHHLL
-            updateLast(this, this.swings[processingIndex]);
-
-            // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
-            filterDoubleSwings(processingIndex, this.lastSwingIndex, newIndex => this.lastSwingIndex = newIndex, this.swings);
-
-            this.processingSwings.delete(processingIndex);
-
-            // markHHLL
-            updateExtremum(this, rootIndex, 'high', this.swings[processingIndex]);
-            updateExtremum(this, rootIndex, 'low', this.swings[processingIndex]);
-
-            confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
-            confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
-
-            // deleteInternalStructure
-            // if (this.config.oneIteration) {
-                // deleteInternalOneIt(processingIndex, 'high', this);
-                // deleteInternalOneIt(processingIndex, 'low', this);
-                //
-                // updateExtremumOneIt(processingIndex, 'high', this);
-                // updateExtremumOneIt(processingIndex, 'low', this);
-            // }
-
-            if (this.config.showIFC)
-                this.markIFCOneIt(processingIndex);
-        }
-
-        if (this.config.oneIteration) {
-            // Удаляем IDM у удаленных LL/HH TODO нужно переместить в цикл выше
-            this.boses = this.boses.map(b => !this.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
         }
 
         // Если текущая свечка внутренняя для предыдущей - идем дальше
@@ -1313,10 +1349,55 @@ export class StateManager {
 
         // Если текущая свечка не внутренняя - начинаем поиск свинга
         this.processingSwings.set(rootIndex, {
-            currentCandle: this.candles[rootIndex],
-            nextIndex: rootIndex + 1,
-            status: 'draft'
+            prevCandle: leftCandle,
+            currentCandle: this.candles[rootIndex]
         });
+
+        for (let i = 0; i < this.processingSwings.size; i++) {
+            const [processingIndex, sw] = Array.from(this.processingSwings)[i];
+
+            let {
+                prevCandle,
+                currentCandle
+            } = sw;
+
+            // TODO Если свеча одновременно и хай и лой - то не нужно проверять nextCandle
+
+            tryCalculatePullback(this, processingIndex, 'high', prevCandle, currentCandle);
+            tryCalculatePullback(this, processingIndex, 'low', prevCandle, currentCandle);
+
+            // markHHLL
+            updateLast(this, processingIndex);
+
+            // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
+            // filterDoubleSwings(processingIndex, this.lastSwingIndex, newIndex => this.lastSwingIndex = newIndex, this.swings);
+
+            this.processingSwings.delete(processingIndex);
+
+            // markHHLL
+            updateExtremum(this, rootIndex, 'high', this.swings[processingIndex]);
+            updateExtremum(this, rootIndex, 'low', this.swings[processingIndex]);
+
+            confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
+            confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
+
+            // deleteInternalStructure
+            // if (this.config.oneIteration) {
+            // deleteInternalOneIt(processingIndex, 'high', this);
+            // deleteInternalOneIt(processingIndex, 'low', this);
+            //
+            // updateExtremumOneIt(processingIndex, 'high', this);
+            // updateExtremumOneIt(processingIndex, 'low', this);
+            // }
+
+            if (this.config.showIFC)
+                this.markIFCOneIt(processingIndex);
+        }
+
+        if (this.config.oneIteration) {
+            // Удаляем IDM у удаленных LL/HH TODO нужно переместить в цикл выше
+            this.boses = this.boses.map(b => !this.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
+        }
     }
 }
 
@@ -1369,7 +1450,10 @@ const confirmBOS = (i: number, type: 'high' | 'low',
     let to: Swing = isLastCandle ? new Swing({
         index: i,
         time: manager.candles[i].time,
-        price: manager.candles[i].close
+        _sidePrice: {
+            high: manager.candles[i].close,
+            low: manager.candles[i].close
+        },
     }) : null;
     let isConfirmed = false;
     let isSwipedLiquidity = false;
@@ -1379,13 +1463,21 @@ const confirmBOS = (i: number, type: 'high' | 'low',
     if (isTakenOutLiquidity) {
         if (showFake) {
             isSwipedLiquidity = true;
-            to = new Swing({index: i, time: manager.candles[i].time, price: manager.candles[i].close});
+            to = new Swing({index: i, time: manager.candles[i].time,
+                _sidePrice: {
+                    high: manager.candles[i].close,
+                    low: manager.candles[i].close
+                },});
         }
         const isClose = hasClose(type, liquidityCandle, manager.candles[i]);
         // Если закрылись выше прошлой точки
         if (isClose) {
             if (!showFake) {
-                to = new Swing({index: i, time: manager.candles[i].time, price: manager.candles[i].close});
+                to = new Swing({index: i, time: manager.candles[i].time,
+                    _sidePrice: {
+                        high: manager.candles[i].close,
+                        low: manager.candles[i].close
+                    },});
             }
             isConfirmed = true;
         } else {
@@ -1396,7 +1488,10 @@ const confirmBOS = (i: number, type: 'high' | 'low',
                 manager.swings[i] = new Swing({
                     side: type,
                     time: manager.candles[i].time,
-                    price: manager.candles[i][type],
+                    _sidePrice: {
+                        high: manager.candles[i].high,
+                        low: manager.candles[i].low
+                    },
                     index: i
                 })
                 manager.swings[i].markExtremum();

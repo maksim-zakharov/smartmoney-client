@@ -1,38 +1,17 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {
-    Button,
-    Checkbox,
-    Divider,
-    Form,
-    Input,
-    InputNumber,
-    Radio,
-    Row,
-    Slider,
-    SliderSingleProps,
-    Space
-} from "antd";
+import {Button, Checkbox, Divider, Form, Input, InputNumber, Radio, Row, Slider, SliderSingleProps, Space} from "antd";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
-import {
-    createRectangle2,
-    fetchCandlesFromAlor, fetchRiskRates,
-    getSecurity,
-    refreshToken
-} from "../utils";
+import {createRectangle2, fetchCandlesFromAlor, fetchRiskRates, getSecurity, refreshToken} from "../utils";
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
-import {
-    calculatePositionsByOrderblocks,
-} from "../samurai_patterns";
+import {calculatePositionsByOrderblocks,} from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {
-    calculateTesting, notTradingTime
-} from "../th_ultimate";
+import {calculateTesting, notTradingTime} from "../th_ultimate";
 import {useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 
@@ -112,7 +91,7 @@ export const SoloTestPage = () => {
     }, [ticker])
 
     useEffect(() => {
-            fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
+        fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
     const setSize = (tf: string) => {
@@ -130,26 +109,26 @@ export const SoloTestPage = () => {
         searchParams.set('toDate', value[1].endOf('day').unix());
         setSearchParams(searchParams);
     }
-    
+
     const {swings, trend, boses, orderBlocks, positions} = useMemo(() => {
         let {swings, trend, boses, orderBlocks} = calculateTesting(data.slice(0, data.length - offset), config);
 
         let positions = [];
 
-        if(config.tradeOB){
+        if (config.tradeOB) {
             const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, maxDiff, multiStop, config.limitOrderTrade, stopPaddingPercent);
             positions.push(...fakeoutPositions);
         }
 
-        if(!isShortSellPossible){
+        if (!isShortSellPossible) {
             positions = positions.filter(p => p.side !== 'short');
         }
 
-        return { swings, trend, boses, orderBlocks, positions: positions.sort((a, b) => a.openTime - b.openTime)};
+        return {swings, trend, boses, orderBlocks, positions: positions.sort((a, b) => a.openTime - b.openTime)};
     }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
-        if(!config.showRobotOB || !robotOB.length){
+        if (!config.showRobotOB || !robotOB.length) {
             return 0;
         }
 
@@ -187,7 +166,7 @@ export const SoloTestPage = () => {
     }, [robotOB, config.showRobotOB, orderBlocks]);
 
     const profit = useMemo(() => {
-        if(!security){
+        if (!security) {
             return {
                 PnL: 0,
                 profits: 0,
@@ -212,24 +191,24 @@ export const SoloTestPage = () => {
     const primitives = useMemo(() => {
         const lastCandle = data[data.length - 1];
         const _primitives = [];
-        if(config.showOB || config.showEndOB || config.imbalances){
+        if (config.showOB || config.showEndOB || config.imbalances) {
             const checkShow = (ob) => {
                 let result = false;
-                if(!ob){
+                if (!ob) {
                     return false;
                 }
-                if(config.showOB && !Boolean(ob.endCandle)){
+                if (config.showOB && !Boolean(ob.endCandle)) {
                     result = true;
                 }
-                if(config.showEndOB && Boolean(ob.endCandle)){
+                if (config.showEndOB && Boolean(ob.endCandle)) {
                     result = true;
                 }
-                if(ob.isSMT && !config.showSMT){
+                if (ob.isSMT && !config.showSMT) {
                     result = false;
                 }
                 return result;
             }
-            if(config.imbalances){
+            if (config.imbalances) {
                 _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock => createRectangle2({
                     leftTop: {
                         price: orderBlock.lastOrderblockCandle.high,
@@ -247,30 +226,33 @@ export const SoloTestPage = () => {
                     borderWidth: 2,
                     borderColor: '#222'
                 })));
-                if(config.showRobotOB)
-                _primitives.push(...robotOB.filter(checkShow).map(orderBlock => createRectangle2({
-                    leftTop: {
-                        price: orderBlock.lastOrderblockCandle.high,
-                        time: orderBlock.lastOrderblockCandle.time
-                    },
-                    rightBottom: {
-                        price: orderBlock.lastImbalanceCandle[orderBlock.type],
-                        time: (orderBlock.endCandle || lastCandle).time
-                    }
-                }, {
-                    fillColor: 'rgba(179, 199, 219, .3)',
-                    showLabels: false,
-                    borderLeftWidth: 0,
-                    borderRightWidth: 0,
-                    borderWidth: 2,
-                    borderColor: '#222'
-                })));
+                if (config.showRobotOB)
+                    _primitives.push(...robotOB.filter(checkShow).map(orderBlock => createRectangle2({
+                        leftTop: {
+                            price: orderBlock.lastOrderblockCandle.high,
+                            time: orderBlock.lastOrderblockCandle.time
+                        },
+                        rightBottom: {
+                            price: orderBlock.lastImbalanceCandle[orderBlock.type],
+                            time: (orderBlock.endCandle || lastCandle).time
+                        }
+                    }, {
+                        fillColor: 'rgba(179, 199, 219, .3)',
+                        showLabels: false,
+                        borderLeftWidth: 0,
+                        borderRightWidth: 0,
+                        borderWidth: 2,
+                        borderColor: '#222'
+                    })));
             }
-            if(config.showRobotOB)
+            if (config.showRobotOB)
                 _primitives.push(...robotOB.filter(checkShow).map(orderBlock =>
                     createRectangle2({
                             leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
-                            rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
+                            rightBottom: {
+                                price: orderBlock.startCandle.low,
+                                time: (orderBlock.endCandle || lastCandle).time
+                            }
                         },
                         {
                             fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
@@ -288,6 +270,7 @@ export const SoloTestPage = () => {
                         borderWidth: 0,
                     })));
         }
+
         function getDate(time: Time): Date {
             if (isUTCTimestamp(time)) {
                 return new Date(time);
@@ -352,19 +335,19 @@ export const SoloTestPage = () => {
 
     const markers = useMemo(() => {
         const allMarkers = [];
-        if(config.showOB || config.showEndOB || config.imbalances) {
+        if (config.showOB || config.showEndOB || config.imbalances) {
             const checkShow = (ob) => {
                 let result = false;
-                if(!ob){
+                if (!ob) {
                     return false;
                 }
-                if(config.showOB && !Boolean(ob.endCandle)){
+                if (config.showOB && !Boolean(ob.endCandle)) {
                     result = true;
                 }
-                if(config.showEndOB && Boolean(ob.endCandle)){
+                if (config.showEndOB && Boolean(ob.endCandle)) {
                     result = true;
                 }
-                if(ob.isSMT && !config.showSMT){
+                if (ob.isSMT && !config.showSMT) {
                     result = false;
                 }
                 return result;
@@ -377,7 +360,7 @@ export const SoloTestPage = () => {
                 text: s.text
             })));
 
-            if(config.showRobotOB){
+            if (config.showRobotOB) {
                 allMarkers.push(...robotOB.filter(checkShow).map(s => ({
                     color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
                     time: (s.textTime || s.time) as Time,
@@ -387,17 +370,32 @@ export const SoloTestPage = () => {
                 })));
             }
         }
-        if(config.swings){
-            allMarkers.push(...swings.filter(Boolean).map(s => ({
+        if (config.swings) {
+            allMarkers.push(...swings.filter(Boolean).map(s => s.side === 'double' ? [
+                {
+                    color: markerColors.bullColor,
+                    time: (s.time) as Time,
+                    shape: 'circle',
+                    position: 'aboveBar',
+                    text: s.text
+                },
+                {
+                    color: markerColors.bearColor,
+                    time: (s.time) as Time,
+                    shape: 'circle',
+                    position: 'belowBar',
+                    text: s.text
+                }
+            ] : [{
                 color: s.side === 'high' ? markerColors.bullColor : markerColors.bearColor,
                 time: (s.time) as Time,
                 shape: 'circle',
                 position: s.side === 'high' ? 'aboveBar' : 'belowBar',
                 text: s.text
-            })));
+            }]).flat());
         }
 
-        if(config.showPositions){
+        if (config.showPositions) {
             allMarkers.push(...poses.flat())
         }
 
@@ -406,7 +404,7 @@ export const SoloTestPage = () => {
 
     const lineSerieses = useMemo(() => {
         const _lineSerieses = [];
-        if(config.showPositions){
+        if (config.showPositions) {
             _lineSerieses.push(...poses.map(([open, close]) => ({
                 options: {
                     color: open.pnl > 0 ? markerColors.bullColor : markerColors.bearColor, // Цвет линии
@@ -421,7 +419,7 @@ export const SoloTestPage = () => {
                 ]
             })));
         }
-        if(config.BOS){
+        if (config.BOS) {
             _lineSerieses.push(...boses.filter(Boolean).map(marker => {
                 const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
                 const options = {
@@ -478,16 +476,20 @@ export const SoloTestPage = () => {
         <Space>
             <Row>
                 <Form.Item label="Риск на сделку">
-                    <Input style={{width: 80}} value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))}/>
+                    <Input style={{width: 80}} value={stopMargin}
+                           onChange={(e) => setStopMargin(Number(e.target.value))}/>
                 </Form.Item>
                 <Form.Item label="Отступ стопа в %">
-                    <InputNumber style={{width: 80}} value={stopPaddingPercent} onChange={(e) => setstopPaddingPercent(Number(e))}/>
+                    <InputNumber style={{width: 80}} value={stopPaddingPercent}
+                                 onChange={(e) => setstopPaddingPercent(Number(e))}/>
                 </Form.Item>
                 <Form.Item label="Risk Rate">
-                    <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop} min={1} max={10} step={1}/>
+                    <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop}
+                            min={1} max={10} step={1}/>
                 </Form.Item>
                 <Form.Item label="Percent Rate">
-                    <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0} max={1} step={0.1}/>
+                    <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0}
+                            max={1} step={0.1}/>
                 </Form.Item>
                 <Space>
                     <div>Профит: {new Intl.NumberFormat('ru-RU', {
@@ -537,13 +539,14 @@ export const SoloTestPage = () => {
                 <Radio.Button value="prod">Production</Radio.Button>\
             </Radio.Group>
         </Space>
-        <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers} data={data.map((d, i, array) => i >= array.length - 1 - offset ?
-            {
-                ...d, borderColor: "rgba(44,60,75, 1)",
-                wickColor: "rgba(44,60,75, 1)",
+        <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers}
+               data={data.map((d, i, array) => i >= array.length - 1 - offset ?
+                   {
+                       ...d, borderColor: "rgba(44,60,75, 1)",
+                       wickColor: "rgba(44,60,75, 1)",
 
-                color: 'rgba(0, 0, 0, 0)'
-            } : d)}
+                       color: 'rgba(0, 0, 0, 0)'
+                   } : d)}
                ema={[]}/>
     </>;
 }

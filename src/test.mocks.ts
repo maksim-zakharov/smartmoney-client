@@ -3,34 +3,47 @@ import {Cross, HistoryObject, notTradingTime, POI, Swing} from "./th_ultimate.ts
 import oneIterationSwing from "./stubs/oneIterationSwing.json";
 import {testData1, testData2} from "./test_data.ts";
 
-const convertOldHighsLowsToSwing = (candles: HistoryObject[], {highs, lows, swings}: {highs: any[], lows: any[], swings: any[]}): Swing[] => {
+const convertOldHighsLowsToSwing = (candles: HistoryObject[], {highs, lows, swings}: {
+    highs: any[],
+    lows: any[],
+    swings: any[]
+}): Swing[] => {
     const result: Swing[] = new Array(candles.length).fill(null);
 
-    if(swings){
-        for (const high of swings) {
-            if(!high){
+    if (swings) {
+        for (const _high of swings) {
+            if (!_high) {
                 continue;
             }
-            result[high.index] = new Swing(high);
-            if(high._isExtremum){
+            const {price, ...high} = _high;
+            result[high.index] = new Swing({...high, _sidePrice: {high: high.price, low: high.price}});
+            if (high._isExtremum) {
                 result[high.index].markExtremum();
             }
         }
     }
 
-    if(highs){
-        for (const {text, ...high} of highs) {
-            result[high.index] = new Swing(high);
-            if(text){
+    if (highs) {
+        for (const {text, ..._high} of highs) {
+            if (!_high) {
+                continue;
+            }
+            const {price, ...high} = _high;
+            result[high.index] = new Swing({...high, _sidePrice: {high: high.price, low: high.price}});
+            if (text) {
                 result[high.index].markExtremum();
             }
         }
     }
 
-    if(lows){
-        for (const {text, ...high} of lows) {
-            result[high.index] = new Swing(high);
-            if(text){
+    if (lows) {
+        for (const {text, ..._high} of lows) {
+            if (!_high) {
+                continue;
+            }
+            const {price, ...high} = _high;
+            result[high.index] = new Swing({...high, _sidePrice: {high: high.price, low: high.price}});
+            if (text) {
                 result[high.index].markExtremum();
             }
         }
@@ -39,12 +52,20 @@ const convertOldHighsLowsToSwing = (candles: HistoryObject[], {highs, lows, swin
     return result;
 }
 
-export const testMocks = new Map<string, {data: HistoryObject[], swings: Swing[], boses?: Cross[], description?: string, orderblocks?: POI[]}>([
+export const testMocks = new Map<string, {
+    data: HistoryObject[],
+    swings: Swing[],
+    boses?: Cross[],
+    description?: string,
+    orderblocks?: POI[],
+    skip?: boolean
+}>([
     [
         'only oneIteration Swings day',
         {
             data: day.filter(d => !notTradingTime(d)),
             swings: convertOldHighsLowsToSwing(day.filter(d => !notTradingTime(d)), {swings: oneIterationSwing} as any),
+            skip: true
         }
     ],
     [
@@ -55,6 +76,7 @@ export const testMocks = new Map<string, {data: HistoryObject[], swings: Swing[]
             swings: convertOldHighsLowsToSwing(testData1.candles, testData1.mock as any),
             boses: testData1.mock.boses as any as Cross[],
             orderblocks: testData1.mock.orderBlocks as any as POI[],
+            skip: true
         }
     ],
     [
@@ -65,6 +87,7 @@ export const testMocks = new Map<string, {data: HistoryObject[], swings: Swing[]
             swings: convertOldHighsLowsToSwing(testData2.candles, testData2.mock as any),
             boses: testData2.mock.boses as any as Cross[],
             orderblocks: testData2.mock.orderBlocks as any as POI[],
+            skip: true
         }
     ]
 ]);

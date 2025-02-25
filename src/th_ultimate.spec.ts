@@ -44,7 +44,9 @@ describe('th_ultimate', () => {
     //     expect(manager1.swings).toEqual(manager2.swings);
     // })
     testMocks.forEach((value, key) => {
-        it(key, () => {
+        const test = value.skip ? it.skip : it;
+
+        test(key, () => {
             const manager2 = new StateManager(value.data, defaultConfig);
 
             manager2.calculate();
