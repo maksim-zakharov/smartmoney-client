@@ -81,10 +81,11 @@ jobs:
     runs-on: ubuntu-latest
     if: always()  # Всегда выполняем после тестов
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download Allure report
+        uses: actions/download-artifact@v4
         with:
           name: allure-report
-          path: ./allure-report
+          path: ./dist/allure-report  # Помещаем сразу в dist
 
       - name: Deploy Allure Report
         uses: peaceiris/actions-gh-pages@v3
