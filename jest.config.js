@@ -32,13 +32,13 @@ export default {
     ],
     "coverageDirectory": "../coverage",
     testEnvironment: "allure-jest/node",
-    environmentInfo: {
-        os_platform: os.platform(),
-        os_release: os.release(),
-        os_version: os.version(),
-        node_version: process.version,
-    },
     testEnvironmentOptions: {
-        resultsDir: "allure-results",
+        resultsDir: "./allure-results",
+        environmentInfo: {
+            os_platform: os.platform(),
+            os_release: os.release(),
+            os_version: os.version(),
+            node_version: process.version,
+        },
     }
 }
