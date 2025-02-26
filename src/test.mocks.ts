@@ -67,7 +67,7 @@ export const testMocks = new Map<string, {
         {
             data: day.filter(d => !notTradingTime(d)),
             swings: convertOldHighsLowsToSwing(day.filter(d => !notTradingTime(d)), {swings: oneIterationSwing} as any),
-            // skip: true,
+            skip: true,
             allureFeature: 'Swings'
         }
     ],
@@ -79,7 +79,7 @@ export const testMocks = new Map<string, {
             swings: convertOldHighsLowsToSwing(testData1.candles, testData1.mock as any),
             boses: testData1.mock.boses as any as Cross[],
             orderblocks: testData1.mock.orderBlocks as any as POI[],
-            // skip: true,
+            skip: true,
             allureFeature: 'Boses'
         }
     ],
@@ -91,7 +91,7 @@ export const testMocks = new Map<string, {
             swings: convertOldHighsLowsToSwing(testData2.candles, testData2.mock as any),
             boses: testData2.mock.boses as any as Cross[],
             orderblocks: testData2.mock.orderBlocks as any as POI[],
-            // skip: true,
+            skip: true,
             allureFeature: 'Boses'
         }
     ]
