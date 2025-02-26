@@ -1,5 +1,6 @@
 import {defaultConfig, StateManager} from "./th_ultimate";
 import {testMocks} from "./test.mocks";
+import * as allure from "allure-js-commons";
 
 const expectIteration = (received: any[], expected: any[]) => {
     // Логируем несовпадающие элементы
@@ -46,7 +47,11 @@ describe('th_ultimate', () => {
     testMocks.forEach((value, key) => {
         const test = value.skip ? it.skip : it;
 
-        test(key, () => {
+        test(key, async () => {
+            value.allureEpic && await allure.epic(value.allureEpic);
+            value.allureFeature && await allure.feature(value.allureFeature);
+            await allure.story(key);
+
             const manager2 = new StateManager(value.data, defaultConfig);
 
             manager2.calculate();
