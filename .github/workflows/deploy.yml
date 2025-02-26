@@ -59,16 +59,15 @@ jobs:
         run: npm ci
 
       - name: Run tests and collect results
-        run: |
-          npm test
-          # Если нужно сохранить сырые результаты тестов
-          mkdir -p test-results
-          cp ./allure-results/* test-results/ || echo "No test results"
+        run: npm test
 
-      - name: Generate Allure report
-        if: success()
-        run: |
-          npx allure generate ./allure-results -o ./build/allure-report
+      - name: Build test report
+        uses: simple-elf/allure-report-action@v1.7
+        if: always()
+        with:
+          gh_pages: gh-pages
+          allure_history: allure-history
+          allure_results: dist/allure-results
 
   build:
     needs: [prepare, test]
@@ -112,6 +111,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
   notify:
     needs: [ test, build, deploy ]
     if: always()
