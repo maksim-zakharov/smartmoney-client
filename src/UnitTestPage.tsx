@@ -3,9 +3,13 @@ import {Layout, Menu, MenuProps, Typography} from "antd";
 import React, {useMemo, useState} from "react";
 import {Content} from "antd/es/layout/layout";
 import {calculateTesting, Cross, defaultConfig, HistoryObject, POI, Swing} from "./th_ultimate";
-import {LineStyle, Time} from "lightweight-charts";
 import {Chart} from "./SoloTestPage/TestChart";
-import {createRectangle2, swingsToMarkers} from "./utils";
+import {
+    bosesToLineSerieses,
+    orderblocksToImbalancePrimitives,
+    orderblocksToOrderblocksPrimitives,
+    swingsToMarkers
+} from "./utils";
 import {testMocks} from "./test.mocks.ts";
 
 type MenuItem = Required<MenuProps>['items'][number] & { description?: string, data: HistoryObject[] };
@@ -34,75 +38,12 @@ const BOSChart = ({data, swings: outerSwings, boses: outerBoses, orderblocks: ou
 
     const lastCandle = data[data.length - 1];
     const _primitives = [];
-    _primitives.push(...orderBlocks.filter(Boolean).map(orderBlock => createRectangle2({
-        leftTop: {
-            price: orderBlock.lastOrderblockCandle.high,
-            time: orderBlock.lastOrderblockCandle.time
-        },
-        rightBottom: {
-            price: orderBlock.lastImbalanceCandle[orderBlock.side],
-            time: (orderBlock.endCandle || lastCandle).time
-        }
-    }, {
-        fillColor: 'rgba(179, 199, 219, .3)',
-        showLabels: false,
-        borderLeftWidth: 0,
-        borderRightWidth: 0,
-        borderWidth: 2,
-        borderColor: '#222'
-    })));
-    _primitives.push(...orderBlocks.filter(Boolean).map(orderBlock =>
-        createRectangle2({
-                leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
-                rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
-            },
-            {
-                fillColor: orderBlock.side === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
-                showLabels: false,
-                borderWidth: 0,
-            })));
+    _primitives.push(...orderblocksToImbalancePrimitives(orderBlocks, Boolean, lastCandle));
+    _primitives.push(...orderblocksToOrderblocksPrimitives(orderBlocks, Boolean, lastCandle));
 
-    const markerColors = {
-        bearColor: "rgb(157, 43, 56)",
-        bullColor: "rgb(20, 131, 92)"
-    }
-    const allMarkers1 = [];
-    allMarkers1.push(...swingsToMarkers(swings));
+    const allMarkers1 = swingsToMarkers(swings);
 
-    const _lineSerieses = [];
-    _lineSerieses.push(...boses.filter(Boolean).map(marker => {
-        const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
-        const options = {
-            color, // Цвет линии
-            priceLineVisible: false,
-            lastValueVisible: false,
-            lineWidth: 1,
-            lineStyle: LineStyle.LargeDashed,
-        };
-        let data = [];
-        let markers = [];
-// 5. Устанавливаем данные для линии
-        if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
-            data = [
-                {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-            ];
-        } else
-            data = [
-                {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
-                {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-            ].sort((a, b) => a.time - b.time);
-
-        markers = [{
-            color,
-            time: (marker.textCandle.time) as Time,
-            shape: 'text',
-            position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-            text: marker.text
-        }]
-        return {options, data, markers}
-    }));
+    const _lineSerieses = bosesToLineSerieses(boses);
 
     return <Chart width={1400} height={300} markers={allMarkers1} lineSerieses={_lineSerieses} primitives={_primitives}
                   data={data} ema={[]}/>

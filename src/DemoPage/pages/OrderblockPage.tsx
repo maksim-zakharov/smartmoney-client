@@ -3,10 +3,13 @@ import img15 from "../../assets/img_15.png"
 import img16 from "../../assets/img_16.png"
 import img17 from "../../assets/img_17.png"
 import img18 from "../../assets/img_18.png"
-import {LineStyle, Time} from "lightweight-charts";
 import {Chart} from "../../SoloTestPage/TestChart";
 import React from "react";
-import {createRectangle2, swingsToMarkers} from "../../utils";
+import {
+    orderblocksToImbalancePrimitives,
+    orderblocksToOrderblocksPrimitives,
+    swingsToMarkers
+} from "../../utils";
 import {
     calculatePOI,
     HistoryObject,
@@ -26,33 +29,8 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
     const orderBlocks = calculatePOI(manager);
     const lastCandle = data[data.length - 1];
     const _primitives = [];
-    _primitives.push(...orderBlocks.map(orderBlock => createRectangle2({
-        leftTop: {
-            price: orderBlock.lastOrderblockCandle.high,
-            time: orderBlock.lastOrderblockCandle.time
-        },
-        rightBottom: {
-            price: orderBlock.lastImbalanceCandle[orderBlock.side],
-            time: (orderBlock.endCandle || lastCandle).time
-        }
-    }, {
-        fillColor: 'rgba(179, 199, 219, .3)',
-        showLabels: false,
-        borderLeftWidth: 0,
-        borderRightWidth: 0,
-        borderWidth: 2,
-        borderColor: '#222'
-    })));
-    _primitives.push(...orderBlocks.map(orderBlock =>
-        createRectangle2({
-                leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
-                rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
-            },
-            {
-                fillColor: orderBlock.side === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
-                showLabels: false,
-                borderWidth: 0,
-            })));
+    _primitives.push(...orderblocksToImbalancePrimitives(orderBlocks, ob => true, lastCandle));
+    _primitives.push(...orderblocksToOrderblocksPrimitives(orderBlocks, () => true, lastCandle));
 
     const markerColors = {
         bearColor: "rgb(157, 43, 56)",

@@ -5,10 +5,10 @@ import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
 import {
-    createRectangle2,
+    bosesToLineSerieses,
     fetchCandlesFromAlor,
     fetchRiskRates,
-    getSecurity,
+    getSecurity, orderblocksToImbalancePrimitives, orderblocksToOrderblocksPrimitives,
     refreshToken,
     swingsToMarkers
 } from "../utils";
@@ -19,7 +19,7 @@ import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
 import {calculateTesting, notTradingTime} from "../th_ultimate";
-import {useOrderblocksQuery} from "../api";
+import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 
 const markerColors = {
@@ -48,7 +48,7 @@ export const SoloTestPage = () => {
     const toDate = searchParams.get('toDate') || dayjs('2025-10-01T00:00:00Z').endOf('day').unix();
     const [stopMargin, setStopMargin] = useState(50);
     const [stopPaddingPercent, setstopPaddingPercent] = useState(0);
-    const [security, setSecurity] = useState();
+    const [security, setSecurity] = useState<Security>();
 
     const [riskRate, setRiskRate] = useState();
 
@@ -216,66 +216,13 @@ export const SoloTestPage = () => {
                 return result;
             }
             if (config.imbalances) {
-                _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock => createRectangle2({
-                    leftTop: {
-                        price: orderBlock.lastOrderblockCandle.high,
-                        time: orderBlock.lastOrderblockCandle.time
-                    },
-                    rightBottom: {
-                        price: orderBlock.lastImbalanceCandle[orderBlock.side],
-                        time: (orderBlock.endCandle || lastCandle).time
-                    }
-                }, {
-                    fillColor: 'rgba(179, 199, 219, .3)',
-                    showLabels: false,
-                    borderLeftWidth: 0,
-                    borderRightWidth: 0,
-                    borderWidth: 2,
-                    borderColor: '#222'
-                })));
+                _primitives.push(...orderblocksToImbalancePrimitives(orderBlocks, checkShow, lastCandle));
                 if (config.showRobotOB)
-                    _primitives.push(...robotOB.filter(checkShow).map(orderBlock => createRectangle2({
-                        leftTop: {
-                            price: orderBlock.lastOrderblockCandle.high,
-                            time: orderBlock.lastOrderblockCandle.time
-                        },
-                        rightBottom: {
-                            price: orderBlock.lastImbalanceCandle[orderBlock.type],
-                            time: (orderBlock.endCandle || lastCandle).time
-                        }
-                    }, {
-                        fillColor: 'rgba(179, 199, 219, .3)',
-                        showLabels: false,
-                        borderLeftWidth: 0,
-                        borderRightWidth: 0,
-                        borderWidth: 2,
-                        borderColor: '#222'
-                    })));
+                    _primitives.push(...orderblocksToImbalancePrimitives(robotOB, checkShow, lastCandle));
             }
             if (config.showRobotOB)
-                _primitives.push(...robotOB.filter(checkShow).map(orderBlock =>
-                    createRectangle2({
-                            leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
-                            rightBottom: {
-                                price: orderBlock.startCandle.low,
-                                time: (orderBlock.endCandle || lastCandle).time
-                            }
-                        },
-                        {
-                            fillColor: orderBlock.type === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
-                            showLabels: false,
-                            borderWidth: 0,
-                        })));
-            _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock =>
-                createRectangle2({
-                        leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
-                        rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
-                    },
-                    {
-                        fillColor: orderBlock.side === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
-                        showLabels: false,
-                        borderWidth: 0,
-                    })));
+                _primitives.push(...orderblocksToOrderblocksPrimitives(robotOB, checkShow, lastCandle));
+            _primitives.push(...orderblocksToOrderblocksPrimitives(orderBlocks, checkShow, lastCandle));
         }
 
         function getDate(time: Time): Date {
@@ -405,39 +352,7 @@ export const SoloTestPage = () => {
             })));
         }
         if (config.BOS) {
-            _lineSerieses.push(...boses.filter(Boolean).map(marker => {
-                const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
-                const options = {
-                    color, // Цвет линии
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                    lineWidth: 1,
-                    lineStyle: LineStyle.LargeDashed,
-                };
-                let data = [];
-                let markers = [];
-// 5. Устанавливаем данные для линии
-                if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
-                    data = [
-                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-                    ];
-                } else
-                    data = [
-                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                        {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
-                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-                    ].sort((a, b) => a.time - b.time);
-
-                markers = [{
-                    color,
-                    time: (marker.textCandle.time) as Time,
-                    shape: 'text',
-                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-                    text: marker.text
-                }]
-                return {options, data, markers}
-            }));
+            _lineSerieses.push(...bosesToLineSerieses(boses));
         }
         return _lineSerieses;
     }, [poses, config.showPositions, config.BOS, boses]);

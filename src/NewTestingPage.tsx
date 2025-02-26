@@ -6,17 +6,21 @@ import dayjs, {type Dayjs} from "dayjs";
 import {Chart} from "./SoloTestPage/TestChart.tsx";
 import React, {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
-import {createRectangle2, fetchCandlesFromAlor, swingsToMarkers} from "./utils.ts";
+import {
+    bosesToLineSerieses,
+    fetchCandlesFromAlor,
+    orderblocksToImbalancePrimitives, orderblocksToOrderblocksPrimitives,
+    swingsToMarkers
+} from "./utils.ts";
 import {
     calculateTesting,
     defaultConfig,
     filterNearOrderblock,
-    hasNear,
     isNotSMT,
     notTradingTime,
-    Side, THConfig
+    THConfig
 } from "./th_ultimate.ts";
-import {LineStyle, Time} from "lightweight-charts";
+import {Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
 import useWindowDimensions from "./useWindowDimensions.tsx";
@@ -117,34 +121,9 @@ const NewTestingPage = () => {
         const _primitives = [];
         if(selectedKey === 'orderblocks'){
             if(true){ // config.imbalances
-                _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock => createRectangle2({
-                    leftTop: {
-                        price: orderBlock.lastOrderblockCandle.high,
-                        time: orderBlock.lastOrderblockCandle.time
-                    },
-                    rightBottom: {
-                        price: orderBlock.lastImbalanceCandle[orderBlock.side],
-                        time: (orderBlock.endCandle || lastCandle).time
-                    }
-                }, {
-                    fillColor: 'rgba(179, 199, 219, .3)',
-                    showLabels: false,
-                    borderLeftWidth: 0,
-                    borderRightWidth: 0,
-                    borderWidth: 2,
-                    borderColor: '#222'
-                })));
+                _primitives.push(...orderblocksToImbalancePrimitives(orderBlocks, checkShow, lastCandle));
             }
-            _primitives.push(...orderBlocks.filter(checkShow).map(orderBlock =>
-                createRectangle2({
-                        leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
-                        rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
-                    },
-                    {
-                        fillColor: orderBlock.side === 'low' ? `rgba(44, 232, 156, .3)` : `rgba(255, 117, 132, .3)`,
-                        showLabels: false,
-                        borderWidth: 0,
-                    })));
+            _primitives.push(...orderblocksToOrderblocksPrimitives(orderBlocks, checkShow, lastCandle));
         }
 
         return _primitives;
@@ -172,39 +151,7 @@ const NewTestingPage = () => {
     const lineSerieses = useMemo(() => {
         const _lineSerieses = [];
         if (selectedKey !== 'swings') { // config.BOS
-            _lineSerieses.push(...boses.filter(Boolean).map(marker => {
-                const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
-                const options = {
-                    color, // Цвет линии
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                    lineWidth: 1,
-                    lineStyle: LineStyle.LargeDashed,
-                };
-                let data = [];
-                let markers = [];
-// 5. Устанавливаем данные для линии
-                if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
-                    data = [
-                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-                    ];
-                } else
-                    data = [
-                        {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                        {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
-                        {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-                    ].sort((a, b) => a.time - b.time);
-
-                markers = [{
-                    color,
-                    time: (marker.textCandle.time) as Time,
-                    shape: 'text',
-                    position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-                    text: marker.text
-                }]
-                return {options, data, markers}
-            }));
+            _lineSerieses.push(...bosesToLineSerieses(boses));
         }
         return _lineSerieses;
     }, [boses, selectedKey]);

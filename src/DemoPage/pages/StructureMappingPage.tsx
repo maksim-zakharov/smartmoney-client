@@ -6,8 +6,7 @@ import img_6 from "../../assets/img_6.png"
 import img_7 from "../../assets/img_7.png"
 import img_8 from "../../assets/img_8.png"
 import React, {useEffect, useMemo, useState} from "react";
-import {CandlesBuilder, fetchCandlesFromAlor, swingsToMarkers} from "../../utils";
-import {LineStyle, Time} from "lightweight-charts";
+import {bosesToLineSerieses, fetchCandlesFromAlor, swingsToMarkers} from "../../utils";
 import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
 import {DatesPicker} from "../../DatesPicker";
@@ -25,11 +24,6 @@ const BOSChart = ({data, text = 'LL'}) => {
     const manager = new StateManager(data);
     manager.calculateSwingsOld();
 
-    const markerColors = {
-        bearColor: "rgb(157, 43, 56)",
-        bullColor: "rgb(20, 131, 92)"
-    }
-
     manager.markHHLLOld();
     manager.swings[3] = {...manager.swings[3], text} as Swing;
 
@@ -37,40 +31,7 @@ const BOSChart = ({data, text = 'LL'}) => {
     const allMarkers1 = [];
     allMarkers1.push(...swingsToMarkers(manager.swings))
 
-    const _lineSerieses1 = [];
-    _lineSerieses1.push(...manager.boses.filter(Boolean).map(marker => {
-        const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
-        const options = {
-            color, // Цвет линии
-            priceLineVisible: false,
-            lastValueVisible: false,
-            lineWidth: 1,
-            lineStyle: LineStyle.LargeDashed,
-        };
-        let data = [];
-        let markers = [];
-// 5. Устанавливаем данные для линии
-        if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
-            data = [
-                {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-            ];
-        } else
-            data = [
-                {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
-                {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-            ].sort((a, b) => a.time - b.time);
-
-        markers = [{
-            color,
-            time: (marker.textCandle.time) as Time,
-            shape: 'text',
-            position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-            text: marker.text
-        }]
-        return {options, data, markers}
-    }));
+    const _lineSerieses1 = bosesToLineSerieses(manager.boses);
 
     return <Chart width={300} height={200} markers={allMarkers1} lineSerieses={_lineSerieses1} primitives={[]} data={data} ema={[]}/>
 }
@@ -270,58 +231,9 @@ const StructureMappingPage = () => {
         return {trend: manager.trend, boses: manager.boses, swings: manager.swings}
     }, [data]);
 
-    const markers = useMemo(() => {
-        const markerColors = {
-            bearColor: "rgb(157, 43, 56)",
-            bullColor: "rgb(20, 131, 92)"
-        }
-        const allMarkers = [];
-        allMarkers.push(...swingsToMarkers(swings))
+    const markers = useMemo(() => swingsToMarkers(swings), [swings]);
 
-        return allMarkers;
-    }, [swings]);
-
-    const lineSerieses = useMemo(() => {
-        const markerColors = {
-            bearColor: "rgb(157, 43, 56)",
-            bullColor: "rgb(20, 131, 92)"
-        }
-        const _lineSerieses = [];
-        _lineSerieses.push(...boses.filter(Boolean).map(marker => {
-            const color = marker.type === 'high' ? markerColors.bullColor : markerColors.bearColor
-            const options = {
-                color, // Цвет линии
-                priceLineVisible: false,
-                lastValueVisible: false,
-                lineWidth: 1,
-                lineStyle: LineStyle.LargeDashed,
-            };
-            let data = [];
-            let markers = [];
-// 5. Устанавливаем данные для линии
-            if (marker.from.time === marker.textCandle.time || marker.to.time === marker.textCandle.time) {
-                data = [
-                    {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                    {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-                ];
-            } else
-                data = [
-                    {time: marker.from.time as Time, value: marker.from.price}, // начальная точка между свечками
-                    {time: marker.textCandle.time as Time, value: marker.from.price}, // конечная точка между свечками
-                    {time: marker.to.time as Time, value: marker.from.price}, // конечная точка между свечками
-                ].sort((a, b) => a.time - b.time);
-
-            markers = [{
-                color,
-                time: (marker.textCandle.time) as Time,
-                shape: 'text',
-                position: marker.type === 'high' ? 'aboveBar' : 'belowBar',
-                text: marker.text
-            }]
-            return {options, data, markers}
-        }));
-        return _lineSerieses;
-    }, [boses]);
+    const lineSerieses = useMemo(() => bosesToLineSerieses(boses), [boses]);
 
     return <>
         <Typography.Title level={3}>Inducement</Typography.Title>

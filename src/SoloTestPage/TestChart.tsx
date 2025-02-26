@@ -17,13 +17,15 @@ const markerColors = {
     bullColor: "rgb(20, 131, 92)"
 }
 
+export type TLineSeries = {
+    options: SeriesOptionsMap['Line'],
+    data?: LineData<Time>[],
+    markers?: SeriesMarker<Time>[]
+}
+
 export const Chart: FC<{
-    markers: SeriesMarker<any>[],
-    lineSerieses: {
-        options: SeriesOptionsMap['Line'],
-        data?: LineData<Time>[],
-        markers?: SeriesMarker<Time>[]
-    }[],
+    markers: SeriesMarker<Time>[],
+    lineSerieses: TLineSeries[],
     hideInternalCandles?: boolean,
     primitives: ISeriesPrimitive<any>[],
     seriesType?: any,
