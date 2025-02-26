@@ -69,6 +69,13 @@ jobs:
           allure_history: allure-history
           allure_results: dist/allure-results
 
+      - name: Upload Allure report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: ./allure-report
+          retention-days: 1  # Очистка через 1 день чтобы не засорять storage
+
   build:
     needs: [prepare, test]
     runs-on: ubuntu-latest
@@ -90,6 +97,12 @@ jobs:
 
       - name: Build project
         run: npm run build:ci
+
+      - name: Download Allure report
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-report
+          path: ./dist/allure-report  # Помещаем сразу в dist
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
