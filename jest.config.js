@@ -1,4 +1,6 @@
-module.exports = {
+import { defaults } from 'jest-config';
+
+export default {
     "reporters": [
         "default",
         [
@@ -25,11 +27,7 @@ module.exports = {
         }
     },
     "setupFilesAfterEnv": ["jest-allure/dist/setup"],
-    "moduleFileExtensions": [
-        "js",
-        "json",
-        "ts"
-    ],
+    moduleFileExtensions: [...defaults.moduleFileExtensions, "ts"],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {

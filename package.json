@@ -9,7 +9,7 @@
     "build:ci": "vite build --base=/smartmoney-client",
     "lint": "eslint smartmoney-client",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.3.0",
