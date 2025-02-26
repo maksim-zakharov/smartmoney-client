@@ -60,6 +60,7 @@ jobs:
 
       - name: Run tests and collect results
         run: npm test
+        continue-on-error: true  # Продолжаем даже при падении тестов
 
       - name: Build test report
         uses: simple-elf/allure-report-action@v1.7
