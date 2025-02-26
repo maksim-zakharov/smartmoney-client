@@ -58,8 +58,17 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests and collect results
+        run: |
+          npm test
+          # Если нужно сохранить сырые результаты тестов
+          mkdir -p test-results
+          cp ./allure-results/* test-results/ || echo "No test results"
+
+      - name: Generate Allure report
+        if: success()
+        run: |
+          npx allure generate ./allure-results -o ./build/allure-report
 
   build:
     needs: [prepare, test]
