@@ -160,9 +160,7 @@ const MainPage: React.FC = () => {
 
         const {data: security} = useSecurityQuery({symbol});
 
-        const digits = useMemo(() => security ? digitsAfterDot(security.minstep) : 2, [security]);
-
-        const candles = data.candles;
+        const candles = data.candles.filter(candle => !notTradingTime(candle));
 
         const props = {
             colors: {
