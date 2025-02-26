@@ -1,4 +1,5 @@
-import { defaults } from 'jest-config';
+import {defaults} from 'jest-config';
+import os from "node:os";
 
 export default {
     "reporters": [
@@ -9,16 +10,6 @@ export default {
                 "outputDirectory": "reports"
             }
         ],
-        [
-            "jest-allure",
-            {
-                "resultsDir": "./allure-results",
-                "environmentInfo": {
-                    "NODE_VERSION": process.version,
-                    "OS": process.platform
-                }
-            }
-        ]
     ],
     "preset": "ts-jest",
     "globals": {
@@ -26,7 +17,6 @@ export default {
             "diagnostics": false
         }
     },
-    "setupFilesAfterEnv": ["jest-allure/dist/setup"],
     moduleFileExtensions: [...defaults.moduleFileExtensions, "ts"],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
@@ -41,5 +31,14 @@ export default {
         "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    testEnvironment: "allure-jest/node",
+    environmentInfo: {
+        os_platform: os.platform(),
+        os_release: os.release(),
+        os_version: os.version(),
+        node_version: process.version,
+    },
+    testEnvironmentOptions: {
+        resultsDir: "allure-results",
+    }
 }
