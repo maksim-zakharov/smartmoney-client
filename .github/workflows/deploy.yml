@@ -76,9 +76,27 @@ jobs:
           path: ./allure-report
           retention-days: 1  # Очистка через 1 день чтобы не засорять storage
 
+  deploy_allure:
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()  # Всегда выполняем после тестов
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: allure-report
+          path: ./allure-report
+
+      - name: Deploy Allure Report
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+          keep_files: false  # Перезаписываем только отчеты
+
   build:
     needs: [prepare, test]
     runs-on: ubuntu-latest
+    if: success()  # Только если тесты прошли
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -97,12 +115,6 @@ jobs:
 
       - name: Build project
         run: npm run build:ci
-
-      - name: Download Allure report
-        uses: actions/download-artifact@v4
-        with:
-          name: allure-report
-          path: ./dist/allure-report  # Помещаем сразу в dist
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
