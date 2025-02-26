@@ -299,7 +299,6 @@ export const SoloTestPage = () => {
                     // trend = tr.trend * -1;
                 }
                 if (!_trend) {
-                    // debugger
                     return 'gray';
                 }
                 if (_trend > 0) {

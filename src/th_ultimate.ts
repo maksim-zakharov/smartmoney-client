@@ -568,7 +568,6 @@ const tryCalculatePullback = (manager: StateManager, index: number, side: Swing[
         },
         index
     });
-    manager.swings[index]?.setDebug();
 
     // Если предыдущий свип был того же типа - удаляем
     if (lastSwing
@@ -619,7 +618,6 @@ const tryCalculatePullbackOld = (index: number, type: 'high' | 'low', diff: numb
             index
         })
         swings[index] = highPullback ? swing : swings[index];
-        swings[index]?.setDebug();
     }
 }
 
@@ -731,12 +729,6 @@ const updateExtremumOneIt = (index: number, side: 'high' | 'low', manager: State
 }
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
 const updateExtremum = (manager: StateManager, index: number, side: Swing['side'], swing: Swing) => {
-    if (index === 94) {
-        debugger
-    }
-    if (index === 161) {
-        debugger
-    }
     // Проверяем свинг по выбранной стороне
     if (!swing || (swing.side !== 'double' && swing.side !== side)) {
         return;
@@ -764,9 +756,6 @@ const updateExtremum = (manager: StateManager, index: number, side: Swing['side'
     }
 
     let idmSwing = manager.lastExtremumMap[side]?.idmSwing;
-    if(index === 94){
-        debugger
-    }
     // Обновляем новый экстремум и помечаем по нему IDM
     manager.lastExtremumMap[side] = swing;
     if(manager.lastExtremumMap[side]?.index !== manager.lastSwingMap[versusSide]?.index){
@@ -806,7 +795,6 @@ const confirmExtremum = (manager: StateManager, index: number, side: Swing['side
 
     // Рисуем IDM
     const from = manager.lastExtremumMap[side].idmSwing
-    debugger
     const to = new Swing({
         index, time: manager.candles[index].time,
         _sidePrice: {

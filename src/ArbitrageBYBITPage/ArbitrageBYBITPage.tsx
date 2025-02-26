@@ -45,7 +45,6 @@ async function recurciveCandles(symbol, tf, category: 'inverse' | 'linear', from
         const firstCandleTime =  candles[candles.length - 1].time / 1000;
         if(firstCandleTime > fromDate){
             const result = await recurciveCandles(symbol, tf, category, fromDate, firstCandleTime - 1)
-            // debugger
             return candles.concat(result);
         }
     }
