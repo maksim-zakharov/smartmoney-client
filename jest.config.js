@@ -41,5 +41,5 @@ export default {
         "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    testEnvironment: "jest-jasmine2",
+    "testEnvironment": "node"
 }
