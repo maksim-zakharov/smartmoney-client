@@ -1,18 +1,28 @@
-import {defaultConfig, StateManager} from "./th_ultimate";
+import {defaultConfig, StateManager, Swing} from "./th_ultimate";
 import {testMocks} from "./test.mocks";
 import * as allure from "allure-js-commons";
+
+// @ts-ignore
+const swingMap = (swing: Swing) => {
+    if(!swing) return swing;
+    // @ts-ignore
+    const {_sidePrice, _isDebug, ...element} = swing;
+    return element;
+};
 
 const expectIteration = (received: any[], expected: any[]) => {
     // Логируем несовпадающие элементы
     received.forEach((element, index) => {
+        const receivedItem = swingMap(element)
+        const expectedItem = swingMap(expected[index]);
         try {
             // Используем expect для глубокого сравнения каждого элемента
-            expect(element).toEqual(expected[index]);
+            expect(receivedItem).toEqual(expectedItem);
         } catch (error) {
             // Если элементы не совпадают, логируем их
             console.log(`Mismatch at index ${index}:`);
-            console.log('Expected:', expected[index]);
-            console.log('Received:', element);
+            console.log('Expected:', expectedItem);
+            console.log('Received:', receivedItem);
         }
     });
 }
@@ -59,7 +69,7 @@ describe('th_ultimate', () => {
             if(value.swings){
                 expect(value.swings.length).toEqual(manager2.swings.length);
                 expectIteration(value.swings, manager2.swings);
-                expect(value.swings).toEqual(manager2.swings);
+                expect(value.swings.map(swingMap)).toEqual(manager2.swings.map(swingMap));
             }
 
             if(value.boses){

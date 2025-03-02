@@ -45,6 +45,8 @@ const BOSChart = ({data, swings: outerSwings, boses: outerBoses, orderblocks: ou
 
     const _lineSerieses = bosesToLineSerieses(boses);
 
+    debugger
+
     return <Chart width={1400} height={300} markers={allMarkers1} lineSerieses={_lineSerieses} primitives={_primitives}
                   data={data} ema={[]}/>
 };

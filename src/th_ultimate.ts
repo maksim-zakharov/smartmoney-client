@@ -761,6 +761,7 @@ const updateExtremum = (manager: StateManager, index: number, side: Swing['side'
     if(manager.lastExtremumMap[side]?.index !== manager.lastSwingMap[versusSide]?.index){
         idmSwing = manager.lastSwingMap[versusSide]
     }
+    if(idmSwing)
     manager.lastExtremumMap[side].idmSwing = idmSwing;
 
 }
