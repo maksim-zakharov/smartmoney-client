@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {Button, Checkbox, Divider, Form, Input, InputNumber, Radio, Row, Slider, SliderSingleProps, Space} from "antd";
 import type {Dayjs} from 'dayjs';
@@ -32,6 +32,10 @@ export const SoloTestPage = () => {
     const [offset, setOffset] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState([]);
+
+    const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const holdDuration = 500; // 2 секунды
 
     const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,limitOrderTrade,newSMT").split(','));
     const setCheckboxValues = (values) => {
@@ -371,6 +375,26 @@ export const SoloTestPage = () => {
         [1]: 1,
     };
 
+    const handleMouseDown = (func) => {
+        holdTimerRef.current = setTimeout(() => {
+            intervalRef.current = setInterval(() => {
+                // Ваша цикличная логика здесь
+                func();
+            }, 50);
+        }, holdDuration);
+    }
+
+    const handleMouseUp = () => {
+        if (holdTimerRef.current) {
+            clearTimeout(holdTimerRef.current);
+            holdTimerRef.current = null;
+        }
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+    }
+
     return <>
         <Divider plain orientation="left">Риски</Divider>
         <Space>
@@ -431,8 +455,9 @@ export const SoloTestPage = () => {
             <TimeframeSelect value={tf} onChange={setSize}/>
             <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                          onChange={onChangeRangeDates}/>
-            <Button style={{display: 'block'}} icon={<LeftOutlined/>} onClick={() => setOffset(prev => prev += 1)}/>
+            <Button style={{display: 'block'}} icon={<LeftOutlined/>} onMouseDown={() => handleMouseDown(() => setOffset(prev => prev += 1))} onMouseUp={handleMouseUp} onClick={() => setOffset(prev => prev += 1)}/>
             <Button style={{display: 'block'}} icon={<RightOutlined/>}
+                    onMouseDown={() => handleMouseDown(() => setOffset(prev => prev < 0 ? prev : prev -= 1))} onMouseUp={handleMouseUp}
                     onClick={() => setOffset(prev => prev < 0 ? prev : prev -= 1)}/>
             <Radio.Group value={env} onChange={(e) => setEnv(e.target.value)}>
                 <Radio.Button value="dev">Development</Radio.Button>
