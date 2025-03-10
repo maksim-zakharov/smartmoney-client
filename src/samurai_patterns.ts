@@ -1,9 +1,6 @@
 import {calculateTakeProfit} from "./utils";
-import {
-    HistoryObject,
-    POI,
-    Swing
-} from "./th_ultimate";
+
+import {HistoryObject, POI, Swing} from "./THUltimate/models.ts";
 
 export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true, stopPaddingPercent: number = 0) => {
     const positions = [];

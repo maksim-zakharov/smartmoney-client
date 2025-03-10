@@ -18,9 +18,11 @@ import {calculatePositionsByOrderblocks,} from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {calculateTesting, notTradingTime} from "../th_ultimate";
+import {calculateTesting} from "../THUltimate/th_ultimate.ts";
 import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
+
+import {notTradingTime} from "../THUltimate/utils.ts";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -81,6 +83,7 @@ export const SoloTestPage = () => {
         tradeIDMIFC: checkboxValues.has('tradeIDMIFC'),
         excludeWick: checkboxValues.has('excludeWick'),
         withMove: checkboxValues.has('withMove'),
+        reversSwings: checkboxValues.has('reversSwings'),
         oneIteration: checkboxValues.has('oneIteration'),
         newSMT: checkboxValues.has('newSMT'),
         showFake: checkboxValues.has('showFake'),
@@ -136,7 +139,7 @@ export const SoloTestPage = () => {
         }
 
         return {swings, trend, boses, orderBlocks, positions: positions.sort((a, b) => a.openTime - b.openTime)};
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.oneIteration, config.reversSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
@@ -444,6 +447,7 @@ export const SoloTestPage = () => {
             <Checkbox key="tradeIDMIFC" value="tradeIDMIFC">Торговать IDM_IFC</Checkbox>
             <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
             <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
+            <Checkbox key="reversSwings" value="reversSwings">reversSwings</Checkbox>
             <Checkbox key="oneIteration" value="oneIteration">Свинги одной итерацией</Checkbox>
             <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
             <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>

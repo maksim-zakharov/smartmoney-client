@@ -6,7 +6,8 @@ import type { Dayjs } from 'dayjs';
 import {Chart} from "./Chart";
 import {calculateCandle} from "../../symbolFuturePairs";
 import {getCommonCandles} from "../utils";
-import {HistoryObject} from "../th_ultimate";
+
+import {HistoryObject} from "../THUltimate/models.ts";
 
 const {RangePicker} = DatePicker
 

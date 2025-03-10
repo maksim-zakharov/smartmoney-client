@@ -15,17 +15,16 @@ import {
 import {
     calculateTesting,
     defaultConfig,
-    filterNearOrderblock,
-    isNotSMT,
-    notTradingTime,
-    THConfig
-} from "./th_ultimate.ts";
+    filterNearOrderblock
+} from "./THUltimate/th_ultimate.ts";
 import {Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
 import useWindowDimensions from "./useWindowDimensions.tsx";
 import {ItemType, MenuItemType} from "antd/es/menu/interface";
 import {LeftOutlined, RightOutlined} from '@ant-design/icons';
+import {THConfig} from "./THUltimate/models.ts";
+import {isNotSMT, notTradingTime} from "./THUltimate/utils.ts";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",

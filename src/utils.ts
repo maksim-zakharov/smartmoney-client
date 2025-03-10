@@ -24,8 +24,8 @@ import {Options} from "@vitejs/plugin-react";
 import {useEffect, useMemo, useState} from "react";
 import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {ensureDefined} from "./lwc-plugins/helpers/assertions";
-import {Cross, HistoryObject, POI, Swing, Trend} from "./th_ultimate";
 import {TLineSeries} from "./SoloTestPage/TestChart.tsx";
+import {Cross, HistoryObject, POI, Swing, Trend} from "./THUltimate/models.ts";
 
 
 export class CandlesBuilder{

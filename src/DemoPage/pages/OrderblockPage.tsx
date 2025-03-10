@@ -11,11 +11,9 @@ import {
     swingsToMarkers
 } from "../../utils";
 import {
-    calculatePOI,
-    HistoryObject,
-    StateManager,
-    Trend
-} from "../../th_ultimate";
+    calculatePOI, StateManager
+} from "../../THUltimate/th_ultimate.ts";
+import {HistoryObject, Trend} from "../../THUltimate/models.ts";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
     const manager = new StateManager(data);

@@ -11,8 +11,10 @@ import {
     orderblocksToOrderblocksPrimitives,
     swingsToMarkers
 } from "./utils.ts";
-import {calculateTesting, defaultConfig, notTradingTime} from "./th_ultimate.ts";
+import {calculateTesting, defaultConfig} from "./THUltimate/th_ultimate.ts";
 import {Chart} from "./SoloTestPage/TestChart.tsx";
+
+import {notTradingTime} from "./THUltimate/utils.ts";
 
 function timeToLocal(originalTime: number) {
     const d = new Date(originalTime * 1000);

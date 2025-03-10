@@ -1,6 +1,7 @@
-import {defaultConfig, StateManager, Swing} from "./th_ultimate";
-import {testMocks} from "./test.mocks";
+import {defaultConfig, StateManager} from "./th_ultimate.ts";
+import {testMocks} from "../test.mocks.ts";
 import * as allure from "allure-js-commons";
+import {Swing} from "./models.ts";
 
 // @ts-ignore
 const swingMap = (swing: Swing) => {

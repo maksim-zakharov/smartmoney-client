@@ -14,11 +14,11 @@ import {Chart} from "../../SoloTestPage/TestChart";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {
-    HistoryObject,
-    notTradingTime, StateManager,
-    Swing,
-    tradinghubCalculateTrendNew
-} from "../../th_ultimate";
+    StateManager, tradinghubCalculateTrendNew
+} from "../../THUltimate/th_ultimate.ts";
+import {HistoryObject, Swing} from "../../THUltimate/models.ts";
+
+import {notTradingTime} from "../../THUltimate/utils.ts";
 
 const BOSChart = ({data, text = 'LL'}) => {
     const manager = new StateManager(data);
