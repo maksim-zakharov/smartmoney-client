@@ -1,5 +1,6 @@
 import {Cross, HistoryObject, OrderblockPart, POI, POIType, Side, Swing, THConfig, Trend} from "./models.ts";
 import {
+    closestRight,
     hasClose,
     hasHighValidPullback,
     hasHitOB,
@@ -516,13 +517,12 @@ export class StateManager {
         const highPullback = hasHighValidPullback(prevCandle, currentCandle);
         const lowPullback = hasLowValidPullback(prevCandle, currentCandle);
 
-        const isExternalBar = highPullback && lowPullback;
-
         const currentSide = highPullback || lowPullback;
         if (!currentSide) {
             return;
         }
 
+        const isExternalBar = highPullback && lowPullback;
         const side = isExternalBar ? 'double' : currentSide
         this.swings[n] = new Swing({
             side,
@@ -536,36 +536,40 @@ export class StateManager {
 
         // this.swings[n].setDebug()
 
-        let closestSwing: Swing;
-        let i1 = n + 1;
-        while (this.candles[i1]) {
-            closestSwing = this.swings[i1];
-            if (closestSwing) {
-                break;
-            }
-            i1++;
-        }
+        // Находит ближайший свинг справа не считая текущую свечу
+        let {closest: closestSwing, index: i1} = closestRight(this.candles, this.swings, n, 1);
 
+        // Если свинг справа по направлению как текущий
         if (closestSwing?.side === side) {
             const lowIndex =
+                // если лоу справа выше чем лоу слева
                 (side === 'low' && closestSwing?.price >= currentCandle.low)
-                || (side === 'high' && closestSwing?.price <= currentCandle.high) ? i1 : n;
+                // если хай справа ниже чем хай слева
+                || (side === 'high' && closestSwing?.price <= currentCandle.high)
+                // То удаляем свинг справа, иначе свинг слева
+                    ? i1 : n;
             this.swings[lowIndex] = null
         }
 
+        // Если текущее направление двойное
         if(side === 'double'){
+            // Если свинг справа хай и он выше текущего, то текущий ставим low
             if(closestSwing?.side === 'high' && closestSwing?.price >= currentCandle.high){
                 this.swings[n].side = 'low';
             }
+            // Если свинг справа лоу и он ниже текущего, то текущий ставим high
             if(closestSwing?.side === 'low' && closestSwing?.price <= currentCandle.low){
                 this.swings[n].side = 'high';
             }
         }
 
+        // Если направление справа двойное
         if(closestSwing?.side === 'double'){
+            // если текущий хай ниже чем у дабла справа, то удаляем текущую точку
             if(side === 'high' && closestSwing?._sidePrice.high >= currentCandle.high){
                 this.swings[n] = null;
             }
+            // если текущий лой выше чем у дабла справа, то удаляем текущую точку
             if(side === 'low' && closestSwing?._sidePrice.low <= currentCandle.low){
                 this.swings[n] = null;
             }

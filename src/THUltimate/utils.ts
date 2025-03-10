@@ -1,4 +1,6 @@
 import {CandleWithSide, Cross, HistoryObject, OrderblockPart, POI, Side, Swing} from "./models.ts";
+import {Simulate} from "react-dom/test-utils";
+import cancel = Simulate.cancel;
 
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT
 export const hasHighValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle?: HistoryObject) => {
@@ -106,3 +108,17 @@ export const hasNear = (
 
     return false;
 };
+
+export const closestRight = (candles: HistoryObject[], swings: Swing[], n: number, offset = 0) => {
+    let closest: Swing;
+    let i1 = n + offset;
+    while (candles[i1]) {
+        closest = swings[i1];
+        if (closest) {
+            break;
+        }
+        i1++;
+    }
+
+    return {closest, index: i1};
+}
