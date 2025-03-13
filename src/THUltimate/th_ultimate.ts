@@ -1,5 +1,6 @@
 import {Cross, HistoryObject, OrderblockPart, POI, POIType, Side, Swing, THConfig, Trend} from "./models.ts";
 import {
+    buildIDMLine,
     closestRight,
     hasClose,
     hasHighValidPullback,
@@ -7,13 +8,14 @@ import {
     hasLowValidPullback,
     hasNear,
     hasTakenOutLiquidity,
-    highestBy,
+    highestBy, isCross,
     isIFC,
     isImbalance,
     isInsideBar,
     isInternalBOS,
     isNotSMT,
-    lowestBy
+    lowestBy,
+    removeRightSwingsAtInsideBars
 } from "./utils.ts";
 
 export class StateManager {
@@ -118,9 +120,11 @@ export class StateManager {
     }
 
     calculate() {
-        if(this.config.reversSwings){
+        if (this.config.reversSwings) {
             for (let i = this.candles.length - 1; i > 0; i--) {
                 this.revertCalculateSwings(i);
+
+                this.reverseMarkExtremums(i);
             }
         } else {
             for (let i = 0; i < this.candles.length; i++) {
@@ -498,17 +502,26 @@ export class StateManager {
     externalCandle?: HistoryObject;
 
     revertCalculateSwings(n: number) {
-        // Если натыкаемся на внешний бар, то удаляем все предыдущие бары которые были внутренними для текущего
-        let i = n;
-        while (this.candles[i + 1]) {
-            const cur = this.candles[n];
-            const next = this.candles[i + 1];
-            if (isInsideBar(cur, next)) {
-                this.swings[i + 1] = null;
-            } else {
-                break;
+        // Если натыкаемся на внешний бар, то удаляем все предыдущие свинги которые были внутренними для текущего
+        const outsideIndex = removeRightSwingsAtInsideBars(n, this.candles, this.swings, this.boses)
+
+        if (this.lastSwingMap.high?.index <= outsideIndex) {
+            this.lastSwingMap.high = closestRight(this.candles, this.swings, outsideIndex, 1, 'high')?.closest;
+
+            if(this.lastSwingMap.high?.idmSwing?.index < outsideIndex){
+                delete this.lastSwingMap.high?.idmSwing
             }
-            i++;
+
+            this.lastExtremumMap.high = this.lastSwingMap.high
+        }
+        if (this.lastSwingMap.low?.index <= outsideIndex) {
+            this.lastSwingMap.low = closestRight(this.candles, this.swings, outsideIndex, 1, 'low')?.closest;
+
+            if(this.lastSwingMap.low?.idmSwing?.index < outsideIndex){
+                delete this.lastSwingMap.low?.idmSwing
+            }
+
+            this.lastExtremumMap.low = this.lastSwingMap.low
         }
 
         const currentCandle = this.candles[n];
@@ -534,7 +547,7 @@ export class StateManager {
             index: n,
         });
 
-        // this.swings[n].setDebug()
+        this.swings[n].setDebug()
 
         // Находит ближайший свинг справа не считая текущую свечу
         let {closest: closestSwing, index: i1} = closestRight(this.candles, this.swings, n, 1);
@@ -546,34 +559,94 @@ export class StateManager {
                 (side === 'low' && closestSwing?.price >= currentCandle.low)
                 // если хай справа ниже чем хай слева
                 || (side === 'high' && closestSwing?.price <= currentCandle.high)
-                // То удаляем свинг справа, иначе свинг слева
+                    // То удаляем свинг справа, иначе свинг слева
                     ? i1 : n;
             this.swings[lowIndex] = null
         }
 
         // Если текущее направление двойное
-        if(side === 'double'){
+        if (side === 'double') {
             // Если свинг справа хай и он выше текущего, то текущий ставим low
-            if(closestSwing?.side === 'high' && closestSwing?.price >= currentCandle.high){
+            if (closestSwing?.side === 'high' && closestSwing?.price >= currentCandle.high) {
                 this.swings[n].side = 'low';
             }
             // Если свинг справа лоу и он ниже текущего, то текущий ставим high
-            if(closestSwing?.side === 'low' && closestSwing?.price <= currentCandle.low){
+            if (closestSwing?.side === 'low' && closestSwing?.price <= currentCandle.low) {
                 this.swings[n].side = 'high';
             }
         }
 
         // Если направление справа двойное
-        if(closestSwing?.side === 'double'){
+        if (closestSwing?.side === 'double') {
             // если текущий хай ниже чем у дабла справа, то удаляем текущую точку
-            if(side === 'high' && closestSwing?._sidePrice.high >= currentCandle.high){
+            if (side === 'high' && closestSwing?._sidePrice.high >= currentCandle.high) {
                 this.swings[n] = null;
             }
             // если текущий лой выше чем у дабла справа, то удаляем текущую точку
-            if(side === 'low' && closestSwing?._sidePrice.low <= currentCandle.low){
+            if (side === 'low' && closestSwing?._sidePrice.low <= currentCandle.low) {
                 this.swings[n] = null;
             }
         }
+    }
+
+    reverseMarkExtremums(n: number) {
+        /**
+         * Определяем первые хай и лой
+         * Пытаемся защитить последние high и low.
+         * Если например защитили лой, не защитив хай и появляется новый лой
+         * - старую защиту удалить (ИДМ), защищаем новый лой.
+         *
+         * Ищу лоу...пока не будет перехай
+         * Ищу хай...пока не будет перелоу
+         */
+        const swing = this.swings[n];
+        if (!swing) {
+            return;
+        }
+
+        updateLast(this, n);
+
+        /**
+         * Получили хай и лоу
+         * пока не было перехай - делаем перелоу. Пока не было перелоу - делаем перехай.
+         * Если перехай произошел - затираем лоу
+         * Если перелоу произошел - затираем хай
+         */
+
+        const isHighestHigh = swing.side === 'high' && (!this.lastExtremumMap.high || this.lastExtremumMap.high.price <= swing.price);
+        const isLowestLow = swing.side === 'low' && (!this.lastExtremumMap.low || this.lastExtremumMap.low.price >= swing.price);
+
+        if (isLowestLow) {
+            this.lastExtremumMap.low?.unmarkExtremum()
+            this.boses[this.lastExtremumMap.low?.idmSwing?.index] = null;
+
+            if(this.lastExtremumMap.low && this.lastExtremumMap.low.index < this.lastExtremumMap.high?.index){
+                this.lastExtremumMap.high = null;
+            }
+
+            /**
+             * low если:
+             * - хая нету
+             * - хай обновился и лоя нету
+             */
+
+            this.lastExtremumMap.low = swing;
+            this.lastExtremumMap.low?.markExtremum()
+        }
+
+        if (isHighestHigh) {
+            this.lastExtremumMap.high?.unmarkExtremum()
+            this.boses[this.lastExtremumMap.high?.idmSwing?.index] = null
+
+            if(this.lastExtremumMap.high && this.lastExtremumMap.high.index < this.lastExtremumMap.low?.index){
+                this.lastExtremumMap.low = null;
+            }
+
+            this.lastExtremumMap.high = swing;
+            this.lastExtremumMap.high?.markExtremum()
+        }
+
+        buildIDMLine(this, n, swing);
     }
 
     // Проверил: точно ок

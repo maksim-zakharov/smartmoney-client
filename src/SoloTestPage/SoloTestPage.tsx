@@ -125,7 +125,7 @@ export const SoloTestPage = () => {
     }
 
     const {swings, trend, boses, orderBlocks, positions} = useMemo(() => {
-        let {swings, trend, boses, orderBlocks} = calculateTesting(data.slice(0, data.length - offset), config);
+        let {swings, trend, boses, orderBlocks} = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
 
         let positions = [];
 
@@ -461,15 +461,15 @@ export const SoloTestPage = () => {
                          onChange={onChangeRangeDates}/>
             <Button style={{display: 'block'}} icon={<LeftOutlined/>} onMouseDown={() => handleMouseDown(() => setOffset(prev => prev += 1))} onMouseUp={handleMouseUp} onClick={() => setOffset(prev => prev += 1)}/>
             <Button style={{display: 'block'}} icon={<RightOutlined/>}
-                    onMouseDown={() => handleMouseDown(() => setOffset(prev => prev < 0 ? prev : prev -= 1))} onMouseUp={handleMouseUp}
-                    onClick={() => setOffset(prev => prev < 0 ? prev : prev -= 1)}/>
+                    onMouseDown={() => handleMouseDown(() => setOffset(prev => prev -= 1))} onMouseUp={handleMouseUp}
+                    onClick={() => setOffset(prev => prev -= 1)}/>
             <Radio.Group value={env} onChange={(e) => setEnv(e.target.value)}>
                 <Radio.Button value="dev">Development</Radio.Button>
                 <Radio.Button value="prod">Production</Radio.Button>\
             </Radio.Group>
         </Space>
         <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers}
-               data={data.map((d, i, array) => i >= array.length - 1 - offset ?
+               data={data.map((d, i, array) => (offset >=0 && i >= array.length - 1 - offset) || (offset < 0 && i <= -offset) ?
                    {
                        ...d, borderColor: "rgba(44,60,75, 1)",
                        wickColor: "rgba(44,60,75, 1)",

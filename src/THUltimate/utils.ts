@@ -1,6 +1,6 @@
 import {CandleWithSide, Cross, HistoryObject, OrderblockPart, POI, Side, Swing} from "./models.ts";
-import {Simulate} from "react-dom/test-utils";
-import cancel = Simulate.cancel;
+import {StateManager} from "./th_ultimate.ts";
+
 
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT
 export const hasHighValidPullback = (leftCandle: HistoryObject, currentCandle: HistoryObject, nextCandle?: HistoryObject) => {
@@ -109,16 +109,88 @@ export const hasNear = (
     return false;
 };
 
-export const closestRight = (candles: HistoryObject[], swings: Swing[], n: number, offset = 0) => {
+export const closestRight = (candles: HistoryObject[], swings: Swing[], n: number, offset = 0, side?: Swing['side']) => {
     let closest: Swing;
     let i1 = n + offset;
     while (candles[i1]) {
         closest = swings[i1];
-        if (closest) {
+        if (closest && (!side || side === closest.side)) {
             break;
         }
         i1++;
     }
 
     return {closest, index: i1};
+}
+
+export const removeRightSwingsAtInsideBars = (n: number, candles: HistoryObject[], swings: Swing[], cross: Cross[]) => {
+    let i = n;
+    while (candles[i + 1]) {
+        const cur = candles[n];
+        const next = candles[i + 1];
+        if (isInsideBar(cur, next)) {
+            cross[i + 1] = null;
+            swings[i + 1] = null;
+        } else {
+            break;
+        }
+        i++;
+    }
+
+    return i;
+}
+
+export const isCross = (n: number, candles: HistoryObject[], type: Swing['side'], offset = 0) => {
+    let index = n + 1 + offset;
+    while (candles[index] && (type === 'low' ? candles[n].low < candles[index].low : candles[n].high > candles[index].high)) {
+        index++;
+    }
+
+    if (!candles[index]) {
+        return undefined;
+    }
+
+    return index;
+}
+
+export const buildIDMLine = (manager: StateManager, n: number, swing: Swing) => {
+    if (!swing) {
+        return;
+    }
+
+    const swingSide = swing.side;
+    if (swingSide === 'double') {
+        return;
+    }
+
+    const versusSide = swingSide === 'high' ? 'low' : 'high';
+
+    if (manager.lastExtremumMap[versusSide] && !manager.lastExtremumMap[versusSide].idmSwing) {
+        manager.lastExtremumMap[versusSide].idmSwing = swing
+
+        let offset = manager.lastExtremumMap[versusSide].index - n;
+        let index = isCross(n, manager.candles, swingSide, offset);
+        let isConfirmed = Boolean(index);
+        if (!index) {
+            index = manager.candles.length - 1;
+        }
+
+        const to = new Swing({
+            index, time: manager.candles[index].time,
+            _sidePrice: {
+                high: manager.candles[index].close,
+                low: manager.candles[index].close
+            }
+        });
+
+        manager.boses[manager.lastExtremumMap[versusSide].idmSwing.index] = new Cross({
+            from: manager.lastExtremumMap[versusSide].idmSwing,
+            to,
+            type: swingSide,
+            isIDM: true,
+            getCandles: () => manager.candles,
+            extremum: manager.lastExtremumMap[versusSide],
+            isConfirmed
+        })
+    }
 }
