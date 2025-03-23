@@ -12,7 +12,7 @@ import {DatesPicker} from "../../DatesPicker";
 import type { Dayjs } from 'dayjs';
 import {
     StateManager,
-} from "../../THUltimate/th_ultimate.ts";
+} from "../../THUltimate/th_ultimate_oneIt.ts";
 import Paragraph from "antd/es/typography/Paragraph";
 import {HistoryObject} from "../../THUltimate/models.ts";
 

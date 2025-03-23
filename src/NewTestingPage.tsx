@@ -16,7 +16,7 @@ import {
     calculateTesting,
     defaultConfig,
     filterNearOrderblock
-} from "./THUltimate/th_ultimate.ts";
+} from "./THUltimate/th_ultimate_oneIt.ts";
 import {Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";

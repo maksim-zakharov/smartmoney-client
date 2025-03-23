@@ -13,7 +13,7 @@ import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateTesting, } from "./THUltimate/th_ultimate.ts";
+import {calculateTesting} from "./THUltimate/th_ultimate";
 import {
     cacheCandles,
     cacheRiskRates,
@@ -59,13 +59,13 @@ export const MultiTestPage = () => {
     const positions = useMemo(() => {
         let {swings, orderBlocks} = calculateTesting(data, {
             withMove,
-            reversSwings,
+            // reversSwings,
             showHiddenSwings,
             newSMT,
             showFake,
             oneIteration,
-            tradeOBIDM,
-            tradeIDMIFC
+            // tradeOBIDM,
+            // tradeIDMIFC
         });
 
         const lotsize = (security?.lotsize || 1)
@@ -261,6 +261,8 @@ export const MultiTestPage = () => {
         loadRiskRate(ticker).then(setRiskRates)
     }, [ticker])
 
+    const minStep = security?.minstep || 0.01;
+
     const oldOneTickerColumns = [
         isAllTickers && {
             title: 'Ticker',
@@ -281,7 +283,7 @@ export const MultiTestPage = () => {
             title: 'Open Volume',
             dataIndex: 'openVolume',
             key: 'openVolume',
-            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep), persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep))
+            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : minStep), persision(row.ticker ? allSecurity[ticker]?.minstep : minStep))
         },
         {
             title: 'OpenPrice',
@@ -298,19 +300,19 @@ export const MultiTestPage = () => {
             title: 'Close Volume',
             dataIndex: 'closeVolume',
             key: 'closeVolume',
-            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep), persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep))
+            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : minStep), persision(row.ticker ? allSecurity[ticker]?.minstep : minStep))
         },
         {
             title: 'StopLoss',
             dataIndex: 'stopLoss',
             key: 'stopLoss',
-            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep), persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep))
+            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : minStep), persision(row.ticker ? allSecurity[ticker]?.minstep : minStep))
         },
         {
             title: 'TakeProfit',
             dataIndex: 'takeProfit',
             key: 'takeProfit',
-            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep), persision(row.ticker ? allSecurity[ticker]?.minstep : security?.minstep))
+            render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : minStep), persision(row.ticker ? allSecurity[ticker]?.minstep : minStep))
         },
         {
             title: 'Side',

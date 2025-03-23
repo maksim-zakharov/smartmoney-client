@@ -1,5 +1,5 @@
 import {CandleWithSide, Cross, HistoryObject, OrderblockPart, POI, Side, Swing} from "./models.ts";
-import {StateManager} from "./th_ultimate.ts";
+import {StateManager} from "./th_ultimate_oneIt.ts";
 
 
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT

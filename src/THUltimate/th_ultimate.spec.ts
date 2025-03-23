@@ -1,4 +1,4 @@
-import {defaultConfig, StateManager} from "./th_ultimate.ts";
+import {defaultConfig, StateManager} from "./th_ultimate_oneIt.ts";
 import {testMocks} from "../test.mocks.ts";
 import * as allure from "allure-js-commons";
 import {Swing} from "./models.ts";

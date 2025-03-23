@@ -25,7 +25,7 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
         const side = obItem.side === 'high' ? 'short' : 'long';
         let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
         let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
-        const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
+        const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1]?.time;
 
         const lastExtremumIndex = obItem.side === 'high' ? lastExtremumIndexMap['low'] : lastExtremumIndexMap['high'];
 

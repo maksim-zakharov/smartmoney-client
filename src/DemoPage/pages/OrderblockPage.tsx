@@ -12,7 +12,7 @@ import {
 } from "../../utils";
 import {
     calculatePOI, StateManager
-} from "../../THUltimate/th_ultimate.ts";
+} from "../../THUltimate/th_ultimate_oneIt.ts";
 import {HistoryObject, Trend} from "../../THUltimate/models.ts";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {

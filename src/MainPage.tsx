@@ -11,7 +11,7 @@ import {
     orderblocksToOrderblocksPrimitives,
     swingsToMarkers
 } from "./utils.ts";
-import {calculateTesting, defaultConfig} from "./THUltimate/th_ultimate.ts";
+import {calculateTesting, defaultConfig} from "./THUltimate/th_ultimate_oneIt.ts";
 import {Chart} from "./SoloTestPage/TestChart.tsx";
 
 import {notTradingTime} from "./THUltimate/utils.ts";
