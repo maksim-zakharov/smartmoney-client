@@ -5,10 +5,17 @@ import FormItem from "antd/es/form/FormItem";
 import {TimeframeSelect} from "./TimeframeSelect";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
-import {moneyFormat} from "./MainPage";
+import {moneyFormat} from "./MainPage/MainPage.tsx";
 import moment from 'moment';
 import {calculatePositionsByOrderblocks} from "./samurai_patterns";
-import {fetchCandlesFromAlor, fetchRiskRates, getSecurity, persision, refreshToken, uniqueBy} from "./utils";
+import {
+    fetchCandlesFromAlor,
+    fetchRiskRates,
+    getSecurity,
+    persision,
+    refreshToken,
+    uniqueBy
+} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/TestChart";
 import {DatesPicker} from "./DatesPicker";
@@ -95,7 +102,7 @@ export const MultiTestPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, showFake, oneIteration, newSMT, showHiddenSwings,reversSwings, withMove, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, showFake, oneIteration, newSMT, showHiddenSwings, reversSwings, withMove, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -151,7 +158,7 @@ export const MultiTestPage = () => {
             if (token)
                 result1[stockSymbols[i]] = await loadSecurity(stockSymbols[i], token);
             result2[stockSymbols[i]] = await loadRiskRate(stockSymbols[i]);
-            setSuccessSymbols({total: stockSymbols.length, current: i + 1});
+            setSuccessSymbols({total: stockSymbols.length * 2, current: i + 1});
         }
         setAllRiskRates(result2)
         setAllSecurity(result1)
@@ -410,7 +417,8 @@ export const MultiTestPage = () => {
             </Col>
             <Col>
                 <FormItem>
-                    <Checkbox checked={reversSwings} onChange={e => setreversSwings(e.target.checked)}>reversSwings</Checkbox>
+                    <Checkbox checked={reversSwings}
+                              onChange={e => setreversSwings(e.target.checked)}>reversSwings</Checkbox>
                 </FormItem>
             </Col>
             <Col>

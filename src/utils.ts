@@ -18,7 +18,7 @@ import {
     SeriesMarker,
     SeriesOptionsMap,
     SeriesType,
-    Time
+    Time, UTCTimestamp
 } from "lightweight-charts";
 import {Options} from "@vitejs/plugin-react";
 import {useEffect, useMemo, useState} from "react";
@@ -935,3 +935,29 @@ export const orderblocksToOrderblocksPrimitives = (orderBlocks: POI[], filter: (
             showLabels: false,
             borderWidth: 0,
         }))
+
+export function timeToLocal(originalTime: number) {
+    const d = new Date(originalTime * 1000);
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()) / 1000;
+}
+
+export const digitsAfterDot = (num) => {
+    if (!num) {
+        return 0;
+    }
+
+    return `${num}`.split('.')?.[1]?.length || 0;
+};
+
+export const roundTime = (date: any, tf: string, utc: boolean = true) => {
+
+    const timestamp = new Date(date).getTime() / 1000;
+
+    // Конвертируем таймфрейм из минут в миллисекунды
+    const timeframeMs = Number(tf);
+
+    // Рассчитываем ближайшую "свечу", округляя до ближайшего целого
+    const roundedTimestamp = Math.floor(timestamp / timeframeMs) * timeframeMs;
+
+    return (utc ? timeToLocal(roundedTimestamp) : roundedTimestamp) as UTCTimestamp;
+};

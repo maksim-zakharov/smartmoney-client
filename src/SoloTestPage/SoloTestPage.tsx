@@ -14,11 +14,11 @@ import {
 } from "../utils";
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
-import {calculatePositionsByOrderblocks,} from "../samurai_patterns";
+import {iterationCalculatePositions,} from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {calculateTesting} from "../THUltimate/th_ultimate_oneIt.ts";
+import {calculateTesting} from "../THUltimate/th_ultimate";
 import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 
@@ -130,7 +130,7 @@ export const SoloTestPage = () => {
         let positions = [];
 
         if (config.tradeOB) {
-            const fakeoutPositions = calculatePositionsByOrderblocks(data, swings, orderBlocks, maxDiff, multiStop, config.limitOrderTrade, stopPaddingPercent);
+            const fakeoutPositions = iterationCalculatePositions(data, swings as any, orderBlocks, maxDiff, multiStop, config.limitOrderTrade, stopPaddingPercent);
             positions.push(...fakeoutPositions);
         }
 

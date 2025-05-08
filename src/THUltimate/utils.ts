@@ -109,6 +109,20 @@ export const hasNear = (
     return false;
 };
 
+export const closestLeft = (candles: HistoryObject[], swings: Swing[], n: number, offset = 0, side?: Swing['side']) => {
+    let closest: Swing;
+    let i1 = n - offset;
+    while (candles[i1]) {
+        closest = swings[i1];
+        if (closest && (!side || side === closest.side)) {
+            break;
+        }
+        i1--;
+    }
+
+    return {closest, index: i1};
+}
+
 export const closestRight = (candles: HistoryObject[], swings: Swing[], n: number, offset = 0, side?: Swing['side']) => {
     let closest: Swing;
     let i1 = n + offset;

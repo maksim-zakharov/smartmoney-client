@@ -2,7 +2,7 @@ import {Content, Header} from "antd/es/layout/layout";
 import {Layout, Menu, theme} from "antd";
 import React from "react";
 import {Route, Routes, useLocation, useNavigate} from "react-router-dom";
-import MainPage from "./MainPage.tsx";
+import MainPage from "./MainPage/MainPage.tsx";
 import SoloTestPage from "./SoloTestPage/SoloTestPage.tsx";
 import {ArbitrageMOEXPage} from "./ArbitrageMOEXPage";
 import {ArbitrageBYBITPage} from "./ArbitrageBYBITPage/ArbitrageBYBITPage";
