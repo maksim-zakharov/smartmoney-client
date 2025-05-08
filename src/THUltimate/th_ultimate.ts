@@ -1,5 +1,3 @@
-import {closestLeft, closestRight} from "./utils.ts";
-
 export interface HistoryObject {
     high: number;
     low: number;
@@ -393,8 +391,7 @@ export const calculatePOI = (
                     side: type,
                 } as OrderblockPart;
 
-                const {closest, index: lastIDMIndex} = closestLeft(manager.candles, manager.swings, swing.index, 1);
-
+                const lastIDMIndex = manager.lastIDMIndexMap[swing?.side];
                 if (
                     orderBlockPart?.side === swing?.side &&
                     swing?.isExtremum &&
@@ -406,10 +403,10 @@ export const calculatePOI = (
                         Boolean(manager.boses[bossIndex]) &&
                         (!showFake || manager.boses[bossIndex].isConfirmed);
 
-                    const isSMT = //!isCrosses;
+                    const isSMT =
                         !newSMT &&
                         (hasBoss ||
-                            (lastIDMIndex && manager.boses[lastIDMIndex]  &&
+                            (lastIDMIndex &&
                                 manager.boses[lastIDMIndex].from.index <= i &&
                                 manager.boses[lastIDMIndex].to.index > i));
 
@@ -426,9 +423,6 @@ export const calculatePOI = (
                         takeProfit,
                         type,
                     });
-                    if(swing.index === 583){
-                        debugger
-                    }
                     manager.obIdxes.add(swing.index);
 
                     manager.uniqueOrderBlockTimeSet.add(orderBlockPart.startCandle.time);
@@ -449,12 +443,10 @@ export const calculatePOI = (
                 const obItem = manager.pois[obIdx];
                 const idmType = obItem.side;
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
-                const {closest, index: lastIDMIndex} = closestLeft(manager.candles, manager.swings, obIdx, 1);
-
-                const isCrosses = obItem.index >= index
-                    || (closest && (closest.side === 'high' ? closest.price < candle.high : closest.price > candle.low));
-
-                if (!isCrosses
+                if (
+                    manager.lastIDMIndexMap[idmType] &&
+                    manager.lastIDMIndexMap[idmType] <= i &&
+                    obItem.index >= manager.lastIDMIndexMap[idmType]
                 ) {
                     obItem.isSMT = true;
                     obItem.canTrade = false;
@@ -547,7 +539,7 @@ export const calculateTesting = (
         oneIteration,
     }: THConfig,
 ) => {
-    const manager = new StateManager(data, { oneIteration, showIFC });
+    const manager = new StateManager(data, {oneIteration, showIFC});
     // <-- Копировать в робота
     manager.calculate();
 
@@ -557,6 +549,26 @@ export const calculateTesting = (
         showIFC,
         oneIteration,
     });
+
+    // if (oneIteration) {
+    //     // Потом переписать в просто calculate
+    //     manager.calculateTrend();
+    // }
+
+    // const manager1 = new StateManager(data);
+    // manager1.calculate();
+    // tradinghubCalculateTrendNew(manager1, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration: false});
+    //
+    // const manager2 = new StateManager(data);
+    // manager2.calculate();
+    // tradinghubCalculateTrendNew(manager2, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration: true});
+    // manager2.calculateTrend();
+    //
+    //
+    // console.log('old', manager1.trend)
+    // console.log('new', manager2.trend)
+    // console.log(JSON.stringify(manager1.trend.slice(0)) === JSON.stringify(manager2.trend.slice(0)))
+    // console.log(JSON.stringify(manager1.boses.slice(0)) === JSON.stringify(manager2.boses.slice(0)))
 
     // Копировать в робота -->
     let orderBlocks = calculatePOI(manager, withMove, newSMT, showFake);
@@ -600,7 +612,7 @@ export const defaultConfig: THConfig = {
 export const calculateProduction = (data: HistoryObject[]) => {
     const config: THConfig = defaultConfig;
 
-    let { orderBlocks } = calculateTesting(data, config);
+    let {orderBlocks} = calculateTesting(data, config);
 
     orderBlocks = orderBlocks.filter((o) => o?.type !== POIType.OB_IDM);
 
@@ -664,8 +676,6 @@ const tryCalculatePullback = (
             index,
         });
         swings[index] = highPullback ? swing : swings[index];
-
-        swings[index]?.setDebug();
     }
 };
 
@@ -855,22 +865,20 @@ const confirmExtremum = (
         return;
     }
 
-    const idmSwing = closestLeft(manager.candles, manager.swings as any, manager.lastExtremumMap[side].index, 0, versusSide)?.closest;
-
     // Если на месте IDM он уже подтвержден - не смотрим
-    if (manager.boses[idmSwing.index]) {
+    if (manager.boses[manager.lastExtremumMap[side].idmSwing.index]) {
         return;
     }
 
     const isHighIDMConfirmed =
         isNonConfirmIDM ||
         (side === 'high' &&
-            idmSwing.price >
+            manager.lastExtremumMap[side].idmSwing.price >
             manager.candles[index].low);
     const isLowIDMConfirmed =
         isNonConfirmIDM ||
         (side === 'low' &&
-            idmSwing.price <
+            manager.lastExtremumMap[side].idmSwing.price <
             manager.candles[index].high);
 
     // Если IDM не подтвержден - не смотрим
@@ -883,6 +891,7 @@ const confirmExtremum = (
     manager.confirmIndexMap[side] = index;
 
     // Рисуем IDM
+    const from = manager.lastExtremumMap[side].idmSwing;
     const to = new Swing({
         index,
         time: manager.candles[index].time,
@@ -891,8 +900,8 @@ const confirmExtremum = (
 
     // На случай если и хай и лоу будет на одной свече, нужно подтверждение жестко с предыдущей свечки
     if (isNonConfirmIDM || manager.lastExtremumMap[side].index !== to.index) {
-        manager.boses[idmSwing.index] = new Cross({
-            from: idmSwing,
+        manager.boses[from.index] = new Cross({
+            from,
             to,
             type: versusSide,
             isIDM: true,
@@ -1145,19 +1154,24 @@ export class StateManager {
     }
 
     // Первый OB сразу после IDM, задеваем его свечой IFC
-    calculateOBIDMIFC() {}
+    calculateOBIDMIFC() {
+    }
 
     // Просто какой то уровень ликвидности (не OB), строится от свинга, не экстремум, не OB IDM, задеваем свечой IFC
-    calculateLQIFC() {}
+    calculateLQIFC() {
+    }
 
     // Первый свинг (ликвидность) сразу после HH/LL, задеваем ее свечой IFC
-    calculateEXTLQIFC() {}
+    calculateEXTLQIFC() {
+    }
 
     // Ордерблок на свече HH/LL, задеваем его свечой (или закрываемся внутри), не IFC
-    calculateOBEXT() {}
+    calculateOBEXT() {
+    }
 
     // Чоч на свече HH/LL, задеваем его свечой IFC
-    calculateOBEXTIFC() {}
+    calculateOBEXTIFC() {
+    }
 
     calculateTrend() {
         this.firstBos = null;
@@ -1284,7 +1298,7 @@ export class StateManager {
             const [processingIndex, sw] = Array.from(this.processingSwings)[i];
 
             const prevCandle = this.candles[processingIndex - 1];
-            let { currentCandle, nextIndex, status } = sw;
+            let {currentCandle, nextIndex, status} = sw;
             let nextCandle = this.candles[nextIndex];
 
             if (!nextCandle) {
@@ -1592,8 +1606,8 @@ const deleteInternalBOS = (manager: StateManager) => {
             manager.lastBosSwingMap['high'],
         );
 
-        // manager.deleteIDM.add(manager.lastBosSwingMap['low']);
-        // manager.deleteIDM.add(manager.lastBosSwingMap['high']);
+        manager.deleteIDM.add(manager.lastBosSwingMap['low']);
+        manager.deleteIDM.add(manager.lastBosSwingMap['high']);
 
         manager.lastBosSwingMap['low'] = manager.prelastBosSwingMap['low'];
         manager.lastBosSwingMap['high'] = manager.prelastBosSwingMap['high'];
@@ -1647,20 +1661,20 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
         });
 
     // Удаляем все IDM у которых BOS сформирован
-    // for (let i = 0; i < manager.boses.length; i++) {
-    //     const b = manager.boses[i];
-    //     if (
-    //         b?.isConfirmed &&
-    //         b?.isIDM &&
-    //         manager.deleteIDM.has(b?.extremum?.index)
-    //     ) {
-    //         manager.boses[i] = null;
-    //     }
-    // }
+    for (let i = 0; i < manager.boses.length; i++) {
+        const b = manager.boses[i];
+        if (
+            b?.isConfirmed &&
+            b?.isIDM &&
+            manager.deleteIDM.has(b?.extremum?.index)
+        ) {
+            manager.boses[i] = null;
+        }
+    }
 };
 export const tradinghubCalculateTrendNew = (
     manager: StateManager,
-    { showHiddenSwings, showFake }: THConfig,
+    {showHiddenSwings, showFake}: THConfig,
 ) => {
     deleteInternalStructure(manager);
 
@@ -1854,7 +1868,7 @@ const drawTrend = (manager: StateManager) => {
                     ? 1
                     : -1
                 : manager.trend[j - 1]?.trend;
-            manager.trend[j] = { time: manager.candles[j].time, trend: isNewTrend };
+            manager.trend[j] = {time: manager.candles[j].time, trend: isNewTrend};
 
             // Удаляем IDM у точек которые являются босами
             if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {
@@ -1991,10 +2005,10 @@ export const filterNearOrderblock = (
     currentCandle: HistoryObject,
 ) =>
     orderBlocks
-        .filter(({ startCandle: { high, low }, side }) =>
+        .filter(({startCandle: {high, low}, side}) =>
             hasNear(
                 true,
-                { high, low, side: side === 'high' ? Side.Sell : Side.Buy } as any,
+                {high, low, side: side === 'high' ? Side.Sell : Side.Buy} as any,
                 currentCandle,
             ),
         )
@@ -2019,7 +2033,7 @@ export const filterNearOrderblock = (
 
 export const hasNear = (
     isNear: boolean,
-    { high, low, side }: CandleWithSide,
+    {high, low, side}: CandleWithSide,
     currentCandle: HistoryObject,
 ) => {
     if (!isNear) {
