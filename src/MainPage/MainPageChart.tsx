@@ -10,8 +10,9 @@ import {
     roundTime,
     swingsToMarkers
 } from "../utils.ts";
-import {SeriesMarker, Time} from "lightweight-charts";
+import {isBusinessDay, isUTCTimestamp, SeriesMarker, Time} from "lightweight-charts";
 import {calculateTesting, defaultConfig} from "../THUltimate/th_ultimate_oneIt.ts";
+import {SessionHighlighting} from "../lwc-plugins/session-highlighting.ts";
 
 
 const markerColors = {
@@ -59,6 +60,47 @@ export const MainPageChart: FC<{
             }
             return result;
         }
+        function getDate(time: Time): Date {
+            if (isUTCTimestamp(time)) {
+                return new Date(time);
+            } else if (isBusinessDay(time)) {
+                return new Date(time.year, time.month, time.day);
+            } else {
+                return new Date(time);
+            }
+        }
+
+        const sessionHighlighter = (time: Time, index) => {
+            let tr = trend[index]; // .find(c => (c?.time * 1000) >= (time as number));
+
+            // let tr = newTrend.find(c => (c?.time * 1000) >= (time as number));
+            let _trend = tr?.trend;
+            if (!tr) {
+                // tr = newTrend.findLast(c => (c?.time * 1000) <= (time as number));
+                // trend = tr.trend * -1;
+            }
+            if (!_trend) {
+                return 'gray';
+            }
+            if (_trend > 0) {
+                return 'rgba(20, 131, 92, 0.4)';
+            }
+            if (_trend < 0) {
+                return 'rgba(157, 43, 56, 0.4)';
+            }
+
+            const date = getDate(time);
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                // Weekend 🏖️
+                return 'rgba(255, 152, 1, 0.08)'
+            }
+            return 'rgba(41, 98, 255, 0.08)';
+        };
+
+        const sessionHighlighting = new SessionHighlighting(sessionHighlighter);
+        _primitives.push(sessionHighlighting);
+
         _primitives.push(...orderblocksToImbalancePrimitives(orderBlocks, checkShow, lastCandle));
 
         _primitives.push(...orderblocksToOrderblocksPrimitives(orderBlocks, checkShow, lastCandle));
