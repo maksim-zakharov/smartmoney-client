@@ -258,12 +258,13 @@ export const calculatePOI = (
         if (swing) {
             // Нужно для определения ближайшей цели для TakeProfit
             const takeProfit = closestExtremumSwing(manager, swing)
+            const firstImbalanceIndex = findFirstImbalanceIndex(manager, index);
             // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
             // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
             manager.nonConfirmsOrderblocks.set(swing.time, {
                 swing,
                 firstCandle: manager.candles[index],
-                firstImbalanceIndex: index,
+                firstImbalanceIndex,
                 status: 'draft',
                 // Тейк профит до ближайшего максимума
                 takeProfit: takeProfit?.price,
@@ -298,26 +299,6 @@ export const calculatePOI = (
                     takeProfit,
                     lastImbalanceIndex,
                 } = orderblock;
-                // Сначала ищем индекс свечки с которой будем искать имбаланс.
-                // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
-                if (
-                    status === 'draft' &&
-                    firstImbalanceIndex < i &&
-                    !isInsideBar(firstCandle, manager.candles[i])
-                ) {
-                    firstImbalanceIndex = i - 1;
-                    status = 'firstImbalanceIndex';
-                    manager.nonConfirmsOrderblocks.set(time, {
-                        ...orderblock,
-                        firstImbalanceIndex,
-                        status,
-                    });
-                }
-
-                // Все некст свечи внутренние
-                if (status === 'draft') {
-                    return;
-                }
 
                 const num = withMove ? 2 : 1;
                 const firstImbIndex = firstImbalanceIndex + num;
@@ -1906,6 +1887,12 @@ export const isIFC = (side: Swing['side'], candle: HistoryObject) => {
         (side === 'low' && upWick < downWick && body < downWick)
     );
 };
+
+/**
+ * Проверяет есть ли правый бар внутри левого
+ * @param candle
+ * @param bar
+ */
 export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) =>
     candle.high > bar.high && candle.low < bar.low;
 
@@ -2050,4 +2037,18 @@ const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
     }
 
     return manager.swings[index];
+}
+
+const findFirstImbalanceIndex = (manager: StateManager, i: number) => {
+    // Сначала ищем индекс свечки с которой будем искать имбаланс.
+    // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
+
+    let firstImbalanceIndex = i;
+    let firstCandle = manager.candles[i];
+
+    while(isInsideBar(firstCandle, manager.candles[firstImbalanceIndex])){
+        firstImbalanceIndex++;
+    }
+
+    return firstImbalanceIndex - 1;
 }
