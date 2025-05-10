@@ -265,7 +265,7 @@ export const calculatePOI = (
                 swing,
                 firstCandle: manager.candles[index],
                 firstImbalanceIndex,
-                status: 'draft',
+                status: 'firstImbalanceIndex',
                 // Тейк профит до ближайшего максимума
                 takeProfit: takeProfit?.price,
             });
@@ -2032,7 +2032,10 @@ export const hasNear = (
 
 const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
     let index = swing.index - 1;
-    while(!manager.swings[index] || !manager.swings[index].isExtremum || manager.swings[index].side === swing.side) {
+    while(
+        index > -1 &&
+        (!manager.swings[index] || !manager.swings[index].isExtremum || manager.swings[index].side === swing.side)
+        ) {
         index--;
     }
 
@@ -2043,7 +2046,7 @@ const findFirstImbalanceIndex = (manager: StateManager, i: number) => {
     // Сначала ищем индекс свечки с которой будем искать имбаланс.
     // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
 
-    let firstImbalanceIndex = i;
+    let firstImbalanceIndex = i + 1;
     let firstCandle = manager.candles[i];
 
     while(isInsideBar(firstCandle, manager.candles[firstImbalanceIndex])){
