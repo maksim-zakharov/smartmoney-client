@@ -255,12 +255,9 @@ export const calculatePOI = (
             manager.lastIDMIndexMap[manager.boses[i]?.type] = i;
         }
 
-        // Нужно для определения ближайшей цели для TakeProfit
-        if (swing?.isExtremum) {
-            manager.lastExtremumIndexMap[swing.side] = i;
-        }
-
         if (swing) {
+            // Нужно для определения ближайшей цели для TakeProfit
+            const takeProfit = closestExtremumSwing(manager, swing)
             // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
             // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
             manager.nonConfirmsOrderblocks.set(swing.time, {
@@ -269,10 +266,7 @@ export const calculatePOI = (
                 firstImbalanceIndex: index,
                 status: 'draft',
                 // Тейк профит до ближайшего максимума
-                takeProfit:
-                    swing.side === 'high'
-                        ? manager.swings[manager.lastExtremumIndexMap['low']]?.price
-                        : manager.swings[manager.lastExtremumIndexMap['high']]?.price,
+                takeProfit: takeProfit?.price,
             });
         }
 
@@ -994,10 +988,6 @@ export class StateManager {
     // calculatePOI
     uniqueOrderBlockTimeSet = new Set();
     lastIDMIndexMap: Record<'high' | 'low', number> = {
-        high: null,
-        low: null,
-    };
-    lastExtremumIndexMap: Record<'high' | 'low', number> = {
         high: null,
         low: null,
     };
@@ -2052,3 +2042,12 @@ export const hasNear = (
 
     return false;
 };
+
+const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
+    let index = swing.index - 1;
+    while(!manager.swings[index] || !manager.swings[index].isExtremum || manager.swings[index].side === swing.side) {
+        index--;
+    }
+
+    return manager.swings[index];
+}
