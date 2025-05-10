@@ -1,5 +1,5 @@
 import {Table} from "antd";
-import React, {FC, useMemo} from "react";
+import React, {FC, useMemo, useState} from "react";
 import moment from "moment/moment";
 import {Link} from "react-router-dom";
 import {moneyFormat, summ} from "./MainPage.tsx";
@@ -7,6 +7,11 @@ import useWindowDimensions from "../useWindowDimensions.tsx";
 
 export const HistoryTable: FC<{pageSize: number, history: any[], onSelect: (row: any) => void, selectedPattern: string, getPatternKey: (row: any) => string}> = ({selectedPattern, getPatternKey, pageSize, history, onSelect}) => {
     const {width} = useWindowDimensions();
+
+    const [{fromDate, toDate}, setDates] = useState({
+        fromDate: moment().add(-1, 'week').unix(),
+        toDate: moment().unix(),
+    });
 
     const historyTableData = useMemo(() => {
         let data = history.map((p: any) => ({
@@ -170,7 +175,7 @@ export const HistoryTable: FC<{pageSize: number, history: any[], onSelect: (row:
             render: (value, row) => {
                 return row?.type !== 'summary' ?
                     <Link
-                        to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
+                        to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend%2CshowPositions&fromDate=${fromDate}&toDate=${toDate}`}
                         target="_blank">Тестер</Link> : '';
             }
         }

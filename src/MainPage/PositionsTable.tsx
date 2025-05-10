@@ -1,5 +1,5 @@
 import {Table} from "antd";
-import React, {FC} from "react";
+import React, {FC, useState} from "react";
 import moment from "moment/moment";
 import {Link, useSearchParams} from "react-router-dom";
 import {moneyFormat} from "./MainPage.tsx";
@@ -8,6 +8,11 @@ import useWindowDimensions from "../useWindowDimensions.tsx";
 export const PositionsTable: FC<{pageSize: number, onSelect: (row: any) => void, positions: any[], accTradesOrdernoQtyMap: any}> = ({pageSize, onSelect, positions, accTradesOrdernoQtyMap}) => {
     const [searchParams, setSearchParams] = useSearchParams();
     const symbol = searchParams.get("ticker") || "SBER";
+
+    const [{fromDate, toDate}, setDates] = useState({
+        fromDate: moment().add(-1, 'week').unix(),
+        toDate: moment().unix(),
+    });
 
     const {width} = useWindowDimensions();
 
@@ -88,7 +93,7 @@ export const PositionsTable: FC<{pageSize: number, onSelect: (row: any) => void,
             title: "Действия",
             render: (value, row) => {
                 return <Link
-                    to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
+                    to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend%2CshowPositions&fromDate=${fromDate}&toDate=${toDate}`}
                     target="_blank">Тестер</Link>;
             }
         }
