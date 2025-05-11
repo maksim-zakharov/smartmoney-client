@@ -251,41 +251,30 @@ export const calculatePOI = (
         const swing = manager.swings[i];
         const index = swing?.index;
 
-        if (manager.boses[i]?.isIDM) {
-            manager.lastIDMIndexMap[manager.boses[i]?.type] = i;
-        }
-
         if (swing) {
             // Нужно для определения ближайшей цели для TakeProfit
             const takeProfit = closestExtremumSwing(manager, swing)
-            const firstImbalanceIndex = findFirstImbalanceIndex(manager, index);
+            const _firstImbalanceIndex = findFirstImbalanceIndex(manager, index);
+            const {
+                lastImbalanceIndex,
+                firstImbalanceIndex,
+                firstCandle
+            } = findLastImbalanceIndex(manager, manager.candles[index], _firstImbalanceIndex, withMove);
             // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
             // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
             manager.nonConfirmsOrderblocks.set(swing.time, {
                 swing,
-                firstCandle: manager.candles[index],
+                firstCandle,
                 firstImbalanceIndex,
+                lastImbalanceIndex,
                 status: 'firstImbalanceIndex',
+                // status: 'lastImbalanceIndex',
                 // Тейк профит до ближайшего максимума
                 takeProfit: takeProfit?.price,
             });
         }
 
-        // Важно, только после этого POI можем удалять lastIDMIndexMap;
         manager.calculateIDMIFC(i);
-        if (
-            manager.lastIDMIndexMap['high'] &&
-            manager.boses[manager.lastIDMIndexMap['high']].to?.index === i
-        ) {
-            manager.lastIDMIndexMap['high'] = null;
-        }
-
-        if (
-            manager.lastIDMIndexMap['low'] &&
-            manager.boses[manager.lastIDMIndexMap['low']].to?.index === i
-        ) {
-            manager.lastIDMIndexMap['low'] = null;
-        }
 
         // В этом блоке создаем все ОБ
         // Если есть хотя бы 3 свечки
@@ -313,6 +302,7 @@ export const calculatePOI = (
                     }
                     lastImbalanceIndex = i;
                     status = 'lastImbalanceIndex';
+
                     manager.nonConfirmsOrderblocks.set(time, {
                         ...orderblock,
                         firstImbalanceIndex,
@@ -366,7 +356,7 @@ export const calculatePOI = (
                     side: type,
                 } as OrderblockPart;
 
-                const lastIDMIndex = manager.lastIDMIndexMap[swing?.side];
+                const lastIDMIndex = closestLeftIDMIndex(manager, swing.index, swing?.side);
                 if (
                     orderBlockPart?.side === swing?.side &&
                     swing?.isExtremum &&
@@ -416,24 +406,8 @@ export const calculatePOI = (
              */
             manager.obIdxes.forEach((obIdx) => {
                 const obItem = manager.pois[obIdx];
-                const idmType = obItem.side;
                 const startPositionIndex = obItem.index + obItem.imbalanceIndex;
-                if (
-                    manager.lastIDMIndexMap[idmType] &&
-                    manager.lastIDMIndexMap[idmType] <= i &&
-                    obItem.index >= manager.lastIDMIndexMap[idmType]
-                ) {
-                    obItem.isSMT = true;
-                    obItem.canTrade = false;
-                }
-                if (
-                    manager.boses[manager.lastIDMIndexMap[idmType]]?.isConfirmed &&
-                    manager.lastIDMIndexMap[idmType] &&
-                    manager.boses[manager.lastIDMIndexMap[idmType]].to?.index - 1 <= i
-                ) {
-                    obItem.isSMT = false;
-                    obItem.canTrade = true;
-                }
+                // TODO Тут нужен фильтр на SMT
                 if (startPositionIndex <= i && hasHitOB(obItem, candle)) {
                     manager.obIdxes.delete(obIdx);
 
@@ -968,10 +942,6 @@ export class StateManager {
 
     // calculatePOI
     uniqueOrderBlockTimeSet = new Set();
-    lastIDMIndexMap: Record<'high' | 'low', number> = {
-        high: null,
-        low: null,
-    };
     nonConfirmsOrderblocks = new Map<
         number,
         {
@@ -1009,7 +979,7 @@ export class StateManager {
 
         // На нисходящем тренде нужно искать IFC сверху, на восходящем - снизу
         const idmSide = this.trend[index].trend === -1 ? 'high' : 'low';
-        const lastIDMIndex = this.lastIDMIndexMap[idmSide];
+        const lastIDMIndex = closestLeftIDMIndex(this, index, idmSide);
         const bos = this.boses[lastIDMIndex];
         if (!bos) {
             return;
@@ -2032,7 +2002,7 @@ export const hasNear = (
 
 const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
     let index = swing.index - 1;
-    while(
+    while (
         index > -1 &&
         (!manager.swings[index] || !manager.swings[index].isExtremum || manager.swings[index].side === swing.side)
         ) {
@@ -2049,9 +2019,42 @@ const findFirstImbalanceIndex = (manager: StateManager, i: number) => {
     let firstImbalanceIndex = i + 1;
     let firstCandle = manager.candles[i];
 
-    while(isInsideBar(firstCandle, manager.candles[firstImbalanceIndex])){
+    while (isInsideBar(firstCandle, manager.candles[firstImbalanceIndex])) {
         firstImbalanceIndex++;
     }
 
     return firstImbalanceIndex - 1;
+}
+
+const findLastImbalanceIndex = (manager: StateManager, _firstCandle: HistoryObject, firstImbalanceIndex: number, withMove: boolean) => {
+    const num = withMove ? 2 : 1;
+    const firstImbIndex = firstImbalanceIndex + num;
+    let firstCandle = _firstCandle;
+    let lastImbalanceIndex = firstImbIndex;
+
+    while (manager.candles[lastImbalanceIndex] && !isImbalance(manager.candles[firstImbalanceIndex], manager.candles[lastImbalanceIndex])) {
+        lastImbalanceIndex++;
+    }
+
+    if (withMove) {
+        firstCandle = manager.candles[firstImbIndex];
+        firstImbalanceIndex = firstImbIndex;
+    }
+
+    return {
+        firstImbalanceIndex,
+        firstCandle,
+        lastImbalanceIndex,
+    }
+}
+
+const closestLeftIDMIndex = (manager: StateManager, i: number, side: 'high' | 'low') => {
+    let startIndex = i;
+    while (startIndex > -1 && (!manager.boses[startIndex]?.isIDM || manager.boses[startIndex].type !== side)) {
+        startIndex--;
+    }
+    if (startIndex === -1) {
+        return undefined;
+    }
+    return startIndex;
 }
