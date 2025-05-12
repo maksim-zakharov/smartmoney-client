@@ -523,9 +523,15 @@ export const calculateTesting = (
     let orderBlocks = calculatePOI(manager, withMove, newSMT, showFake);
 
     if (byTrend) {
-        const currentTrend =
-            manager.trend[manager.trend.length - 1]?.trend === 1 ? 'low' : 'high';
-        orderBlocks = orderBlocks.filter((ob) => ob?.side === currentTrend);
+        let currentTrend;
+        if (manager.trend[manager.trend.length - 1]?.trend === 1) {
+            currentTrend = 'low';
+        }
+        if (manager.trend[manager.trend.length - 1]?.trend === -1) {
+            currentTrend = 'high';
+        }
+
+        orderBlocks = orderBlocks.filter((ob) => currentTrend && ob?.side === currentTrend);
     }
 
     return {
