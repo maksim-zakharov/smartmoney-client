@@ -1894,6 +1894,7 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing) => {
         startIDMIndex--;
     }
 
+    // Если не нашли ближайший свинг слева - ИДМ нет
     if (startIDMIndex === -1) {
         return false;
     }
@@ -1912,6 +1913,11 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing) => {
 
     // Если IDM не подтвержден - не смотрим
     if (!manager.candles[endIDMIndex]) {
+        return false;
+    }
+
+    // Проверяем чтоб LL/HH находились четко между краями IDM
+    if(swing.index <= startIDMIndex || swing.index >= endIDMIndex){
         return false;
     }
 
