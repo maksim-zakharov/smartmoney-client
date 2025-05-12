@@ -355,7 +355,6 @@ export class StateManager {
             updateLastSwing(i, 'low', this);
         }
 
-        // TODO Хорошо бы это сделать в oneIteration
         this.boses
             .filter(b => b?.type === 'high' && !b?.isIDM)
             .sort((a, b) => a.from.price - b.from.price)
@@ -709,22 +708,8 @@ export class StateManager {
             confirmExtremum(this, rootIndex, 'high', rootIndex === this.swings.length - 1);
             confirmExtremum(this, rootIndex, 'low', rootIndex === this.swings.length - 1)
 
-            // deleteInternalStructure
-            // if (this.config.oneIteration) {
-            // deleteInternalOneIt(processingIndex, 'high', this);
-            // deleteInternalOneIt(processingIndex, 'low', this);
-            //
-            // updateExtremumOneIt(processingIndex, 'high', this);
-            // updateExtremumOneIt(processingIndex, 'low', this);
-            // }
-
             if (this.config.showIFC)
                 this.markIFCOneIt(processingIndex);
-        }
-
-        if (this.config.oneIteration) {
-            // Удаляем IDM у удаленных LL/HH TODO нужно переместить в цикл выше
-            this.boses = this.boses.map(b => !this.deletedSwingIndexes.has(b?.extremum?.index) ? b : null);
         }
     }
 }
@@ -992,7 +977,6 @@ export const defaultConfig: THConfig = {
     withMove: false,
     byTrend: true,
     showFake: true,
-    oneIteration: true
 }
 
 // Точка входа в торговлю
@@ -1452,8 +1436,7 @@ const deleteInternalBOS = (manager: StateManager) => {
 }
 
 export const tradinghubCalculateTrendNew = (manager: StateManager) => {
-    if (!manager.config.oneIteration)
-        manager.deleteInternalStructureOld();
+    manager.deleteInternalStructureOld();
 
     if (!manager.config.showHiddenSwings) {
         manager.deleteEmptySwingsOld();
@@ -1545,9 +1528,6 @@ const oneIterationTrend = (manager: StateManager, rootIndex: number) => {
 }
 
 /**
- * @deprecated
- * TODO
- * Переписать на oneIteration
  * Сравнивать не cur/next а prev/cur
  * Через свинги без фильтрации onlybos
  * @param manager

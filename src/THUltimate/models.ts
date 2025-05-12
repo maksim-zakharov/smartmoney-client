@@ -236,7 +236,6 @@ export interface THConfig {
     showIFC?: boolean;
     byTrend?: boolean;
     showFake?: boolean;
-    oneIteration?: boolean;
     tradeIDMIFC?: boolean;
     tradeOBIDM?: boolean;
     reversSwings?: boolean;

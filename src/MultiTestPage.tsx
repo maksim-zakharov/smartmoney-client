@@ -46,7 +46,6 @@ export const MultiTestPage = () => {
     const [tradeIDMIFC, settradeIDMIFC] = useState<boolean>(false);
     const [withMove, setwithMove] = useState<boolean>(false);
     const [reversSwings, setreversSwings] = useState<boolean>(false);
-    const [oneIteration, setoneIteration] = useState<boolean>(false);
     const [showFake, setfakeBOS] = useState<boolean>(false);
     const [newSMT, setnewSMT] = useState<boolean>(false);
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(false);
@@ -70,7 +69,6 @@ export const MultiTestPage = () => {
             showHiddenSwings,
             newSMT,
             showFake,
-            oneIteration,
             // tradeOBIDM,
             // tradeIDMIFC
         });
@@ -102,7 +100,7 @@ export const MultiTestPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, showFake, oneIteration, newSMT, showHiddenSwings, reversSwings, withMove, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, showFake, newSMT, showHiddenSwings, reversSwings, withMove, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -112,7 +110,6 @@ export const MultiTestPage = () => {
                 showHiddenSwings,
                 newSMT,
                 showFake,
-                oneIteration,
                 tradeOBIDM,
                 tradeIDMIFC
             });
@@ -145,7 +142,7 @@ export const MultiTestPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [tradeIDMIFC, tradeOBIDM, showFake, oneIteration, newSMT, showHiddenSwings,reversSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [tradeIDMIFC, tradeOBIDM, showFake, newSMT, showHiddenSwings,reversSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -430,12 +427,6 @@ export const MultiTestPage = () => {
             <Col>
                 <FormItem>
                     <Checkbox checked={showFake} onChange={e => setfakeBOS(e.target.checked)}>Fake BOS</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={oneIteration} onChange={e => setoneIteration(e.target.checked)}>Свинги одной
-                        итерацией</Checkbox>
                 </FormItem>
             </Col>
             <Col>

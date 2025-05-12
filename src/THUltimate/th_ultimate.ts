@@ -369,19 +369,6 @@ export const calculatePOI = (
                     swing?.isExtremum &&
                     !manager.uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)
                 ) {
-                    // TODO Не торговать ОБ под IDM
-                    const bossIndex = orderBlockPart.firstImbalanceIndex + index;
-                    const hasBoss =
-                        Boolean(manager.boses[bossIndex]) &&
-                        (!showFake || manager.boses[bossIndex].isConfirmed);
-
-                    const isSMT = false;
-                    // !newSMT &&
-                    // (hasBoss ||
-                    //     (lastIDMIndex &&
-                    //         manager.boses[lastIDMIndex].from.index <= i &&
-                    //         manager.boses[lastIDMIndex].to.index > i));
-
                     let type = POIType.LQ_IFC;
                     if (canTradeExtremumOrderblock(manager, swing)) {
                         type = POIType.OB_EXT;
@@ -389,7 +376,7 @@ export const calculatePOI = (
 
                     manager.pois[swing.index] = new POI({
                         ...orderBlockPart,
-                        isSMT,
+                        isSMT: false,
                         swing,
                         canTrade: true,
                         takeProfit,
@@ -492,10 +479,9 @@ export const calculateTesting = (
         newSMT,
         byTrend,
         showFake,
-        oneIteration,
     }: THConfig,
 ) => {
-    const manager = new StateManager(data, {oneIteration, showIFC});
+    const manager = new StateManager(data, { showIFC});
     // <-- Копировать в робота
     manager.calculate();
 
@@ -503,7 +489,6 @@ export const calculateTesting = (
         showHiddenSwings,
         showFake,
         showIFC,
-        oneIteration,
     });
 
     // Копировать в робота -->
@@ -541,7 +526,6 @@ export interface THConfig {
     showIFC?: boolean;
     byTrend?: boolean;
     showFake?: boolean;
-    oneIteration?: boolean;
 }
 
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT;
@@ -552,7 +536,6 @@ export const defaultConfig: THConfig = {
     withMove: false,
     byTrend: true,
     showFake: false,
-    oneIteration: true,
 };
 
 // Точка входа в торговлю
