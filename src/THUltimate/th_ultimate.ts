@@ -661,7 +661,6 @@ export interface Trend {
 }
 
 /**
- * @deprecated
  * @param manager
  */
 export const deleteEmptySwings = (manager: StateManager) => {
@@ -918,10 +917,6 @@ export class StateManager {
         low: new Map<number, HistoryObject>([]),
     };
 
-    // oneIterationTrend
-    firstBos?: Cross;
-    lastBos?: Cross;
-
     // calculatePOI
     uniqueOrderBlockTimeSet = new Set();
     nonConfirmsOrderblocks = new Map<
@@ -1074,35 +1069,6 @@ export class StateManager {
             endCandle: this.candles[index],
             endIndex: index,
         });
-    }
-
-    // Первый OB сразу после IDM, задеваем его свечой IFC
-    calculateOBIDMIFC() {
-    }
-
-    // Просто какой то уровень ликвидности (не OB), строится от свинга, не экстремум, не OB IDM, задеваем свечой IFC
-    calculateLQIFC() {
-    }
-
-    // Первый свинг (ликвидность) сразу после HH/LL, задеваем ее свечой IFC
-    calculateEXTLQIFC() {
-    }
-
-    // Ордерблок на свече HH/LL, задеваем его свечой (или закрываемся внутри), не IFC
-    calculateOBEXT() {
-    }
-
-    // Чоч на свече HH/LL, задеваем его свечой IFC
-    calculateOBEXTIFC() {
-    }
-
-    calculateTrend() {
-        this.firstBos = null;
-        this.lastBos = null;
-        // Берем только те босы которые строятся от свингов (по сути ж которые не IDM)
-        for (let i = 0; i < this.candles.length; i++) {
-            oneIterationTrend(this, i);
-        }
     }
 
     markIFCOneIt = (index: number) => {
@@ -1316,7 +1282,6 @@ export class StateManager {
 }
 
 /**
- * @deprecated
  * @param manager
  */
 export const deleteInternalStructure = (manager: StateManager) => {
@@ -1595,6 +1560,7 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
         }
     }
 };
+
 export const tradinghubCalculateTrendNew = (
     manager: StateManager,
     {showHiddenSwings, showFake}: THConfig,
@@ -1610,153 +1576,7 @@ export const tradinghubCalculateTrendNew = (
     drawTrend(manager);
 };
 
-const oneIterationTrend = (manager: StateManager, rootIndex: number) => {
-    const curBos = manager.boses[rootIndex];
-    const lastBos = manager.lastBos;
-    const firstBos = manager.firstBos;
-
-    const log = (...args) => {
-        return;
-        console.log(args);
-    };
-
-    // Если бос ИДМ - просто повторяем тренд который был
-    if (curBos && curBos.isIDM && lastBos) {
-        const isNewTrend = lastBos.type === 'high' ? 1 : -1;
-        manager.trend[rootIndex] = {
-            time: manager.candles[rootIndex].time,
-            trend: isNewTrend,
-        };
-        log(rootIndex, 'Если бос ИДМ - просто повторяем тренд который был');
-        return;
-    }
-
-    // Если первый бос/чоч случился а нового пока нет - рисуем тренд первого
-    if (lastBos && !firstBos && rootIndex >= lastBos.to.index) {
-        const isNewTrend = lastBos.type === 'high' ? 1 : -1;
-        manager.trend[rootIndex] = {
-            time: manager.candles[rootIndex].time,
-            trend: isNewTrend,
-        };
-        log(
-            rootIndex,
-            'Если первый бос/чоч случился а нового пока нет - рисуем тренд первого',
-        );
-    }
-
-    // Если текущий бос внутри предыдущего боса - то текущий бос нужно выпилить и не учитывать в тренде
-    if (
-        firstBos &&
-        lastBos &&
-        lastBos.from.index > firstBos.from.index &&
-        lastBos.to.index < firstBos.to.index
-    ) {
-        manager.boses[lastBos.from.index] = null;
-        return;
-    }
-
-    // Если оба боса подтвердились одной свечой, значит второй бос лишний и оставляем самый длинный
-    if (
-        firstBos &&
-        lastBos &&
-        firstBos.isConfirmed &&
-        lastBos.isConfirmed &&
-        firstBos.to.index === lastBos.to.index
-    ) {
-        manager.boses[lastBos.from.index] = null;
-        manager.lastBos = null;
-        return;
-    }
-
-    // Если есть текущий бос и прошлый, но текущий еще не закончился - рисуем тренд прошлого
-    if (firstBos && lastBos && lastBos?.to.index > rootIndex) {
-        const isNewTrend = firstBos.type === 'high' ? 1 : -1;
-        manager.trend[rootIndex] = {
-            time: manager.candles[rootIndex].time,
-            trend: isNewTrend,
-        };
-        log(
-            rootIndex,
-            'Если есть текущий бос и прошлый, но текущий еще не закончился - рисуем тренд прошлого',
-        );
-    }
-
-    // Если есть текущий бос и прошлый, но оба еще не закончились - рисуем предыдущий тренд
-    if (
-        firstBos &&
-        lastBos &&
-        lastBos?.to.index > rootIndex &&
-        firstBos?.to.index > rootIndex &&
-        manager.trend[rootIndex - 1]?.trend
-    ) {
-        manager.trend[rootIndex] = {
-            time: manager.candles[rootIndex].time,
-            trend: manager.trend[rootIndex - 1]?.trend,
-        };
-        log(
-            rootIndex,
-            'Если есть текущий бос и прошлый, но оба еще не закончились - рисуем предыдущий тренд',
-        );
-    }
-
-    // Если в прошлом был БОС - то нужно рисовать его тренд.
-    if (lastBos && rootIndex >= lastBos.to.index) {
-        manager.trend[rootIndex] = {
-            time: manager.candles[rootIndex].time,
-            trend: lastBos.type === 'high' ? 1 : -1,
-        };
-        log(rootIndex, 'Если в прошлом был БОС - то нужно рисовать его тренд.');
-    }
-
-    // Удаляем IDM у точек которые являются босами
-    if (
-        lastBos &&
-        manager.boses[rootIndex]?.isIDM &&
-        manager.boses[rootIndex]?.type === lastBos.type
-    ) {
-        manager.boses[rootIndex] = null;
-    }
-
-    // либо первый чоч, либо сменился тренд, либо был фейк чоч и нужно проверить следующий чоч
-    const isFirstCHoCH = !lastBos;
-    const isTrendChanged = lastBos && curBos && curBos.type !== lastBos.type;
-    const isAfterFake =
-        Boolean(lastBos) &&
-        curBos &&
-        Boolean(curBos.isCHoCH) &&
-        !curBos.isConfirmed &&
-        curBos.type === lastBos.type;
-    if (
-        curBos &&
-        !curBos.isIDM &&
-        (isFirstCHoCH ||
-            ((isTrendChanged || isAfterFake) && curBos.to.index > lastBos.to.index))
-    ) {
-        curBos.markCHoCH();
-    }
-
-    if (curBos && !curBos.isIDM && curBos.isConfirmed) {
-        if (manager.lastBos) {
-            manager.firstBos = manager.lastBos;
-            log(
-                rootIndex,
-                'Записали firstBos',
-                `${manager.firstBos.from.index} - ${manager.firstBos.to.index}`,
-            );
-        }
-        manager.lastBos = curBos;
-        log(
-            rootIndex,
-            'Записали lastBos',
-            `${curBos.from.index} - ${curBos.to.index}`,
-        );
-    }
-};
-
 /**
- * @deprecated
- * TODO
- * Переписать на oneIteration
  * Сравнивать не cur/next а prev/cur
  * Через свинги без фильтрации onlybos
  * @param manager
