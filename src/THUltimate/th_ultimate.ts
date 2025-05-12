@@ -914,10 +914,6 @@ export class StateManager {
     };
 
     // drawBOS
-    liquidityCandleMap: Record<'high' | 'low', HistoryObject> = {
-        high: null,
-        low: null,
-    };
     prelastBosSwingMap: Record<'high' | 'low', number> = {
         high: null,
         low: null,
@@ -2048,6 +2044,12 @@ const findLastImbalanceIndex = (manager: StateManager, _firstCandle: HistoryObje
     }
 }
 
+/**
+ * Находит ближайший слева индекс IDM
+ * @param manager
+ * @param i
+ * @param side
+ */
 const closestLeftIDMIndex = (manager: StateManager, i: number, side: 'high' | 'low') => {
     let startIndex = i;
     while (startIndex > -1 && (!manager.boses[startIndex]?.isIDM || manager.boses[startIndex].type !== side)) {
