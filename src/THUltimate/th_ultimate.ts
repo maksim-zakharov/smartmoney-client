@@ -499,26 +499,6 @@ export const calculateTesting = (
         oneIteration,
     });
 
-    // if (oneIteration) {
-    //     // Потом переписать в просто calculate
-    //     manager.calculateTrend();
-    // }
-
-    // const manager1 = new StateManager(data);
-    // manager1.calculate();
-    // tradinghubCalculateTrendNew(manager1, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration: false});
-    //
-    // const manager2 = new StateManager(data);
-    // manager2.calculate();
-    // tradinghubCalculateTrendNew(manager2, {moreBOS, showHiddenSwings, showFake, showIFC, oneIteration: true});
-    // manager2.calculateTrend();
-    //
-    //
-    // console.log('old', manager1.trend)
-    // console.log('new', manager2.trend)
-    // console.log(JSON.stringify(manager1.trend.slice(0)) === JSON.stringify(manager2.trend.slice(0)))
-    // console.log(JSON.stringify(manager1.boses.slice(0)) === JSON.stringify(manager2.boses.slice(0)))
-
     // Копировать в робота -->
     let orderBlocks = calculatePOI(manager, withMove, newSMT, showFake);
 
@@ -1954,6 +1934,7 @@ export const filterNearOrderblock = (
     currentCandle: HistoryObject,
 ) =>
     orderBlocks
+        .filter(Boolean)
         .filter(({startCandle: {high, low}, side}) =>
             hasNear(
                 true,
