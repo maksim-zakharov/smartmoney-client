@@ -64,7 +64,7 @@ export class Cross {
     isBOS?: boolean;
     isCHoCH?: boolean;
 
-    isSwipedLiquidity?: boolean;
+    isFake?: boolean;
     isConfirmed?: boolean;
 
     constructor(props: Partial<Cross>) {
@@ -98,15 +98,19 @@ export class Cross {
      */
     get text(): string {
         if (this.isIDM) {
-            return 'IDM';
+            if (this.isFake) return 'Fake IDM';
+            if (this.isConfirmed) return 'IDM';
+            return 'Non Confirmed IDM';
         }
         if (this.isBOS) {
-            if (!this.isSwipedLiquidity || this.isConfirmed) return 'BOS';
-            return 'Fake BOS';
+            if (this.isFake) return 'Fake BOS';
+            if (this.isConfirmed) return 'BOS';
+            return 'Non Confirmed BOS';
         }
         if (this.isCHoCH) {
-            if (!this.isSwipedLiquidity || this.isConfirmed) return 'CHoCH';
-            return 'Fake CHoCH';
+            if (this.isFake) return 'Fake CHoCH';
+            if (this.isConfirmed) return 'CHoCH';
+            return 'Non Confirmed CHoCH';
         }
 
         return '';
@@ -255,23 +259,27 @@ export const calculatePOI = (
             // Нужно для определения ближайшей цели для TakeProfit
             const takeProfit = closestExtremumSwing(manager, swing)
             const _firstImbalanceIndex = findFirstImbalanceIndex(manager, index);
-            const {
-                lastImbalanceIndex,
-                firstImbalanceIndex,
-                firstCandle
-            } = findLastImbalanceIndex(manager, manager.candles[index], _firstImbalanceIndex, withMove);
-            // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
-            // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
-            manager.nonConfirmsOrderblocks.set(swing.time, {
-                swing,
-                firstCandle,
-                firstImbalanceIndex,
-                lastImbalanceIndex,
-                status: 'firstImbalanceIndex',
-                // status: 'lastImbalanceIndex',
-                // Тейк профит до ближайшего максимума
-                takeProfit: takeProfit?.price,
-            });
+            try {
+                const {
+                    lastImbalanceIndex,
+                    firstImbalanceIndex,
+                    firstCandle
+                } = findLastImbalanceIndex(manager, manager.candles[index], _firstImbalanceIndex, withMove);
+                // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
+                // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
+                manager.nonConfirmsOrderblocks.set(swing.time, {
+                    swing,
+                    firstCandle,
+                    firstImbalanceIndex,
+                    lastImbalanceIndex,
+                    status: 'firstImbalanceIndex',
+                    // status: 'lastImbalanceIndex',
+                    // Тейк профит до ближайшего максимума
+                    takeProfit: takeProfit?.price,
+                });
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         manager.calculateIDMIFC(i);
@@ -356,7 +364,6 @@ export const calculatePOI = (
                     side: type,
                 } as OrderblockPart;
 
-                const lastIDMIndex = closestLeftIDMIndex(manager, swing.index, swing?.side);
                 if (
                     orderBlockPart?.side === swing?.side &&
                     swing?.isExtremum &&
@@ -368,15 +375,15 @@ export const calculatePOI = (
                         Boolean(manager.boses[bossIndex]) &&
                         (!showFake || manager.boses[bossIndex].isConfirmed);
 
-                    const isSMT =
-                        !newSMT &&
-                        (hasBoss ||
-                            (lastIDMIndex &&
-                                manager.boses[lastIDMIndex].from.index <= i &&
-                                manager.boses[lastIDMIndex].to.index > i));
+                    const isSMT = false;
+                    // !newSMT &&
+                    // (hasBoss ||
+                    //     (lastIDMIndex &&
+                    //         manager.boses[lastIDMIndex].from.index <= i &&
+                    //         manager.boses[lastIDMIndex].to.index > i));
 
                     let type = POIType.LQ_IFC;
-                    if (swing.isExtremum) {
+                    if (canTradeExtremumOrderblock(manager, swing)) {
                         type = POIType.OB_EXT;
                     }
 
@@ -455,7 +462,7 @@ export const calculatePOI = (
 
     return manager.pois.map((ob, index) => {
         if (!ob) {
-            return null;
+            return ob;
         }
         // Либо смотрим тренд по закрытию ОБ либо если закрытия нет - по открытию.
         const obStartIndex = ob?.index;
@@ -503,15 +510,20 @@ export const calculateTesting = (
     let orderBlocks = calculatePOI(manager, withMove, newSMT, showFake);
 
     if (byTrend) {
-        let currentTrend;
-        if (manager.trend[manager.trend.length - 1]?.trend === 1) {
-            currentTrend = 'low';
-        }
-        if (manager.trend[manager.trend.length - 1]?.trend === -1) {
-            currentTrend = 'high';
-        }
+        // TODO вернуть вот так
+        // let currentTrend;
+        // if (manager.trend[manager.trend.length - 1]?.trend === 1) {
+        //     currentTrend = 'low';
+        // }
+        // if (manager.trend[manager.trend.length - 1]?.trend === -1) {
+        //     currentTrend = 'high';
+        // }
+        //
+        // orderBlocks = orderBlocks.filter((ob) => currentTrend && ob?.side === currentTrend);
 
-        orderBlocks = orderBlocks.filter((ob) => currentTrend && ob?.side === currentTrend);
+        const currentTrend =
+            manager.trend[manager.trend.length - 1]?.trend === 1 ? 'low' : 'high';
+        orderBlocks = orderBlocks.filter((ob) => ob?.side === currentTrend);
     }
 
     return {
@@ -1381,7 +1393,7 @@ const confirmBOS = (
         })
         : null;
     let isConfirmed = false;
-    let isSwipedLiquidity = false;
+    let isFake = false;
 
     const isTakenOutLiquidity = hasTakenOutLiquidity(
         type,
@@ -1391,7 +1403,7 @@ const confirmBOS = (
     // Если сделали пересвип тенью
     if (isTakenOutLiquidity) {
         if (showFake) {
-            isSwipedLiquidity = true;
+            isFake = true;
             to = new Swing({
                 index: i,
                 time: manager.candles[i].time,
@@ -1438,7 +1450,7 @@ const confirmBOS = (
         to,
         type,
         isBOS: true,
-        isSwipedLiquidity,
+        isFake,
         getCandles: () => manager.candles,
         extremum: manager.swings[lastCrossBosSwing],
         isConfirmed,
@@ -1446,7 +1458,7 @@ const confirmBOS = (
 
     if (
         showFake &&
-        manager.boses[lastBosSwing].isSwipedLiquidity &&
+        manager.boses[lastBosSwing].isFake &&
         manager.boses[lastBosSwing].isConfirmed
     )
         manager.boses[lastBosSwing]?.extremum?.unmarkExtremum();
@@ -1504,7 +1516,6 @@ const deleteInternalBOS = (manager: StateManager) => {
 
 // Рисует BOS если LL или HH перекрываются
 /**
- * @deprecated
  * @param manager
  * @param showFake
  */
@@ -1839,6 +1850,11 @@ const findLastImbalanceIndex = (manager: StateManager, _firstCandle: HistoryObje
         lastImbalanceIndex++;
     }
 
+    // Это на случай если индексы не нашлись
+    if (!manager.candles[lastImbalanceIndex]) {
+        throw new Error('Не найден конец имбаланса');
+    }
+
     if (withMove) {
         firstCandle = manager.candles[firstImbIndex];
         firstImbalanceIndex = firstImbIndex;
@@ -1866,4 +1882,38 @@ const closestLeftIDMIndex = (manager: StateManager, i: number, side: 'high' | 'l
         return undefined;
     }
     return startIndex;
+}
+
+const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing) => {
+    if (!swing.isExtremum) {
+        return false;
+    }
+
+    let startIDMIndex = swing.index - 1;
+    while (startIDMIndex > -1 && (!manager.swings[startIDMIndex] || manager.swings[startIDMIndex].side === swing.side)) {
+        startIDMIndex--;
+    }
+
+    if (startIDMIndex === -1) {
+        return false;
+    }
+
+    const idmStartSwing = manager.swings[startIDMIndex];
+
+    // тут IDM свинг найден, теперь надо проверить что он закрылся
+    let endIDMIndex = startIDMIndex + 1;
+    while (manager.candles[endIDMIndex]
+        && ((swing.side === 'high' && idmStartSwing.price <= manager.candles[endIDMIndex].low)
+            ||
+            (swing.side === 'low' && idmStartSwing.price >= manager.candles[endIDMIndex].high))
+        ) {
+        endIDMIndex++;
+    }
+
+    // Если IDM не подтвержден - не смотрим
+    if (!manager.candles[endIDMIndex]) {
+        return false;
+    }
+
+    return true;
 }
