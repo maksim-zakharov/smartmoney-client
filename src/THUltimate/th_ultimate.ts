@@ -261,76 +261,17 @@ export const calculatePOI = (
                     firstImbalanceIndex,
                     firstCandle
                 } = findLastImbalanceIndex(manager, manager.candles[index], _firstImbalanceIndex, withMove);
-                // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
-                // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
-                manager.nonConfirmsOrderblocks.set(swing.time, {
-                    swing,
-                    firstCandle,
-                    firstImbalanceIndex,
-                    lastImbalanceIndex,
-                    status: 'firstImbalanceIndex',
-                    // status: 'lastImbalanceIndex',
-                    // Тейк профит до ближайшего максимума
-                    takeProfit: takeProfit?.price,
-                });
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        manager.calculateIDMIFC(i);
-
-        // В этом блоке создаем все ОБ
-        // Если есть хотя бы 3 свечки
-        if (i >= 2) {
-            manager.nonConfirmsOrderblocks.forEach((orderblock, time) => {
-                let {
-                    swing,
-                    firstCandle,
-                    firstImbalanceIndex,
-                    status,
-                    takeProfit,
-                    lastImbalanceIndex,
-                } = orderblock;
-
-                const num = withMove ? 2 : 1;
-                const firstImbIndex = firstImbalanceIndex + num;
-
-                if (
-                    firstImbIndex <= i &&
-                    isImbalance(manager.candles[firstImbalanceIndex], manager.candles[i])
-                ) {
-                    if (withMove) {
-                        firstCandle = manager.candles[firstImbIndex];
-                        firstImbalanceIndex = firstImbIndex;
-                    }
-                    lastImbalanceIndex = i;
-                    status = 'lastImbalanceIndex';
-
-                    manager.nonConfirmsOrderblocks.set(time, {
-                        ...orderblock,
-                        firstImbalanceIndex,
-                        firstCandle,
-                        lastImbalanceIndex,
-                        status,
-                    });
-                }
-
-                // Это на случай если индексы не нашлись
-                if (status === 'firstImbalanceIndex') {
-                    return;
-                }
 
                 const lastImbalanceCandle = manager.candles[lastImbalanceIndex];
                 const lastOrderblockCandle = manager.candles[firstImbalanceIndex];
 
                 // Жестко нужно для БД, не трогать
                 const open =
-                    firstCandle.time === time
+                    firstCandle.time === swing.time
                         ? firstCandle.open
                         : lastOrderblockCandle.open;
                 const close =
-                    firstCandle.time !== time
+                    firstCandle.time !== swing.time
                         ? firstCandle.close
                         : lastOrderblockCandle.close;
                 const type =
@@ -340,14 +281,15 @@ export const calculatePOI = (
                             ? 'high'
                             : null;
 
-                if (!type) {
-                    manager.nonConfirmsOrderblocks.delete(time);
-                    return;
+                if(!type) {
+                    continue;
                 }
 
+                // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
+                // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
                 const orderBlockPart = {
                     startCandle: {
-                        time,
+                        time: swing.time,
                         open,
                         close,
                         high: Math.max(firstCandle.high, lastOrderblockCandle.high),
@@ -362,8 +304,7 @@ export const calculatePOI = (
 
                 if (
                     orderBlockPart?.side === swing?.side &&
-                    swing?.isExtremum &&
-                    !manager.uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)
+                    swing?.isExtremum
                 ) {
                     let type = POIType.LQ_IFC;
                     if (canTradeExtremumOrderblock(manager, swing, orderBlockPart)) {
@@ -375,16 +316,18 @@ export const calculatePOI = (
                         isSMT: false,
                         swing,
                         canTrade: true,
-                        takeProfit,
+                        // Тейк профит до ближайшего максимума
+                        takeProfit: takeProfit?.price,
                         type,
                     });
                     manager.obIdxes.add(swing.index);
-
-                    manager.uniqueOrderBlockTimeSet.add(orderBlockPart.startCandle.time);
                 }
-                manager.nonConfirmsOrderblocks.delete(time);
-            });
+            } catch (e) {
+                console.error(e);
+            }
         }
+
+        manager.calculateIDMIFC(i);
         manager.calculateOBIDM(i);
 
         // В этом блоке по всем OB подтверждаем endCandles
@@ -488,7 +431,7 @@ export const calculateTesting = (
     });
 
     // Копировать в робота -->
-    let orderBlocks = calculatePOI(manager, withMove, newSMT, showFake);
+    let orderBlocks = calculatePOI(manager, withMove, newSMT);
 
     if (byTrend) {
         // TODO вернуть вот так
@@ -909,18 +852,6 @@ export class StateManager {
     };
 
     // calculatePOI
-    uniqueOrderBlockTimeSet = new Set();
-    nonConfirmsOrderblocks = new Map<
-        number,
-        {
-            swing: Swing;
-            firstCandle: HistoryObject;
-            takeProfit: number;
-            firstImbalanceIndex: number;
-            lastImbalanceIndex?: number;
-            status: 'draft' | 'firstImbalanceIndex' | 'lastImbalanceIndex';
-        }
-    >([]);
     obIdxes = new Set<number>([]);
 
     constructor(candles: HistoryObject[], config?: THConfig) {
@@ -988,8 +919,6 @@ export class StateManager {
             endCandle: this.candles[index],
             endIndex: index,
         });
-
-        this.uniqueOrderBlockTimeSet.add(orderBlockPart.startCandle.time);
     }
 
     // Первый OB сразу после IDM, задеваем его свечой (любой) или закрываемся внутри
