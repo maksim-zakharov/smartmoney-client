@@ -323,7 +323,7 @@ export const calculatePOI = (
                     manager.obIdxes.add(swing.index);
                 }
             } catch (e) {
-                console.error(e);
+                // console.error(e);
             }
         }
 
