@@ -57,9 +57,10 @@ export const api = createApi({
         params
       })
     }),
-    portfolio: builder.query<any, void>({
-      query: () => ({
-        url: "/api/portfolio"
+    portfolio: builder.query<any, any>({
+      query: (params) => ({
+        url: "/api/portfolio",
+        params
       })
     }),
     orderblocks: builder.query<any, { symbol:string, tf:string, from: number, to: number }>({

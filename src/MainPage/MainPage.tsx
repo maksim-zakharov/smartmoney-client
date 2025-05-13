@@ -52,7 +52,18 @@ const MainPage: React.FC = () => {
             liquidSweepTime: searchParams.get("liquidSweepTime")
         })
 
-        const {data: portfolio = {}} = usePortfolioQuery(undefined);
+    const minDate = moment('2025-04-03T00:00:00.000Z');
+    const min = minDate.unix()
+    const max = moment().unix()
+
+    const [{fromDate, toDate}, setDates] = useState({
+        fromDate: min,
+        toDate: 9999999999999
+    });
+
+        const {data: portfolio = {}} = usePortfolioQuery({
+            fromDate
+        });
 
         const ordersMap = useMemo(() => portfolio?.orders?.reduce((acc, curr) => {
             acc[curr.id] = curr;
@@ -211,15 +222,6 @@ const MainPage: React.FC = () => {
                     <HistoryTable history={history} pageSize={pageSize} onSelect={onSelect} selectedPattern={selectedPattern} getPatternKey={getPatternKey} />
             }
         ];
-
-        const minDate = moment('2025-03-03T00:00:00.000Z');
-        const min = minDate.unix()
-        const max = moment().unix()
-
-        const [{fromDate, toDate}, setDates] = useState({
-            fromDate: min,
-            toDate: 9999999999999
-        });
 
         const diff = max - min;
         const length = 10;

@@ -137,7 +137,7 @@ export enum POIType {
 export class POI {
     textTime?: number;
     firstImbalanceIndex: number;
-    imbalanceIndex: number;
+    lastImbalanceIndex: number;
     lastOrderblockCandle: HistoryObject;
     // Направление: high - рисуем сверху (шорт на отбой), low - рисуем снизу - (лонг на отбой)
     side: 'high' | 'low';
@@ -223,9 +223,6 @@ export class POI {
  * Если Об ни разу не пересекли - тянуть до последней свечи
  */
 /**
- * @deprecated
- * TODO
- * Переписать на calculatePOI
  * Зона POI шире чем ордерблок
  * Варианты по хрустику:
  * - IDM IFC (свип IDM свечей IFC)
@@ -245,7 +242,6 @@ export const calculatePOI = (
     manager: StateManager,
     withMove: boolean = false,
     newSMT: boolean = false,
-    showFake: boolean = false,
 ) => {
     // Иногда определяеются несколько ОБ на одной свечке, убираем
 
@@ -360,7 +356,7 @@ export const calculatePOI = (
                     lastOrderblockCandle,
                     lastImbalanceCandle,
                     firstImbalanceIndex: firstImbalanceIndex - swing.index,
-                    imbalanceIndex: lastImbalanceIndex - swing.index,
+                    lastImbalanceIndex: lastImbalanceIndex - swing.index,
                     side: type,
                 } as OrderblockPart;
 
@@ -370,7 +366,7 @@ export const calculatePOI = (
                     !manager.uniqueOrderBlockTimeSet.has(orderBlockPart.startCandle.time)
                 ) {
                     let type = POIType.LQ_IFC;
-                    if (canTradeExtremumOrderblock(manager, swing)) {
+                    if (canTradeExtremumOrderblock(manager, swing, orderBlockPart)) {
                         type = POIType.OB_EXT;
                     }
 
@@ -400,7 +396,7 @@ export const calculatePOI = (
              */
             manager.obIdxes.forEach((obIdx) => {
                 const obItem = manager.pois[obIdx];
-                const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+                const startPositionIndex = obItem.index + obItem.lastImbalanceIndex;
                 // TODO Тут нужен фильтр на SMT
                 if (startPositionIndex <= i && hasHitOB(obItem, candle)) {
                     manager.obIdxes.delete(obIdx);
@@ -433,7 +429,7 @@ export const calculatePOI = (
             if (!obItem) {
                 continue;
             }
-            const startPositionIndex = obItem.index + obItem.imbalanceIndex;
+            const startPositionIndex = obItem.index + obItem.lastImbalanceIndex;
             for (let j = startPositionIndex; j < manager.candles.length - 1; j++) {
                 const candle = manager.candles[j];
 
@@ -481,7 +477,7 @@ export const calculateTesting = (
         showFake,
     }: THConfig,
 ) => {
-    const manager = new StateManager(data, { showIFC});
+    const manager = new StateManager(data, {showIFC});
     // <-- Копировать в робота
     manager.calculate();
 
@@ -962,7 +958,7 @@ export class StateManager {
             lastOrderblockCandle: this.candles[lastIDMIndex],
             lastImbalanceCandle: this.candles[index],
             firstImbalanceIndex: lastIDMIndex,
-            imbalanceIndex: index,
+            lastImbalanceIndex: index,
             side: idmSide,
         } as OrderblockPart;
 
@@ -1044,7 +1040,7 @@ export class StateManager {
             lastOrderblockCandle: this.candles[index],
             lastImbalanceCandle: this.candles[index],
             firstImbalanceIndex: OB_IDM_SWING.index,
-            imbalanceIndex: index,
+            lastImbalanceIndex: index,
             side: idmSide,
         } as OrderblockPart;
 
@@ -1668,7 +1664,7 @@ export type OrderblockPart = Pick<
     | 'lastOrderblockCandle'
     | 'lastImbalanceCandle'
     | 'firstImbalanceIndex'
-    | 'imbalanceIndex'
+    | 'lastImbalanceIndex'
     | 'startCandle'
 >;
 
@@ -1867,7 +1863,7 @@ const closestLeftIDMIndex = (manager: StateManager, i: number, side: 'high' | 'l
     return startIndex;
 }
 
-const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing) => {
+const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBlockPart: OrderblockPart) => {
     if (!swing.isExtremum) {
         return false;
     }
@@ -1900,9 +1896,32 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing) => {
     }
 
     // Проверяем чтоб LL/HH находились четко между краями IDM
-    if(swing.index <= startIDMIndex || swing.index >= endIDMIndex){
+    if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
         return false;
     }
+
+    // Берем Индекс закрытия имбаланса и начинаем считать пробитие со следующей свечи
+    let hitIndex = swing.index + orderBlockPart.lastImbalanceIndex + 1;
+
+    /**
+     * Важно чтобы пробитие было ПОСЛЕ закрытия IDM
+     */
+    // while (
+    //     manager.candles[hitIndex] && !(
+    //         // Прокололи ОБ снизу вверх
+    //         (swing.side === 'high' && orderBlockPart.startCandle.low <= manager.candles[hitIndex].high) ||
+    //             // Прокололи ОБ сверху вниз
+    //         (swing.side === 'low' && orderBlockPart.startCandle.high >= manager.candles[hitIndex].low)
+    //     )
+    //     ) {
+    //     hitIndex++
+    // }
+
+    // Если пробитие не состоялось
+    // if (!manager.candles[hitIndex] || endIDMIndex >= hitIndex) {
+    //     return false;
+    // }
+
 
     return true;
 }

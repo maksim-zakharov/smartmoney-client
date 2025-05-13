@@ -120,16 +120,8 @@ export class StateManager {
     }
 
     calculate() {
-        if (this.config.reversSwings) {
-            for (let i = this.candles.length - 1; i > 0; i--) {
-                this.revertCalculateSwings(i);
-
-                this.reverseMarkExtremums(i);
-            }
-        } else {
-            for (let i = 0; i < this.candles.length; i++) {
-                this.calculateSwings(i);
-            }
+        for (let i = 0; i < this.candles.length; i++) {
+            this.calculateSwings(i);
         }
     }
 

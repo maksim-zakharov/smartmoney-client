@@ -238,7 +238,6 @@ export interface THConfig {
     showFake?: boolean;
     tradeIDMIFC?: boolean;
     tradeOBIDM?: boolean;
-    reversSwings?: boolean;
 }
 
 export interface Trend {
