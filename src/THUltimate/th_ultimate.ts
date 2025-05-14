@@ -1588,7 +1588,7 @@ export const isIFC = (side: Swing['side'], candle: HistoryObject) => {
  * @param bar
  */
 export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) =>
-    candle.high > bar.high && candle.low < bar.low;
+    candle.high > bar?.high && candle.low < bar?.low;
 
 export type OrderblockPart = Pick<
     POI,

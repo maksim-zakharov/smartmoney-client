@@ -526,11 +526,14 @@ console.log(positions)
             <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
             <Checkbox key="showFake" value="showFake">Fake BOS</Checkbox>
         </Checkbox.Group>
+        {offset}
+        {data.length}
         <Space style={{alignItems: 'baseline'}}>
             <TickerSelect value={ticker} onSelect={onSelectTicker}/>
             <TimeframeSelect value={tf} onChange={setSize}/>
             <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
                          onChange={onChangeRangeDates}/>
+            <Button onClick={() => setOffset(prev => prev = data.length - 2)}>Начало</Button>
             <Button style={{display: 'block'}} icon={<LeftOutlined/>} onMouseDown={() => handleMouseDown(() => setOffset(prev => prev += 1))} onMouseUp={handleMouseUp} onClick={() => setOffset(prev => prev += 1)}/>
             <Button style={{display: 'block'}} icon={<RightOutlined/>}
                     onMouseDown={() => handleMouseDown(() => setOffset(prev => prev -= 1))} onMouseUp={handleMouseUp}
