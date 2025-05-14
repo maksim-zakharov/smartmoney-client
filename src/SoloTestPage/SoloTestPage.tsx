@@ -1,6 +1,19 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {useSearchParams} from "react-router-dom";
-import {Button, Checkbox, Divider, Form, Input, InputNumber, Radio, Row, Slider, SliderSingleProps, Space} from "antd";
+import {Link, useSearchParams} from "react-router-dom";
+import {
+    Button,
+    Checkbox,
+    Divider,
+    Form,
+    Input,
+    InputNumber,
+    Radio,
+    Row,
+    Slider,
+    SliderSingleProps,
+    Space,
+    Table
+} from "antd";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {Chart} from "./TestChart";
@@ -23,6 +36,8 @@ import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 
 import {notTradingTime} from "../THUltimate/utils.ts";
+import moment from "moment";
+import {moneyFormat} from "../MainPage/MainPage.tsx";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -138,7 +153,7 @@ export const SoloTestPage = () => {
 
         return {swings, trend, boses, orderBlocks, positions: positions.sort((a, b) => a.openTime - b.openTime)};
     }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
-
+console.log(positions)
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
             return 0;
@@ -396,6 +411,67 @@ export const SoloTestPage = () => {
         }
     }
 
+    const historyColumns = [
+        {
+            title: "Паттерн",
+            dataIndex: "name",
+            key: "name"
+        },
+        {
+            title: "Тип",
+            dataIndex: "side",
+            key: "side",
+            render: (value, row) => row?.side || "-"
+        },
+        {
+            title: "Время входа",
+            dataIndex: "openTime",
+            key: "openTime",
+            // colSpan: 2,
+            onCell: (row, index) => ({
+                colSpan: row.type === 'summary' ? 4 : 1,
+            }),
+            render: (value, row) => moment(row?.openTime * 1000).format('YYYY-MM-DD HH:mm')
+        },
+        {
+            title: "Стоп цена",
+            dataIndex: "stopLoss",
+            key: "stopLoss",
+            render: (value, row) => {
+                const percent = row.openPrice > row?.stopLoss ? row.openPrice / row?.stopLoss : row?.stopLoss / row.openPrice
+
+                return `${row?.stopLoss} (${((percent - 1) * 100).toFixed(2)}%)`;
+            }
+        },
+        {
+            title: "Тейк цена",
+            dataIndex: "takeProfit",
+            key: "takeProfit",
+            render: (value, row) => {
+                const percent = row.openPrice > row?.takeProfit ? row.openPrice / row?.takeProfit : row?.takeProfit / row.openPrice
+
+                return `${row?.takeProfit} (${((percent - 1) * 100).toFixed(2)}%)`;
+            }
+        },
+        {
+            title: "Время выхода",
+            dataIndex: "closeTime",
+            key: "closeTime",
+            // colSpan: 2,
+            onCell: (row, index) => ({
+                colSpan: row.type === 'summary' ? 4 : 1,
+            }),
+            render: (value, row) => moment(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm')
+        },
+        {
+            title: "Финрез",
+            dataIndex: "pnl",
+            key: "pnl",
+            align: "right",
+            render: (value, row) => row.pnl ? moneyFormat(row.pnl * row.quantity * security?.lotsize, "RUB", 2, 2) : "-"
+        },
+    ].filter(Boolean);
+
     return <>
         <Divider plain orientation="left">Риски</Divider>
         <Space>
@@ -473,6 +549,22 @@ export const SoloTestPage = () => {
                        color: 'rgba(0, 0, 0, 0)'
                    } : d)}
                ema={[]}/>
+        <Table size="small" dataSource={positions} columns={historyColumns as any}
+               pagination={{
+                   pageSize: 10,
+               }}
+               onRow={(record) => {
+                   return {
+                       style: record.pnl < 0 ? {
+                           backgroundColor: "#d1261b66",
+                           color: "rgb(255, 117, 132)"
+                       } : record.pnl > 0 ? {
+                           backgroundColor: "#15785566",
+                           color: "rgb(44, 232, 156)"
+                       } : undefined,
+                       className: "hoverable",
+                   };
+               }}/>
     </>;
 }
 

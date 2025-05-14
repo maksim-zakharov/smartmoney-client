@@ -450,6 +450,9 @@ export const calculateTesting = (
         orderBlocks = orderBlocks.filter((ob) => ob?.side === currentTrend);
     }
 
+    // Увеличивает на тестинге на 3% винрейт
+    orderBlocks = orderBlocks.filter((ob) => ob?.type === POIType.OB_EXT);
+
     return {
         swings: manager.swings,
         trend: manager.trend,
@@ -1807,30 +1810,30 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         return false;
     }
 
-    const idmStartSwing = manager.swings[startIDMIndex];
-
-    // тут IDM свинг найден, теперь надо проверить что он закрылся
-    let endIDMIndex = startIDMIndex + 1;
-    while (manager.candles[endIDMIndex]
-        && ((swing.side === 'high' && idmStartSwing.price <= manager.candles[endIDMIndex].low)
-            ||
-            (swing.side === 'low' && idmStartSwing.price >= manager.candles[endIDMIndex].high))
-        ) {
-        endIDMIndex++;
-    }
-
-    // Если IDM не подтвержден - не смотрим
-    if (!manager.candles[endIDMIndex]) {
-        return false;
-    }
-
-    // Проверяем чтоб LL/HH находились четко между краями IDM
-    if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
-        return false;
-    }
-
-    // Берем Индекс закрытия имбаланса и начинаем считать пробитие со следующей свечи
-    let hitIndex = swing.index + orderBlockPart.lastImbalanceIndex + 1;
+    // const idmStartSwing = manager.swings[startIDMIndex];
+    //
+    // // тут IDM свинг найден, теперь надо проверить что он закрылся
+    // let endIDMIndex = startIDMIndex + 1;
+    // while (manager.candles[endIDMIndex]
+    //     && ((swing.side === 'high' && idmStartSwing.price <= manager.candles[endIDMIndex].low)
+    //         ||
+    //         (swing.side === 'low' && idmStartSwing.price >= manager.candles[endIDMIndex].high))
+    //     ) {
+    //     endIDMIndex++;
+    // }
+    //
+    // // Если IDM не подтвержден - не смотрим
+    // if (!manager.candles[endIDMIndex]) {
+    //     return false;
+    // }
+    //
+    // // Проверяем чтоб LL/HH находились четко между краями IDM
+    // if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
+    //     return false;
+    // }
+    //
+    // // Берем Индекс закрытия имбаланса и начинаем считать пробитие со следующей свечи
+    // let hitIndex = swing.index + orderBlockPart.lastImbalanceIndex + 1;
 
     /**
      * Важно чтобы пробитие было ПОСЛЕ закрытия IDM
@@ -1845,12 +1848,11 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
     //     ) {
     //     hitIndex++
     // }
-
-    // Если пробитие не состоялось
+    //
+    // // Если пробитие не состоялось
     // if (!manager.candles[hitIndex] || endIDMIndex >= hitIndex) {
     //     return false;
     // }
-
 
     return true;
 }

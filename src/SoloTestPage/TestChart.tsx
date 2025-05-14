@@ -46,7 +46,7 @@ export const Chart: FC<{
           data,
           ema,
                               width,
-                              height = 710
+                              height = 610
       }) => {
 
     const {
