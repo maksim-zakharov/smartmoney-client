@@ -1,3 +1,5 @@
+import {closestLeft} from "./utils.ts";
+
 export interface HistoryObject {
     high: number;
     low: number;
@@ -720,11 +722,16 @@ const updateExtremum = (
     }
 };
 
+/**
+ *
+ * @param manager
+ * @param index По этому индексу получаем свечку для проверки пересвипа ИДМ
+ * @param side
+ */
 const confirmExtremum = (
     manager: StateManager,
     index: number,
     side: Swing['side'],
-    isNonConfirmIDM: boolean,
 ) => {
     const versusSide = side === 'low' ? 'high' : 'low';
     // Если экстремума нет - не смотрим
@@ -733,7 +740,10 @@ const confirmExtremum = (
     }
     // Экстремум есть но нет IDM - не смотрим
     if (!manager.lastExtremumMap[side].idmSwing) {
-        return;
+        manager.lastExtremumMap[side].idmSwing = closestSwing(manager,  manager.lastExtremumMap[side]);
+        if(!manager.lastExtremumMap[side].idmSwing){
+            return;
+        }
     }
 
     // Если на месте IDM он уже подтвержден - не смотрим
@@ -742,12 +752,10 @@ const confirmExtremum = (
     }
 
     const isHighIDMConfirmed =
-        isNonConfirmIDM ||
         (side === 'high' &&
             manager.lastExtremumMap[side].idmSwing.price >
             manager.candles[index].low);
     const isLowIDMConfirmed =
-        isNonConfirmIDM ||
         (side === 'low' &&
             manager.lastExtremumMap[side].idmSwing.price <
             manager.candles[index].high);
@@ -770,7 +778,7 @@ const confirmExtremum = (
     });
 
     // На случай если и хай и лоу будет на одной свече, нужно подтверждение жестко с предыдущей свечки
-    if (isNonConfirmIDM || manager.lastExtremumMap[side].index !== to.index) {
+    if (manager.lastExtremumMap[side].index !== to.index) {
         manager.boses[from.index] = new Cross({
             from,
             to,
@@ -778,7 +786,7 @@ const confirmExtremum = (
             isIDM: true,
             getCandles: () => manager.candles,
             extremum: manager.lastExtremumMap[side],
-            isConfirmed: !isNonConfirmIDM,
+            isConfirmed: true,
         });
     }
 
@@ -1015,8 +1023,8 @@ export class StateManager {
      */
     markHHLLOld = () => {
         for (let i = 0; i < this.swings.length; i++) {
-            confirmExtremum(this, i, 'low', i === this.swings.length - 1);
-            confirmExtremum(this, i, 'high', i === this.swings.length - 1);
+            confirmExtremum(this, i, 'low');
+            confirmExtremum(this, i, 'high');
 
             updateExtremum(this, i, 'high', this.swings[i]);
             updateExtremum(this, i, 'low', this.swings[i]);
@@ -1103,6 +1111,7 @@ export class StateManager {
                 price: this.candles[0].high,
                 index: 0,
             });
+            this.swings[0].markExtremum()
             return;
         }
 
@@ -1174,14 +1183,12 @@ export class StateManager {
             confirmExtremum(
                 this,
                 rootIndex,
-                'high',
-                rootIndex === this.swings.length - 1,
+                'high'
             );
             confirmExtremum(
                 this,
                 rootIndex,
-                'low',
-                rootIndex === this.swings.length - 1,
+                'low'
             );
 
             if (this.config.showIFC) this.markIFCOneIt(processingIndex);
@@ -1724,6 +1731,18 @@ export const hasNear = (
 
     return false;
 };
+
+const closestSwing = (manager: StateManager, swing: Swing) => {
+    let index = swing.index - 1;
+    while (
+        index > -1 &&
+        (!manager.swings[index] || manager.swings[index].side === swing.side)
+        ) {
+        index--;
+    }
+
+    return manager.swings[index];
+}
 
 const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
     let index = swing.index - 1;
