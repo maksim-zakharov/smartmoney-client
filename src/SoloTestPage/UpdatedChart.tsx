@@ -1,4 +1,4 @@
-import React, {FC, useEffect, useRef, useState} from "react";
+import React, {FC, useEffect, useMemo, useRef, useState} from "react";
 import {
     ColorType,
     createChart,
@@ -74,6 +74,7 @@ export const Chart: FC<{
     const toolTipRef = useRef<HTMLDivElement | null>(null);
     const handleResizeRef = useRef<() => void>();
     const prevPrimitivesRef = useRef<ISeriesPrimitive<any>[]>([]);
+    const timeDataRef = useRef<Map<Time, any>>(new Map([]));
 
     // Состояние для хранения видимого диапазона
     const [visibleRange, setVisibleRange] = useState<{ from: number; to: number } | null>(null);
@@ -159,7 +160,27 @@ export const Chart: FC<{
 
         // Подписка на события
         chartApi.subscribeCrosshairMove(param => {
-            // ... ваша логика tooltip
+            if (
+                param.point === undefined ||
+                !param.time ||
+                param.point.x < 0 ||
+                param.point.x > chartContainerRef!.current.clientWidth ||
+                param.point.y < 0 ||
+                param.point.y > chartContainerRef!.current.clientHeight
+            ) {
+                toolTip.style.display = 'none';
+            } else {
+                // time will be in the same format that we supplied to setData.
+                toolTip.style.display = 'flex';
+                const data = param.seriesData.get(series);
+                // symbol ОТКР МАКС МИН ЗАКР ОБЪЕМ
+                const candle: any = timeDataRef.current.get(data.time)
+
+                toolTip.innerHTML = `ОТКР: ${candle.open} МАКС: ${candle.high} МИН: ${candle.low} ЗАКР: ${candle.close}`; // ОБЪЕМ: ${shortNumberFormat(candle.volume)} ОБЪЕМ (деньги): ${moneyFormat(candle.volume * candle.close * lotSize)}`;
+
+                toolTip.style.left = '12px';
+                toolTip.style.top = '12px';
+            }
         });
 
         return () => {
@@ -174,6 +195,8 @@ export const Chart: FC<{
     // Обновление данных основной серии
     useEffect(() => {
         if (!chartApiRef.current || !seriesRef.current || !data) return;
+
+        timeDataRef.current = new Map(data.map(d => [d.time, d]));
 
         // Сохраняем текущий видимый диапазон
         const timeScale = chartApiRef.current.timeScale();
@@ -341,5 +364,5 @@ export const Chart: FC<{
 
     // Остальные эффекты для volume, primitives и т.д.
 
-    return <div ref={chartContainerRef} style={{height, width: width || '100%'}}/>;
+    return <div ref={chartContainerRef} style={{position: 'relative', height, width: width || '100%'}}/>;
 };
