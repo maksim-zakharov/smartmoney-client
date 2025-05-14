@@ -180,7 +180,6 @@ export const Chart: FC<{
             })));
         }
 
-
         const timeCandleMap = new Map(data.map(d => [d.time, d]));
 
         if(chartContainerRef!.current.children.length > 1 && !chartContainerRef!.current.children[0].classList.contains('tv-lightweight-charts')){

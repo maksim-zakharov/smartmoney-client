@@ -16,7 +16,7 @@ import {
 } from "antd";
 import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
-import {Chart} from "./TestChart";
+import {Chart} from "./UpdatedChart";
 import {
     bosesToLineSerieses,
     fetchCandlesFromAlor,
