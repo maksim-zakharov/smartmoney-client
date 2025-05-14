@@ -526,8 +526,6 @@ console.log(positions)
             <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
             <Checkbox key="showFake" value="showFake">Fake BOS</Checkbox>
         </Checkbox.Group>
-        {offset}
-        {data.length}
         <Space style={{alignItems: 'baseline'}}>
             <TickerSelect value={ticker} onSelect={onSelectTicker}/>
             <TimeframeSelect value={tf} onChange={setSize}/>
