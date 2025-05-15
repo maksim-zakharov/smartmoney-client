@@ -824,6 +824,7 @@ export class StateManager {
     processingSwings = new Map<
         number,
         {
+            prevCandle: HistoryObject;
             currentCandle: HistoryObject;
             nextIndex: number;
             status: 'draft' | 'nextIndex';
@@ -1130,28 +1131,41 @@ export class StateManager {
         for (let i = 0; i < this.processingSwings.size; i++) {
             const [processingIndex, sw] = Array.from(this.processingSwings)[i];
 
-            const prevCandle = this.candles[processingIndex - 1];
-            let {currentCandle, nextIndex, status} = sw;
+            /**
+             * TODO Если брать просто предыдущую свечу
+             * Она может оказаться внутренней для более ранней свечи (что мы не учитываем)
+             * И тогда может быть такое, что на текущей свече хотели нарисовать свинг лоу,
+             * но если у предыдущей НЕВНУТРЕННЕЙ свечи лоу еще ниже - то на текущей нельзя рисовать лоу
+             * Поэтому ПРЕДЫДУЩАЯ - это не та которая первая слева
+             * а та которая не является внутренней для предыдущих свеч (слоожно)
+             * Тем не менее вроде все логично, но винрейт падает на 3% а доходность на 10%
+             */
+            // const prevCandle = this.candles[processingIndex - 1];
+            let { prevCandle, currentCandle, nextIndex, status} = sw;
             let nextCandle = this.candles[nextIndex];
 
             // if (!nextCandle) {
             //     continue;
             // }
 
-            if (status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
+            // TODO Убрал пока здесь, уменьшился финрез на 15%, в методичке нет, но да выглядит чуть иначе
+            // if (status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
                 status = 'nextIndex';
-            } else {
-                nextIndex = rootIndex + 1;
-            }
+            // } else {
+            //     nextIndex = rootIndex + 1;
+            // }
+            // TODO На самом деле нужно искать от текущей свечи такой prevCandle,
+            // TODO который не будет внутренней для предыдущей
+
             this.processingSwings.set(processingIndex, {
                 ...sw,
                 nextIndex,
                 status,
             });
 
-            if (status === 'draft') {
-                continue;
-            }
+            // if (status === 'draft') {
+            //     continue;
+            // }
 
             const diff = nextIndex - processingIndex - 1;
             nextCandle = this.candles[nextIndex];
@@ -1217,14 +1231,16 @@ export class StateManager {
             this.externalCandle = leftCandle;
             return;
         }
-        this.externalCandle = null;
 
         // Если текущая свечка не внутренняя - начинаем поиск свинга
         this.processingSwings.set(rootIndex, {
+            prevCandle: leftCandle,
             currentCandle: this.candles[rootIndex],
             nextIndex: rootIndex + 1,
             status: 'draft',
         });
+
+        this.externalCandle = null;
     }
 }
 
@@ -1562,7 +1578,8 @@ const drawTrend = (manager: StateManager) => {
 
             // Удаляем IDM у точек которые являются босами
             if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {
-                manager.boses[j] = null;
+                // TODO По сути у точки есть IDM, над IDM есть BOS, и поэтому IDM удалялся (не понятно пока зачем)
+                // manager.boses[j] = null;
             }
         }
 
