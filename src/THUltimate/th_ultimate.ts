@@ -714,12 +714,25 @@ const updateExtremum = (
         return;
     }
 
+    // Добавил это правило, потому что был случай когда между двумя лоями был ПЕРВЫЙ хай,
+    // и почему то LL перед хаем удалялся
+    // То есть LL - HH - LL - ok, HH - LL - HH - ok
+    const HHLLHHCondition = manager.lastExtremumMap[swing.side]?.index > manager.lastExtremumMap[versusSide]?.index;
+
     // Сначала чистим экстремум. На текущем свинге убираем флаг экстремума
-    if (manager.lastExtremumMap[swing.side]) {
+    if (manager.lastExtremumMap[swing.side]
+        &&
+        (!manager.lastExtremumMap[versusSide] || HHLLHHCondition)) {
         manager.lastExtremumMap[swing.side].unmarkExtremum();
         // Если по нему был IDM - убираем IDM
         if (manager.lastExtremumMap[swing.side].idmSwing)
             manager.boses[manager.lastExtremumMap[swing.side].idmSwing.index] = null;
+    }
+
+    if(HHLLHHCondition){
+        // manager.lastExtremumMap[swing.side].idmSwing = manager.lastExtremumMap[swing.side];
+        // manager.lastExtremumMap[versusSide].markExtremum();
+        // debugger
     }
 
     // Обновляем новый экстремум и помечаем по нему IDM
@@ -798,7 +811,10 @@ const confirmExtremum = (
         });
     }
 
+    // TODO Проблема в том, что если свечка которая закрыла IDM - она по сути должна быть первым HH
     manager.lastExtremumMap[versusSide] = null;
+
+    // updateExtremum(manager, index, )
 };
 
 // Фиксируем последний свинг который нашли сверху или снизу
