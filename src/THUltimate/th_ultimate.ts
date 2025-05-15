@@ -513,6 +513,14 @@ const hasLowValidPullback = (
     currentCandle: HistoryObject,
     nextCandle?: HistoryObject,
 ) => {
+    /**
+     * Был Вопрос почему тут "="
+     * Если представить "свинг слева" как "начало уровня", то
+     * "равный минимум" это касание уровня.
+     * Пока уровень не пробили - он валиден.
+     * И при касании мы не перерисовываем начало уровня.
+     * Поэтому это не считается "более низким минимумом", и поэтому >= / <= валидно
+     */
     if (
         leftCandle.low > currentCandle.low &&
         (!nextCandle || nextCandle.low >= currentCandle.low)
@@ -1112,6 +1120,9 @@ export class StateManager {
                 index: 0,
             });
             this.swings[0].markExtremum()
+            // this.lastSwingMap[this.swings[0].side] = this.swings[0];
+            // this.lastExtremumMap[this.swings[0].side] = this.swings[0];
+            // this.lastBosSwingMap[this.swings[0].side] = 0;
             return;
         }
 
@@ -1381,7 +1392,8 @@ const confirmBOS = (
     )
         manager.boses[lastBosSwing]?.extremum?.unmarkExtremum();
 
-    manager.deleteIDM.add(lastCrossBosSwing);
+    // TODO Вспомнить зачем это тут было
+    // manager.deleteIDM.add(lastCrossBosSwing);
 
     manager.lastBosSwingMapSet[type].delete(lastBosSwing);
 

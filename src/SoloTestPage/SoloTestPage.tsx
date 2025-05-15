@@ -542,7 +542,7 @@ console.log(positions)
             </Radio.Group>
         </Space>
         <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers}
-               data={data.map(({borderColor, wickColor, color, ...d}, i, array) => (offset >=0 && i >= array.length - 1 - offset) || (offset < 0 && i <= -offset) ?
+               data={data.map(({borderColor, wickColor, color, ...d}, i, array) => (offset >=0 && i > array.length - 1 - offset) || (offset < 0 && i <= -offset) ?
                    {
                        ...d, borderColor: "rgba(44,60,75, 1)",
                        wickColor: "rgba(44,60,75, 1)",
