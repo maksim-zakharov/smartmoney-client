@@ -1,5 +1,3 @@
-import {closestLeft} from "./utils.ts";
-
 export interface HistoryObject {
     high: number;
     low: number;
@@ -283,7 +281,7 @@ export const calculatePOI = (
                             ? 'high'
                             : null;
 
-                if(!type) {
+                if (!type) {
                     continue;
                 }
 
@@ -729,7 +727,7 @@ const updateExtremum = (
             manager.boses[manager.lastExtremumMap[swing.side].idmSwing.index] = null;
     }
 
-    if(HHLLHHCondition){
+    if (HHLLHHCondition) {
         // manager.lastExtremumMap[swing.side].idmSwing = manager.lastExtremumMap[swing.side];
         // manager.lastExtremumMap[versusSide].markExtremum();
         // debugger
@@ -761,8 +759,8 @@ const confirmExtremum = (
     }
     // Экстремум есть но нет IDM - не смотрим
     if (!manager.lastExtremumMap[side].idmSwing) {
-        manager.lastExtremumMap[side].idmSwing = closestSwing(manager,  manager.lastExtremumMap[side]);
-        if(!manager.lastExtremumMap[side].idmSwing){
+        manager.lastExtremumMap[side].idmSwing = closestSwing(manager, manager.lastExtremumMap[side]);
+        if (!manager.lastExtremumMap[side].idmSwing) {
             return;
         }
     }
@@ -813,8 +811,6 @@ const confirmExtremum = (
 
     // TODO Проблема в том, что если свечка которая закрыла IDM - она по сути должна быть первым HH
     manager.lastExtremumMap[versusSide] = null;
-
-    // updateExtremum(manager, index, )
 };
 
 // Фиксируем последний свинг который нашли сверху или снизу
@@ -834,18 +830,6 @@ export class StateManager {
     pois: POI[] = [];
 
     config: THConfig = {};
-
-    // tradinghubCalculateSwings
-    lastSwingIndex: number = -1;
-    processingSwings = new Map<
-        number,
-        {
-            prevCandle: HistoryObject;
-            currentCandle: HistoryObject;
-            nextIndex: number;
-            status: 'draft' | 'nextIndex';
-        }
-    >();
 
     // deleteInternalStructure
     preLastIndexMap: Record<'high' | 'low', number> = {
@@ -901,10 +885,7 @@ export class StateManager {
     }
 
     calculate() {
-        // Здесь +1 чтобы можно было поставить LL/HH на последнюю свечку
-        for (let i = 0; i < this.candles.length + 1; i++) {
-            this.calculateSwings(i);
-        }
+        this.calculateSwingsNew();
     }
 
     // Есть IDM, задеваем его свечой IFC (или простреливаем), открываем сделку
@@ -1059,37 +1040,39 @@ export class StateManager {
         }
     };
 
-    /**
-     * @deprecated
-     */
-    calculateSwingsOld = () => {
-        // Тупо первая точка
-        if (this.candles.length) {
-            this.swings[0] = new Swing({
-                side: 'high',
-                time: this.candles[0].time,
-                price: this.candles[0].high,
-                index: 0,
-            });
-        }
+    externalCandle?: HistoryObject;
 
-        let prevCandleIndex = 0;
-        let lastSwingIndex = -1;
-        for (let rootIndex = 1; rootIndex < this.candles.length - 1; rootIndex++) {
-            const prevCandle = this.candles[prevCandleIndex];
-            const currentCandle = this.candles[rootIndex];
-            if (isInsideBar(prevCandle, currentCandle)) {
+    calculateSwingsNew() {
+        let lastSwingIndex: number = -1;
+        for (let rootIndex = 0; rootIndex < this.candles.length; rootIndex++) {
+            // Тупо первая точка
+            if (rootIndex === 0) {
+                this.swings[0] = new Swing({
+                    side: 'high',
+                    time: this.candles[0].time,
+                    price: this.candles[0].high,
+                    index: 0,
+                });
+                this.swings[0].markExtremum();
+                // this.lastSwingMap[this.swings[0].side] = this.swings[0];
+                // this.lastExtremumMap[this.swings[0].side] = this.swings[0];
+                // this.lastBosSwingMap[this.swings[0].side] = 0;
                 continue;
             }
-            let nextIndex = rootIndex + 1;
-            let nextCandle = this.candles[nextIndex];
-            // TODO в методичке этого нет. После текущего свипа для подтверждения нужно дождаться пока какая-либо свеча пересвипнет текущую.
-            for (; nextIndex < this.candles.length - 1; nextIndex++) {
-                nextCandle = this.candles[nextIndex];
-                if (!isInsideBar(currentCandle, nextCandle)) {
-                    break;
-                }
+
+            // Если текущая свечка внутренняя для предыдущей - идем дальше
+            const prevCandle = this.externalCandle ?? this.candles[rootIndex - 1];
+            if (isInsideBar(prevCandle, this.candles[rootIndex])) {
+                this.externalCandle = prevCandle;
+                continue;
             }
+            this.externalCandle = null;
+
+            // Если текущая свечка не внутренняя - начинаем поиск свинга
+            const currentCandle = this.candles[rootIndex];
+            const nextIndex = rootIndex + 1;
+            let nextCandle = this.candles[nextIndex];
+
             const diff = nextIndex - rootIndex - 1;
             nextCandle = this.candles[nextIndex];
 
@@ -1112,7 +1095,17 @@ export class StateManager {
                 this.swings,
             );
 
-            // фильтруем вершины подряд
+            confirmExtremum(this, rootIndex, 'high');
+            confirmExtremum(this, rootIndex, 'low');
+
+            // markHHLL
+            updateExtremum(this, rootIndex, 'high', this.swings[rootIndex]);
+            updateExtremum(this, rootIndex, 'low', this.swings[rootIndex]);
+
+            // markHHLL
+            updateLast(this, this.swings[rootIndex]);
+
+            // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
             filterDoubleSwings(
                 rootIndex,
                 lastSwingIndex,
@@ -1120,143 +1113,8 @@ export class StateManager {
                 this.swings,
             );
 
-            prevCandleIndex = rootIndex;
-            rootIndex += diff;
+            if (this.config.showIFC) this.markIFCOneIt(rootIndex);
         }
-    };
-
-    externalCandle?: HistoryObject;
-
-    // Проверил: точно ок
-    calculateSwings(rootIndex: number) {
-        // Тупо первая точка
-        if (rootIndex === 0 && this.candles.length) {
-            this.swings[0] = new Swing({
-                side: 'high',
-                time: this.candles[0].time,
-                price: this.candles[0].high,
-                index: 0,
-            });
-            this.swings[0].markExtremum()
-            // this.lastSwingMap[this.swings[0].side] = this.swings[0];
-            // this.lastExtremumMap[this.swings[0].side] = this.swings[0];
-            // this.lastBosSwingMap[this.swings[0].side] = 0;
-            return;
-        }
-
-        for (let i = 0; i < this.processingSwings.size; i++) {
-            const [processingIndex, sw] = Array.from(this.processingSwings)[i];
-
-            /**
-             * TODO Если брать просто предыдущую свечу
-             * Она может оказаться внутренней для более ранней свечи (что мы не учитываем)
-             * И тогда может быть такое, что на текущей свече хотели нарисовать свинг лоу,
-             * но если у предыдущей НЕВНУТРЕННЕЙ свечи лоу еще ниже - то на текущей нельзя рисовать лоу
-             * Поэтому ПРЕДЫДУЩАЯ - это не та которая первая слева
-             * а та которая не является внутренней для предыдущих свеч (слоожно)
-             * Тем не менее вроде все логично, но винрейт падает на 3% а доходность на 10%
-             */
-            // const prevCandle = this.candles[processingIndex - 1];
-            let { prevCandle, currentCandle, nextIndex, status} = sw;
-            let nextCandle = this.candles[nextIndex];
-
-            // if (!nextCandle) {
-            //     continue;
-            // }
-
-            // TODO Убрал пока здесь, уменьшился финрез на 15%, в методичке нет, но да выглядит чуть иначе
-            // if (status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
-                status = 'nextIndex';
-            // } else {
-            //     nextIndex = rootIndex + 1;
-            // }
-            // TODO На самом деле нужно искать от текущей свечи такой prevCandle,
-            // TODO который не будет внутренней для предыдущей
-
-            this.processingSwings.set(processingIndex, {
-                ...sw,
-                nextIndex,
-                status,
-            });
-
-            // if (status === 'draft') {
-            //     continue;
-            // }
-
-            const diff = nextIndex - processingIndex - 1;
-            nextCandle = this.candles[nextIndex];
-
-            tryCalculatePullback(
-                processingIndex,
-                'high',
-                diff,
-                prevCandle,
-                currentCandle,
-                nextCandle,
-                this.swings,
-            );
-            tryCalculatePullback(
-                processingIndex,
-                'low',
-                diff,
-                prevCandle,
-                currentCandle,
-                nextCandle,
-                this.swings,
-            );
-
-            // markHHLL
-            updateLast(this, this.swings[processingIndex]);
-
-            // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
-            filterDoubleSwings(
-                processingIndex,
-                this.lastSwingIndex,
-                (newIndex) => (this.lastSwingIndex = newIndex),
-                this.swings,
-            );
-
-            this.processingSwings.delete(processingIndex);
-
-            // markHHLL
-            updateExtremum(this, rootIndex, 'high', this.swings[processingIndex]);
-            updateExtremum(this, rootIndex, 'low', this.swings[processingIndex]);
-
-            confirmExtremum(
-                this,
-                rootIndex,
-                'high'
-            );
-            confirmExtremum(
-                this,
-                rootIndex,
-                'low'
-            );
-
-            if (this.config.showIFC) this.markIFCOneIt(processingIndex);
-        }
-
-        // Если вышли за последнюю свечку
-        if(rootIndex >= this.candles.length){
-            return;
-        }
-
-        // Если текущая свечка внутренняя для предыдущей - идем дальше
-        const leftCandle = this.externalCandle ?? this.candles[rootIndex - 1];
-        if (isInsideBar(leftCandle, this.candles[rootIndex])) {
-            this.externalCandle = leftCandle;
-            return;
-        }
-
-        // Если текущая свечка не внутренняя - начинаем поиск свинга
-        this.processingSwings.set(rootIndex, {
-            prevCandle: leftCandle,
-            currentCandle: this.candles[rootIndex],
-            nextIndex: rootIndex + 1,
-            status: 'draft',
-        });
-
-        this.externalCandle = null;
     }
 }
 
@@ -1578,6 +1436,7 @@ const drawTrend = (manager: StateManager) => {
         if (
             curBos?.from.index > prevBos?.from.index &&
             curBos?.to.index < prevBos?.to.index
+            && prevBos?.isConfirmed
         ) {
             manager.boses[curBos.from.index] = null;
             continue;
