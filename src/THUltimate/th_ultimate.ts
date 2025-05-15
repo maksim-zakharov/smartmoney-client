@@ -500,9 +500,9 @@ const hasHighValidPullback = (
 ) => {
     if (
         // Текущая свеча пересвипнула предыдущую
-        leftCandle.high < currentCandle.high &&
+        leftCandle.high < currentCandle?.high &&
         // И следующий свечи либо нет либо ее хай ниже текущего
-        (!nextCandle || nextCandle.high <= currentCandle.high)
+        (!nextCandle || nextCandle.high <= currentCandle?.high)
     ) {
         return 'high';
     }
@@ -522,8 +522,8 @@ const hasLowValidPullback = (
      * Поэтому это не считается "более низким минимумом", и поэтому >= / <= валидно
      */
     if (
-        leftCandle.low > currentCandle.low &&
-        (!nextCandle || nextCandle.low >= currentCandle.low)
+        leftCandle.low > currentCandle?.low &&
+        (!nextCandle || nextCandle.low >= currentCandle?.low)
     ) {
         return 'low';
     }
@@ -762,11 +762,11 @@ const confirmExtremum = (
     const isHighIDMConfirmed =
         (side === 'high' &&
             manager.lastExtremumMap[side].idmSwing.price >
-            manager.candles[index].low);
+            manager.candles[index]?.low);
     const isLowIDMConfirmed =
         (side === 'low' &&
             manager.lastExtremumMap[side].idmSwing.price <
-            manager.candles[index].high);
+            manager.candles[index]?.high);
 
     // Если IDM не подтвержден - не смотрим
     if (!isLowIDMConfirmed && !isHighIDMConfirmed) {
@@ -884,7 +884,8 @@ export class StateManager {
     }
 
     calculate() {
-        for (let i = 0; i < this.candles.length; i++) {
+        // Здесь +1 чтобы можно было поставить LL/HH на последнюю свечку
+        for (let i = 0; i < this.candles.length + 1; i++) {
             this.calculateSwings(i);
         }
     }
@@ -1133,9 +1134,9 @@ export class StateManager {
             let {currentCandle, nextIndex, status} = sw;
             let nextCandle = this.candles[nextIndex];
 
-            if (!nextCandle) {
-                continue;
-            }
+            // if (!nextCandle) {
+            //     continue;
+            // }
 
             if (status === 'draft' && !isInsideBar(currentCandle, nextCandle)) {
                 status = 'nextIndex';
@@ -1203,6 +1204,11 @@ export class StateManager {
             );
 
             if (this.config.showIFC) this.markIFCOneIt(processingIndex);
+        }
+
+        // Если вышли за последнюю свечку
+        if(rootIndex >= this.candles.length){
+            return;
         }
 
         // Если текущая свечка внутренняя для предыдущей - идем дальше
