@@ -1519,7 +1519,7 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
             b?.isIDM &&
             manager.deleteIDM.has(b?.extremum?.index)
         ) {
-            manager.boses[i] = null;
+            // manager.boses[i] = null;
         }
     }
 };
