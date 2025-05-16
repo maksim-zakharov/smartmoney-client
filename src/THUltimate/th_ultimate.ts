@@ -306,20 +306,7 @@ export const calculatePOI = (
                     orderBlockPart?.side === swing?.side &&
                     swing?.isExtremum
                 ) {
-                    let type = POIType.LQ_IFC;
-                    if (canTradeExtremumOrderblock(manager, swing, orderBlockPart)) {
-                        type = POIType.OB_EXT;
-                    }
-
-                    manager.pois[swing.index] = new POI({
-                        ...orderBlockPart,
-                        isSMT: false,
-                        swing,
-                        canTrade: true,
-                        // Тейк профит до ближайшего максимума
-                        takeProfit: takeProfit?.price,
-                        type,
-                    });
+                    manager.pois[swing.index] = new POI(canTradeExtremumOrderblock(manager, swing, orderBlockPart, takeProfit?.price));
                     manager.obIdxes.add(swing.index);
                 }
             } catch (e) {
@@ -373,7 +360,7 @@ export const calculatePOI = (
                 continue;
             }
             const startPositionIndex = obItem.index + obItem.lastImbalanceIndex;
-            for (let j = startPositionIndex; j < manager.candles.length - 1; j++) {
+            for (let j = startPositionIndex; j < manager.candles.length; j++) {
                 const candle = manager.candles[j];
 
                 if (hasHitOB(obItem, candle)) {
@@ -396,6 +383,7 @@ export const calculatePOI = (
         const startTrend = manager.trend[obStartIndex]?.trend;
         const trend = manager.trend[obIndex]?.trend;
         if (startTrend !== trend) {
+            debugger
             return null;
         }
 
@@ -433,22 +421,22 @@ export const calculateTesting = (
     // Копировать в робота -->
     let orderBlocks = calculatePOI(manager, withMove, newSMT);
 
-    if (byTrend) {
-        // TODO вернуть вот так
-        // let currentTrend;
-        // if (manager.trend[manager.trend.length - 1]?.trend === 1) {
-        //     currentTrend = 'low';
-        // }
-        // if (manager.trend[manager.trend.length - 1]?.trend === -1) {
-        //     currentTrend = 'high';
-        // }
-        //
-        // orderBlocks = orderBlocks.filter((ob) => currentTrend && ob?.side === currentTrend);
-
-        const currentTrend =
-            manager.trend[manager.trend.length - 1]?.trend === 1 ? 'low' : 'high';
-        orderBlocks = orderBlocks.filter((ob) => ob?.side === currentTrend);
-    }
+    // if (byTrend) {
+    //     // TODO вернуть вот так
+    //     // let currentTrend;
+    //     // if (manager.trend[manager.trend.length - 1]?.trend === 1) {
+    //     //     currentTrend = 'low';
+    //     // }
+    //     // if (manager.trend[manager.trend.length - 1]?.trend === -1) {
+    //     //     currentTrend = 'high';
+    //     // }
+    //     //
+    //     // orderBlocks = orderBlocks.filter((ob) => currentTrend && ob?.side === currentTrend);
+    //
+    //     const currentTrend =
+    //         manager.trend[manager.trend.length - 1]?.trend === 1 ? 'low' : 'high';
+    //     orderBlocks = orderBlocks.filter((ob) => ob?.side === currentTrend);
+    // }
 
     // Увеличивает на тестинге на 3% винрейт
     orderBlocks = orderBlocks.filter((ob) => ob?.type === POIType.OB_EXT);
@@ -486,9 +474,7 @@ export const calculateProduction = (data: HistoryObject[]) => {
 
     let {orderBlocks} = calculateTesting(data, config);
 
-    orderBlocks = orderBlocks.filter((o) => o?.type !== POIType.OB_IDM);
-
-    return orderBlocks.filter(isNotSMT);
+    return orderBlocks.filter((o) => o?.type === POIType.OB_EXT && o.canTrade && !o.isSMT);
 };
 
 const hasHighValidPullback = (
@@ -1724,9 +1710,19 @@ const closestLeftIDMIndex = (manager: StateManager, i: number, side: 'high' | 'l
     return startIndex;
 }
 
-const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBlockPart: OrderblockPart) => {
+const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBlockPart: OrderblockPart, takeProfit?: number) => {
+    const props: Partial<POI> = {
+    ...orderBlockPart,
+            isSMT: false,
+            swing,
+            canTrade: true,
+            // Тейк профит до ближайшего максимума
+            takeProfit: takeProfit,
+            type: POIType.LQ_IFC,
+    }
+
     if (!swing.isExtremum) {
-        return false;
+        return props;
     }
 
     let startIDMIndex = swing.index - 1;
@@ -1736,8 +1732,10 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
 
     // Если не нашли ближайший свинг слева - ИДМ нет
     if (startIDMIndex === -1) {
-        return false;
+        return props;
     }
+
+    props.type = POIType.OB_EXT;
 
     const idmStartSwing = manager.swings[startIDMIndex];
 
@@ -1753,12 +1751,14 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
 
     // Если IDM не подтвержден - не смотрим
     if (!manager.candles[endIDMIndex]) {
-        return false;
+        props.canTrade = false;
+        return props;
     }
 
     // Проверяем чтоб LL/HH находились четко между краями IDM
     if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
-        return false;
+        props.isSMT = true;
+        return props;
     }
 
     // Берем Индекс закрытия имбаланса и начинаем считать пробитие со следующей свечи
@@ -1780,8 +1780,9 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
 
     // Если пробитие не состоялось
     if (!manager.candles[hitIndex] || endIDMIndex >= hitIndex) {
-        return false;
+        props.canTrade = false;
+        return props;
     }
 
-    return true;
+    return props;
 }

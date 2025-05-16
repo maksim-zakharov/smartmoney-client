@@ -34,7 +34,7 @@ import {iterationCalculatePositions,} from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {calculateTesting} from "../THUltimate/th_ultimate";
+import {calculateTesting, POIType} from "../THUltimate/th_ultimate";
 import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 
@@ -59,7 +59,7 @@ export const SoloTestPage = () => {
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const holdDuration = 500; // 2 секунды
 
-    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,limitOrderTrade,newSMT").split(','));
+    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,limitOrderTrade,showHiddenSwings").split(','));
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
@@ -161,9 +161,9 @@ export const SoloTestPage = () => {
             positions = positions.filter(p => p.side !== 'short');
         }
 
-        return {swings, trend, boses, orderBlocks, positions: positions.sort((a, b) => a.openTime - b.openTime)};
+        return {swings, trend, boses, orderBlocks: orderBlocks.filter((o) => o?.type === POIType.OB_EXT && o.canTrade && !o.isSMT), positions: positions.sort((a, b) => a.openTime - b.openTime)};
     }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
-    console.log(positions)
+
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
             return 0;
