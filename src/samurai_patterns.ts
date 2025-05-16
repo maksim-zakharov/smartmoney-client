@@ -5,8 +5,12 @@ import {HistoryObject, POI, Swing} from "./THUltimate/models.ts";
 export interface Position {
     side: 'short' | 'long',
     name: string,
-    takeProfit: number, stopLoss: number,
-    openPrice: number, openTime: number, closeTime: number, pnl: number,
+    takeProfit: number,
+    stopLoss: number,
+    openPrice: number,
+    openTime: number,
+    closeTime?: number,
+    pnl?: number,
     quantity?: number;
     fee?: number;
     newPnl?: number;
@@ -24,10 +28,12 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
         low: null
     }
 
+    const nonClosedPositionsMap = new Map<number, Position>([]);
+
     for (let i = 0; i < candles.length; i++) {
         const obItem = ob[i];
         const swing = swings[i];
-        if(swing?.isExtremum){
+        if (swing?.isExtremum) {
             lastExtremumIndexMap[swing?.side] = i;
         }
 
@@ -44,16 +50,16 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
 
         const lastExtremumIndex = obItem.side === 'high' ? lastExtremumIndexMap['low'] : lastExtremumIndexMap['high'];
 
-        if(!limitOrder){
+        if (!limitOrder) {
             openPrice = candles[obItem.endIndex + 1].open;
         }
 
-        if(stopPaddingPercent){
+        if (stopPaddingPercent) {
             stopLoss *= (1 - stopPaddingPercent / 100);
         }
 
         let takeProfit = obItem.takeProfit;
-        if(!maxDiff || !takeProfit){
+        if (!maxDiff || !takeProfit) {
             takeProfit = calculateTakeProfit({
                 side,
                 openPrice,
@@ -78,21 +84,23 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
             continue;
         }
 
+        let closePosition: Position;
+
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
             if (side === 'long' && candles[j].low <= stopLoss) {
-                positions.push({
+                closePosition = {
                     side, name: obItem.text, takeProfit, stopLoss,
                     openPrice, openTime, closeTime: candles[j].time, pnl: stopLoss - openPrice
-                });
+                };
                 break;
             } else if (side === 'short' && candles[j].high >= stopLoss) {
-                positions.push({
+                closePosition = {
                     side, name: obItem.text, takeProfit, stopLoss,
                     openPrice, openTime, closeTime: candles[j].time, pnl: openPrice - stopLoss
-                });
+                };
                 break;
             } else if (side === 'long' && candles[j].high >= takeProfit) {
-                positions.push({
+                closePosition = {
                     side,
                     name: obItem.text,
                     takeProfit,
@@ -102,10 +110,10 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
                     closeTime: candles[j].time,
 
                     pnl: takeProfit - openPrice
-                });
+                };
                 break;
             } else if (side === 'short' && candles[j].low <= takeProfit) {
-                positions.push({
+                closePosition = {
                     side,
                     name: obItem.text,
                     takeProfit,
@@ -115,18 +123,35 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
                     closeTime: candles[j].time,
 
                     pnl: openPrice - takeProfit
-                });
+                };
                 break;
             }
         }
+
+        if(closePosition) {
+            positions.push(closePosition)
+            nonClosedPositionsMap.delete(openTime)
+        }
+        else {
+            nonClosedPositionsMap.set(openTime, {
+                side,
+                name: obItem.text,
+                takeProfit,
+                stopLoss,
+                openPrice,
+                openTime,
+            })
+        }
     }
+
+    nonClosedPositionsMap.forEach(position => positions.push({...position, closeTime: candles[candles.length - 1].time}))
 
     return positions;
 }
 
 export const iterationCalculatePositions = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true, stopPaddingPercent: number = 0) => {
     let positions = {};
-    for(let i = 0; i < candles.length - 1; i++){
+    for (let i = 0; i < candles.length - 1; i++) {
         const partCandles = candles.slice(0, i);
         const partSwings = swings.slice(0, i);
         const partOB = ob.slice(0, i);
@@ -134,7 +159,7 @@ export const iterationCalculatePositions = (candles: HistoryObject[], swings: Sw
         const _pos = calculatePositionsByOrderblocks(partCandles, partSwings, partOB, maxDiff, multiStop, limitOrder, stopPaddingPercent);
 
         _pos.forEach(pos => {
-            if(!positions[pos.openTime]){
+            if (!positions[pos.openTime] || !positions[pos.closeTime]) {
                 positions[pos.openTime] = pos;
             }
         })

@@ -6,7 +6,6 @@ import {
     Divider,
     Form,
     Input,
-    InputNumber,
     Layout,
     Radio,
     Row,
@@ -161,7 +160,13 @@ export const SoloTestPage = () => {
             positions = positions.filter(p => p.side !== 'short');
         }
 
-        return {swings, trend, boses, orderBlocks: orderBlocks.filter((o) => o?.type === POIType.OB_EXT && o.canTrade && !o.isSMT), positions: positions.sort((a, b) => a.openTime - b.openTime)};
+        return {
+            swings,
+            trend,
+            boses,
+            orderBlocks: orderBlocks.filter((o) => o?.type === POIType.OB_EXT && o.canTrade && !o.isSMT),
+            positions: positions.sort((a, b) => a.openTime - b.openTime)
+        };
     }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
@@ -313,7 +318,7 @@ export const SoloTestPage = () => {
         time: (s.closeTime) as Time,
         shape: s.side === 'short' ? 'arrowUp' : 'arrowDown',
         position: s.side === (s.pnl > 0 ? 'long' : 'short') ? 'aboveBar' : 'belowBar',
-        price: s.pnl > 0 ? s.takeProfit : s.stopLoss,
+        price: s.pnl > 0 ? s.takeProfit : s.pnl < 0 ? s.stopLoss : s.takeProfit,
     }]), [positions]);
 
     const markers = useMemo(() => {
@@ -369,7 +374,7 @@ export const SoloTestPage = () => {
         if (config.showPositions) {
             _lineSerieses.push(...poses.map(([open, close]) => ({
                 options: {
-                    color: open.pnl > 0 ? markerColors.bullColor : markerColors.bearColor, // Цвет линии
+                    color: open.pnl > 0 ? markerColors.bullColor : open.pnl < 0 ? markerColors.bearColor : "rgb(166,189,213)", // Цвет линии
                     priceLineVisible: false,
                     lastValueVisible: false,
                     lineWidth: 1,
@@ -548,7 +553,14 @@ export const SoloTestPage = () => {
                 </Row>
             </Space>
         </Sider>
-        <Content style={{padding: '0', minHeight: 280, position: 'relative', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+        <Content style={{
+            padding: '0',
+            minHeight: 280,
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
+        }}>
             <div style={{position: 'absolute', zIndex: 10, top: 4, left: 4, display: 'flex', gap: '8px'}}>
                 <TickerSelect value={ticker} onSelect={onSelectTicker}/>
                 <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
