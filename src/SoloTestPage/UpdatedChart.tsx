@@ -1,4 +1,4 @@
-import React, {FC, useEffect, useRef, useState} from "react";
+import React, {FC, Suspense, useEffect, useRef, useState} from "react";
 import {
     ColorType,
     createChart,
@@ -15,6 +15,7 @@ import {createSeries, defaultSeriesOptions, uniqueBy} from "../utils";
 import {ensureDefined} from "../lwc-plugins/helpers/assertions";
 import {isInsideBar} from "../THUltimate/utils.ts";
 import {TLineSeries} from "./TestChart.tsx";
+import {ErrorBoundary, withErrorBoundary} from "../ErrorBoundary.tsx";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -42,7 +43,7 @@ function capitalizeFirstLetter(str) {
     return str[0].toUpperCase() + str.slice(1);
 }
 
-export const Chart: FC<{
+interface Props {
     markers: SeriesMarker<Time>[],
     lineSerieses: TLineSeries[],
     hideInternalCandles?: boolean,
@@ -55,7 +56,9 @@ export const Chart: FC<{
     width?: number,
     toolTipLeft?: string;
     toolTipTop?: string;
-}> = ({
+}
+
+ const ChartFC: FC<Props> = ({
           lineSerieses,
           markers,
           hideInternalCandles,
@@ -364,3 +367,5 @@ export const Chart: FC<{
 
     return <div ref={chartContainerRef} style={{position: 'relative', height, width: width || '100%'}}/>;
 };
+
+export const Chart = withErrorBoundary(ChartFC)

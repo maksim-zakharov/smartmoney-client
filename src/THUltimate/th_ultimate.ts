@@ -473,8 +473,8 @@ export interface THConfig {
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT;
 
 export const defaultConfig: THConfig = {
-    newSMT: true,
-    showHiddenSwings: false,
+    newSMT: false,
+    showHiddenSwings: true,
     withMove: false,
     byTrend: true,
     showFake: false,
