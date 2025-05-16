@@ -260,7 +260,7 @@ export const calculatePOI = (
                     lastImbalanceIndex,
                     firstImbalanceIndex,
                     firstCandle
-                } = findLastImbalanceIndex(manager, manager.candles[index], _firstImbalanceIndex, withMove);
+                } = findLastImbalanceIndex(manager, index, _firstImbalanceIndex, withMove);
 
                 const lastImbalanceCandle = manager.candles[lastImbalanceIndex];
                 const lastOrderblockCandle = manager.candles[firstImbalanceIndex];
@@ -461,7 +461,7 @@ export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT;
 
 export const defaultConfig: THConfig = {
     newSMT: false,
-    showHiddenSwings: true,
+    showHiddenSwings: false,
     withMove: false,
     byTrend: true,
     showFake: false,
@@ -1665,13 +1665,12 @@ const findFirstImbalanceIndex = (manager: StateManager, i: number) => {
     return firstImbalanceIndex - 1;
 }
 
-const findLastImbalanceIndex = (manager: StateManager, _firstCandle: HistoryObject, firstImbalanceIndex: number, withMove: boolean) => {
-    const num = withMove ? 2 : 1;
-    const firstImbIndex = firstImbalanceIndex + num;
-    let firstCandle = _firstCandle;
+const findLastImbalanceIndex = (manager: StateManager, _firstCandleIndex: number, firstImbalanceIndex: number, withMove: boolean) => {
+    const firstImbIndex = firstImbalanceIndex + 1;
+    let firstCandle = manager.candles[_firstCandleIndex];
     let lastImbalanceIndex = firstImbIndex;
 
-    while (manager.candles[lastImbalanceIndex] && !isImbalance(manager.candles[firstImbalanceIndex], manager.candles[lastImbalanceIndex])) {
+    while (manager.candles[lastImbalanceIndex] && !isImbalance(firstCandle, manager.candles[lastImbalanceIndex])) {
         lastImbalanceIndex++;
     }
 
@@ -1681,8 +1680,8 @@ const findLastImbalanceIndex = (manager: StateManager, _firstCandle: HistoryObje
     }
 
     if (withMove) {
-        firstCandle = manager.candles[firstImbIndex];
-        firstImbalanceIndex = firstImbIndex;
+        firstCandle = manager.candles[lastImbalanceIndex-2];
+        firstImbalanceIndex = lastImbalanceIndex-2;
     }
 
     return {

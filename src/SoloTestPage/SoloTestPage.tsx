@@ -58,7 +58,7 @@ export const SoloTestPage = () => {
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const holdDuration = 500; // 2 секунды
 
-    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,limitOrderTrade,showHiddenSwings").split(','));
+    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,limitOrderTrade").split(','));
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
@@ -69,8 +69,8 @@ export const SoloTestPage = () => {
     const [multiStop, setMultiStop] = useState(5);
     const ticker = searchParams.get('ticker') || 'MTLR';
     const tf = searchParams.get('tf') || '300';
-    const fromDate = searchParams.get('fromDate') || dayjs('2024-10-01T00:00:00Z').startOf('day').unix();
-    const toDate = searchParams.get('toDate') || dayjs('2025-10-01T00:00:00Z').endOf('day').unix();
+    const fromDate = searchParams.get('fromDate') || dayjs().add(-2, "week").unix();
+    const toDate = searchParams.get('toDate') || dayjs().endOf('day').unix();
     const [stopMargin, setStopMargin] = useState(50);
     const [stopPaddingPercent, setstopPaddingPercent] = useState(0);
     const [security, setSecurity] = useState<Security>();

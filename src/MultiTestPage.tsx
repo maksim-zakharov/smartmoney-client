@@ -179,8 +179,8 @@ export const MultiTestPage = () => {
         const array = isAllTickers ? allPositions : positions;
 
         return {
-            PnL: array.reduce((acc, curr) => acc + curr.newPnl, 0),
-            fee: array.reduce((acc, curr) => acc + curr.fee, 0),
+            PnL: array.reduce((acc, curr) => acc + (curr.newPnl || 0), 0),
+            fee: array.reduce((acc, curr) => acc + (curr.fee || 0), 0),
             profits: array.filter(p => p.newPnl > 0).length,
             losses: array.filter(p => p.newPnl < 0).length
         };
