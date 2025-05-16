@@ -383,7 +383,6 @@ export const calculatePOI = (
         const startTrend = manager.trend[obStartIndex]?.trend;
         const trend = manager.trend[obIndex]?.trend;
         if (startTrend !== trend) {
-            debugger
             return null;
         }
 

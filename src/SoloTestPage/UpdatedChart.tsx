@@ -1,4 +1,4 @@
-import React, {FC, Suspense, useEffect, useRef, useState} from "react";
+import React, {FC, useEffect, useMemo, useRef, useState} from "react";
 import {
     ColorType,
     createChart,
@@ -15,7 +15,7 @@ import {createSeries, defaultSeriesOptions, uniqueBy} from "../utils";
 import {ensureDefined} from "../lwc-plugins/helpers/assertions";
 import {isInsideBar} from "../THUltimate/utils.ts";
 import {TLineSeries} from "./TestChart.tsx";
-import {ErrorBoundary, withErrorBoundary} from "../ErrorBoundary.tsx";
+import {withErrorBoundary} from "../ErrorBoundary.tsx";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -58,23 +58,23 @@ interface Props {
     toolTipTop?: string;
 }
 
- const ChartFC: FC<Props> = ({
-          lineSerieses,
-          markers,
-          hideInternalCandles,
-          primitives,
-          seriesType = 'Candlestick',
-          showVolume = true,
-          data,
-          ema,
-          width,
-          height = 610,
-                              toolTipLeft,
-                              toolTipTop
-      }) => {
+const ChartFC: FC<Props> = ({
+                                lineSerieses,
+                                markers,
+                                hideInternalCandles,
+                                primitives,
+                                seriesType = 'Candlestick',
+                                showVolume = true,
+                                data,
+                                ema,
+                                width,
+                                height = 610,
+                                toolTipLeft,
+                                toolTipTop
+                            }) => {
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartApiRef = useRef<IChartApi>(null);
-    const seriesRef = useRef<any>(null);
+    const seriesRef = useRef<ISeriesApi<SeriesType>>(null);
     const volumeSeriesRef = useRef<any>(null);
     const emaSeriesRef = useRef<any>(null);
     const lineSeriesRefs = useRef<{ [id: string]: ISeriesApi<SeriesType> }>({});
@@ -163,6 +163,14 @@ interface Props {
         chartContainerRef.current.appendChild(toolTip);
         toolTipRef.current = toolTip;
 
+        // Подписка на изменение видимого диапазона
+        chartApi.timeScale().subscribeVisibleLogicalRangeChange(() => {
+            const newVisibleRange = chartApi.timeScale().getVisibleRange();
+            if (newVisibleRange) {
+                setVisibleRange({from: newVisibleRange.from, to: newVisibleRange.to});
+            }
+        });
+
         // Подписка на события
         chartApi.subscribeCrosshairMove(param => {
             if (
@@ -237,12 +245,48 @@ interface Props {
         }
     }, [data, hideInternalCandles]);
 
+    // Фильтрация линий по видимому диапазону
+    const filteredLineSerieses = useMemo(() => {
+        if (!visibleRange || !lineSerieses) return lineSerieses;
+        return lineSerieses.filter(series => {
+            const pointsInRange = series.data.filter(d =>
+                d.time >= visibleRange.from && d.time <= visibleRange.to
+            )
+            return Boolean(pointsInRange.length)
+        }).map(series => {
+            const pointsInRange = series.data.filter(d =>
+                d.time >= visibleRange.from && d.time <= visibleRange.to
+            );
+            // Добавляем граничные точки, если линия пересекает диапазон
+            const beforePoints = series.data.filter(d => d.time < visibleRange.from);
+            const afterPoints = series.data.filter(d => d.time > visibleRange.to);
+            const minPoint = beforePoints[beforePoints.length - 1];
+            const maxPoint = afterPoints[0];
+            return {
+                ...series,
+                data: [
+                    ...(minPoint ? [minPoint] : []),
+                    ...pointsInRange,
+                    ...(maxPoint ? [maxPoint] : [])
+                ]
+            };
+        });
+    }, [lineSerieses, visibleRange]);
+
+    // Фильтрация маркеров по видимому диапазону
+    const filteredMarkers = useMemo(() => {
+        if (!visibleRange || !markers) return markers;
+        return markers.filter(m =>
+            m.time >= visibleRange.from && m.time <= visibleRange.to
+        );
+    }, [markers, visibleRange]);
+
     // Обновление маркеров
     useEffect(() => {
-        if (seriesRef.current && markers) {
-            seriesRef.current.setMarkers([...markers].sort((a, b) => a.time - b.time));
+        if (seriesRef.current && filteredMarkers) {
+            seriesRef.current.setMarkers([...filteredMarkers].sort((a, b) => a.time - b.time));
         }
-    }, [markers]);
+    }, [filteredMarkers]);
 
     // Обновление EMA
     useEffect(() => {
@@ -254,11 +298,11 @@ interface Props {
 
     // Обновление линий (lineSeries)
     useEffect(() => {
-        if (!chartApiRef.current || !lineSerieses) return;
+        if (!chartApiRef.current || !filteredLineSerieses) return;
         // Находим линий для удаления
 
         const currentLineIds = Object.keys(lineSeriesRefs.current);
-        const newLineIds = lineSerieses.map(lineSeries => lineSeries.data[0]?.time?.toString());
+        const newLineIds = filteredLineSerieses.map(lineSeries => lineSeries.data[0]?.time?.toString());
 
         // Удаление устаревших линий
         currentLineIds.forEach(lineId => {
@@ -268,7 +312,7 @@ interface Props {
             }
         });
 
-        lineSerieses.forEach((lineSeries, index) => {
+        filteredLineSerieses.forEach((lineSeries, index) => {
             const id = lineSeries.data[0]?.time?.toString();
             let ls = lineSeriesRefs.current[id];
             if (!ls) {
@@ -282,7 +326,8 @@ interface Props {
                 ls.setMarkers(lineSeries.markers);
             }
         });
-    }, [lineSerieses]);
+    }, [filteredLineSerieses]);
+    console.log(filteredLineSerieses.length)
 
     useEffect(() => {
         if (!chartApiRef.current) return;
@@ -325,8 +370,7 @@ interface Props {
             if (currentVisibleRange) {
                 timeScale.setVisibleRange(currentVisibleRange);
             }
-        }
-        else
+        } else
             volumeSeriesRef.current.setData([]);
     }, [data, showVolume]);
 
