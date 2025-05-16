@@ -2,7 +2,7 @@ import {Divider, Space, Typography} from "antd";
 import img from "../../assets/img.png"
 import img_1 from "../../assets/img_1.png"
 import img_2 from "../../assets/img_2.png"
-import {Chart} from "../../SoloTestPage/TestChart";
+import {Chart} from "../../SoloTestPage/UpdatedChart";
 import React, {useEffect, useMemo, useState} from "react";
 import {bosesToLineSerieses, fetchCandlesFromAlor, swingsToMarkers} from "../../utils";
 import dayjs from 'dayjs';

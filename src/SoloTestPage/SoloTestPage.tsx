@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Link, useSearchParams} from "react-router-dom";
+import {useSearchParams} from "react-router-dom";
 import {
     Button,
     Checkbox,
@@ -7,6 +7,7 @@ import {
     Form,
     Input,
     InputNumber,
+    Layout,
     Radio,
     Row,
     Slider,
@@ -21,7 +22,9 @@ import {
     bosesToLineSerieses,
     fetchCandlesFromAlor,
     fetchRiskRates,
-    getSecurity, orderblocksToImbalancePrimitives, orderblocksToOrderblocksPrimitives,
+    getSecurity,
+    orderblocksToImbalancePrimitives,
+    orderblocksToOrderblocksPrimitives,
     refreshToken,
     swingsToMarkers
 } from "../utils";
@@ -38,6 +41,8 @@ import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 import {notTradingTime} from "../THUltimate/utils.ts";
 import moment from "moment";
 import {moneyFormat} from "../MainPage/MainPage.tsx";
+import Sider from "antd/es/layout/Sider";
+import {Content} from "antd/es/layout/layout";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -138,7 +143,12 @@ export const SoloTestPage = () => {
     }
 
     const {swings, trend, boses, orderBlocks, positions} = useMemo(() => {
-        let {swings, trend, boses, orderBlocks} = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
+        let {
+            swings,
+            trend,
+            boses,
+            orderBlocks
+        } = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
 
         let positions = [];
 
@@ -153,7 +163,7 @@ export const SoloTestPage = () => {
 
         return {swings, trend, boses, orderBlocks, positions: positions.sort((a, b) => a.openTime - b.openTime)};
     }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
-console.log(positions)
+    console.log(positions)
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
             return 0;
@@ -472,100 +482,122 @@ console.log(positions)
         },
     ].filter(Boolean);
 
-    return <>
-        <Divider plain orientation="left">Риски</Divider>
-        <Space>
-            <Row>
-                <Form.Item label="Риск на сделку">
-                    <Input style={{width: 80}} value={stopMargin}
-                           onChange={(e) => setStopMargin(Number(e.target.value))}/>
-                </Form.Item>
-                <Form.Item label="Отступ стопа в %">
-                    <InputNumber style={{width: 80}} value={stopPaddingPercent}
-                                 onChange={(e) => setstopPaddingPercent(Number(e))}/>
-                </Form.Item>
-                <Form.Item label="Risk Rate">
-                    <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop}
-                            min={1} max={10} step={1}/>
-                </Form.Item>
-                <Form.Item label="Percent Rate">
-                    <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff} min={0}
-                            max={1} step={0.1}/>
-                </Form.Item>
-                <Space>
-                    <div>Профит: {new Intl.NumberFormat('ru-RU', {
-                        style: 'currency',
-                        currency: 'RUB',
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                    }).format(profit.PnL)}</div>
-                    <div>Прибыльных: {profit.profits}</div>
-                    <div>Убыточных: {profit.losses}</div>
-                    <div>Винрейт: {((profit.profits / (profit.profits + profit.losses)) * 100).toFixed(2)}%</div>
-                    <div>Совпадений с роботом: {(robotEqualsPercent).toFixed(2)}%</div>
-                </Space>
-                <Slider style={{width: 200}} defaultValue={windowLength} onChange={setWindowLength}/>
-            </Row>
-        </Space>
-        <Checkbox.Group onChange={setCheckboxValues} value={Array.from(checkboxValues)}>
-            <Checkbox key="swings" value="swings">Swings</Checkbox>
-            <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
-            <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
-            <Checkbox key="showSMT" value="showSMT">Показывать SMT</Checkbox>
-            <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
-            <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
-            <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>
-            <Checkbox key="showPositions" value="showPositions">Сделки</Checkbox>
-            <Checkbox key="tradeOB" value="tradeOB">Торговать OB</Checkbox>
-            <Checkbox key="tradeOBIDM" value="tradeOBIDM">Торговать OB_IDM</Checkbox>
-            <Checkbox key="tradeIDMIFC" value="tradeIDMIFC">Торговать IDM_IFC</Checkbox>
-            <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
-            <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
-            <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
-            <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
-            <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
-            <Checkbox key="showFake" value="showFake">Fake BOS</Checkbox>
-        </Checkbox.Group>
-        <Space style={{alignItems: 'baseline'}}>
-            <TickerSelect value={ticker} onSelect={onSelectTicker}/>
-            <TimeframeSelect value={tf} onChange={setSize}/>
-            <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-                         onChange={onChangeRangeDates}/>
-            <Button onClick={() => setOffset(prev => prev = data.length - 2)}>Начало</Button>
-            <Button style={{display: 'block'}} icon={<LeftOutlined/>} onMouseDown={() => handleMouseDown(() => setOffset(prev => prev += 1))} onMouseUp={handleMouseUp} onClick={() => setOffset(prev => prev += 1)}/>
-            <Button style={{display: 'block'}} icon={<RightOutlined/>}
-                    onMouseDown={() => handleMouseDown(() => setOffset(prev => prev -= 1))} onMouseUp={handleMouseUp}
-                    onClick={() => setOffset(prev => prev -= 1)}/>
-            <Radio.Group value={env} onChange={(e) => setEnv(e.target.value)}>
-                <Radio.Button value="dev">Development</Radio.Button>
-                <Radio.Button value="prod">Production</Radio.Button>\
-            </Radio.Group>
-        </Space>
-        <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers}
-               data={data.map(({borderColor, wickColor, color, ...d}, i, array) => (offset >=0 && i > array.length - 1 - offset) || (offset < 0 && i <= -offset) ?
-                   {
-                       ...d, borderColor: "rgba(44,60,75, 1)",
-                       wickColor: "rgba(44,60,75, 1)",
-                       color: 'rgba(0, 0, 0, 0)'
-                   } : d)}
-               ema={[]}/>
-        <Table size="small" dataSource={positions} columns={historyColumns as any}
-               pagination={{
-                   pageSize: 10,
-               }}
-               onRow={(record) => {
-                   return {
-                       style: record.pnl < 0 ? {
-                           backgroundColor: "#d1261b66",
-                           color: "rgb(255, 117, 132)"
-                       } : record.pnl > 0 ? {
-                           backgroundColor: "#15785566",
-                           color: "rgb(44, 232, 156)"
-                       } : undefined,
-                       className: "hoverable",
-                   };
-               }}/>
-    </>;
+    return <Layout style={{display: 'flex', flexDirection: 'row', gap: '8px'}}>
+        <Sider width={280} style={{padding: 16}}>
+            <Divider plain orientation="left">Фильтры</Divider>
+            <div style={{display: 'flex', gap: '8px'}}>
+                <Radio.Group value={env} onChange={(e) => setEnv(e.target.value)}>
+                    <Radio.Button value="dev">Development</Radio.Button>
+                    <Radio.Button value="prod">Production</Radio.Button>
+                </Radio.Group>
+            </div>
+            <Checkbox.Group onChange={setCheckboxValues} value={Array.from(checkboxValues)}
+                            style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                <Checkbox key="swings" value="swings">Swings</Checkbox>
+                <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
+                <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
+                <Checkbox key="showSMT" value="showSMT">Показывать SMT</Checkbox>
+                <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
+                <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
+                <Checkbox key="imbalances" value="imbalances">Имбалансы</Checkbox>
+                <Checkbox key="showPositions" value="showPositions">Сделки</Checkbox>
+                <Checkbox key="tradeOB" value="tradeOB">Торговать OB</Checkbox>
+                <Checkbox key="tradeOBIDM" value="tradeOBIDM">Торговать OB_IDM</Checkbox>
+                <Checkbox key="tradeIDMIFC" value="tradeIDMIFC">Торговать IDM_IFC</Checkbox>
+                <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
+                <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
+                <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
+                <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
+                <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
+                <Checkbox key="showFake" value="showFake">Fake BOS</Checkbox>
+            </Checkbox.Group>
+
+            <Divider plain orientation="left">Риски</Divider>
+            <Space>
+                <Row>
+                    <Form.Item label="Риск на сделку">
+                        <Input style={{width: 80}} value={stopMargin}
+                               onChange={(e) => setStopMargin(Number(e.target.value))}/>
+                    </Form.Item>
+                    {/*<Form.Item label="Отступ стопа в %">*/}
+                    {/*    <InputNumber style={{width: 80}} value={stopPaddingPercent}*/}
+                    {/*                 onChange={(e) => setstopPaddingPercent(Number(e))}/>*/}
+                    {/*</Form.Item>*/}
+                    {/*<Form.Item label="Risk Rate">*/}
+                    {/*    <Slider style={{width: 200}} marks={marksRR} defaultValue={multiStop} onChange={setMultiStop}*/}
+                    {/*            min={1} max={10} step={1}/>*/}
+                    {/*</Form.Item>*/}
+                    {/*<Form.Item label="Percent Rate">*/}
+                    {/*    <Slider style={{width: 200}} defaultValue={maxDiff} marks={marksPR} onChange={setMaxDiff}*/}
+                    {/*            min={0}*/}
+                    {/*            max={1} step={0.1}/>*/}
+                    {/*</Form.Item>*/}
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                        <div>Профит: {new Intl.NumberFormat('ru-RU', {
+                            style: 'currency',
+                            currency: 'RUB',
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        }).format(profit.PnL)}</div>
+                        <div>Прибыльных: {profit.profits}</div>
+                        <div>Убыточных: {profit.losses}</div>
+                        <div>Винрейт: {((profit.profits / (profit.profits + profit.losses)) * 100).toFixed(2)}%</div>
+                        <div>Совпадений с роботом: {(robotEqualsPercent).toFixed(2)}%</div>
+                    </div>
+                    <Slider style={{width: 200}} defaultValue={windowLength} onChange={setWindowLength}/>
+                </Row>
+            </Space>
+        </Sider>
+        <Content style={{padding: '0', minHeight: 280, position: 'relative', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+            <div style={{position: 'absolute', zIndex: 10, top: 4, left: 4, display: 'flex', gap: '8px'}}>
+                <TickerSelect value={ticker} onSelect={onSelectTicker}/>
+                <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
+                             onChange={onChangeRangeDates}/>
+                <TimeframeSelect value={tf} onChange={setSize}/>
+                <div style={{display: 'flex', gap: '8px'}}>
+                    <Button onClick={() => setOffset(prev => prev = data.length - 2)}>Начало</Button>
+                    <Button style={{display: 'block'}} icon={<LeftOutlined/>}
+                            onMouseDown={() => handleMouseDown(() => setOffset(prev => prev += 1))}
+                            onMouseUp={handleMouseUp} onClick={() => setOffset(prev => prev += 1)}/>
+                    <Button style={{display: 'block'}} icon={<RightOutlined/>}
+                            onMouseDown={() => handleMouseDown(() => setOffset(prev => prev -= 1))}
+                            onMouseUp={handleMouseUp}
+                            onClick={() => setOffset(prev => prev -= 1)}/>
+                </div>
+            </div>
+            <Chart lineSerieses={lineSerieses} hideInternalCandles primitives={primitives} markers={markers}
+                   toolTipTop="40px"
+                   toolTipLeft="4px"
+                   data={data.map(({
+                                       borderColor,
+                                       wickColor,
+                                       color,
+                                       ...d
+                                   }, i, array) => (offset >= 0 && i > array.length - 1 - offset) || (offset < 0 && i <= -offset) ?
+                       {
+                           ...d, borderColor: "rgba(44,60,75, 1)",
+                           wickColor: "rgba(44,60,75, 1)",
+                           color: 'rgba(0, 0, 0, 0)'
+                       } : d)}
+                   ema={[]}/>
+            <Table size="small" dataSource={positions} columns={historyColumns as any}
+                   pagination={{
+                       pageSize: 10,
+                   }}
+                   onRow={(record) => {
+                       return {
+                           style: record.pnl < 0 ? {
+                               backgroundColor: "#d1261b66",
+                               color: "rgb(255, 117, 132)"
+                           } : record.pnl > 0 ? {
+                               backgroundColor: "#15785566",
+                               color: "rgb(44, 232, 156)"
+                           } : undefined,
+                           className: "hoverable",
+                       };
+                   }}/>
+        </Content>
+    </Layout>;
 }
 
 export default SoloTestPage;

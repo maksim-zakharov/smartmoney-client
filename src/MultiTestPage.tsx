@@ -17,7 +17,7 @@ import {
     uniqueBy
 } from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
-import {Chart} from "./SoloTestPage/TestChart";
+import {Chart} from "./SoloTestPage/UpdatedChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
 import {calculateTesting} from "./THUltimate/th_ultimate";

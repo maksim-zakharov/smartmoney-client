@@ -1,4 +1,4 @@
-import React, {FC, useEffect, useMemo, useRef, useState} from "react";
+import React, {FC, useEffect, useRef, useState} from "react";
 import {
     ColorType,
     createChart,
@@ -53,6 +53,8 @@ export const Chart: FC<{
     ema: any[],
     height?: number,
     width?: number,
+    toolTipLeft?: string;
+    toolTipTop?: string;
 }> = ({
           lineSerieses,
           markers,
@@ -63,7 +65,9 @@ export const Chart: FC<{
           data,
           ema,
           width,
-          height = 610
+          height = 610,
+                              toolTipLeft,
+                              toolTipTop
       }) => {
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartApiRef = useRef<IChartApi>(null);
@@ -72,7 +76,6 @@ export const Chart: FC<{
     const emaSeriesRef = useRef<any>(null);
     const lineSeriesRefs = useRef<{ [id: string]: ISeriesApi<SeriesType> }>({});
     const toolTipRef = useRef<HTMLDivElement | null>(null);
-    const handleResizeRef = useRef<() => void>();
     const prevPrimitivesRef = useRef<ISeriesPrimitive<any>[]>([]);
     const timeDataRef = useRef<Map<Time, any>>(new Map([]));
 
@@ -149,7 +152,6 @@ export const Chart: FC<{
         const handleResize = () => {
             chartApi.applyOptions({width: chartContainerRef.current?.clientWidth});
         };
-        handleResizeRef.current = handleResize;
         window.addEventListener('resize', handleResize);
 
         // Создаем tooltip
@@ -178,8 +180,8 @@ export const Chart: FC<{
 
                 toolTip.innerHTML = `ОТКР: ${candle.open} МАКС: ${candle.high} МИН: ${candle.low} ЗАКР: ${candle.close}`; // ОБЪЕМ: ${shortNumberFormat(candle.volume)} ОБЪЕМ (деньги): ${moneyFormat(candle.volume * candle.close * lotSize)}`;
 
-                toolTip.style.left = '12px';
-                toolTip.style.top = '12px';
+                toolTip.style.left = toolTipLeft || '12px';
+                toolTip.style.top = toolTipTop || '12px';
             }
         });
 
@@ -277,7 +279,6 @@ export const Chart: FC<{
                 ls.setMarkers(lineSeries.markers);
             }
         });
-
     }, [lineSerieses]);
 
     useEffect(() => {
@@ -308,7 +309,6 @@ export const Chart: FC<{
         const timeScale = chartApiRef.current.timeScale();
         const currentVisibleRange = timeScale.getVisibleRange();
 
-        // Обработка hideInternalCandles
         let processedData = [...data.map((d: any) => ({
             ...d,
             // time: d.time * 1000,
@@ -361,8 +361,6 @@ export const Chart: FC<{
         prevPrimitivesRef.current = [...primitives];
 
     }, [primitives]); // Зависимость от массива примитивов
-
-    // Остальные эффекты для volume, primitives и т.д.
 
     return <div ref={chartContainerRef} style={{position: 'relative', height, width: width || '100%'}}/>;
 };

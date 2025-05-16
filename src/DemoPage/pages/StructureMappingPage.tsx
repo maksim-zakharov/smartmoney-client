@@ -10,7 +10,7 @@ import {bosesToLineSerieses, fetchCandlesFromAlor, swingsToMarkers} from "../../
 import {TickerSelect} from "../../TickerSelect";
 import {TimeframeSelect} from "../../TimeframeSelect";
 import {DatesPicker} from "../../DatesPicker";
-import {Chart} from "../../SoloTestPage/TestChart";
+import {Chart} from "../../SoloTestPage/UpdatedChart";
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {

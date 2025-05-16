@@ -1,5 +1,5 @@
 import {Col} from "antd";
-import {Chart} from "../SoloTestPage/TestChart.tsx";
+import {Chart} from "../SoloTestPage/UpdatedChart";
 import {notTradingTime} from "../THUltimate/utils.ts";
 import React, {FC, useMemo} from "react";
 import useWindowDimensions from "../useWindowDimensions.tsx";

@@ -1739,49 +1739,49 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         return false;
     }
 
-    // const idmStartSwing = manager.swings[startIDMIndex];
-    //
-    // // тут IDM свинг найден, теперь надо проверить что он закрылся
-    // let endIDMIndex = startIDMIndex + 1;
-    // while (manager.candles[endIDMIndex]
-    //     && ((swing.side === 'high' && idmStartSwing.price <= manager.candles[endIDMIndex].low)
-    //         ||
-    //         (swing.side === 'low' && idmStartSwing.price >= manager.candles[endIDMIndex].high))
-    //     ) {
-    //     endIDMIndex++;
-    // }
-    //
-    // // Если IDM не подтвержден - не смотрим
-    // if (!manager.candles[endIDMIndex]) {
-    //     return false;
-    // }
-    //
-    // // Проверяем чтоб LL/HH находились четко между краями IDM
-    // if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
-    //     return false;
-    // }
-    //
-    // // Берем Индекс закрытия имбаланса и начинаем считать пробитие со следующей свечи
-    // let hitIndex = swing.index + orderBlockPart.lastImbalanceIndex + 1;
+    const idmStartSwing = manager.swings[startIDMIndex];
+
+    // тут IDM свинг найден, теперь надо проверить что он закрылся
+    let endIDMIndex = startIDMIndex + 1;
+    while (manager.candles[endIDMIndex]
+        && ((swing.side === 'high' && idmStartSwing.price <= manager.candles[endIDMIndex].low)
+            ||
+            (swing.side === 'low' && idmStartSwing.price >= manager.candles[endIDMIndex].high))
+        ) {
+        endIDMIndex++;
+    }
+
+    // Если IDM не подтвержден - не смотрим
+    if (!manager.candles[endIDMIndex]) {
+        return false;
+    }
+
+    // Проверяем чтоб LL/HH находились четко между краями IDM
+    if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
+        return false;
+    }
+
+    // Берем Индекс закрытия имбаланса и начинаем считать пробитие со следующей свечи
+    let hitIndex = swing.index + orderBlockPart.lastImbalanceIndex + 1;
 
     /**
      * Важно чтобы пробитие было ПОСЛЕ закрытия IDM
      */
-    // while (
-    //     manager.candles[hitIndex] && !(
-    //         // Прокололи ОБ снизу вверх
-    //         (swing.side === 'high' && orderBlockPart.startCandle.low <= manager.candles[hitIndex].high) ||
-    //             // Прокололи ОБ сверху вниз
-    //         (swing.side === 'low' && orderBlockPart.startCandle.high >= manager.candles[hitIndex].low)
-    //     )
-    //     ) {
-    //     hitIndex++
-    // }
-    //
-    // // Если пробитие не состоялось
-    // if (!manager.candles[hitIndex] || endIDMIndex >= hitIndex) {
-    //     return false;
-    // }
+    while (
+        manager.candles[hitIndex] && !(
+            // Прокололи ОБ снизу вверх
+            (swing.side === 'high' && orderBlockPart.startCandle.low <= manager.candles[hitIndex].high) ||
+                // Прокололи ОБ сверху вниз
+            (swing.side === 'low' && orderBlockPart.startCandle.high >= manager.candles[hitIndex].low)
+        )
+        ) {
+        hitIndex++
+    }
+
+    // Если пробитие не состоялось
+    if (!manager.candles[hitIndex] || endIDMIndex >= hitIndex) {
+        return false;
+    }
 
     return true;
 }

@@ -3,7 +3,7 @@ import {Layout, Menu, MenuProps, Typography} from "antd";
 import React, {useMemo, useState} from "react";
 import {Content} from "antd/es/layout/layout";
 import {calculateTesting, defaultConfig} from "./THUltimate/th_ultimate_oneIt.ts";
-import {Chart} from "./SoloTestPage/TestChart";
+import {Chart} from "./SoloTestPage/UpdatedChart";
 import {
     bosesToLineSerieses,
     orderblocksToImbalancePrimitives,

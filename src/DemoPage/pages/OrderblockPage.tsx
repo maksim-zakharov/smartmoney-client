@@ -3,7 +3,7 @@ import img15 from "../../assets/img_15.png"
 import img16 from "../../assets/img_16.png"
 import img17 from "../../assets/img_17.png"
 import img18 from "../../assets/img_18.png"
-import {Chart} from "../../SoloTestPage/TestChart";
+import {Chart} from "../../SoloTestPage/UpdatedChart";
 import React from "react";
 import {
     orderblocksToImbalancePrimitives,
