@@ -60,6 +60,7 @@ export class Cross {
     extremum?: Swing;
     type: 'low' | 'high';
 
+    isSession?: boolean;
     isIDM?: boolean;
     isBOS?: boolean;
     isCHoCH?: boolean;
@@ -97,6 +98,11 @@ export class Cross {
      * isConfirmed && isCHoCH - CHoCH
      */
     get text(): string {
+        if (this.isSession) {
+            if (this.type === 'high') return 'Session High';
+            if (this.type === 'low') return 'Session Low';
+            return '';
+        }
         if (this.isIDM) {
             if (this.isFake) return 'Fake IDM';
             if (this.isConfirmed) return 'IDM';
@@ -405,6 +411,7 @@ export const calculateTesting = (
         newSMT,
         byTrend,
         showFake,
+        showSession,
     }: THConfig,
 ) => {
     const manager = new StateManager(data, {showIFC});
@@ -416,6 +423,9 @@ export const calculateTesting = (
         showFake,
         showIFC,
     });
+
+    if(showSession)
+    calculateSession(manager);
 
     // Копировать в робота -->
     let orderBlocks = calculatePOI(manager, withMove, newSMT);
@@ -455,6 +465,7 @@ export interface THConfig {
     showIFC?: boolean;
     byTrend?: boolean;
     showFake?: boolean;
+    showSession?: boolean;
 }
 
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT;
@@ -870,7 +881,7 @@ export class StateManager {
     }
 
     calculate() {
-        this.calculateSwingsNew();
+        this.calculateSwings();
     }
 
     // Есть IDM, задеваем его свечой IFC (или простреливаем), открываем сделку
@@ -883,7 +894,7 @@ export class StateManager {
         const idmSide = this.trend[index].trend === -1 ? 'high' : 'low';
         const lastIDMIndex = closestLeftIDMIndex(this, index, idmSide);
         const bos = this.boses[lastIDMIndex];
-        if (!bos) {
+        if (!bos || bos.isSession) {
             return;
         }
 
@@ -942,7 +953,7 @@ export class StateManager {
                 OB_IDM_SWING = swing;
                 break;
             }
-            if (!bos) {
+            if (!bos || bos.isSession) {
                 continue; // (b => b?.isIDM && b.to?.index >= index);
             }
             if (bos.to?.index >= index) {
@@ -1027,7 +1038,7 @@ export class StateManager {
 
     externalCandle?: HistoryObject;
 
-    calculateSwingsNew() {
+    calculateSwings() {
         let lastSwingIndex: number = -1;
         for (let rootIndex = 0; rootIndex < this.candles.length; rootIndex++) {
             // Тупо первая точка
@@ -1345,7 +1356,7 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
     }
 
     manager.boses
-        .filter((b) => b?.type === 'high' && !b?.isIDM)
+        .filter((b) => b?.type === 'high' && !b?.isIDM && !b?.isSession)
         .sort((a, b) => a.from.price - b.from.price)
         .forEach((curr: any, i, array) => {
             for (let j = 0; j < i; j++) {
@@ -1358,7 +1369,7 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
         });
 
     manager.boses
-        .filter((b) => b?.type === 'low' && !b?.isIDM)
+        .filter((b) => b?.type === 'low' && !b?.isIDM && !b?.isSession)
         .sort((a, b) => b.from.price - a.from.price)
         .forEach((curr: any, i, array) => {
             for (let j = 0; j < i; j++) {
@@ -1680,8 +1691,8 @@ const findLastImbalanceIndex = (manager: StateManager, _firstCandleIndex: number
     }
 
     if (withMove) {
-        firstCandle = manager.candles[lastImbalanceIndex-2];
-        firstImbalanceIndex = lastImbalanceIndex-2;
+        firstCandle = manager.candles[lastImbalanceIndex - 2];
+        firstImbalanceIndex = lastImbalanceIndex - 2;
     }
 
     return {
@@ -1710,13 +1721,13 @@ const closestLeftIDMIndex = (manager: StateManager, i: number, side: 'high' | 'l
 
 const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBlockPart: OrderblockPart, takeProfit?: number) => {
     const props: Partial<POI> = {
-    ...orderBlockPart,
-            isSMT: false,
-            swing,
-            canTrade: true,
-            // Тейк профит до ближайшего максимума
-            takeProfit: takeProfit,
-            type: POIType.LQ_IFC,
+        ...orderBlockPart,
+        isSMT: false,
+        swing,
+        canTrade: true,
+        // Тейк профит до ближайшего максимума
+        takeProfit: takeProfit,
+        type: POIType.LQ_IFC,
     }
 
     if (!swing.isExtremum) {
@@ -1769,7 +1780,7 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         manager.candles[hitIndex] && !(
             // Прокололи ОБ снизу вверх
             (swing.side === 'high' && orderBlockPart.startCandle.low <= manager.candles[hitIndex].high) ||
-                // Прокололи ОБ сверху вниз
+            // Прокололи ОБ сверху вниз
             (swing.side === 'low' && orderBlockPart.startCandle.high >= manager.candles[hitIndex].low)
         )
         ) {
@@ -1783,4 +1794,73 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
     }
 
     return props;
+}
+
+const calculateSession = (manager: StateManager) => {
+    if (!manager.candles.length) {
+        return;
+    }
+
+    const lastCandle = manager.candles[manager.candles.length - 1];
+    const lastCandleDate = new Date(lastCandle.time * 1000);
+    const targetDay = lastCandleDate.getUTCDate();
+    const targetMonth = lastCandleDate.getUTCMonth();
+    const targetYear = lastCandleDate.getUTCFullYear();
+
+    const sessionCandlesIndexes: number[] = [];
+    // Идём с конца массива к началу
+    for (let i = manager.candles.length - 1; i >= 0; i--) {
+        const candle = manager.candles[i];
+        const candleDate = new Date(candle.time * 1000);
+        if (
+            candleDate.getUTCFullYear() === targetYear &&
+            candleDate.getUTCMonth() === targetMonth &&
+            candleDate.getUTCDate() === targetDay
+        ) {
+            sessionCandlesIndexes.push(i);
+        } else {
+            break; // Предполагаем, что массив упорядочен по времени
+        }
+    }
+
+    if (!sessionCandlesIndexes.length) {
+        return
+    }
+
+    const sessionHighIndex = sessionCandlesIndexes.reduce((maxIndex, c) => manager.candles[c].high > manager.candles[maxIndex].high ? c : maxIndex, 0);
+    const sessionLowIndex = sessionCandlesIndexes.reduce((minIndex, c) => manager.candles[c].low < manager.candles[minIndex].low ? c : minIndex, 0);
+
+    // sessionHigh
+    manager.boses[sessionHighIndex] = new Cross({
+        from: new Swing({
+            index: sessionHighIndex,
+            time: manager.candles[sessionHighIndex].time,
+            price: manager.candles[sessionHighIndex].high,
+        }),
+        to: new Swing({
+            index: manager.candles.length - 1,
+            time: lastCandle.time,
+            price: lastCandle.high,
+        }),
+        type: 'high',
+        isSession: true,
+        getCandles: () => manager.candles,
+    });
+
+    // sessionLow
+    manager.boses[sessionLowIndex] = new Cross({
+        from: new Swing({
+            index: sessionLowIndex,
+            time: manager.candles[sessionLowIndex].time,
+            price: manager.candles[sessionLowIndex].low,
+        }),
+        to: new Swing({
+            index: manager.candles.length - 1,
+            time: lastCandle.time,
+            price: lastCandle.low,
+        }),
+        type: 'low',
+        isSession: true,
+        getCandles: () => manager.candles,
+    });
 }

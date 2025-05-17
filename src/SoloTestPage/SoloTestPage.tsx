@@ -107,6 +107,7 @@ export const SoloTestPage = () => {
         showHiddenSwings: checkboxValues.has('showHiddenSwings'),
         showRobotOB: checkboxValues.has('showRobotOB'),
         showIFC: checkboxValues.has('showIFC'),
+        showSession: checkboxValues.has('showSession'),
     }), [checkboxValues])
 
     useEffect(() => {
@@ -167,7 +168,7 @@ export const SoloTestPage = () => {
             orderBlocks: orderBlocks.filter((o) => o?.type === POIType.OB_EXT && o.canTrade && !o.isSMT),
             positions: positions.sort((a, b) => a.openTime - b.openTime)
         };
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
@@ -511,6 +512,7 @@ export const SoloTestPage = () => {
                 <Checkbox key="tradeIDMIFC" value="tradeIDMIFC">Торговать IDM_IFC</Checkbox>
                 <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
                 <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
+                <Checkbox key="showSession" value="showSession">Показывать сессии</Checkbox>
                 <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
                 <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
                 <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>
