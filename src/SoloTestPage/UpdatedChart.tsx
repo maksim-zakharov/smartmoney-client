@@ -327,7 +327,6 @@ const ChartFC: FC<Props> = ({
             }
         });
     }, [filteredLineSerieses]);
-    console.log(filteredLineSerieses.length)
 
     useEffect(() => {
         if (!chartApiRef.current) return;

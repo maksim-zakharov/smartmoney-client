@@ -280,14 +280,14 @@ export const calculatePOI = (
                     firstCandle.time !== swing.time
                         ? firstCandle.close
                         : lastOrderblockCandle.close;
-                const type =
+                const side =
                     lastImbalanceCandle.low > firstCandle.high
                         ? 'low'
                         : lastImbalanceCandle.high < firstCandle.low
                             ? 'high'
                             : null;
 
-                if (!type) {
+                if (!side) {
                     continue;
                 }
 
@@ -305,14 +305,14 @@ export const calculatePOI = (
                     lastImbalanceCandle,
                     firstImbalanceIndex: firstImbalanceIndex - swing.index,
                     lastImbalanceIndex: lastImbalanceIndex - swing.index,
-                    side: type,
+                    side,
                 } as OrderblockPart;
 
                 if (
-                    orderBlockPart?.side === swing?.side &&
-                    swing?.isExtremum
+                    orderBlockPart?.side === swing?.side
                 ) {
                     manager.pois[swing.index] = new POI(canTradeExtremumOrderblock(manager, swing, orderBlockPart, takeProfit?.price));
+                    // newSMT
                     manager.obIdxes.add(swing.index);
                 }
             } catch (e) {
@@ -320,8 +320,8 @@ export const calculatePOI = (
             }
         }
 
-        manager.calculateIDMIFC(i);
-        manager.calculateOBIDM(i);
+        // manager.calculateIDMIFC(i);
+        // manager.calculateOBIDM(i);
 
         // В этом блоке по всем OB подтверждаем endCandles
         if (newSMT) {
@@ -466,6 +466,7 @@ export interface THConfig {
     byTrend?: boolean;
     showFake?: boolean;
     showSession?: boolean;
+    showLogs?: boolean;
 }
 
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT;
@@ -1741,6 +1742,7 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
 
     // Если не нашли ближайший свинг слева - ИДМ нет
     if (startIDMIndex === -1) {
+        manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] Не найден свинг слева`)
         return props;
     }
 
@@ -1760,12 +1762,14 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
 
     // Если IDM не подтвержден - не смотрим
     if (!manager.candles[endIDMIndex]) {
+        manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] IDM не подтвержден`)
         props.canTrade = false;
         return props;
     }
 
     // Проверяем чтоб LL/HH находились четко между краями IDM
     if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
+        manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] Свинг за пределами IDM`)
         props.isSMT = true;
         return props;
     }
@@ -1787,12 +1791,14 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         hitIndex++
     }
 
-    // Если пробитие не состоялось
-    if (!manager.candles[hitIndex] || endIDMIndex >= hitIndex) {
+    // Если пробитие состоялось
+    if (manager.candles[hitIndex] || endIDMIndex >= hitIndex) {
+        manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] пробитие состоялось`)
         props.canTrade = false;
         return props;
     }
 
+    manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] OB_IDM найден`)
     return props;
 }
 
