@@ -250,7 +250,7 @@ export class CandlesBuilder{
         }
     }
 
-export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit?) {
+export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit?, token?) {
     let url = `https://api.alor.ru/md/v2/history?tf=${tf}&symbol=${symbol}&exchange=MOEX`;
     if(limit){
         url += `&limit=${limit}`;
@@ -263,11 +263,14 @@ export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit
     }
 
     try {
+        const headers = {
+            "Content-Type": "application/json",
+        }
+        if(token)
+            headers["Authorization"] = `Bearer ${token}`;
         const response = await fetch(url, {
             method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
+            headers
         });
 
         if (!response.ok) {

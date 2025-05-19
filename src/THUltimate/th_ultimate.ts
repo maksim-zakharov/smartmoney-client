@@ -325,22 +325,26 @@ export const calculatePOI = (
         if (!ob) {
             return ob;
         }
+        // Еще не касались
+        if(!ob?.endIndex){
+            return ob;
+        }
         // Либо смотрим тренд по закрытию ОБ либо если закрытия нет - по открытию.
         const obStartIndex = ob?.index;
-        const obIndex = ob?.endIndex || index;
         const startTrend = manager.trend[obStartIndex]?.trend;
-        const trend = manager.trend[obIndex]?.trend;
-        if (startTrend !== trend) {
+        const endTrend = manager.trend[ob?.endIndex]?.trend;
+        // Разный тренд в начале ОБ и в конце ОБ
+        if (startTrend !== endTrend) {
             return null;
         }
 
-        const isBuy = trend === 1 && ob?.side === 'low';
-        const isSell = trend === -1 && ob?.side === 'high';
+        const isBuy = endTrend === 1 && ob?.side === 'low';
+        const isSell = endTrend === -1 && ob?.side === 'high';
 
         if (isBuy || isSell) {
             return ob;
         }
-        return null;
+        return ob;
     });
 };
 
@@ -374,22 +378,22 @@ export const calculateTesting = (
     // Копировать в робота -->
     let orderBlocks = calculatePOI(manager, withMove, newSMT);
 
-    // if (byTrend) {
-    //     // TODO вернуть вот так
-    //     // let currentTrend;
-    //     // if (manager.trend[manager.trend.length - 1]?.trend === 1) {
-    //     //     currentTrend = 'low';
-    //     // }
-    //     // if (manager.trend[manager.trend.length - 1]?.trend === -1) {
-    //     //     currentTrend = 'high';
-    //     // }
-    //     //
-    //     // orderBlocks = orderBlocks.filter((ob) => currentTrend && ob?.side === currentTrend);
-    //
-    //     const currentTrend =
-    //         manager.trend[manager.trend.length - 1]?.trend === 1 ? 'low' : 'high';
-    //     orderBlocks = orderBlocks.filter((ob) => ob?.side === currentTrend);
-    // }
+    if (byTrend) {
+        // TODO вернуть вот так
+        // let currentTrend;
+        // if (manager.trend[manager.trend.length - 1]?.trend === 1) {
+        //     currentTrend = 'low';
+        // }
+        // if (manager.trend[manager.trend.length - 1]?.trend === -1) {
+        //     currentTrend = 'high';
+        // }
+        //
+        // orderBlocks = orderBlocks.filter((ob) => currentTrend && ob?.side === currentTrend);
+
+        const currentTrend =
+            manager.trend[manager.trend.length - 1]?.trend === 1 ? 'low' : 'high';
+        orderBlocks = orderBlocks.filter((ob) => ob?.side === currentTrend);
+    }
 
     // Увеличивает на тестинге на 3% винрейт
     orderBlocks = orderBlocks.filter((ob) => [POIType.OB_EXT, POIType.EXT_LQ_IFC].includes(ob?.type));

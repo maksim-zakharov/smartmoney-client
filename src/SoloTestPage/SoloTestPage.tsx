@@ -125,8 +125,8 @@ export const SoloTestPage = () => {
     }, [ticker])
 
     useEffect(() => {
-        fetchCandlesFromAlor(ticker, tf, fromDate, toDate).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
-    }, [tf, ticker, fromDate, toDate]);
+        fetchCandlesFromAlor(ticker, tf, fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
+    }, [tf, ticker, fromDate, toDate, token]);
 
     const setSize = (tf: string) => {
         searchParams.set('tf', tf);
