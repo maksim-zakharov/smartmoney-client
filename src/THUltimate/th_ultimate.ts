@@ -1909,7 +1909,7 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         props.reasons.push('Не найден свинг слева')
         return props;
     }
-    props.reasons.push(`Свинг слева: ${startIDMIndex}`)
+    props.reasons.push(`Свинг слева: ${formatDate(new Date(manager.candles[startIDMIndex].time * 1000))}`)
 
     props.type = POIType.OB_EXT;
 
@@ -1933,14 +1933,14 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         props.reasons.push(`IDM не подтвержден`)
         return props;
     }
-    props.reasons.push(`IDM подтвержден: ${endIDMIndex}`)
+    props.reasons.push(`IDM подтвержден: ${formatDate(new Date(manager.candles[endIDMIndex].time * 1000))}`)
 
     // Проверяем чтоб LL/HH находились четко между краями IDM
     if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
         manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] Свинг за пределами IDM`)
         props.canTest = false;
         props.canTrade = false;
-        props.reasons.push(`Свинг ${swing.index} за пределами IDM ${startIDMIndex} - ${endIDMIndex}`)
+        props.reasons.push(`Свинг ${swing.index} за пределами IDM ${formatDate(new Date(manager.candles[startIDMIndex].time * 1000))} - ${formatDate(new Date(manager.candles[endIDMIndex].time * 1000))}`)
         return props;
     }
 
@@ -1979,10 +1979,10 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         props.canTrade = false;
         props.endCandle = manager.candles[hitIndex];
         props.endIndex = hitIndex;
-        props.reasons.push(`Есть пробитие: ${hitIndex}`)
+        props.reasons.push(`Есть пробитие: ${formatDate(new Date(manager.candles[hitIndex].time * 1000))}`)
         if(endIDMIndex >= hitIndex){
             props.isSMT = true;
-            props.reasons.push(`SMT: Находимся между ${startIDMIndex} и ${endIDMIndex}`)
+            props.reasons.push(`SMT: Находимся между ${formatDate(new Date(manager.candles[startIDMIndex].time * 1000))} и ${formatDate(new Date(manager.candles[endIDMIndex].time * 1000))}`)
         }
 
         const endTrend = manager.trend[hitIndex]?.trend;
@@ -2006,7 +2006,7 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
     }
 
     manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] OB_IDM найден`)
-    props.reasons.push(`С ОБ все окей`)
+    props.reasons.push(`ОБ рабочий`);
     return props;
 }
 
@@ -2077,4 +2077,13 @@ const calculateSession = (manager: StateManager) => {
         isSession: true,
         getCandles: () => manager.candles,
     });
+}
+
+const formatDate = (_date: Date) => {
+    // 2025-05-19T19:40:00.000Z
+    const str = _date.toISOString();
+    const [date, time] = str.split('T');
+    const [hour, minute, second] = time.split(':');
+
+    return `${date} ${hour}:${minute}`;
 }
