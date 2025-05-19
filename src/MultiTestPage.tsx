@@ -20,7 +20,7 @@ import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/UpdatedChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateTesting} from "./THUltimate/th_ultimate";
+import {calculateTesting, POIType} from "./THUltimate/th_ultimate";
 import {
     cacheCandles,
     cacheRiskRates,
@@ -46,6 +46,7 @@ export const MultiTestPage = () => {
     const [tradeIDMIFC, settradeIDMIFC] = useState<boolean>(false);
     const [withMove, setwithMove] = useState<boolean>(false);
     const [showFake, setfakeBOS] = useState<boolean>(false);
+    const [showSMT, setshowSMT] = useState<boolean>(false);
     const [newSMT, setnewSMT] = useState<boolean>(false);
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(true);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
@@ -71,11 +72,13 @@ export const MultiTestPage = () => {
             // tradeIDMIFC
         });
 
+        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
+
         const lotsize = (security?.lotsize || 1)
 
         const fee = feePercent / 100
 
-        let positions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+        let positions = calculatePositionsByOrderblocks(data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
 
         positions = uniqueBy(v => v.openTime, positions);
 
@@ -98,7 +101,7 @@ export const MultiTestPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, showFake, newSMT, showHiddenSwings, withMove, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, showFake, newSMT, showHiddenSwings, showSMT, withMove, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -111,11 +114,13 @@ export const MultiTestPage = () => {
                 tradeIDMIFC
             });
 
+            const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
+
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
             const fee = feePercent / 100;
 
-            let positions = calculatePositionsByOrderblocks(data, swings, orderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+            let positions = calculatePositionsByOrderblocks(data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
 
             const isShortSellPossible = allRiskRates[ticker]?.isShortSellPossible || false;
             if (!isShortSellPossible) {
@@ -139,7 +144,7 @@ export const MultiTestPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [tradeIDMIFC, tradeOBIDM, showFake, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [tradeIDMIFC, tradeOBIDM, showFake, showSMT, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -418,6 +423,11 @@ export const MultiTestPage = () => {
             <Col>
                 <FormItem>
                     <Checkbox checked={showFake} onChange={e => setfakeBOS(e.target.checked)}>Fake BOS</Checkbox>
+                </FormItem>
+            </Col>
+            <Col>
+                <FormItem>
+                    <Checkbox checked={showSMT} onChange={e => setshowSMT(e.target.checked)}>Торговать SMT</Checkbox>
                 </FormItem>
             </Col>
             <Col>

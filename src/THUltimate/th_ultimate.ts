@@ -2081,7 +2081,11 @@ const calculateSession = (manager: StateManager) => {
 
 const formatDate = (_date: Date) => {
     // 2025-05-19T19:40:00.000Z
-    const str = _date.toISOString();
+
+    // Скорректированная дата под смещение
+    const adjustedDate = new Date(_date.getTime() + 180 * 60000);
+
+    const str = adjustedDate.toISOString();
     const [date, time] = str.split('T');
     const [hour, minute, second] = time.split(':');
 
