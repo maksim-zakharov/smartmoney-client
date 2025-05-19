@@ -15,19 +15,19 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {
     StateManager, tradinghubCalculateTrendNew
-} from "../../THUltimate/th_ultimate_oneIt.ts";
+} from "../../THUltimate/th_ultimate.ts";
 import {HistoryObject, Swing} from "../../THUltimate/models.ts";
 
 import {notTradingTime} from "../../THUltimate/utils.ts";
 
 const BOSChart = ({data, text = 'LL'}) => {
     const manager = new StateManager(data);
-    manager.calculateSwingsOld();
+    manager.calculateSwings();
 
     manager.markHHLLOld();
     manager.swings[3] = {...manager.swings[3], text} as Swing;
 
-    manager.drawBOSOld();
+    // manager.drawBOSOld();
     const allMarkers1 = [];
     allMarkers1.push(...swingsToMarkers(manager.swings))
 

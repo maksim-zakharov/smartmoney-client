@@ -157,6 +157,7 @@ export class POI {
     lastImbalanceCandle: HistoryObject;
     startCandle: HistoryObject;
     // TODO только для теста
+    canTest?: boolean;
     canTrade?: boolean;
     endCandle?: HistoryObject;
     endIndex?: number;

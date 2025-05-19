@@ -11,8 +11,8 @@ import {
     swingsToMarkers
 } from "../utils.ts";
 import {isBusinessDay, isUTCTimestamp, SeriesMarker, Time} from "lightweight-charts";
-import {calculateTesting, defaultConfig} from "../THUltimate/th_ultimate_oneIt.ts";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting.ts";
+import {calculateTesting, defaultConfig} from "../THUltimate/th_ultimate.ts";
 
 
 const markerColors = {

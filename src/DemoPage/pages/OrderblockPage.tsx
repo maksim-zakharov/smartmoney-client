@@ -12,15 +12,15 @@ import {
 } from "../../utils";
 import {
     calculatePOI, StateManager
-} from "../../THUltimate/th_ultimate_oneIt.ts";
+} from "../../THUltimate/th_ultimate.ts";
 import {HistoryObject, Trend} from "../../THUltimate/models.ts";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
     const manager = new StateManager(data);
-    manager.calculateSwingsOld();
+    manager.calculateSwings();
 
     manager.markHHLLOld();
-    manager.drawBOSOld();
+    // manager.drawBOSOld();
 
     const trends = data.map((candle, index) => ({trend, time: candle.time}) as Trend);
 

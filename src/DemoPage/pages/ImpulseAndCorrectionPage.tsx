@@ -12,17 +12,17 @@ import {DatesPicker} from "../../DatesPicker";
 import type { Dayjs } from 'dayjs';
 import {
     StateManager,
-} from "../../THUltimate/th_ultimate_oneIt.ts";
+} from "../../THUltimate/th_ultimate.ts";
 import Paragraph from "antd/es/typography/Paragraph";
 import {HistoryObject} from "../../THUltimate/models.ts";
 
 import {notTradingTime} from "../../THUltimate/utils.ts";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
     const manager = new StateManager(data);
-    manager.calculateSwingsOld();
+    manager.calculateSwings();
 
     manager.markHHLLOld();
-    manager.drawBOSOld();
+    // manager.drawBOSOld();
 
     const _lineSerieses1 = bosesToLineSerieses(manager.boses);
     const allMarkers1 = [];
