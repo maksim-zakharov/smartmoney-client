@@ -47,7 +47,7 @@ export const MultiTestPage = () => {
     const [withMove, setwithMove] = useState<boolean>(false);
     const [showFake, setfakeBOS] = useState<boolean>(false);
     const [newSMT, setnewSMT] = useState<boolean>(false);
-    const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(false);
+    const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(true);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("max");
     const [stopMargin, setStopMargin] = useState<number>(50)

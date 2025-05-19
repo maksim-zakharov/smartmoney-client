@@ -58,7 +58,7 @@ export const SoloTestPage = () => {
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const holdDuration = 500; // 2 секунды
 
-    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,limitOrderTrade").split(','));
+    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,limitOrderTrade,showHiddenSwings,showPositions").split(','));
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)

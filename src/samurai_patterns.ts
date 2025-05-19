@@ -73,7 +73,7 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
         const loss = Math.abs(stopLoss - openPrice);
         const RR = profit / loss;
 
-        if (RR < 2) {
+        if (RR < 3) {
             continue;
         }
 
