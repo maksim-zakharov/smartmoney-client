@@ -387,7 +387,7 @@ export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT;
 
 export const defaultConfig: THConfig = {
     newSMT: false,
-    showHiddenSwings: false,
+    showHiddenSwings: true,
     withMove: false,
     byTrend: true,
     showFake: false,
@@ -1603,6 +1603,7 @@ export const hasHitOB = (ob: Partial<POI>, candle: HistoryObject) =>
     (ob.side === 'low' &&
         // Если был прокол
         ob.startCandle.high >= candle.low);
+
 export const notTradingTime = (candle: HistoryObject) => {
     const hours = new Date(candle.time * 1000).getHours();
     const minutes = new Date(candle.time * 1000).getMinutes();
@@ -1937,9 +1938,9 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
     // Проверяем чтоб LL/HH находились четко между краями IDM
     if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
         manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] Свинг за пределами IDM`)
-        props.isSMT = true;
+        props.canTest = false;
         props.canTrade = false;
-        props.reasons.push(`SMT: Находимся между ${startIDMIndex} и ${endIDMIndex}`)
+        props.reasons.push(`Свинг ${swing.index} за пределами IDM ${startIDMIndex} - ${endIDMIndex}`)
         return props;
     }
 
@@ -1961,13 +1962,28 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         return props;
     }
 
+    const isBuy = startTrend === -1 && props?.side === 'high';
+    const isSell = startTrend === 1 && props?.side === 'low';
+
+    // Если тренд лонг а ОБ в шорт, или тренд в шорт а ОБ в лонг - не торгуем и не тестируем
+    if (!isBuy && !isSell) {
+        props.canTrade = false;
+        props.canTest = false;
+        props.reasons.push(`ОБ не по тренду: Тренд: ${startTrend === 1 ? 'Бычий' : startTrend === -1 ? 'Медвежий' : 'undefined'} Направление ОБ: ${props?.side === 'low' ? 'Продажа': 'Покупка'}`)
+        return props;
+    }
+
     // Если пробитие состоялось
-    if (manager.candles[hitIndex] || endIDMIndex >= hitIndex) {
+    if (manager.candles[hitIndex]) {
         manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] пробитие состоялось`)
         props.canTrade = false;
         props.endCandle = manager.candles[hitIndex];
         props.endIndex = hitIndex;
         props.reasons.push(`Есть пробитие: ${hitIndex}`)
+        if(endIDMIndex >= hitIndex){
+            props.isSMT = true;
+            props.reasons.push(`SMT: Находимся между ${startIDMIndex} и ${endIDMIndex}`)
+        }
 
         const endTrend = manager.trend[hitIndex]?.trend;
 
@@ -1986,17 +2002,6 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
     if(!startTrend || currentTrend !== startTrend){
         props.canTrade = false;
         props.reasons.push(`Тренд ОБ не равен текущему тренду: ${startTrend} != ${currentTrend}`)
-        return props;
-    }
-
-    const isBuy = startTrend === 1 && props?.side === 'low';
-    const isSell = startTrend === -1 && props?.side === 'high';
-
-    // Если тренд лонг а ОБ в шорт, или тренд в шорт а ОБ в лонг - не торгуем и не тестируем
-    if (!isBuy && !isSell) {
-        props.canTrade = false;
-        props.canTest = false;
-        props.reasons.push(`ОБ не по тренду: Тренд: ${startTrend === 1 ? 'Бычий' : startTrend === -1 ? 'Медвежий' : 'undefined'} Направление ОБ: ${props?.side === 'low' ? 'Продажа': 'Покупка'}`)
         return props;
     }
 

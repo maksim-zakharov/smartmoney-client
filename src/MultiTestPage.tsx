@@ -70,7 +70,6 @@ export const MultiTestPage = () => {
             // tradeOBIDM,
             // tradeIDMIFC
         });
-        console.log(orderBlocks)
 
         const lotsize = (security?.lotsize || 1)
 
@@ -111,7 +110,6 @@ export const MultiTestPage = () => {
                 tradeOBIDM,
                 tradeIDMIFC
             });
-            console.log(orderBlocks)
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 

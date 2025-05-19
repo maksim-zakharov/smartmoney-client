@@ -153,6 +153,7 @@ export const SoloTestPage = () => {
         } = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
 
         const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC].includes(o?.type) && !o.isSMT && o.canTest);
+        console.log(canTradeOrderBlocks)
 
         let positions = [];
 
