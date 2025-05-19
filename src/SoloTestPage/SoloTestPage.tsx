@@ -42,6 +42,7 @@ import moment from "moment";
 import {moneyFormat} from "../MainPage/MainPage.tsx";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
+import {c} from "vite/dist/node/types.d-aGj9QkWt";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -152,8 +153,7 @@ export const SoloTestPage = () => {
             orderBlocks
         } = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
 
-        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC].includes(o?.type) && !o.isSMT && o.canTest);
-        console.log(canTradeOrderBlocks)
+        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
 
         let positions = [];
 
@@ -173,7 +173,7 @@ export const SoloTestPage = () => {
             orderBlocks: canTradeOrderBlocks,
             positions: positions.sort((a, b) => a.openTime - b.openTime)
         };
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {

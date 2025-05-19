@@ -37,7 +37,7 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
             lastExtremumIndexMap[swing?.side] = i;
         }
 
-        if (!obItem || !obItem.endCandle || !candles[obItem.endIndex + 1] || !obItem.canTest || obItem.isSMT) {
+        if (!obItem || !obItem.endCandle || !candles[obItem.endIndex + 1] || !obItem.canTest) {
             continue;
         }
 
