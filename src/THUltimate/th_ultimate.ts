@@ -1906,10 +1906,10 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] Не найден свинг слева`)
         props.canTrade = false;
         props.canTest = false;
-        props.reasons.push('Не найден свинг слева')
+        props.reasons.push(`${formatDate(new Date(manager.candles[startIDMIndex].time * 1000))} Правильный откат не найден`)
         return props;
     }
-    props.reasons.push(`Свинг слева: ${formatDate(new Date(manager.candles[startIDMIndex].time * 1000))}`)
+    props.reasons.push(`${formatDate(new Date(manager.candles[startIDMIndex].time * 1000))} Правильный откат`)
 
     props.type = POIType.OB_EXT;
 
@@ -1933,7 +1933,7 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         props.reasons.push(`IDM не подтвержден`)
         return props;
     }
-    props.reasons.push(`IDM подтвержден: ${formatDate(new Date(manager.candles[endIDMIndex].time * 1000))}`)
+    props.reasons.push(`${formatDate(new Date(manager.candles[endIDMIndex].time * 1000))} Подтверждение IDM`)
 
     // Проверяем чтоб LL/HH находились четко между краями IDM
     if (swing.index <= startIDMIndex || swing.index >= endIDMIndex) {
