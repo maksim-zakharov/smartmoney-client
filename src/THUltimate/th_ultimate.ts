@@ -1609,7 +1609,7 @@ export const notTradingTime = (candle: HistoryObject) => {
     const minutes = new Date(candle.time * 1000).getMinutes();
 
     // Открытие утреннего аукциона
-    if (hours > 2 && hours < 10) {
+    if (hours > 1 && hours < 7) {
         return true;
     }
 
