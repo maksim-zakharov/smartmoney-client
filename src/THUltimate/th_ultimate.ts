@@ -1763,10 +1763,10 @@ function findImbalance(manager: StateManager, firstCandleIndex: number): { first
             reasons.push(`Свеча ${formatDate(new Date(manager.candles[j].time * 1000))} внутренняя для ${formatDate(new Date(manager.candles[i].time * 1000))}`)
             j++;
         }
-        reasons.push(`Свеча ${formatDate(new Date(manager.candles[j].time * 1000))} не внутренняя для ${formatDate(new Date(manager.candles[i].time * 1000))}`)
-
         // Проверяем границы массива после поиска j
         if (j >= manager.candles.length - 1) break;
+
+        reasons.push(`Свеча ${formatDate(new Date(manager.candles[j].time * 1000))} не внутренняя для ${formatDate(new Date(manager.candles[i].time * 1000))}`)
 
         // Индес последней свечи имбаланса
         const k = j + 1;
