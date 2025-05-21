@@ -16,7 +16,7 @@ import {
 import Paragraph from "antd/es/typography/Paragraph";
 import {HistoryObject} from "../../THUltimate/models.ts";
 
-import {notTradingTime} from "../../THUltimate/utils.ts";
+import {notTradingTime} from "../../THUltimate/th_ultimate.ts";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
     const manager = new StateManager(data);
     manager.calculateSwings();

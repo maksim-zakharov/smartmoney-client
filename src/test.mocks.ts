@@ -3,7 +3,7 @@ import oneIterationSwing from "./stubs/oneIterationSwing.json";
 import {testData1, testData2} from "./test_data.ts";
 import {Cross, HistoryObject, POI, Swing} from "./THUltimate/models.ts";
 
-import {notTradingTime} from "./THUltimate/utils.ts";
+import {notTradingTime} from "./THUltimate/th_ultimate.ts";
 
 const convertOldHighsLowsToSwing = (candles: HistoryObject[], {highs, lows, swings}: {
     highs: any[],

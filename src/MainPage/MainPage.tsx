@@ -5,7 +5,7 @@ import moment from "moment";
 import {Link, useSearchParams} from "react-router-dom";
 import useWindowDimensions from "../useWindowDimensions.tsx";
 
-import {notTradingTime} from "../THUltimate/utils.ts";
+import {notTradingTime} from "../THUltimate/th_ultimate.ts";
 import {PositionsTable} from "./PositionsTable.tsx";
 import {HistoryTable} from "./HistoryTable.tsx";
 import {OrdersTable} from "./OrdersTable.tsx";

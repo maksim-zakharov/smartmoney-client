@@ -42,34 +42,6 @@ export const hasHitOB = (ob: OrderblockPart, candle: HistoryObject) =>
         // Если был прокол
         && ob.startCandle.high >= candle.low
     );
-export const notTradingTime = (candle: HistoryObject) => {
-    const hours = new Date(candle.time * 1000).getHours();
-    const minutes = new Date(candle.time * 1000).getMinutes();
-
-    // Открытие утреннего аукциона
-    if (hours > 1 && hours < 7) {
-        return true;
-    }
-
-    // Открытие утренней сессии
-    // хз удалять ли
-    // if (hours === 10 && minutes === 0) {
-    //   return true;
-    // }
-
-    // закрытие дневной сессии
-    if (hours === 18 && minutes >= 45) {
-        return true;
-    }
-
-    // Открытие вечерней сессии
-    // хз удалять ли
-    if (hours === 19 && minutes === 0) {
-        return true;
-    }
-
-    return false;
-};
 export const highestBy = <T>(batch: T[], key: keyof T) => batch.reduce((acc, idx, i) => {
     if (!acc && idx) {
         acc = idx;

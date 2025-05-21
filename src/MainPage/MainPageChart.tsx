@@ -1,6 +1,6 @@
 import {Col} from "antd";
 import {Chart} from "../SoloTestPage/UpdatedChart";
-import {notTradingTime} from "../THUltimate/utils.ts";
+import {notTradingTime} from "../THUltimate/th_ultimate.ts";
 import React, {FC, useMemo} from "react";
 import useWindowDimensions from "../useWindowDimensions.tsx";
 import {

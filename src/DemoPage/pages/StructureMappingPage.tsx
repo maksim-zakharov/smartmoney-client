@@ -18,7 +18,7 @@ import {
 } from "../../THUltimate/th_ultimate.ts";
 import {HistoryObject, Swing} from "../../THUltimate/models.ts";
 
-import {notTradingTime} from "../../THUltimate/utils.ts";
+import {notTradingTime} from "../../THUltimate/th_ultimate.ts";
 
 const BOSChart = ({data, text = 'LL'}) => {
     const manager = new StateManager(data);

@@ -899,16 +899,25 @@ export class StateManager {
     calculateOBEXT(swing: Swing) {
         // Нужно для определения ближайшей цели для TakeProfit
         const takeProfit = closestExtremumSwing(this, swing)
-        const _firstImbalanceIndex = findFirstImbalanceIndex(this, swing.index);
-        try {
-            const {
-                lastImbalanceIndex,
-                firstImbalanceIndex,
-                firstCandle
-            } = findLastImbalanceIndex(this, swing.index, _firstImbalanceIndex, this.config.withMove);
 
-            const lastImbalanceCandle = this.candles[lastImbalanceIndex];
+        const imbalance = findImbalance(this, swing.index);
+        if(!imbalance){
+            return;
+        }
+
+        const {firstImbalanceIndex, lastImbalanceIndex} = imbalance;
+        const firstCandle = this.candles[firstImbalanceIndex];
+
+        // const _firstImbalanceIndex = findFirstImbalanceIndex(this, swing.index);
+        try {
+            // const {
+            //     lastImbalanceIndex,
+            //     firstImbalanceIndex,
+            //     firstCandle
+            // } = findLastImbalanceIndex(this, swing.index, _firstImbalanceIndex, this.config.withMove);
+
             const lastOrderblockCandle = this.candles[firstImbalanceIndex];
+            const lastImbalanceCandle = this.candles[lastImbalanceIndex];
 
             // Жестко нужно для БД, не трогать
             const open =
@@ -934,7 +943,7 @@ export class StateManager {
             // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
             const orderBlockPart = {
                 startCandle: {
-                    time: swing.time,
+                    time: firstCandle.time,
                     open,
                     close,
                     high: Math.max(firstCandle.high, lastOrderblockCandle.high),
@@ -951,6 +960,7 @@ export class StateManager {
                 orderBlockPart?.side === swing?.side
             ) {
                 this.pois[swing.index] = new POI(canTradeExtremumOrderblock(this, swing, orderBlockPart, takeProfit?.price));
+                this.pois[swing.index].reasons.unshift(...imbalance.reasons);
                 // newSMT
                 this.obIdxes.add(swing.index);
             }
@@ -1736,6 +1746,43 @@ const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
     }
 
     return manager.swings[index];
+}
+
+function findImbalance(manager: StateManager, firstCandleIndex: number): { firstImbalanceIndex: number; lastImbalanceIndex: number, reasons: string[] } | null {
+    let reasons: string[] = [];
+
+    // Индекс начальной свечи имбаланса
+    let i = firstCandleIndex;
+
+    while (i < manager.candles.length - 2) {
+        // Индекс средней свечи имбаланса
+        let j = i + 1;
+
+        // Пропускаем все внутренние свечи относительно i
+        while (j < manager.candles.length && isInsideBar(manager.candles[i], manager.candles[j])) {
+            reasons.push(`Свеча ${formatDate(new Date(manager.candles[j].time * 1000))} внутренняя для ${formatDate(new Date(manager.candles[i].time * 1000))}`)
+            j++;
+        }
+        reasons.push(`Свеча ${formatDate(new Date(manager.candles[j].time * 1000))} не внутренняя для ${formatDate(new Date(manager.candles[i].time * 1000))}`)
+
+        // Проверяем границы массива после поиска j
+        if (j >= manager.candles.length - 1) break;
+
+        // Индес последней свечи имбаланса
+        const k = j + 1;
+
+        // Проверяем имбаланс между i и k
+        if (isImbalance(manager.candles[i], manager.candles[k])) {
+            reasons.push(`Имбаланс есть: ${formatDate(new Date(manager.candles[i].time * 1000))} | ${formatDate(new Date(manager.candles[k].time * 1000))}`)
+            return { firstImbalanceIndex: i, lastImbalanceIndex: k, reasons };
+        } else {
+            // Если имбаланса нет, продолжаем поиск с новой начальной свечи
+            reasons.push(`Имбаланса нет: ${formatDate(new Date(manager.candles[i].time * 1000))} | ${formatDate(new Date(manager.candles[k].time * 1000))}`)
+            i = j;
+        }
+    }
+
+    return null;
 }
 
 const findFirstImbalanceIndex = (manager: StateManager, i: number) => {

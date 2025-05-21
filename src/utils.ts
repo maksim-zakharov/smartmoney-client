@@ -5,27 +5,17 @@ import {
     AreaSeriesPartialOptions,
     BarSeriesPartialOptions,
     CandlestickSeriesPartialOptions,
-    ChartOptions,
-    createChart,
-    DeepPartial,
     HistogramSeriesPartialOptions,
     IChartApi,
-    ISeriesApi,
-    LineData,
     LineSeriesPartialOptions,
     LineStyle,
-    PriceLineOptions,
-    SeriesDataItemTypeMap,
     SeriesMarker,
-    SeriesOptionsMap,
     SeriesType,
     Time,
     UTCTimestamp
 } from "lightweight-charts";
 import {Options} from "@vitejs/plugin-react";
-import {useEffect, useMemo, useState} from "react";
 import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
-import {ensureDefined} from "./lwc-plugins/helpers/assertions";
 import {TLineSeries} from "./SoloTestPage/UpdatedChart.tsx";
 import {Cross, HistoryObject, POI, Swing, Trend} from "./THUltimate/models.ts";
 

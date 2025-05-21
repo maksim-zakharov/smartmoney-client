@@ -31,7 +31,7 @@ import {
 } from "./cacheService.ts";
 import {HistoryObject} from "./THUltimate/models.ts";
 
-import {notTradingTime} from "./THUltimate/utils.ts";
+import {notTradingTime} from "./THUltimate/th_ultimate.ts";
 
 export const MultiTestPage = () => {
     const [loading, setLoading] = useState(true);

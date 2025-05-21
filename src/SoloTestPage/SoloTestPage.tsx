@@ -37,7 +37,7 @@ import {calculateTesting, POIType} from "../THUltimate/th_ultimate";
 import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 
-import {notTradingTime} from "../THUltimate/utils.ts";
+import {notTradingTime} from "../THUltimate/th_ultimate.ts";
 import moment from "moment";
 import {moneyFormat} from "../MainPage/MainPage.tsx";
 import Sider from "antd/es/layout/Sider";
