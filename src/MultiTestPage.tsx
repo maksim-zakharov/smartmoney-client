@@ -87,7 +87,7 @@ export const MultiTestPage = () => {
             positions = positions.filter(p => p.side !== 'short');
         }
 
-        return positions.map((curr) => {
+        return positions.filter(p => Boolean(p.pnl)).map((curr) => {
             const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
             const stopLossMarginPerLot = diff * lotsize
             curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
@@ -127,7 +127,7 @@ export const MultiTestPage = () => {
                 positions = positions.filter(p => p.side !== 'short');
             }
 
-            return positions.map((curr) => {
+            return positions.filter(p => Boolean(p.pnl)).map((curr) => {
                 const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
                 const stopLossMarginPerLot = diff * lotsize
                 curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
