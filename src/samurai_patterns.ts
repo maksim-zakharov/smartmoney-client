@@ -1,6 +1,6 @@
 import {calculateTakeProfit} from "./utils";
 
-import {HistoryObject, POI, Swing} from "./THUltimate/models.ts";
+import {HistoryObject, POI, POIType, Swing} from "./THUltimate/models.ts";
 
 export interface Position {
     side: 'short' | 'long',
@@ -30,11 +30,10 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
 
     const nonClosedPositionsMap = new Map<number, Position>([]);
 
-    for (let i = 0; i < candles.length; i++) {
+    for (let i = 0; i < ob.length; i++) {
         const obItem = ob[i];
-        const swing = swings[i];
-        if (swing?.isExtremum) {
-            lastExtremumIndexMap[swing?.side] = i;
+        if (obItem.swing?.isExtremum) {
+            lastExtremumIndexMap[obItem.swing?.side] = i;
         }
 
         if (!obItem || !obItem.endCandle || !candles[obItem.endIndex + 1] || !obItem.canTest) {
@@ -52,6 +51,13 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
 
         if (!limitOrder) {
             openPrice = candles[obItem.endIndex + 1].open;
+        }
+
+        if (!limitOrder && side === 'short' && candles[obItem.endIndex].close >= openPrice) {
+            continue;
+        }
+        if (!limitOrder && side === 'long' && candles[obItem.endIndex].close <= openPrice) {
+            continue;
         }
 
         if (stopPaddingPercent) {
@@ -74,13 +80,6 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
         const RR = profit / loss;
 
         if (RR < 3) {
-            continue;
-        }
-
-        if (!limitOrder && side === 'short' && candles[obItem.endIndex].close >= openPrice) {
-            continue;
-        }
-        if (!limitOrder && side === 'long' && candles[obItem.endIndex].close <= openPrice) {
             continue;
         }
 
@@ -164,6 +163,8 @@ export const iterationCalculatePositions = (candles: HistoryObject[], swings: Sw
             }
         })
     }
+
+    debugger
 
     return Object.values<Position>(positions);
 }

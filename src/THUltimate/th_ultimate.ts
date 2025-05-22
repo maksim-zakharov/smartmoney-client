@@ -264,7 +264,8 @@ export const calculatePOI = (
         if (manager.config.tradeEXTIFC)
             manager.calculateEXTIFC(i);
 
-        // manager.calculateIDMIFC(i);
+        if(manager.config.tradeIDMIFC)
+        manager.calculateIDMIFC(i);
         // manager.calculateOBIDM(i);
 
         // В этом блоке по всем OB подтверждаем endCandles
@@ -342,9 +343,10 @@ export const calculateTesting = (
         showLogs,
         showSession,
         tradeEXTIFC,
+        tradeIDMIFC
     }: THConfig,
 ) => {
-    const manager = new StateManager(data, {showIFC, tradeEXTIFC, showLogs});
+    const manager = new StateManager(data, {showIFC, tradeIDMIFC, tradeEXTIFC, showLogs});
     // <-- Копировать в робота
     manager.calculate();
 
@@ -361,7 +363,7 @@ export const calculateTesting = (
     let orderBlocks = calculatePOI(manager, withMove, newSMT);
 
     // Увеличивает на тестинге на 3% винрейт
-    orderBlocks = orderBlocks.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC].includes(ob?.type));
+    orderBlocks = orderBlocks.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC].includes(ob?.type));
 
     return {
         swings: manager.swings,
@@ -377,6 +379,7 @@ export interface THConfig {
     newSMT?: boolean;
     showIFC?: boolean;
     tradeEXTIFC?: boolean;
+    tradeIDMIFC?: boolean;
     byTrend?: boolean;
     showFake?: boolean;
     showSession?: boolean;
@@ -799,6 +802,11 @@ export class StateManager {
         this.calculateSwings();
     }
 
+    /**
+     * Внимание! Свеча IFC свипает хай (по наблюдениям),
+     * при этом открытие может быть внутри HH свечи или внутри ОБ, это не важно.
+     * @param index
+     */
     calculateEXTIFC(index: number) {
         if (!this.trend[index]) {
             return;
@@ -810,6 +818,7 @@ export class StateManager {
         if (!isIFC(extremumSide, this.candles[index])) {
             return
         }
+
         const swing = new Swing({
             side: extremumSide,
             time: this.candles[index].time,
@@ -866,11 +875,21 @@ export class StateManager {
         }
 
         const orderBlockPart = {
-            startCandle: this.candles[extremum.index],
-            lastOrderblockCandle: this.candles[extremum.index],
-            lastImbalanceCandle: this.candles[index],
+            // Указываем экстремум который пробила свеча IFC
+            startCandle: {
+                ...this.candles[extremum.index],
+                // Это нужно для стопа, если свипнули хай - стоп должен быть за хаем свипа, если лоу - за лоем свипа
+                high: extremum.side === 'high' ? Math.max(this.candles[extremum.index].high, this.candles[index].high) : this.candles[extremum.index].high,
+                low: extremum.side === 'low' ? Math.min(this.candles[extremum.index].low, this.candles[index].low) : this.candles[extremum.index].low,
+            },
+            // Указываем индекс экстремума
             firstImbalanceIndex: extremum.index,
+            lastOrderblockCandle: this.candles[extremum.index],
+            // Здесь просто указываем свечу IFC
+            lastImbalanceCandle: this.candles[index],
+            // Здесь просто указываем индекс IFC
             lastImbalanceIndex: index,
+            // Указываем направление экстремума: high - на продажу, low - на покупку
             side: extremumSide,
         } as OrderblockPart;
 
@@ -879,6 +898,7 @@ export class StateManager {
             isSMT: false,
             swing,
             canTrade: true,
+            canTest: true,
             // Тейк профит до ближайшего максимума
             takeProfit: takeProfit?.price,
             type: POIType.EXT_LQ_IFC,
@@ -890,6 +910,13 @@ export class StateManager {
         }
 
         this.pois[swing.index] = new POI(props);
+
+        this.pois[swing.index].endCandle = this.candles[swing.index];
+        this.pois[swing.index].endIndex = swing.index;
+        this.pois[swing.index].reasons = [];
+        this.pois[swing.index].textTime = swing.time;
+
+        // debugger
         console.log(`[${new Date(swing.time * 1000).toISOString()}] EXT_IFC`)
 
         this.pois[swing.index].endIndex = index;
@@ -979,45 +1006,101 @@ export class StateManager {
         const idmSide = this.trend[index].trend === -1 ? 'high' : 'low';
         const lastIDMIndex = closestLeftIDMIndex(this, index, idmSide);
         const bos = this.boses[lastIDMIndex];
-        if (!bos || bos.isSession) {
+        if (!bos?.isIDM) {
             return;
         }
 
-        const orderBlockPart = {
-            startCandle: this.candles[lastIDMIndex],
-            lastOrderblockCandle: this.candles[lastIDMIndex],
-            lastImbalanceCandle: this.candles[index],
-            firstImbalanceIndex: lastIDMIndex,
-            lastImbalanceIndex: index,
-            side: idmSide,
-        } as OrderblockPart;
+        const lastIDMCandle = this.candles[lastIDMIndex]
 
         // IDM Есть и он подтвержден свечой IFC
         const isConfirmedByIFC =
             bos?.isConfirmed &&
             bos.to.index === index &&
-            isIFC(idmSide, this.candles[bos.to.index]) &&
-            hasHitOB(orderBlockPart, this.candles[bos.to.index]);
+            isIFC(idmSide, this.candles[bos.to.index]);
 
         if (!isConfirmedByIFC) {
             return;
         }
+
+        // Нужно убедиться что между экстремумом и IFC нет других пробитий
+        let startHitIndex = index - 1;
+        while (startHitIndex > lastIDMIndex) {
+            if (idmSide === 'high' &&
+                (this.candles[startHitIndex].high > lastIDMCandle[idmSide]
+                )
+            ) {
+                break;
+            }
+
+            if (idmSide === 'low' && (
+                this.candles[startHitIndex].low <= lastIDMCandle[idmSide]
+            )) {
+                break;
+            }
+            startHitIndex--;
+        }
+
+        // Пробитие было
+        if (startHitIndex > lastIDMIndex) {
+            return;
+        }
+
+        if (idmSide === 'high' &&
+            (this.candles[index].high <= lastIDMCandle[idmSide]
+                || this.candles[index].low >= lastIDMCandle[idmSide]
+                || this.candles[index].close >= lastIDMCandle[idmSide]
+            )
+        ) {
+            return;
+        }
+
+        if (idmSide === 'low' && (
+            this.candles[index].low >= lastIDMCandle[idmSide]
+            || this.candles[index].high <= lastIDMCandle[idmSide]
+            || this.candles[index].close <= lastIDMCandle[idmSide]
+        )) {
+            return;
+        }
+
+        const orderBlockPart = {
+            // Указываем IDM который пробила свеча IFC
+            startCandle: {
+                ...lastIDMCandle,
+                // Это нужно для стопа, если свипнули хай - стоп должен быть за хаем свипа, если лоу - за лоем свипа
+                high: idmSide === 'high' ? Math.max(this.candles[lastIDMIndex].high, this.candles[index].high) : this.candles[lastIDMIndex].high,
+                low: idmSide === 'low' ? Math.min(this.candles[lastIDMIndex].low, this.candles[index].low) : this.candles[lastIDMIndex].low,
+            },
+            // Указываем индекс IDM
+            firstImbalanceIndex: lastIDMIndex,
+            lastOrderblockCandle: lastIDMCandle,
+            // Здесь просто указываем свечу IFC
+            lastImbalanceCandle: this.candles[index],
+            // Здесь просто указываем индекс IFC
+            lastImbalanceIndex: index,
+            side: idmSide,
+        } as OrderblockPart;
 
         const swing = this.swings[lastIDMIndex];
         if (!swing) {
             return;
         }
 
-        this.pois[lastIDMIndex] = new POI({
+        const props: Partial<POI> = {
             ...orderBlockPart,
             isSMT: false,
             swing,
             canTrade: true,
+            canTest: true,
+            // Тейк профит до ближайшего максимума
             takeProfit: bos.extremum.price,
             type: POIType.IDM_IFC,
             endCandle: this.candles[index],
             endIndex: index,
-        });
+            reasons: [],
+            textTime: this.candles[index].time
+        }
+
+        this.pois[index] = new POI(props);
     }
 
     // Первый OB сразу после IDM, задеваем его свечой (любой) или закрываемся внутри
@@ -2053,7 +2136,6 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
     }
 
     manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] OB_IDM найден`)
-    props.reasons.push(`ОБ рабочий`);
     return props;
 }
 
