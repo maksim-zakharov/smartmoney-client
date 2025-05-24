@@ -33,11 +33,11 @@ import {iterationCalculatePositions,} from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {calculateTesting, POIType} from "../THUltimate/th_ultimate";
+import {calculateTesting, POIType} from "../th_ultimate.ts";
 import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 
-import {notTradingTime} from "../THUltimate/th_ultimate.ts";
+import {notTradingTime} from "../th_ultimate.ts";
 import moment from "moment";
 import {moneyFormat} from "../MainPage/MainPage.tsx";
 import Sider from "antd/es/layout/Sider";

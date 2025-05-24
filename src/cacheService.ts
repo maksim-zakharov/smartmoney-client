@@ -1,7 +1,7 @@
 // cacheService.ts
 import { db } from './db';
 
-import {HistoryObject} from "./THUltimate/th_ultimate.ts";
+import {HistoryObject} from "./th_ultimate.ts";
 
 export const getCachedCandles = async (symbol: string): Promise<HistoryObject[]> => {
     return db.candles

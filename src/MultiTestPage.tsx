@@ -20,7 +20,7 @@ import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/UpdatedChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateTesting, POIType} from "./THUltimate/th_ultimate";
+import {calculateTesting, POIType} from "./th_ultimate.ts";
 import {
     cacheCandles,
     cacheRiskRates,
@@ -29,9 +29,9 @@ import {
     getCachedRiskRates,
     getCachedSecurity
 } from "./cacheService.ts";
-import {HistoryObject} from "./THUltimate/th_ultimate.ts";
+import {HistoryObject} from "./th_ultimate.ts";
 
-import {notTradingTime} from "./THUltimate/th_ultimate.ts";
+import {notTradingTime} from "./th_ultimate.ts";
 
 export const MultiTestPage = () => {
     const [loading, setLoading] = useState(true);

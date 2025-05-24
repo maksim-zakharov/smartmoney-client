@@ -1,4 +1,4 @@
-import {HistoryObject} from "./src/THUltimate/th_ultimate.ts";
+import {HistoryObject} from "./src/th_ultimate.ts";
 
 export const symbolFuturePairs = [
     {

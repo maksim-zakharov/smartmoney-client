@@ -1,7 +1,7 @@
 // db.ts
 import Dexie, { Table } from 'dexie';
 
-import {HistoryObject} from "./THUltimate/th_ultimate.ts";
+import {HistoryObject} from "./th_ultimate.ts";
 
 export class TradingDataDB extends Dexie {
     candles!: Table<HistoryObject, string>;

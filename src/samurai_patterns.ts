@@ -1,5 +1,5 @@
 import {calculateTakeProfit} from "./utils";
-import {HistoryObject, POI, Swing} from "./THUltimate/th_ultimate.ts";
+import {HistoryObject, POI, Swing} from "./th_ultimate.ts";
 
 export interface Position {
     side: 'short' | 'long',

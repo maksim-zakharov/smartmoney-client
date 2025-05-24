@@ -13,7 +13,7 @@ import {
 import moment from 'moment';
 import {createSeries, defaultSeriesOptions, uniqueBy} from "../utils";
 import {ensureDefined} from "../lwc-plugins/helpers/assertions";
-import {isInsideBar} from "../THUltimate/utils.ts";
+import {isInsideBar} from "../th_ultimate.ts";
 import {TLineSeries} from "./TestChart.tsx";
 import {withErrorBoundary} from "../ErrorBoundary.tsx";
 

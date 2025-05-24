@@ -12,8 +12,8 @@ import {
 } from "../../utils";
 import {
     calculatePOI, StateManager
-} from "../../THUltimate/th_ultimate.ts";
-import {HistoryObject, Trend} from "../../THUltimate/th_ultimate.ts";
+} from "../../th_ultimate.ts";
+import {HistoryObject, Trend} from "../../th_ultimate.ts";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
     const manager = new StateManager(data);
