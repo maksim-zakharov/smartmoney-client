@@ -1,4 +1,4 @@
-import {Card, Checkbox, Col, Divider, Form, Input, Radio, Row, Slider, Space, Statistic, Table} from "antd";
+import {Card, Checkbox, Col, Divider, Form, Input, Layout, Radio, Row, Slider, Space, Statistic, Table} from "antd";
 import {TickerSelect} from "./TickerSelect";
 import React, {useEffect, useMemo, useState} from "react";
 import FormItem from "antd/es/form/FormItem";
@@ -8,19 +8,12 @@ import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage/MainPage.tsx";
 import moment from 'moment';
 import {calculatePositionsByOrderblocks} from "./samurai_patterns";
-import {
-    fetchCandlesFromAlor,
-    fetchRiskRates,
-    getSecurity,
-    persision,
-    refreshToken,
-    uniqueBy
-} from "./utils";
+import {fetchCandlesFromAlor, fetchRiskRates, getSecurity, persision, refreshToken, uniqueBy} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/UpdatedChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateTesting, POIType} from "./th_ultimate.ts";
+import {calculateTesting, HistoryObject, notTradingTime, POIType} from "./th_ultimate.ts";
 import {
     cacheCandles,
     cacheRiskRates,
@@ -29,9 +22,8 @@ import {
     getCachedRiskRates,
     getCachedSecurity
 } from "./cacheService.ts";
-import {HistoryObject} from "./th_ultimate.ts";
-
-import {notTradingTime} from "./th_ultimate.ts";
+import Sider from "antd/es/layout/Sider";
+import {Content} from "antd/es/layout/layout";
 
 export const MultiTestPage = () => {
     const [loading, setLoading] = useState(true);
@@ -387,199 +379,205 @@ export const MultiTestPage = () => {
             }, []);
     }, [isAllTickers, allPositions, positions])
 
-    return <Form layout="vertical">
-        <Divider plain orientation="left">Инструмент</Divider>
-        <Row gutter={8}>
-            <Col>
-                <FormItem label="Тикер">
-                    <Space>
-                        <Checkbox checked={isAllTickers}
-                                  onChange={e => onCheckAllTickers(e.target.checked)}>Все</Checkbox>
-                        <TickerSelect value={ticker} disabled={isAllTickers} onSelect={onSelectTicker}/>
-                    </Space>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem label="Таймфрейм">
-                    <TimeframeSelect value={tf} onChange={onChangeTF}/>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem label="Период">
-                    <DatesPicker
-                        value={dates}
-                        onChange={onChangeRangeDates}/>
-                </FormItem>
-            </Col>
-        </Row>
-        <Row gutter={8} align="bottom">
-            <Col>
-                <FormItem>
-                    <Checkbox checked={tradeOBIDM} onChange={e => settradeOBIDM(e.target.checked)}>Торговать
-                        OB_IDM</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={tradeIDMIFC} onChange={e => settradeIDMIFC(e.target.checked)}>Торговать
-                        IDM_IFC</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={tradeOBEXT} onChange={e => settradeOBEXT(e.target.checked)}>Торговать
-                        OBEXT</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={tradeFlipWithIDM} onChange={e => settradeFlipWithIDM(e.target.checked)}>Торговать
-                        FlipWithIDM</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={tradeCHoCHWithIDM} onChange={e => settradeCHoCHWithIDM(e.target.checked)}>Торговать
-                        CHoCHWithIDM</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={tradeEXTIFC} onChange={e => settradeEXTIFC(e.target.checked)}>Торговать
-                        EXT_IFC</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={withMove} onChange={e => setwithMove(e.target.checked)}>Двигать к
-                        имбалансу</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={showFake} onChange={e => setfakeBOS(e.target.checked)}>Fake BOS</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={showSMT} onChange={e => setshowSMT(e.target.checked)}>Торговать SMT</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={newSMT} onChange={e => setnewSMT(e.target.checked)}>Предугадывать SMT</Checkbox>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem>
-                    <Checkbox checked={showHiddenSwings} onChange={e => setshowHiddenSwings(e.target.checked)}>Показывать
-                        скрытые точки</Checkbox>
-                </FormItem>
-            </Col>
-        </Row>
-        <Divider plain orientation="left">Риски и комиссии</Divider>
-        <Row gutter={8} align="bottom">
-            <Col>
-                <FormItem label="Тейк-профит стратегия">
-                    <Radio.Group onChange={e => onChangeTakeProfitStrategy(e.target.value)}
-                                 value={takeProfitStrategy}>
-                        <Radio value="default">Стоп-лосс</Radio>
-                        <Radio value="max">Экстремум</Radio>
-                    </Radio.Group>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem label="Базовый коэф. тейк-профита">
-                    <Slider value={baseTakePercent} disabled={takeProfitStrategy === "max"}
-                            onChange={setBaseTakePercent} min={1} step={1} max={20}/>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem label="Max коэф. тейк-профита">
-                    <Slider value={maxTakePercent} disabled={takeProfitStrategy === "default"}
-                            onChange={setMaxTakePercent} min={0.1} step={0.1} max={1}/>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem label="Риск на сделку">
-                    <Input value={stopMargin} onChange={e => setStopMargin(Number(e.target.value))}/>
-                </FormItem>
-            </Col>
-            <Col>
-                <FormItem label="Размер комиссии в %">
-                    <Slider value={feePercent} onChange={setFeePercent} min={0.01} step={0.01} max={0.4}/>
-                </FormItem>
-            </Col>
-        </Row>
-        <Row style={{paddingBottom: '8px'}} gutter={8}>
-            <Col span={24}>
-                <Chart height={400} showVolume={false} seriesType="Line" lineSerieses={[]} hideInternalCandles
-                       primitives={[]} markers={[]} data={profitChartData}
-                       ema={[]}/>
-            </Col>
-        </Row>
-        <Row style={{paddingBottom: '8px'}} gutter={8}>
-            <Col span={6}>
-                <Card bordered={false}>
-                    <Statistic
-                        title="Общий финрез"
-                        value={moneyFormat(PnL, 'RUB', 2, 2)}
-                        precision={2}
-                        valueStyle={{color: PnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
-                    />
-                </Card>
-            </Col>
-            <Col span={6}>
-                <Card bordered={false}>
-                    <Statistic
-                        title="Комиссия"
-                        value={moneyFormat(fee, 'RUB', 2, 2)}
-                        precision={2}
-                        valueStyle={{color: "rgb(255, 117, 132)"}}
-                    />
-                </Card>
-            </Col>
-            <Col span={6}>
-                <Card bordered={false}>
-                    <Statistic
-                        title="Тейки"
-                        value={new Intl.NumberFormat('en-US',
-                            {notation: 'compact'}).format(profits)}
-                        valueStyle={{color: "rgb(44, 232, 156)"}}
-                        suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
-                    />
-                </Card>
-            </Col>
-            <Col span={6}>
-                <Card bordered={false}>
-                    <Statistic
-                        title="Лоси"
-                        value={new Intl.NumberFormat('en-US',
-                            {notation: 'compact'}).format(losses)}
-                        valueStyle={{color: "rgb(255, 117, 132)"}}
-                        suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
-                    />
-                </Card>
-            </Col>
-            {/*<Col span={6}>*/}
-            {/*    <Card bordered={false}>*/}
-            {/*        <Statistic*/}
-            {/*            title="Просадка"*/}
-            {/*            value={drawdowns || 0}*/}
-            {/*            precision={2}*/}
-            {/*            valueStyle={{color: "rgb(255, 117, 132)"}}*/}
-            {/*            suffix={`%`}*/}
-            {/*        />*/}
-            {/*    </Card>*/}
-            {/*</Col>*/}
-        </Row>
-        <Row gutter={8}>
-            <Table style={{width: '100%'}} loading={{
-                percent: +(successSymbols.current * 100 / successSymbols.total).toFixed(2),
-                spinning: loading
-            }} rowClassName={rowClassName} size="small"
-                   columns={oldOneTickerColumns}
-                   dataSource={isAllTickers ? allPositions : positions}/>
-        </Row>
-    </Form>;
+    return <Layout style={{display: 'flex', flexDirection: 'row', gap: '8px'}}>
+        <Sider width={300} style={{padding: 16}}>
+            <Form layout="vertical" style={{height: 'calc(100vh - 84px)', overflow: 'auto', overflowX: 'hidden'}}>
+                <Row gutter={8} align="bottom">
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={tradeOBIDM} onChange={e => settradeOBIDM(e.target.checked)}>Торговать
+                                OB_IDM</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={tradeIDMIFC} onChange={e => settradeIDMIFC(e.target.checked)}>Торговать
+                                IDM_IFC</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={tradeOBEXT} onChange={e => settradeOBEXT(e.target.checked)}>Торговать
+                                OBEXT</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={tradeFlipWithIDM} onChange={e => settradeFlipWithIDM(e.target.checked)}>Торговать
+                                FlipWithIDM</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={tradeCHoCHWithIDM}
+                                      onChange={e => settradeCHoCHWithIDM(e.target.checked)}>Торговать
+                                CHoCHWithIDM</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={tradeEXTIFC} onChange={e => settradeEXTIFC(e.target.checked)}>Торговать
+                                EXT_IFC</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={withMove} onChange={e => setwithMove(e.target.checked)}>Двигать к
+                                имбалансу</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={showFake} onChange={e => setfakeBOS(e.target.checked)}>Fake
+                                BOS</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={showSMT} onChange={e => setshowSMT(e.target.checked)}>Торговать
+                                SMT</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={newSMT} onChange={e => setnewSMT(e.target.checked)}>Предугадывать
+                                SMT</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={showHiddenSwings} onChange={e => setshowHiddenSwings(e.target.checked)}>Показывать
+                                скрытые точки</Checkbox>
+                        </FormItem>
+                    </Col>
+                </Row>
+                <Divider plain orientation="left">Риски и комиссии</Divider>
+                <Row gutter={8} align="bottom">
+                    <Col>
+                        <FormItem label="Тейк-профит стратегия">
+                            <Radio.Group onChange={e => onChangeTakeProfitStrategy(e.target.value)}
+                                         value={takeProfitStrategy}>
+                                <Radio value="default">Стоп-лосс</Radio>
+                                <Radio value="max">Экстремум</Radio>
+                            </Radio.Group>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem label="Базовый коэф. тейк-профита">
+                            <Slider value={baseTakePercent} disabled={takeProfitStrategy === "max"}
+                                    onChange={setBaseTakePercent} min={1} step={1} max={20}/>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem label="Max коэф. тейк-профита">
+                            <Slider value={maxTakePercent} disabled={takeProfitStrategy === "default"}
+                                    onChange={setMaxTakePercent} min={0.1} step={0.1} max={1}/>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem label="Риск на сделку">
+                            <Input value={stopMargin} onChange={e => setStopMargin(Number(e.target.value))}/>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem label="Размер комиссии в %">
+                            <Slider value={feePercent} onChange={setFeePercent} min={0.01} step={0.01} max={0.4}/>
+                        </FormItem>
+                    </Col>
+                </Row>
+            </Form>
+        </Sider>
+        <Content style={{
+            padding: '0',
+            minHeight: 280,
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            height: 'calc(100vh - 74px)',
+            overflow: 'hidden'
+        }}>
+
+            <div style={{position: 'absolute', zIndex: 10, top: 4, left: 4, display: 'flex', gap: '8px'}}>
+                <Space>
+                    <Checkbox checked={isAllTickers}
+                              onChange={e => onCheckAllTickers(e.target.checked)}>Все</Checkbox>
+                    <TickerSelect value={ticker} disabled={isAllTickers} onSelect={onSelectTicker}/>
+                </Space>
+                <DatesPicker value={dates}
+                             onChange={onChangeRangeDates}/>
+                <TimeframeSelect value={tf} onChange={onChangeTF}/>
+            </div>
+            <Row style={{paddingBottom: '8px'}} gutter={8}>
+                <Col span={24}>
+                    <Chart height={400} showVolume={false} seriesType="Line" lineSerieses={[]} hideInternalCandles
+                           primitives={[]} markers={[]} data={profitChartData}
+                           ema={[]}/>
+                </Col>
+            </Row>
+            <Row style={{paddingBottom: '8px'}} gutter={8}>
+                <Col span={6}>
+                    <Card bordered={false}>
+                        <Statistic
+                            title="Общий финрез"
+                            value={moneyFormat(PnL, 'RUB', 2, 2)}
+                            precision={2}
+                            valueStyle={{color: PnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                        />
+                    </Card>
+                </Col>
+                <Col span={6}>
+                    <Card bordered={false}>
+                        <Statistic
+                            title="Комиссия"
+                            value={moneyFormat(fee, 'RUB', 2, 2)}
+                            precision={2}
+                            valueStyle={{color: "rgb(255, 117, 132)"}}
+                        />
+                    </Card>
+                </Col>
+                <Col span={6}>
+                    <Card bordered={false}>
+                        <Statistic
+                            title="Тейки"
+                            value={new Intl.NumberFormat('en-US',
+                                {notation: 'compact'}).format(profits)}
+                            valueStyle={{color: "rgb(44, 232, 156)"}}
+                            suffix={`(${!profits ? 0 : (profits * 100 / (profits + losses)).toFixed(2)})%`}
+                        />
+                    </Card>
+                </Col>
+                <Col span={6}>
+                    <Card bordered={false}>
+                        <Statistic
+                            title="Лоси"
+                            value={new Intl.NumberFormat('en-US',
+                                {notation: 'compact'}).format(losses)}
+                            valueStyle={{color: "rgb(255, 117, 132)"}}
+                            suffix={`(${!losses ? 0 : (losses * 100 / (profits + losses)).toFixed(2)})%`}
+                        />
+                    </Card>
+                </Col>
+                {/*<Col span={6}>*/}
+                {/*    <Card bordered={false}>*/}
+                {/*        <Statistic*/}
+                {/*            title="Просадка"*/}
+                {/*            value={drawdowns || 0}*/}
+                {/*            precision={2}*/}
+                {/*            valueStyle={{color: "rgb(255, 117, 132)"}}*/}
+                {/*            suffix={`%`}*/}
+                {/*        />*/}
+                {/*    </Card>*/}
+                {/*</Col>*/}
+            </Row>
+            <Row gutter={8}>
+                <Table style={{width: '100%'}} loading={{
+                    percent: +(successSymbols.current * 100 / successSymbols.total).toFixed(2),
+                    spinning: loading
+                }} rowClassName={rowClassName} size="small"
+                       columns={oldOneTickerColumns}
+                       dataSource={isAllTickers ? allPositions : positions}/>
+            </Row>
+        </Content>
+    </Layout>
 }
