@@ -11,7 +11,7 @@ import {
     swingsToMarkers
 } from "./utils";
 import {testMocks} from "./test.mocks.ts";
-import {Cross, HistoryObject, POI, Swing} from "./THUltimate/models.ts";
+import {Cross, HistoryObject, POI, Swing} from "./THUltimate/th_ultimate.ts";
 
 type MenuItem = Required<MenuProps>['items'][number] & { description?: string, data: HistoryObject[] };
 
@@ -45,8 +45,6 @@ const BOSChart = ({data, swings: outerSwings, boses: outerBoses, orderblocks: ou
     const allMarkers1 = swingsToMarkers(swings);
 
     const _lineSerieses = bosesToLineSerieses(boses);
-
-    debugger
 
     return <Chart width={1400} height={300} markers={allMarkers1} lineSerieses={_lineSerieses} primitives={_primitives}
                   data={data} ema={[]}/>

@@ -29,7 +29,7 @@ import {
     getCachedRiskRates,
     getCachedSecurity
 } from "./cacheService.ts";
-import {HistoryObject} from "./THUltimate/models.ts";
+import {HistoryObject} from "./THUltimate/th_ultimate.ts";
 
 import {notTradingTime} from "./THUltimate/th_ultimate.ts";
 
@@ -44,6 +44,9 @@ export const MultiTestPage = () => {
     const [isAllTickers, onCheckAllTickers] = useState<boolean>(false);
     const [tradeOBIDM, settradeOBIDM] = useState<boolean>(false);
     const [tradeIDMIFC, settradeIDMIFC] = useState<boolean>(false);
+    const [tradeCHoCHWithIDM, settradeCHoCHWithIDM] = useState<boolean>(false);
+    const [tradeFlipWithIDM, settradeFlipWithIDM] = useState<boolean>(false);
+    const [tradeOBEXT, settradeOBEXT] = useState<boolean>(false);
     const [tradeEXTIFC, settradeEXTIFC] = useState<boolean>(false);
     const [withMove, setwithMove] = useState<boolean>(false);
     const [showFake, setfakeBOS] = useState<boolean>(false);
@@ -70,10 +73,13 @@ export const MultiTestPage = () => {
             newSMT,
             showFake,
             tradeIDMIFC,
+            tradeCHoCHWithIDM,
+            tradeFlipWithIDM,
+            tradeOBEXT,
             tradeEXTIFC
         });
 
-        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
+        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
 
         const lotsize = (security?.lotsize || 1)
 
@@ -102,7 +108,7 @@ export const MultiTestPage = () => {
 
             return curr;
         }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, showFake, newSMT, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [data, showFake, newSMT, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -113,10 +119,13 @@ export const MultiTestPage = () => {
                 showFake,
                 tradeOBIDM,
                 tradeIDMIFC,
+                tradeCHoCHWithIDM,
+                tradeFlipWithIDM,
+                tradeOBEXT,
                 tradeEXTIFC
             });
 
-            const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
+            const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
@@ -146,7 +155,7 @@ export const MultiTestPage = () => {
                 return curr;
             });
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [tradeIDMIFC, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -414,6 +423,24 @@ export const MultiTestPage = () => {
                 <FormItem>
                     <Checkbox checked={tradeIDMIFC} onChange={e => settradeIDMIFC(e.target.checked)}>Торговать
                         IDM_IFC</Checkbox>
+                </FormItem>
+            </Col>
+            <Col>
+                <FormItem>
+                    <Checkbox checked={tradeOBEXT} onChange={e => settradeOBEXT(e.target.checked)}>Торговать
+                        OBEXT</Checkbox>
+                </FormItem>
+            </Col>
+            <Col>
+                <FormItem>
+                    <Checkbox checked={tradeFlipWithIDM} onChange={e => settradeFlipWithIDM(e.target.checked)}>Торговать
+                        FlipWithIDM</Checkbox>
+                </FormItem>
+            </Col>
+            <Col>
+                <FormItem>
+                    <Checkbox checked={tradeCHoCHWithIDM} onChange={e => settradeCHoCHWithIDM(e.target.checked)}>Торговать
+                        CHoCHWithIDM</Checkbox>
                 </FormItem>
             </Col>
             <Col>

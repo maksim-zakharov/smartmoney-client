@@ -14,7 +14,7 @@ import {
     StateManager,
 } from "../../THUltimate/th_ultimate.ts";
 import Paragraph from "antd/es/typography/Paragraph";
-import {HistoryObject} from "../../THUltimate/models.ts";
+import {HistoryObject} from "../../THUltimate/th_ultimate.ts";
 
 import {notTradingTime} from "../../THUltimate/th_ultimate.ts";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {

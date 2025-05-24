@@ -7,7 +7,7 @@ import {Chart} from "./Chart";
 import {calculateCandle} from "../../symbolFuturePairs";
 import {getCommonCandles} from "../utils";
 
-import {HistoryObject} from "../THUltimate/models.ts";
+import {HistoryObject} from "../THUltimate/th_ultimate.ts";
 
 const {RangePicker} = DatePicker
 

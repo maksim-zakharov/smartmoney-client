@@ -1,7 +1,7 @@
 import day from './stubs/MTLR_M5_1738875600_1738961999.json';
 import oneIterationSwing from "./stubs/oneIterationSwing.json";
 import {testData1, testData2} from "./test_data.ts";
-import {Cross, HistoryObject, POI, Swing} from "./THUltimate/models.ts";
+import {Cross, HistoryObject, POI, Swing} from "./THUltimate/th_ultimate.ts";
 
 import {notTradingTime} from "./THUltimate/th_ultimate.ts";
 

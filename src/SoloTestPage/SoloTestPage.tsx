@@ -101,6 +101,9 @@ export const SoloTestPage = () => {
         tradeOB: checkboxValues.has('tradeOB'),
         tradeOBIDM: checkboxValues.has('tradeOBIDM'),
         tradeIDMIFC: checkboxValues.has('tradeIDMIFC'),
+        tradeCHoCHWithIDM: checkboxValues.has('tradeCHoCHWithIDM'),
+        tradeFlipWithIDM: checkboxValues.has('tradeFlipWithIDM'),
+        tradeOBEXT: checkboxValues.has('tradeOBEXT'),
         tradeEXTIFC: checkboxValues.has('tradeEXTIFC'),
         excludeWick: checkboxValues.has('excludeWick'),
         withMove: checkboxValues.has('withMove'),
@@ -153,7 +156,7 @@ export const SoloTestPage = () => {
             orderBlocks
         } = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
 
-        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
+        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
 
         let positions = [];
 
@@ -173,7 +176,7 @@ export const SoloTestPage = () => {
             orderBlocks: canTradeOrderBlocks,
             positions: positions.sort((a, b) => a.openTime - b.openTime)
         };
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
@@ -515,6 +518,9 @@ export const SoloTestPage = () => {
                 <Checkbox key="tradeOB" value="tradeOB">Торговать OB</Checkbox>
                 <Checkbox key="tradeOBIDM" value="tradeOBIDM">Торговать OB_IDM</Checkbox>
                 <Checkbox key="tradeIDMIFC" value="tradeIDMIFC">Торговать IDM_IFC</Checkbox>
+                <Checkbox key="tradeCHoCHWithIDM" value="tradeCHoCHWithIDM">Торговать CHoCHWithIDM</Checkbox>
+                <Checkbox key="tradeFlipWithIDM" value="tradeFlipWithIDM">Торговать FlipWithIDM</Checkbox>
+                <Checkbox key="tradeOBEXT" value="tradeOBEXT">Торговать OBEXT</Checkbox>
                 <Checkbox key="tradeEXTIFC" value="tradeEXTIFC">Торговать EXT_IFC</Checkbox>
                 <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
                 <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>

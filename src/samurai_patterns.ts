@@ -1,6 +1,5 @@
 import {calculateTakeProfit} from "./utils";
-
-import {HistoryObject, POI, POIType, Swing} from "./THUltimate/models.ts";
+import {HistoryObject, POI, Swing} from "./THUltimate/th_ultimate.ts";
 
 export interface Position {
     side: 'short' | 'long',
@@ -163,8 +162,6 @@ export const iterationCalculatePositions = (candles: HistoryObject[], swings: Sw
             }
         })
     }
-
-    debugger
 
     return Object.values<Position>(positions);
 }

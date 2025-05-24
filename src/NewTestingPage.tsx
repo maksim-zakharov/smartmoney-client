@@ -23,7 +23,7 @@ import {Content} from "antd/es/layout/layout";
 import useWindowDimensions from "./useWindowDimensions.tsx";
 import {ItemType, MenuItemType} from "antd/es/menu/interface";
 import {LeftOutlined, RightOutlined} from '@ant-design/icons';
-import {THConfig} from "./THUltimate/models.ts";
+import {THConfig} from "./THUltimate/th_ultimate.ts";
 import {isNotSMT, notTradingTime} from "./THUltimate/th_ultimate.ts";
 
 const markerColors = {

@@ -16,7 +16,7 @@ import type { Dayjs } from 'dayjs';
 import {
     StateManager, tradinghubCalculateTrendNew
 } from "../../THUltimate/th_ultimate.ts";
-import {HistoryObject, Swing} from "../../THUltimate/models.ts";
+import {HistoryObject, Swing} from "../../THUltimate/th_ultimate.ts";
 
 import {notTradingTime} from "../../THUltimate/th_ultimate.ts";
 

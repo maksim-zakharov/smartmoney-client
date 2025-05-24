@@ -1,4 +1,4 @@
-import {CandleWithSide, Cross, HistoryObject, OrderblockPart, POI, Side, Swing} from "./models.ts";
+import {CandleWithSide, Cross, HistoryObject, OrderblockPart, POI, Side, Swing} from "./th_ultimate.ts";
 import {StateManager} from "./th_ultimate.ts";
 
 

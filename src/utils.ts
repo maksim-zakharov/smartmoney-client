@@ -17,7 +17,7 @@ import {
 import {Options} from "@vitejs/plugin-react";
 import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {TLineSeries} from "./SoloTestPage/UpdatedChart.tsx";
-import {Cross, HistoryObject, POI, Swing, Trend} from "./THUltimate/models.ts";
+import {Cross, HistoryObject, POI, Swing, Trend} from "./THUltimate/th_ultimate.ts";
 
 export async function fetchRiskRates(symbol) {
     let url = `https://apidev.alor.ru/md/v2/risk/rates?riskCategoryId=1&ticker=${symbol}&exchange=MOEX`;
