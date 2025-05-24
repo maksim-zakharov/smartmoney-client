@@ -488,7 +488,10 @@ const tryCalculatePullback = (
         price: currentCandle[type],
         index,
     });
-    swings[index] = highPullback ? swing : swings[index];
+    // Так было
+    // swings[index] = highPullback ? swing : swings[index];
+    // А так сделано временно пока нет double, это для того что если на этом свинге у нас уже есть перехай - то не делать перелой, хотя надо бы учитывать
+    swings[index] = highPullback && !swings[index] ? swing : swings[index];
 };
 
 const filterDoubleSwings = (
