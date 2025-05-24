@@ -468,7 +468,6 @@ const hasLowValidPullback = (
 const tryCalculatePullback = (
     index: number,
     type: 'high' | 'low',
-    diff: number,
     prevCandle: HistoryObject,
     currentCandle: HistoryObject,
     nextCandle: HistoryObject,
@@ -480,20 +479,16 @@ const tryCalculatePullback = (
     };
 
     const mainFunc = funcMap[type];
-    const subFunc = funcMap[type === 'high' ? 'low' : 'high'];
 
-    // diff может быть если между текущей свечой и последней есть еще свечки.
     // В таком случае нужно проверить что последняя свеча не является внутренней для текущей свечи (пересвипнула снизу)
-    if (!diff || subFunc(currentCandle, nextCandle)) {
-        const highPullback = mainFunc(prevCandle, currentCandle, nextCandle);
-        const swing = new Swing({
-            side: type,
-            time: currentCandle.time,
-            price: currentCandle[type],
-            index,
-        });
-        swings[index] = highPullback ? swing : swings[index];
-    }
+    const highPullback = mainFunc(prevCandle, currentCandle, nextCandle);
+    const swing = new Swing({
+        side: type,
+        time: currentCandle.time,
+        price: currentCandle[type],
+        index,
+    });
+    swings[index] = highPullback ? swing : swings[index];
 };
 
 const filterDoubleSwings = (
@@ -1458,13 +1453,11 @@ export class StateManager {
             const nextIndex = rootIndex + 1;
             let nextCandle = this.candles[nextIndex];
 
-            const diff = nextIndex - rootIndex - 1;
             nextCandle = this.candles[nextIndex];
 
             tryCalculatePullback(
                 rootIndex,
                 'high',
-                diff,
                 prevCandle,
                 currentCandle,
                 nextCandle,
@@ -1473,7 +1466,6 @@ export class StateManager {
             tryCalculatePullback(
                 rootIndex,
                 'low',
-                diff,
                 prevCandle,
                 currentCandle,
                 nextCandle,
