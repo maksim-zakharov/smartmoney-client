@@ -21,7 +21,7 @@ const BOSChart = ({data}: {data: HistoryObject[]}) => {
     const manager = new StateManager(data);
     manager.calculateSwings();
 
-    manager.markHHLLOld();
+    // manager.markHHLLOld();
     // manager.drawBOSOld();
 
     const _lineSerieses1 = bosesToLineSerieses(manager.boses);

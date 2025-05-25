@@ -24,7 +24,7 @@ const BOSChart = ({data, text = 'LL'}) => {
     const manager = new StateManager(data);
     manager.calculateSwings();
 
-    manager.markHHLLOld();
+    // manager.markHHLLOld();
     manager.swings[3] = {...manager.swings[3], text} as Swing;
 
     // manager.drawBOSOld();

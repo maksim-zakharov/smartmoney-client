@@ -19,7 +19,7 @@ const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) =>
     const manager = new StateManager(data);
     manager.calculateSwings();
 
-    manager.markHHLLOld();
+    // manager.markHHLLOld();
     // manager.drawBOSOld();
 
     const trends = data.map((candle, index) => ({trend, time: candle.time}) as Trend);

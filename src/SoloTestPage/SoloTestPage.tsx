@@ -188,7 +188,7 @@ export const SoloTestPage = () => {
                 tf,
                 ticker,
                 stopMargin
-            })).sort((a, b) => a.openTime - b.openTime)
+            })).sort((a, b) => b.openTime - a.openTime)
         };
     }, [offset, isShortSellPossible, security?.lotsize, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
@@ -494,7 +494,7 @@ export const SoloTestPage = () => {
     ].filter(Boolean);
 
     return <Layout style={{display: 'flex', flexDirection: 'row', gap: '8px'}}>
-        <Sider width={280} style={{padding: 16}}>
+        <Sider width={280} style={{padding: 16, height: 'calc(100vh - 84px)', overflow: 'auto', overflowX: 'hidden'}}>
             <Divider plain orientation="left">Фильтры</Divider>
             <div style={{display: 'flex', gap: '8px'}}>
                 <Radio.Group value={env} onChange={(e) => setEnv(e.target.value)}>
@@ -569,7 +569,9 @@ export const SoloTestPage = () => {
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px'
+            gap: '8px',
+            height: 'calc(100vh - 74px)',
+            overflow: 'hidden'
         }}>
             <div style={{position: 'absolute', zIndex: 10, top: 4, left: 4, display: 'flex', gap: '8px'}}>
                 <TickerSelect value={ticker} onSelect={onSelectTicker}/>

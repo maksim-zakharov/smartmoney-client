@@ -8,11 +8,15 @@ export interface HistoryObject {
 }
 
 export class Swing {
-    side?: 'high' | 'low';
+    side?: 'high' | 'low' | 'double';
     time: number;
-    price: number;
     index: number;
     isIFC?: boolean;
+
+    _sidePrice = {
+        high: 0,
+        low: 0
+    };
 
     protected _isExtremum: boolean = false;
 
@@ -21,6 +25,12 @@ export class Swing {
 
     constructor(props: Partial<Swing>) {
         Object.assign(this, props);
+    }
+
+    get price() {
+        if (this.side === 'double')
+            return this._sidePrice['high']
+        return this._sidePrice[this.side];
     }
 
     get isExtremum() {
@@ -274,7 +284,7 @@ export const calculatePOI = (
             if (manager.config.tradeFlipWithIDM)
                 manager.calculateBOSWithIDM(swing);
             if (manager.config.tradeOBEXT)
-            manager.calculateOBEXT(swing);
+                manager.calculateOBEXT(swing);
         }
         if (manager.config.tradeEXTIFC)
             manager.calculateEXTIFC(i);
@@ -365,9 +375,17 @@ export const calculateTesting = (
         tradeOBEXT,
     }: THConfig,
 ) => {
-    const manager = new StateManager(data, {showIFC, tradeIDMIFC, tradeFlipWithIDM, tradeCHoCHWithIDM, tradeOBEXT, tradeEXTIFC, showLogs});
+    const manager = new StateManager(data, {
+        showIFC,
+        tradeIDMIFC,
+        tradeFlipWithIDM,
+        tradeCHoCHWithIDM,
+        tradeOBEXT,
+        tradeEXTIFC,
+        showLogs
+    });
     // <-- Копировать в робота
-    manager.calculate();
+    manager.calculateSwings();
 
     tradinghubCalculateTrendNew(manager, {
         showHiddenSwings,
@@ -463,6 +481,46 @@ const hasLowValidPullback = (
     return '';
 };
 
+const tryCalculatePullbackMulti = (
+    index: number,
+    prevCandle: HistoryObject,
+    currentCandle: HistoryObject,
+    nextCandle: HistoryObject,
+    swings: Swing[],
+) => {
+    // В таком случае нужно проверить что последняя свеча не является внутренней для текущей свечи (пересвипнула снизу)
+    const highPullback = hasHighValidPullback(prevCandle, currentCandle, nextCandle);
+    const lowPullback = hasLowValidPullback(prevCandle, currentCandle, nextCandle);
+
+    if (!lowPullback && !highPullback) {
+        return;
+    }
+
+    let side: Swing['side'];
+    if (lowPullback) {
+        side = 'low'
+    }
+    if (highPullback) {
+        side = 'high'
+    }
+    if (highPullback && lowPullback) {
+        side = 'double';
+    }
+
+    const swing = new Swing({
+        side,
+        time: currentCandle.time,
+        _sidePrice: {
+            high: currentCandle.high,
+            low: currentCandle.low,
+        },
+        index,
+    });
+
+    // А так сделано временно пока нет double, это для того что если на этом свинге у нас уже есть перехай - то не делать перелой, хотя надо бы учитывать
+    swings[index] = swing;
+};
+
 const tryCalculatePullback = (
     index: number,
     type: 'high' | 'low',
@@ -483,7 +541,10 @@ const tryCalculatePullback = (
     const swing = new Swing({
         side: type,
         time: currentCandle.time,
-        price: currentCandle[type],
+        _sidePrice: {
+            high: currentCandle.high,
+            low: currentCandle.low,
+        },
         index,
     });
     // Так было
@@ -725,8 +786,12 @@ const confirmExtremum = (
     const from = manager.lastExtremumMap[side].idmSwing;
     const to = new Swing({
         index,
+        side: from.side,
+        _sidePrice: {
+            high: manager.candles[index].close,
+            low: manager.candles[index].close,
+        },
         time: manager.candles[index].time,
-        price: manager.candles[index].close,
     });
 
     // На случай если и хай и лоу будет на одной свече, нужно подтверждение жестко с предыдущей свечки
@@ -817,10 +882,6 @@ export class StateManager {
         Object.assign(this.config, config || {});
     }
 
-    calculate() {
-        this.calculateSwings();
-    }
-
     calculateCHoCHWithIDM(swing: Swing) {
         /**
          * Сначала найти ЧОЧ
@@ -853,7 +914,7 @@ export class StateManager {
         // Теперь надо искать ближайший откат слева от IDM и пытаться там построить OB
         // @ts-ignore
         const OBSwing = closestSwing(this, {...IDM.from, side: IDM.extremum.side});
-        if(!OBSwing){
+        if (!OBSwing) {
             return;
         }
 
@@ -952,7 +1013,7 @@ export class StateManager {
         // Теперь надо искать ближайший откат слева от IDM и пытаться там построить OB
         // @ts-ignore
         const OBSwing = closestSwing(this, {...IDM.from, side: IDM.extremum.side});
-        if(!OBSwing){
+        if (!OBSwing) {
             return;
         }
 
@@ -1426,39 +1487,36 @@ export class StateManager {
 
     calculateSwings() {
         let lastSwingIndex: number = -1;
-        for (let rootIndex = 0; rootIndex < this.candles.length; rootIndex++) {
+        for (let i = 0; i < this.candles.length; i++) {
             // Тупо первая точка
-            if (rootIndex === 0) {
+            if (i === 0) {
                 this.swings[0] = new Swing({
                     side: 'high',
                     time: this.candles[0].time,
-                    price: this.candles[0].high,
+                    _sidePrice: this.candles[0],
                     index: 0,
                 });
                 this.swings[0].markExtremum();
-                // this.lastSwingMap[this.swings[0].side] = this.swings[0];
-                // this.lastExtremumMap[this.swings[0].side] = this.swings[0];
-                // this.lastBosSwingMap[this.swings[0].side] = 0;
                 continue;
             }
 
             // Если текущая свечка внутренняя для предыдущей - идем дальше
-            const prevCandle = this.externalCandle ?? this.candles[rootIndex - 1];
-            if (isInsideBar(prevCandle, this.candles[rootIndex])) {
+            const prevCandle = this.externalCandle ?? this.candles[i - 1];
+            if (isInsideBar(prevCandle, this.candles[i])) {
                 this.externalCandle = prevCandle;
                 continue;
             }
             this.externalCandle = null;
 
             // Если текущая свечка не внутренняя - начинаем поиск свинга
-            const currentCandle = this.candles[rootIndex];
-            const nextIndex = rootIndex + 1;
+            const currentCandle = this.candles[i];
+            const nextIndex = i + 1;
             let nextCandle = this.candles[nextIndex];
 
             nextCandle = this.candles[nextIndex];
 
             tryCalculatePullback(
-                rootIndex,
+                i,
                 'high',
                 prevCandle,
                 currentCandle,
@@ -1466,7 +1524,7 @@ export class StateManager {
                 this.swings,
             );
             tryCalculatePullback(
-                rootIndex,
+                i,
                 'low',
                 prevCandle,
                 currentCandle,
@@ -1474,25 +1532,33 @@ export class StateManager {
                 this.swings,
             );
 
-            confirmExtremum(this, rootIndex, 'high');
-            confirmExtremum(this, rootIndex, 'low');
+            // tryCalculatePullbackMulti(
+            //     i,
+            //     prevCandle,
+            //     currentCandle,
+            //     nextCandle,
+            //     this.swings
+            // )
+
+            confirmExtremum(this, i, 'high');
+            confirmExtremum(this, i, 'low');
 
             // markHHLL
-            updateExtremum(this, rootIndex, 'high', this.swings[rootIndex]);
-            updateExtremum(this, rootIndex, 'low', this.swings[rootIndex]);
+            updateExtremum(this, i, 'high', this.swings[i]);
+            updateExtremum(this, i, 'low', this.swings[i]);
 
             // markHHLL
-            updateLast(this, this.swings[rootIndex]);
+            updateLast(this, this.swings[i]);
 
             // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
             filterDoubleSwings(
-                rootIndex,
+                i,
                 lastSwingIndex,
                 (newIndex) => (lastSwingIndex = newIndex),
                 this.swings,
             );
 
-            if (this.config.showIFC) this.markIFCOneIt(rootIndex);
+            if (this.config.showIFC) this.markIFCOneIt(i);
         }
     }
 }
@@ -1593,7 +1659,10 @@ const confirmBOS = (
         ? new Swing({
             index: i,
             time: manager.candles[i].time,
-            price: manager.candles[i].close,
+            _sidePrice: {
+                high: manager.candles[i].close,
+                low: manager.candles[i].close,
+            },
         })
         : null;
     let isConfirmed = false;
@@ -1611,7 +1680,10 @@ const confirmBOS = (
             to = new Swing({
                 index: i,
                 time: manager.candles[i].time,
-                price: manager.candles[i].close,
+                _sidePrice: {
+                    high: manager.candles[i].close,
+                    low: manager.candles[i].close,
+                },
             });
         }
         const isClose = hasClose(type, liquidityCandle, manager.candles[i]);
@@ -1621,7 +1693,10 @@ const confirmBOS = (
                 to = new Swing({
                     index: i,
                     time: manager.candles[i].time,
-                    price: manager.candles[i].close,
+                    _sidePrice: {
+                        high: manager.candles[i].close,
+                        low: manager.candles[i].close,
+                    },
                 });
             }
             isConfirmed = true;
@@ -1877,17 +1952,17 @@ export const isIFC = (crossPrice: number, candle: HistoryObject): 'inside' | 'ou
     const maxBodyPrice = Math.max(candle.open, candle.close);
     const minBodyPrice = Math.min(candle.open, candle.close);
 
-    if(crossPrice >= maxBodyPrice && crossPrice <= candle.high) {
+    if (crossPrice >= maxBodyPrice && crossPrice <= candle.high) {
         // Пробила снизу вверх (IFC)
         return 'bottom2top'
     }
 
-    if(crossPrice <= minBodyPrice && crossPrice >= candle.low) {
+    if (crossPrice <= minBodyPrice && crossPrice >= candle.low) {
         // Пробила сверху вниз (IFC)
         return 'top2bottom'
     }
 
-    if(crossPrice > candle.high || crossPrice < candle.low) {
+    if (crossPrice > candle.high || crossPrice < candle.low) {
         // Цена вне свечи != IFC
         return 'outside'
     }
@@ -2296,7 +2371,7 @@ const canTradeCHoCHExtremumOrderblock = (manager: StateManager, swing: Swing, CH
         return props;
     }
 
-    if(hitIndex && IDM.to.index > hitIndex){
+    if (hitIndex && IDM.to.index > hitIndex) {
         props.canTrade = false;
         props.canTest = false;
         props.reasons.push(`Пробитие ${formatDate(new Date(manager.candles[hitIndex].time * 1000))} было раньше чем подтверждение IDM ${formatDate(new Date(manager.candles[IDM.to.index].time * 1000))}`)
