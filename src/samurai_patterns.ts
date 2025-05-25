@@ -48,16 +48,17 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
 
         const lastExtremumIndex = obItem.side === 'high' ? lastExtremumIndexMap['low'] : lastExtremumIndexMap['high'];
 
+        // Если вход по рынку - то вход по цене открытия следующей свечи
         if (!limitOrder) {
             openPrice = candles[obItem.endIndex + 1].open;
         }
 
-        if (!limitOrder && side === 'short' && candles[obItem.endIndex].close >= openPrice) {
-            continue;
-        }
-        if (!limitOrder && side === 'long' && candles[obItem.endIndex].close <= openPrice) {
-            continue;
-        }
+        // if (!limitOrder && side === 'short' && candles[obItem.endIndex].close >= openPrice) {
+        //     continue;
+        // }
+        // if (!limitOrder && side === 'long' && candles[obItem.endIndex].close <= openPrice) {
+        //     continue;
+        // }
 
         if (stopPaddingPercent) {
             stopLoss *= (1 - stopPaddingPercent / 100);

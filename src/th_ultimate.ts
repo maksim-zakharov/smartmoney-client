@@ -303,7 +303,7 @@ export const calculatePOI = (
                     obItem.canTest = true;
 
                     if (
-                        isIFC(obItem.side, candle) &&
+                        ['bottom2top', 'top2bottom'].includes(isIFC(obItem.side === 'high' ? obItem.startCandle.low : obItem.startCandle.high, candle)) &&
                         ![POIType.OB_EXT, POIType.OB_IDM].includes(obItem.type)
                     ) {
                         obItem.canTrade = false;
@@ -1033,11 +1033,6 @@ export class StateManager {
         // На нисходящем тренде нужно искать IFC сверху, на восходящем - снизу
         const extremumSide = this.trend[index].trend === -1 ? 'high' : 'low';
 
-        // Проверить чтоб это был пинбар
-        if (!isIFC(extremumSide, this.candles[index])) {
-            return
-        }
-
         const swing = new Swing({
             side: extremumSide,
             time: this.candles[index].time,
@@ -1050,6 +1045,12 @@ export class StateManager {
         if (!extremum) {
             return;
         }
+
+        // Проверить чтоб это был пинбар
+        if (!['bottom2top', 'top2bottom'].includes(isIFC(extremum.price, this.candles[index]))) {
+            return
+        }
+
         // Нужно для определения ближайшей цели для TakeProfit
         const takeProfit = closestExtremumSwing(this, swing)
 
@@ -1235,7 +1236,7 @@ export class StateManager {
         const isConfirmedByIFC =
             bos?.isConfirmed &&
             bos.to.index === index &&
-            isIFC(idmSide, this.candles[bos.to.index]);
+            ['bottom2top', 'top2bottom'].includes(isIFC(bos.from.price, this.candles[bos.to.index]));
 
         if (!isConfirmedByIFC) {
             return;
@@ -1384,7 +1385,7 @@ export class StateManager {
             swing: OB_IDM_SWING,
             canTrade: true,
             takeProfit: null,
-            type: isIFC(orderBlockPart.side, this.candles[index])
+            type: ['bottom2top', 'top2bottom'].includes(isIFC(orderBlockPart.side === 'high' ? orderBlockPart.startCandle.low : orderBlockPart.startCandle.high, this.candles[index]))
                 ? POIType.OB_IDM_IFC
                 : POIType.OB_IDM,
             endCandle: this.candles[index],
@@ -1394,7 +1395,7 @@ export class StateManager {
 
     markIFCOneIt = (index: number) => {
         const bos = this.swings[index];
-        if (bos && isIFC(bos.side, this.candles[bos.index])) {
+        if (bos && ['bottom2top', 'top2bottom'].includes(isIFC(bos.price, this.candles[bos.index]))) {
             bos.isIFC = true;
         }
     };
@@ -1868,15 +1869,33 @@ const drawTrend = (manager: StateManager) => {
     }
 };
 
-export const isIFC = (side: Swing['side'], candle: HistoryObject) => {
-    const body = Math.abs(candle.open - candle.close);
-    const upWick = candle.high - Math.max(candle.open, candle.close);
-    const downWick = Math.min(candle.open, candle.close) - candle.low;
+// Является ли candle - IFC свечой
+/**
+ * Проверяем пробила ли свеча candle цену price и закрепилась ниже/выше пробития
+ * @param crossPrice
+ * @param candle
+ */
+export const isIFC = (crossPrice: number, candle: HistoryObject): 'inside' | 'outside' | 'bottom2top' | 'top2bottom' => {
+    const maxBodyPrice = Math.max(candle.open, candle.close);
+    const minBodyPrice = Math.min(candle.open, candle.close);
 
-    return (
-        (side === 'high' && upWick > body && upWick > downWick) ||
-        (side === 'low' && upWick < downWick && body < downWick)
-    );
+    if(crossPrice >= maxBodyPrice && crossPrice <= candle.high) {
+        // Пробила снизу вверх (IFC)
+        return 'bottom2top'
+    }
+
+    if(crossPrice <= minBodyPrice && crossPrice >= candle.low) {
+        // Пробила сверху вниз (IFC)
+        return 'top2bottom'
+    }
+
+    if(crossPrice > candle.high || crossPrice < candle.low) {
+        // Цена вне свечи != IFC
+        return 'outside'
+    }
+
+    // Свеча внутри тела != IFC
+    return 'inside'
 };
 
 /**
