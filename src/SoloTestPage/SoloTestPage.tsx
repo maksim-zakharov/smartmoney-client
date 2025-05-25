@@ -29,20 +29,17 @@ import {
 } from "../utils";
 import {TickerSelect} from "../TickerSelect";
 import {TimeframeSelect} from "../TimeframeSelect";
-import {iterationCalculatePositions,} from "../samurai_patterns";
+import {finishPosition, iterationCalculatePositions,} from "../samurai_patterns";
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {calculateTesting, POIType} from "../th_ultimate.ts";
+import {calculateTesting, notTradingTime, POIType} from "../th_ultimate.ts";
 import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
-
-import {notTradingTime} from "../th_ultimate.ts";
 import moment from "moment";
 import {moneyFormat} from "../MainPage/MainPage.tsx";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
-import {c} from "vite/dist/node/types.d-aGj9QkWt";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -148,6 +145,16 @@ export const SoloTestPage = () => {
     }
 
     const {swings, trend, boses, orderBlocks, positions} = useMemo(() => {
+        if (!security) {
+            return {
+                swings: [],
+                trend: [],
+                boses: [],
+                orderBlocks: [],
+                positions: []
+            }
+        }
+
         let {
             swings,
             trend,
@@ -167,15 +174,23 @@ export const SoloTestPage = () => {
         if (!isShortSellPossible) {
             positions = positions.filter(p => p.side !== 'short');
         }
+        const lotsize = security?.lotsize;
+        const fee = 0.04 / 100
 
         return {
             swings,
             trend,
             boses,
             orderBlocks: canTradeOrderBlocks,
-            positions: positions.sort((a, b) => a.openTime - b.openTime)
+            positions: positions.map(finishPosition({
+                lotsize,
+                fee,
+                tf,
+                ticker,
+                stopMargin
+            })).sort((a, b) => a.openTime - b.openTime)
         };
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, security?.lotsize, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
@@ -215,28 +230,11 @@ export const SoloTestPage = () => {
         return (current / total) * 100;
     }, [robotOB, config.showRobotOB, orderBlocks]);
 
-    const profit = useMemo(() => {
-        if (!security) {
-            return {
-                PnL: 0,
-                profits: 0,
-                losses: 0
-            }
-        }
-        const recalculatePositions = positions.map((curr) => {
-            const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
-            const stopLossMarginPerLot = diff * security?.lotsize
-            curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
-            curr.newPnl = curr.pnl * curr.quantity * security?.lotsize;
-
-            return curr;
-        });
-        return {
-            PnL: recalculatePositions.reduce((acc, curr) => acc + curr.newPnl, 0),
-            profits: recalculatePositions.filter(p => p.newPnl > 0).length,
-            losses: recalculatePositions.filter(p => p.newPnl < 0).length
-        };
-    }, [stopMargin, security?.lotsize, positions])
+    const profit = useMemo(() => ({
+        PnL: positions.reduce((acc, curr) => acc + curr.newPnl, 0),
+        profits: positions.filter(p => p.newPnl > 0).length,
+        losses: positions.filter(p => p.newPnl < 0).length
+    }), [stopMargin, positions])
 
     const primitives = useMemo(() => {
         const lastCandle = data[data.length - 1];
@@ -488,10 +486,10 @@ export const SoloTestPage = () => {
         },
         {
             title: "Финрез",
-            dataIndex: "pnl",
-            key: "pnl",
+            dataIndex: "newPnl",
+            key: "newPnl",
             align: "right",
-            render: (value, row) => row.pnl ? moneyFormat(row.pnl * row.quantity * security?.lotsize, "RUB", 2, 2) : "-"
+            render: (value, row) => row.newPnl ? moneyFormat(row.newPnl, "RUB", 2, 2) : "-"
         },
     ].filter(Boolean);
 

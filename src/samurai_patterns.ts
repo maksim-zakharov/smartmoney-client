@@ -20,6 +20,38 @@ export interface Position {
     RR?: number;
 }
 
+export const finishPosition = ({
+                      lotsize,
+                      fee,
+                      stopMargin,
+                      tf,
+                      ticker
+                  }: {
+    lotsize: number,
+    fee: number,
+    stopMargin: number,
+    ticker: string,
+    tf: string
+}) => (curr: Position) => {
+    const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
+    const stopLossMarginPerLot = diff * lotsize
+    curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
+    curr.openVolume = curr.openPrice * curr.quantity * lotsize
+    curr.closeVolume = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize
+    // const openFee = curr.openVolume * fee;
+    // const closeFee = curr.closeVolume * fee;
+    const openFee = curr.openPrice * curr.quantity * lotsize * fee;
+    const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize * fee;
+
+    curr.fee = openFee + closeFee;
+    curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee;
+    curr.ticker = ticker;
+    curr.timeframe = tf;
+    curr.RR = Math.abs(curr.takeProfit - curr.openPrice) / Math.abs(curr.stopLoss - curr.openPrice);
+
+    return curr;
+}
+
 export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0) => {
     const positions: Position[] = [];
     let lastExtremumIndexMap: Record<'high' | 'low', number> = {
@@ -127,11 +159,10 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
             }
         }
 
-        if(closePosition) {
+        if (closePosition) {
             positions.push(closePosition)
             nonClosedPositionsMap.delete(openTime)
-        }
-        else {
+        } else {
             nonClosedPositionsMap.set(openTime, {
                 side,
                 name: obItem.text,
@@ -143,7 +174,10 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
         }
     }
 
-    nonClosedPositionsMap.forEach(position => positions.push({...position, closeTime: candles[candles.length - 1].time}))
+    nonClosedPositionsMap.forEach(position => positions.push({
+        ...position,
+        closeTime: candles[candles.length - 1].time
+    }))
 
     return positions;
 }

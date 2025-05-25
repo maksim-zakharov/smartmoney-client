@@ -7,7 +7,7 @@ import type {Dayjs} from 'dayjs';
 import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage/MainPage.tsx";
 import moment from 'moment';
-import {calculatePositionsByOrderblocks} from "./samurai_patterns";
+import {calculatePositionsByOrderblocks, finishPosition} from "./samurai_patterns";
 import {fetchCandlesFromAlor, fetchRiskRates, getSecurity, persision, refreshToken, uniqueBy} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/UpdatedChart";
@@ -86,20 +86,7 @@ export const MultiTestPage = () => {
             positions = positions.filter(p => p.side !== 'short');
         }
 
-        return positions.filter(p => Boolean(p.pnl)).map((curr) => {
-            const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
-            const stopLossMarginPerLot = diff * lotsize
-            curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
-            const openFee = curr.openPrice * curr.quantity * lotsize * fee;
-            const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize * fee;
-
-            curr.fee = openFee + closeFee;
-            curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee
-
-            curr.timeframe = tf;
-
-            return curr;
-        }).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
+        return positions.filter(p => Boolean(p.pnl)).map(finishPosition({lotsize, fee, tf, ticker, stopMargin})).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
     }, [data, showFake, newSMT, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
@@ -130,22 +117,7 @@ export const MultiTestPage = () => {
                 positions = positions.filter(p => p.side !== 'short');
             }
 
-            return positions.filter(p => Boolean(p.pnl)).map((curr) => {
-                const diff = (curr.side === 'long' ? (curr.openPrice - curr.stopLoss) : (curr.stopLoss - curr.openPrice))
-                const stopLossMarginPerLot = diff * lotsize
-                curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
-                curr.openVolume = curr.openPrice * curr.quantity * lotsize
-                curr.closeVolume = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize
-                const openFee = curr.openVolume * fee;
-                const closeFee = curr.closeVolume * fee;
-                curr.fee = openFee + closeFee;
-                curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee;
-                curr.ticker = ticker;
-                curr.timeframe = tf;
-                curr.RR = Math.abs(curr.takeProfit - curr.openPrice) / Math.abs(curr.stopLoss - curr.openPrice);
-
-                return curr;
-            });
+            return positions.filter(p => Boolean(p.pnl)).map(finishPosition({ticker, tf, stopMargin, fee, lotsize}));
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
     }, [tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
