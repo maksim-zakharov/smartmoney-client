@@ -355,7 +355,6 @@ export const calculateTesting = (
         showIFC,
         withMove,
         newSMT,
-        byTrend,
         showFake,
         showLogs,
         showSession,
@@ -403,7 +402,6 @@ export interface THConfig {
     tradeFlipWithIDM?: boolean;
     tradeOBEXT?: boolean;
     tradeIDMIFC?: boolean;
-    byTrend?: boolean;
     showFake?: boolean;
     showSession?: boolean;
     showLogs?: boolean;
@@ -415,8 +413,8 @@ export const defaultConfig: THConfig = {
     newSMT: false,
     showHiddenSwings: true,
     withMove: false,
-    byTrend: true,
     showFake: false,
+    tradeOBEXT: true
 };
 
 // Точка входа в торговлю
