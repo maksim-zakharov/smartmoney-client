@@ -86,7 +86,7 @@ export const OrdersTable: FC<{pageSize: number, orders: any[], onSelect: (row: a
             title: "Действия",
             render: (value, row) => {
                 return <Link
-                    to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend`}
+                    to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2CnewSMT%2CsmartTrend`}
                     target="_blank">Тестер</Link>;
             }
         }

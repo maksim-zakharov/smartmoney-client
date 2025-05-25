@@ -93,7 +93,7 @@ export const PositionsTable: FC<{pageSize: number, onSelect: (row: any) => void,
             title: "Действия",
             render: (value, row) => {
                 return <Link
-                    to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend%2CshowPositions&fromDate=${fromDate}&toDate=${toDate}`}
+                    to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2CnewSMT%2CsmartTrend%2CshowPositions&fromDate=${fromDate}&toDate=${toDate}`}
                     target="_blank">Тестер</Link>;
             }
         }

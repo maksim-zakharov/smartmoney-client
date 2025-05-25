@@ -175,7 +175,7 @@ export const HistoryTable: FC<{pageSize: number, history: any[], onSelect: (row:
             render: (value, row) => {
                 return row?.type !== 'summary' ?
                     <Link
-                        to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2ClimitOrderTrade%2CnewSMT%2CsmartTrend%2CshowPositions&fromDate=${fromDate}&toDate=${toDate}`}
+                        to={`/test?ticker=${row.ticker}&checkboxes=showHiddenSwings%2CtradeOB%2CBOS%2Cswings%2CmoreBOS%2CshowEndOB%2CnewSMT%2CsmartTrend%2CshowPositions&fromDate=${fromDate}&toDate=${toDate}`}
                         target="_blank">Тестер</Link> : '';
             }
         }

@@ -59,7 +59,7 @@ export const SoloTestPage = () => {
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const holdDuration = 500; // 2 секунды
 
-    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,limitOrderTrade,showHiddenSwings,showPositions").split(','));
+    const checkboxValues = new Set((searchParams.get('checkboxes') || "tradeOB,BOS,swings,showEndOB,showHiddenSwings,showPositions").split(','));
     const setCheckboxValues = (values) => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
@@ -97,7 +97,6 @@ export const SoloTestPage = () => {
         showEndOB: checkboxValues.has('showEndOB'),
         imbalances: checkboxValues.has('imbalances'),
         showPositions: checkboxValues.has('showPositions'),
-        limitOrderTrade: checkboxValues.has('limitOrderTrade'),
         tradeOB: checkboxValues.has('tradeOB'),
         tradeOBIDM: checkboxValues.has('tradeOBIDM'),
         tradeIDMIFC: checkboxValues.has('tradeIDMIFC'),
@@ -161,7 +160,7 @@ export const SoloTestPage = () => {
         let positions = [];
 
         if (config.tradeOB) {
-            const fakeoutPositions = iterationCalculatePositions(data, swings as any, canTradeOrderBlocks, maxDiff, multiStop, config.limitOrderTrade, stopPaddingPercent);
+            const fakeoutPositions = iterationCalculatePositions(data, swings as any, canTradeOrderBlocks, maxDiff, multiStop, stopPaddingPercent);
             positions.push(...fakeoutPositions);
         }
 
@@ -176,7 +175,7 @@ export const SoloTestPage = () => {
             orderBlocks: canTradeOrderBlocks,
             positions: positions.sort((a, b) => a.openTime - b.openTime)
         };
-    }, [offset, isShortSellPossible, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.limitOrderTrade, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
@@ -522,7 +521,6 @@ export const SoloTestPage = () => {
                 <Checkbox key="tradeFlipWithIDM" value="tradeFlipWithIDM">Торговать FlipWithIDM</Checkbox>
                 <Checkbox key="tradeOBEXT" value="tradeOBEXT">Торговать OBEXT</Checkbox>
                 <Checkbox key="tradeEXTIFC" value="tradeEXTIFC">Торговать EXT_IFC</Checkbox>
-                <Checkbox key="limitOrderTrade" value="limitOrderTrade">Торговать лимитками</Checkbox>
                 <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
                 <Checkbox key="showSession" value="showSession">Показывать сессии</Checkbox>
                 <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>

@@ -20,7 +20,7 @@ export interface Position {
     RR?: number;
 }
 
-export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true, stopPaddingPercent: number = 0) => {
+export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0) => {
     const positions: Position[] = [];
     let lastExtremumIndexMap: Record<'high' | 'low', number> = {
         high: null,
@@ -39,7 +39,7 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
             continue;
         }
 
-        limitOrder = obItem.tradeOrderType === 'limit';
+        let limitOrder = obItem.tradeOrderType === 'limit';
 
         const side = obItem.side === 'high' ? 'short' : 'long';
         let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
@@ -148,14 +148,14 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
     return positions;
 }
 
-export const iterationCalculatePositions = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, limitOrder: boolean = true, stopPaddingPercent: number = 0) => {
+export const iterationCalculatePositions = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0) => {
     let positions = {};
     for (let i = 0; i < candles.length - 1; i++) {
         const partCandles = candles.slice(0, i);
         const partSwings = swings.slice(0, i);
         const partOB = ob.slice(0, i);
 
-        const _pos = calculatePositionsByOrderblocks(partCandles, partSwings, partOB, maxDiff, multiStop, limitOrder, stopPaddingPercent);
+        const _pos = calculatePositionsByOrderblocks(partCandles, partSwings, partOB, maxDiff, multiStop, stopPaddingPercent);
 
         _pos.forEach(pos => {
             if (!positions[pos.openTime] || !positions[pos.closeTime]) {
