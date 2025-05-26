@@ -2104,12 +2104,12 @@ export const hasNear = (
         const steps = 30;
         const stepsRange = minStep * steps;
 
-        // Разница между лоу свечи точки входа и хай текущей свечи меньше либо равна 40 шагам цены
-        if (side === Side.Sell && low - currentCandle.high <= stepsRange) {
+        // Разница между закрытием свечи точки входа и хай текущей свечи меньше либо равна 40 шагам цены
+        if (side === Side.Sell && low - currentCandle.close <= stepsRange) {
             return true;
         }
-        // Разница между хай свечи точки входа и лоу текущей свечи меньше либо равна 40 шагам цены
-        if (side === Side.Buy && currentCandle.low - high <= stepsRange) {
+        // Разница между хай свечи точки входа и закрытием текущей свечи меньше либо равна 40 шагам цены
+        if (side === Side.Buy && currentCandle.close - high <= stepsRange) {
             return true;
         }
     } else {
