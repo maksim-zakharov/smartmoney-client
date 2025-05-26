@@ -2064,14 +2064,15 @@ export type CandleWithSide = HistoryObject & { side: Side };
 export const filterNearOrderblock = (
     orderBlocks: POI[],
     currentCandle: HistoryObject,
+    minStep?: number,
 ) =>
     orderBlocks
         .filter(Boolean)
-        .filter(({startCandle: {high, low}, side}) =>
+        .filter(({ startCandle: { high, low }, side }) =>
             hasNear(
-                true,
-                {high, low, side: side === 'high' ? Side.Sell : Side.Buy} as any,
+                { high, low, side: side === 'high' ? Side.Sell : Side.Buy } as any,
                 currentCandle,
+                minStep,
             ),
         )
         .filter((ob) =>
@@ -2094,22 +2095,32 @@ export const filterNearOrderblock = (
         .slice(0, 1);
 
 export const hasNear = (
-    isNear: boolean,
-    {high, low, side}: CandleWithSide,
+    { high, low, side }: CandleWithSide,
     currentCandle: HistoryObject,
+    minStep?: number,
 ) => {
-    if (!isNear) {
-        return true;
-    }
+    if (minStep) {
+        // Максимум в стакане - 50ж
+        const steps = 30;
+        const stepsRange = minStep * steps;
 
-    // Близость к цене 0.7%
-    const price = 1.007;
-
-    if (side === Side.Sell && low / currentCandle.high <= price) {
-        return true;
-    }
-    if (side === Side.Buy && currentCandle.low / high <= price) {
-        return true;
+        // Разница между лоу свечи точки входа и хай текущей свечи меньше либо равна 40 шагам цены
+        if (side === Side.Sell && low - currentCandle.high <= stepsRange) {
+            return true;
+        }
+        // Разница между хай свечи точки входа и лоу текущей свечи меньше либо равна 40 шагам цены
+        if (side === Side.Buy && currentCandle.low - high <= stepsRange) {
+            return true;
+        }
+    } else {
+        // Близость к цене 0.7%
+        const price = 1.006;
+        if (side === Side.Sell && low / currentCandle.high <= price) {
+            return true;
+        }
+        if (side === Side.Buy && currentCandle.low / high <= price) {
+            return true;
+        }
     }
 
     return false;
