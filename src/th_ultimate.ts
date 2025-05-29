@@ -312,7 +312,8 @@ export const calculatePOI = (
 
         if (manager.config.tradeIDMIFC)
             manager.calculateIDMIFC(i);
-        // manager.calculateOBIDM(i);
+        if (manager.config.tradeOBIDM)
+            manager.calculateOBIDM(i);
 
         // В этом блоке по всем OB подтверждаем endCandles
         if (newSMT) {
@@ -395,6 +396,7 @@ export const calculateTesting = (
         tradeCHoCHWithIDM,
         tradeFlipWithIDM,
         tradeOBEXT,
+        tradeOBIDM,
         showFVG,
         tradeBB
     }: THConfig,
@@ -406,6 +408,7 @@ export const calculateTesting = (
         tradeCHoCHWithIDM,
         tradeOBEXT,
         tradeEXTIFC,
+        tradeOBIDM,
         showLogs
     });
 
@@ -434,7 +437,7 @@ export const calculateTesting = (
         manager.calculateBreakerBlocks()
 
     // Увеличивает на тестинге на 3% винрейт
-    let orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
+    let orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.OB_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
 
     return {
         swings: manager.swings,
@@ -454,6 +457,7 @@ export interface THConfig {
     tradeCHoCHWithIDM?: boolean;
     tradeFlipWithIDM?: boolean;
     tradeOBEXT?: boolean;
+    tradeOBIDM?: boolean;
     tradeIDMIFC?: boolean;
     showFake?: boolean;
     showSession?: boolean;
@@ -1317,6 +1321,32 @@ export class StateManager {
                 orderBlockPart?.side === swing?.side && !this.pois[swing.index]
             ) {
                 this.pois[swing.index] = new POI(canTradeExtremumOrderblock(this, swing, orderBlockPart, takeProfitPrice));
+
+                if (this.pois[swing.index].canTest) {
+                    let endIndex = this.pois[swing.index].endIndex || this.candles.length - 1;
+                    let maxTakeProfitBetween = takeProfitPrice;
+                    let startIndex = swing.index;
+                    // while (startIndex <= endIndex) {
+                    //     const buyTake = maxTakeProfitBetween > this.candles[startIndex].high ? maxTakeProfitBetween : this.candles[startIndex].high;
+                    //     const sellTake = maxTakeProfitBetween < this.candles[startIndex].low ? maxTakeProfitBetween : this.candles[startIndex].low;
+                    //     maxTakeProfitBetween = side === 'low' ? buyTake : sellTake;
+                    //     startIndex++;
+                    // }
+                    // this.pois[swing.index].takeProfit = maxTakeProfitBetween;
+
+                    // Если между тейкпрофитом и касанием есть хай выше - не торгуем
+                    while (startIndex <= endIndex) {
+                        const buyTake = side === 'low' && maxTakeProfitBetween < this.candles[startIndex].high;
+                        const sellTake = side === 'high' && maxTakeProfitBetween > this.candles[startIndex].low;
+                        if (sellTake || buyTake) {
+                            this.pois[swing.index].canTrade = false;
+                            this.pois[swing.index].canTest = false;
+                            break;
+                        }
+                        startIndex++;
+                    }
+                }
+
                 this.pois[swing.index].reasons.unshift(...imbalance.reasons);
                 // newSMT
                 this.obIdxes.add(swing.index);
@@ -1495,9 +1525,10 @@ export class StateManager {
             swing: OB_IDM_SWING,
             canTrade: true,
             takeProfit: null,
-            type: ['bottom2top', 'top2bottom'].includes(isIFC(orderBlockPart.side === 'high' ? orderBlockPart.startCandle.low : orderBlockPart.startCandle.high, this.candles[index]))
-                ? POIType.OB_IDM_IFC
-                : POIType.OB_IDM,
+            type: POIType.OB_IDM,
+            // ['bottom2top', 'top2bottom'].includes(isIFC(orderBlockPart.side === 'high' ? orderBlockPart.startCandle.low : orderBlockPart.startCandle.high, this.candles[index]))
+            //     ? POIType.OB_IDM_IFC
+            //     : POIType.OB_IDM,
             endCandle: this.candles[index],
             endIndex: index,
         });
@@ -2099,7 +2130,7 @@ const drawTrend = (manager: StateManager) => {
             to = manager.trend.length;
         }
 
-        if(!curBos.isConfirmed){
+        if (!curBos.isConfirmed) {
             endlessTrend = true
         }
 
@@ -2117,7 +2148,10 @@ const drawTrend = (manager: StateManager) => {
         const side = type === 'high' ? 1 : -1
 
         for (let j = curBos.to.index; j < to; j++) {
-            manager.trend[j] = {time: manager.candles[j].time, trend: curBos.isConfirmed && !endlessTrend ? side : manager.trend[j - 1]?.trend};
+            manager.trend[j] = {
+                time: manager.candles[j].time,
+                trend: curBos.isConfirmed && !endlessTrend ? side : manager.trend[j - 1]?.trend
+            };
 
             // Удаляем IDM у точек которые являются босами
             if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {

@@ -67,11 +67,12 @@ export const MultiTestPage = () => {
             tradeIDMIFC,
             tradeCHoCHWithIDM,
             tradeFlipWithIDM,
+            tradeOBIDM,
             tradeOBEXT,
             tradeEXTIFC
         });
 
-        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.Breaking_Block].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
+        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.Breaking_Block, POIType.OB_IDM].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
 
         const lotsize = (security?.lotsize || 1)
 
