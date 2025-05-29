@@ -517,7 +517,7 @@ export const orderblocksToImbalancePrimitives = (orderBlocks: POI[], filter: (ob
     },
     rightBottom: {
         price: orderBlock.lastImbalanceCandle[orderBlock.side],
-        time: (orderBlock.endCandle || lastCandle).time
+        time: orderBlock.lastImbalanceCandle.time
     }
 }, {
     fillColor: 'rgba(179, 199, 219, .3)',

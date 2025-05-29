@@ -430,8 +430,8 @@ export const calculateTesting = (
     // Копировать в робота -->
     calculatePOI(manager, withMove, newSMT);
 
-    if(tradeBB)
-    manager.calculateBreakerBlocks()
+    if (tradeBB)
+        manager.calculateBreakerBlocks()
 
     // Увеличивает на тестинге на 3% винрейт
     let orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
@@ -1242,6 +1242,7 @@ export class StateManager {
     calculateOBEXT(swing: Swing) {
         // Нужно для определения ближайшей цели для TakeProfit
         const takeProfit = closestExtremumSwing(this, swing)
+        let takeProfitPrice = takeProfit?.price;
 
         const imbalance = findImbalance(this, swing.index);
         if (!imbalance) {
@@ -1299,10 +1300,23 @@ export class StateManager {
                 side,
             } as OrderblockPart;
 
+            /**
+             * В случае торговли по тренду может быть такое что слева нет точки которая будет тейк профитом
+             */
+            const isBuyAndLowTakeProfit = side === 'low' && takeProfitPrice <= orderBlockPart.startCandle.high;
+            const isSellAndHighTakeProfit = side === 'high' && takeProfitPrice >= orderBlockPart.startCandle.low;
+            if (isBuyAndLowTakeProfit || isSellAndHighTakeProfit) {
+                const openPrice = side === 'low' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
+                const stopLoss = side === 'high' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
+                const bodyPrice = Math.abs(openPrice - stopLoss);
+                const RR = 3;
+                takeProfitPrice = side === 'low' ? openPrice + bodyPrice * RR : openPrice - bodyPrice * RR;
+            }
+
             if (
                 orderBlockPart?.side === swing?.side && !this.pois[swing.index]
             ) {
-                this.pois[swing.index] = new POI(canTradeExtremumOrderblock(this, swing, orderBlockPart, takeProfit?.price));
+                this.pois[swing.index] = new POI(canTradeExtremumOrderblock(this, swing, orderBlockPart, takeProfitPrice));
                 this.pois[swing.index].reasons.unshift(...imbalance.reasons);
                 // newSMT
                 this.obIdxes.add(swing.index);
@@ -1665,7 +1679,7 @@ export class StateManager {
                             }));
                             this.pois[swing.index].takeProfit = takeProfit?.price;
 
-                            if((needBuy && takeProfit?.price <= orderBlockPart.startCandle.high) || (needSell&&takeProfit?.price >= orderBlockPart.startCandle.low)){
+                            if ((needBuy && takeProfit?.price <= orderBlockPart.startCandle.high) || (needSell && takeProfit?.price >= orderBlockPart.startCandle.low)) {
                                 const openPrice = orderBlockPart.side === 'high' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
                                 const stopLoss = orderBlockPart.side === 'low' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
                                 const body = Math.abs(openPrice - stopLoss);
@@ -2074,6 +2088,7 @@ const drawTrend = (manager: StateManager) => {
     let onlyBOSes = manager.boses.filter(
         (bos) => manager.swings[bos?.from?.index]?.isExtremum,
     );
+    let endlessTrend = false;
     for (let i = 0; i < onlyBOSes.length; i++) {
         const prevBos = onlyBOSes[i - 1];
         const curBos = onlyBOSes[i];
@@ -2082,6 +2097,10 @@ const drawTrend = (manager: StateManager) => {
         let to = !nextBos ? manager.trend.length : nextBos.to.index;
         if (nextBos && !curBos.isConfirmed && !nextBos.isConfirmed) {
             to = manager.trend.length;
+        }
+
+        if(!curBos.isConfirmed){
+            endlessTrend = true
         }
 
         // Если текущий бос внутри предыдущего боса - то текущий бос нужно выпилить и не учитывать в тренде
@@ -2094,14 +2113,11 @@ const drawTrend = (manager: StateManager) => {
             continue;
         }
 
+        const type = curBos.type;
+        const side = type === 'high' ? 1 : -1
+
         for (let j = curBos.to.index; j < to; j++) {
-            const type = curBos.type;
-            const isNewTrend = curBos.isConfirmed
-                ? type === 'high'
-                    ? 1
-                    : -1
-                : manager.trend[j - 1]?.trend;
-            manager.trend[j] = {time: manager.candles[j].time, trend: isNewTrend};
+            manager.trend[j] = {time: manager.candles[j].time, trend: curBos.isConfirmed && !endlessTrend ? side : manager.trend[j - 1]?.trend};
 
             // Удаляем IDM у точек которые являются босами
             if (manager.boses[j]?.isIDM && manager.boses[j]?.type === type) {
@@ -2125,6 +2141,7 @@ const drawTrend = (manager: StateManager) => {
     onlyBOSes = manager.boses
         .filter((bos) => manager.swings[bos?.from?.index]?.isExtremum)
         .sort((a, b) => a.to.index - b.to.index);
+
     for (let i = 0; i < onlyBOSes.length - 1; i++) {
         const curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
