@@ -1,5 +1,6 @@
 import {calculateTakeProfit} from "./utils";
 import {HistoryObject, POI, POIType, Swing} from "./th_ultimate.ts";
+import {Security} from "./api.ts";
 
 export interface Position {
     side: 'short' | 'long',
@@ -52,7 +53,7 @@ export const finishPosition = ({
     return curr;
 }
 
-export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0) => {
+export const calculatePositionsByOrderblocks = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0) => {
     const positions: Position[] = [];
     let lastExtremumIndexMap: Record<'high' | 'low', number> = {
         high: null,
@@ -78,6 +79,9 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
             side = obItem.side === 'low' ? 'short' : 'long';
         }
         let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
+        if(security){
+            stopLoss = side === 'long' ? stopLoss - security.minstep : stopLoss + security.minstep
+        }
         let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
         const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
 
@@ -185,14 +189,14 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
     return positions;
 }
 
-export const iterationCalculatePositions = (candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0) => {
+export const iterationCalculatePositions = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0) => {
     let positions = {};
     for (let i = 0; i < candles.length - 1; i++) {
         const partCandles = candles.slice(0, i);
         const partSwings = swings.slice(0, i);
         const partOB = ob.slice(0, i);
 
-        const _pos = calculatePositionsByOrderblocks(partCandles, partSwings, partOB, maxDiff, multiStop, stopPaddingPercent);
+        const _pos = calculatePositionsByOrderblocks(security, partCandles, partSwings, partOB, maxDiff, multiStop, stopPaddingPercent);
 
         _pos.forEach(pos => {
             if (!positions[pos.openTime] || !positions[pos.closeTime]) {

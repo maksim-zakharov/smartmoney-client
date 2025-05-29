@@ -78,7 +78,7 @@ export const MultiTestPage = () => {
 
         const fee = feePercent / 100
 
-        let positions = calculatePositionsByOrderblocks(data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+        let positions = calculatePositionsByOrderblocks(security, data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
 
         positions = uniqueBy(v => v.openTime, positions);
 
@@ -111,7 +111,7 @@ export const MultiTestPage = () => {
 
             const fee = feePercent / 100;
 
-            let positions = calculatePositionsByOrderblocks(data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+            let positions = calculatePositionsByOrderblocks(allSecurity[ticker], data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
 
             const isShortSellPossible = allRiskRates[ticker]?.isShortSellPossible || false;
             if (!isShortSellPossible) {
@@ -316,7 +316,7 @@ export const MultiTestPage = () => {
         {
             title: "Действия",
             render: (value, row) => {
-                return <Link to={`/new-testing?ticker=${row.ticker || ticker}&tf=${row.timeframe}&tab=orderblocks`}
+                return <Link to={`/test?ticker=${row.ticker || ticker}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowEndOB%2CshowHiddenSwings%2CshowPositions%2CsmartTrend%2CtradeOBEXT&toDate=${dayjs(row.closeTime * 1000).add(1, 'day').unix()}&fromDate=${dayjs(row.openTime * 1000).add(-2, 'week').unix()}`}
                              target="_blank">Тестер</Link>;
             }
         }
