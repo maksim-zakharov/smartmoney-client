@@ -1,5 +1,5 @@
 import {calculateTakeProfit} from "./utils";
-import {HistoryObject, POI, Swing} from "./th_ultimate.ts";
+import {HistoryObject, POI, POIType, Swing} from "./th_ultimate.ts";
 
 export interface Position {
     side: 'short' | 'long',
@@ -73,7 +73,10 @@ export const calculatePositionsByOrderblocks = (candles: HistoryObject[], swings
 
         let limitOrder = obItem.tradeOrderType === 'limit';
 
-        const side = obItem.side === 'high' ? 'short' : 'long';
+        let side = obItem.side === 'high' ? 'short' : 'long';
+        if(obItem.type === POIType.Breaking_Block){
+            side = obItem.side === 'low' ? 'short' : 'long';
+        }
         let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
         let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
         const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;

@@ -160,7 +160,9 @@ export enum POIType {
 
     FLIP_IDM = 'FLIP_IDM',
 
-    One_Side_FVG = 'One_Side_FVG'
+    One_Side_FVG = 'One_Side_FVG',
+
+    Breaking_Block = 'Breaking_Block'
 }
 
 export class POI {
@@ -214,6 +216,8 @@ export class POI {
                 return 'limit';
             case POIType.One_Side_FVG:
                 return 'limit';
+            case POIType.Breaking_Block:
+                return 'limit';
             default:
                 return 'limit';
         }
@@ -223,6 +227,9 @@ export class POI {
         if (this.isSMT) return 'SMT';
         if (this.type === POIType.One_Side_FVG) {
             return '1-Side_FVG';
+        }
+        if (this.type === POIType.Breaking_Block) {
+            return 'BB';
         }
         if (this.type === POIType.OB_EXT) {
             return 'OB_EXT';
@@ -388,7 +395,8 @@ export const calculateTesting = (
         tradeCHoCHWithIDM,
         tradeFlipWithIDM,
         tradeOBEXT,
-        showFVG
+        showFVG,
+        tradeBB
     }: THConfig,
 ) => {
     const manager = new StateManager(data, {
@@ -404,7 +412,7 @@ export const calculateTesting = (
     // <-- Копировать в робота
     manager.calculateSwings();
 
-    if(showFVG)
+    if (showFVG)
         manager.drawFVG();
 
     tradinghubCalculateTrendNew(manager, {
@@ -417,13 +425,16 @@ export const calculateTesting = (
         calculateSession(manager);
 
     if (showWeekly)
-    calculateWeek(manager);
+        calculateWeek(manager);
 
     // Копировать в робота -->
-    let orderBlocks = calculatePOI(manager, withMove, newSMT);
+    calculatePOI(manager, withMove, newSMT);
+
+    if(tradeBB)
+    manager.calculateBreakerBlocks()
 
     // Увеличивает на тестинге на 3% винрейт
-    orderBlocks = orderBlocks.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG].includes(ob?.type));
+    let orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
 
     return {
         swings: manager.swings,
@@ -435,6 +446,7 @@ export const calculateTesting = (
 
 export interface THConfig {
     withMove?: boolean;
+    tradeBB?: boolean;
     showHiddenSwings?: boolean;
     newSMT?: boolean;
     showIFC?: boolean;
@@ -1510,9 +1522,9 @@ export class StateManager {
 
     externalCandle?: HistoryObject;
 
-    drawFVG(){
+    drawFVG() {
         for (let i = 2; i < this.candles.length; i++) {
-            const firstCandle = this.candles[i-2];
+            const firstCandle = this.candles[i - 2];
             const middleCandle = this.candles[i];
             const lastCandle = this.candles[i];
 
@@ -1521,11 +1533,11 @@ export class StateManager {
 
             const oneSide = isBullishOneSide || isBearishOneSide
 
-            if(!oneSide){
+            if (!oneSide) {
                 continue;
             }
 
-            if(!isImbalance(firstCandle, lastCandle)){
+            if (!isImbalance(firstCandle, lastCandle)) {
                 continue
             }
 
@@ -1541,7 +1553,7 @@ export class StateManager {
                 },
                 lastOrderblockCandle: lastCandle,
                 lastImbalanceCandle: lastCandle,
-                firstImbalanceIndex: i-2,
+                firstImbalanceIndex: i - 2,
                 lastImbalanceIndex: i,
                 side,
             } as OrderblockPart;
@@ -1550,13 +1562,13 @@ export class StateManager {
                 side,
                 time: firstCandle.time,
                 _sidePrice: firstCandle,
-                index: i-2,
+                index: i - 2,
             })
 
             // Нужно для определения ближайшей цели для TakeProfit
             const takeProfit = closestExtremumSwing(this, swing)
 
-            this.pois[i-2] = new POI({
+            this.pois[i - 2] = new POI({
                 ...orderBlockPart,
                 isSMT: false,
                 swing,
@@ -1570,13 +1582,101 @@ export class StateManager {
                 // endIndex: i
             });
 
-            const obItem = this.pois[i-2];
+            const obItem = this.pois[i - 2];
 
             for (let j = i + 1; j < this.candles.length; j++) {
                 const candle = this.candles[j];
                 if (hasHitOB(obItem, candle)) {
                     obItem.endCandle = candle;
                     obItem.endIndex = j;
+                    break;
+                }
+            }
+        }
+    }
+
+    calculateBreakerBlocks() {
+        /**
+         * Уровни перед разворотными ликвидностями
+         * Появляются в ключевые моменты дня когда ожидаем всплеск ликвидности
+         * Самый мощный инструмент
+         * Формируется перед всплеском ликвидности
+         * На бычьем рынке - BB строится сверху (как OB) на медвежьем - снизу. По сути контртренд
+         * Нужно чтобы цена пробила BB и закрылась выше (на бычьем) или ниже (на медвежьем)
+         * Сразу после этого можно искать лонги или шорты
+         */
+
+        for (let i = 0; i < this.candles.length; i++) {
+            const swing = this.swings[i];
+            if (!swing)
+                continue;
+
+            if (!swing.isExtremum)
+                continue;
+
+            const trend = this.trend[i];
+            if (!trend)
+                continue;
+
+            // -1 - Продажа, 1 - Покупка
+            const trendSide = trend.trend === -1 ? 'high' : 'low';
+            if (swing.side === trendSide)
+                continue;
+
+            const candle = this.candles[i];
+
+            const orderBlockPart = {
+                startCandle: candle,
+                lastOrderblockCandle: candle,
+                lastImbalanceCandle: candle,
+                firstImbalanceIndex: i,
+                lastImbalanceIndex: i,
+                side: swing.side,
+                isSMT: false,
+                swing,
+                canTrade: false,
+                canTest: true,
+                type: POIType.Breaking_Block,
+                reasons: []
+            } as Partial<POI>;
+
+            for (let j = i + 1; j < this.candles.length; j++) {
+                const needBuy = orderBlockPart.side === 'high';
+                const needSell = orderBlockPart.side === 'low';
+                const closeAbove = needBuy && this.candles[j].close > orderBlockPart.startCandle.high;
+                const closeBelow = needSell && this.candles[j].close < orderBlockPart.startCandle.low;
+
+                if (closeAbove || closeBelow) {
+                    // @ts-ignore
+                    this.pois[swing.index] = new POI(orderBlockPart);
+
+                    for (let k = j + 1; k < this.candles.length; k++) {
+                        const hitToBuy = needBuy && this.candles[k].low < orderBlockPart.startCandle.high;
+                        const hitToSell = needSell && this.candles[k].high > orderBlockPart.startCandle.low;
+
+                        if (hitToBuy || hitToSell) {
+                            const takeProfit = closestExtremumSwing(this, new Swing({
+                                index: k,
+                                time: this.candles[k].time,
+                                _sidePrice: {
+                                    high: this.candles[k].close,
+                                    low: this.candles[k].close,
+                                },
+                            }));
+                            this.pois[swing.index].takeProfit = takeProfit?.price;
+
+                            if((needBuy && takeProfit?.price <= orderBlockPart.startCandle.high) || (needSell&&takeProfit?.price >= orderBlockPart.startCandle.low)){
+                                const openPrice = orderBlockPart.side === 'high' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
+                                const stopLoss = orderBlockPart.side === 'low' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
+                                const body = Math.abs(openPrice - stopLoss);
+                                this.pois[swing.index].takeProfit = orderBlockPart.side === 'high' ? openPrice + body * 5 : openPrice - body * 5;
+                            }
+                            this.pois[swing.index].endIndex = k;
+                            this.pois[swing.index].endCandle = this.candles[k];
+                            break;
+                        }
+                    }
+
                     break;
                 }
             }
@@ -2166,9 +2266,9 @@ export const filterNearOrderblock = (
 ) =>
     orderBlocks
         .filter(Boolean)
-        .filter(({ startCandle: { high, low }, side }) =>
+        .filter(({startCandle: {high, low}, side}) =>
             hasNear(
-                { high, low, side: side === 'high' ? Side.Sell : Side.Buy } as any,
+                {high, low, side: side === 'high' ? Side.Sell : Side.Buy} as any,
                 currentCandle,
                 minStep,
             ),
@@ -2193,7 +2293,7 @@ export const filterNearOrderblock = (
         .slice(0, 1);
 
 export const hasNear = (
-    { high, low, side }: CandleWithSide,
+    {high, low, side}: CandleWithSide,
     currentCandle: HistoryObject,
     minStep?: number,
 ) => {
@@ -2662,7 +2762,7 @@ function getWeekNumber(date: Date): { week: number, year: number } {
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
     const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return { week: weekNo, year: d.getUTCFullYear() };
+    return {week: weekNo, year: d.getUTCFullYear()};
 }
 
 const calculateWeek = (manager: StateManager) => {

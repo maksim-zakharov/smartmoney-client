@@ -180,7 +180,7 @@ export const SoloTestPage = () => {
             orderBlocks
         } = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
 
-        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
+        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
 
         let positions = [];
 
@@ -283,7 +283,7 @@ export const SoloTestPage = () => {
                 _primitives.push(...orderblocksToOrderblocksPrimitives(robotOB, checkShow, lastCandle));
             _primitives.push(...orderblocksToOrderblocksPrimitives(orderBlocks, checkShow, lastCandle));
             // FVG на HFT
-            _primitives.push(...orderblocksToFVGPrimitives(fbgs, checkShow, lastCandle));
+            // _primitives.push(...orderblocksToFVGPrimitives(fbgs, checkShow, lastCandle));
         }
 
         function getDate(time: Time): Date {
