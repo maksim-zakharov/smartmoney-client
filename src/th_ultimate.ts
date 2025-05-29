@@ -1309,7 +1309,7 @@ export class StateManager {
                 const openPrice = side === 'low' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
                 const stopLoss = side === 'high' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
                 const bodyPrice = Math.abs(openPrice - stopLoss);
-                const RR = 3;
+                const RR = 4;
                 takeProfitPrice = side === 'low' ? openPrice + bodyPrice * RR : openPrice - bodyPrice * RR;
             }
 

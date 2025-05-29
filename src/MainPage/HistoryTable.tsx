@@ -5,7 +5,13 @@ import {Link} from "react-router-dom";
 import {moneyFormat, summ} from "./MainPage.tsx";
 import useWindowDimensions from "../useWindowDimensions.tsx";
 
-export const HistoryTable: FC<{pageSize: number, history: any[], onSelect: (row: any) => void, selectedPattern: string, getPatternKey: (row: any) => string}> = ({selectedPattern, getPatternKey, pageSize, history, onSelect}) => {
+export const HistoryTable: FC<{
+    pageSize: number,
+    history: any[],
+    onSelect: (row: any) => void,
+    selectedPattern: string,
+    getPatternKey: (row: any) => string
+}> = ({selectedPattern, getPatternKey, pageSize, history, onSelect}) => {
     const {width} = useWindowDimensions();
 
     const [{fromDate, toDate}, setDates] = useState({
@@ -13,10 +19,27 @@ export const HistoryTable: FC<{pageSize: number, history: any[], onSelect: (row:
         toDate: moment().unix(),
     });
 
+    const calculateRR = (p) => {
+        const profitPrice = p.takeProfit?.stopPrice || p.takeProfitTrade?.price;
+        let lossPrice = p.stopLoss?.stopPrice || p.stopLossTrade?.price;
+        const openPrice = p.limit?.price || p.limitTrade?.price;
+
+        if(!lossPrice){
+            lossPrice = p.limitTrade.side === 'buy' ? Number(p.liquidSweepLow) : Number(p.liquidSweepHigh);
+        }
+
+        if(!lossPrice || !profitPrice || !openPrice){
+            return 0;
+        }
+
+        return Math.abs(profitPrice - openPrice) / Math.abs(lossPrice - openPrice);
+    }
+
     const historyTableData = useMemo(() => {
         let data = history.map((p: any) => ({
             ...p,
             id: getPatternKey(p),
+            RR: calculateRR(p)
         }));
 
         const dayPositionsWithSummaryMap = {};
@@ -169,6 +192,13 @@ export const HistoryTable: FC<{pageSize: number, history: any[], onSelect: (row:
             key: "PnL",
             align: "right",
             render: (value, row) => row.PnL ? moneyFormat(row.PnL, "RUB", 2, 2) : "-"
+        },
+        {
+            title: "RR",
+            dataIndex: "RR",
+            key: "RR",
+            align: "right",
+            render: (value) => value?.toFixed(2)
         },
         width > 1200 && {
             title: "Действия",
