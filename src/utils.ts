@@ -483,6 +483,33 @@ export const bosesToLineSerieses = (boses: Cross[]) => boses.filter(Boolean).map
     return {options, data, markers} as TLineSeries
 })
 
+export const orderblocksToFVGPrimitives = (orderBlocks: POI[], filter: (ob: POI) => boolean, lastCandle: HistoryObject) =>
+    orderBlocks.filter(filter).map(orderBlock => [createRectangle2({
+        leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
+        rightBottom: {price: orderBlock.startCandle.low + (orderBlock.startCandle.high - orderBlock.startCandle.low) / 2, time: (orderBlock.endCandle || lastCandle).time}
+    }, {
+        fillColor: 'rgba(179, 199, 219, .3)',
+        showLabels: false,
+        borderLeftWidth: 0,
+        borderRightWidth: 0,
+        borderTopWidth: orderBlock.side === 'high' ? 1 : 0,
+        borderBottomWidth: orderBlock.side === 'low' ? 1 : 0,
+        borderWidth: 1,
+        borderColor: '#222'
+    }), createRectangle2({
+        leftTop: {price: orderBlock.startCandle.high - (orderBlock.startCandle.high - orderBlock.startCandle.low) / 2, time: orderBlock.startCandle.time},
+        rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
+    }, {
+        fillColor: 'rgba(179, 199, 219, .3)',
+        showLabels: false,
+        borderLeftWidth: 0,
+        borderRightWidth: 0,
+        borderTopWidth: orderBlock.side === 'low' ? 1 : 0,
+        borderBottomWidth: orderBlock.side === 'high' ? 1 : 0,
+        borderWidth: 1,
+        borderColor: '#222'
+    })]).flat()
+
 export const orderblocksToImbalancePrimitives = (orderBlocks: POI[], filter: (ob: POI) => boolean, lastCandle: HistoryObject) => orderBlocks.filter(filter).map(orderBlock => createRectangle2({
     leftTop: {
         price: orderBlock.lastOrderblockCandle.high,

@@ -21,7 +21,7 @@ import {
     bosesToLineSerieses,
     fetchCandlesFromAlor,
     fetchRiskRates,
-    getSecurity,
+    getSecurity, orderblocksToFVGPrimitives,
     orderblocksToImbalancePrimitives,
     orderblocksToOrderblocksPrimitives,
     refreshToken,
@@ -162,8 +162,6 @@ export const SoloTestPage = () => {
         return orderBlocks;
     }, [HTFdata])
 
-    console.log(fbgs)
-
     const {swings, trend, boses, orderBlocks, positions} = useMemo(() => {
         if (!security) {
             return {
@@ -285,7 +283,7 @@ export const SoloTestPage = () => {
                 _primitives.push(...orderblocksToOrderblocksPrimitives(robotOB, checkShow, lastCandle));
             _primitives.push(...orderblocksToOrderblocksPrimitives(orderBlocks, checkShow, lastCandle));
             // FVG на HFT
-            _primitives.push(...orderblocksToOrderblocksPrimitives(fbgs, checkShow, lastCandle));
+            _primitives.push(...orderblocksToFVGPrimitives(fbgs, checkShow, lastCandle));
         }
 
         function getDate(time: Time): Date {
@@ -376,6 +374,14 @@ export const SoloTestPage = () => {
                 text: s.text
             })));
 
+            allMarkers.push(...fbgs.filter(checkShow).map(s => ({
+                color: s.side === 'low' ? markerColors.bullColor : markerColors.bearColor,
+                time: (s.textTime || s.time) as Time,
+                shape: 'text',
+                position: s.side === 'high' ? 'aboveBar' : 'belowBar',
+                text: s.text
+            })));
+
             if (config.showRobotOB) {
                 allMarkers.push(...robotOB.filter(checkShow).map(s => ({
                     color: s.type === 'low' ? markerColors.bullColor : markerColors.bearColor,
@@ -395,7 +401,7 @@ export const SoloTestPage = () => {
         }
 
         return allMarkers;
-    }, [swings, poses, config.showRobotOB, robotOB, orderBlocks, config.showSMT, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings]);
+    }, [swings, poses, fbgs, config.showRobotOB, robotOB, orderBlocks, config.showSMT, config.showOB, config.showPositions, config.showEndOB, config.imbalances, config.swings]);
 
     const lineSerieses = useMemo(() => {
         const _lineSerieses = [];
