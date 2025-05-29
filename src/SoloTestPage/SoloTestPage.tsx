@@ -51,6 +51,7 @@ export const SoloTestPage = () => {
     const [offset, setOffset] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState([]);
+    const [HTFdata, setHTFData] = useState([]);
 
     const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,6 +97,7 @@ export const SoloTestPage = () => {
         showPositions: checkboxValues.has('showPositions'),
         tradeOB: checkboxValues.has('tradeOB'),
         tradeOBIDM: checkboxValues.has('tradeOBIDM'),
+        showFVG: checkboxValues.has('showFVG'),
         tradeIDMIFC: checkboxValues.has('tradeIDMIFC'),
         tradeCHoCHWithIDM: checkboxValues.has('tradeCHoCHWithIDM'),
         tradeFlipWithIDM: checkboxValues.has('tradeFlipWithIDM'),
@@ -109,6 +111,7 @@ export const SoloTestPage = () => {
         showRobotOB: checkboxValues.has('showRobotOB'),
         showIFC: checkboxValues.has('showIFC'),
         showSession: checkboxValues.has('showSession'),
+        showWeekly: checkboxValues.has('showWeekly'),
         showLogs: true
     }), [checkboxValues])
 
@@ -128,6 +131,10 @@ export const SoloTestPage = () => {
         fetchCandlesFromAlor(ticker, tf, fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
     }, [tf, ticker, fromDate, toDate, token]);
 
+    useEffect(() => {
+        fetchCandlesFromAlor(ticker, "3600", fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setHTFData);
+    }, [ticker, fromDate, toDate, token]);
+
     const setSize = (tf: string) => {
         searchParams.set('tf', tf);
         setSearchParams(searchParams)
@@ -143,6 +150,19 @@ export const SoloTestPage = () => {
         searchParams.set('toDate', value[1].endOf('day').unix());
         setSearchParams(searchParams);
     }
+
+    const fbgs = useMemo(() => {
+        let {
+            orderBlocks
+        } = calculateTesting(HTFdata, {
+            showFVG: true,
+            showHiddenSwings: true
+        })
+
+        return orderBlocks;
+    }, [HTFdata])
+
+    console.log(fbgs)
 
     const {swings, trend, boses, orderBlocks, positions} = useMemo(() => {
         if (!security) {
@@ -162,7 +182,7 @@ export const SoloTestPage = () => {
             orderBlocks
         } = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
 
-        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
+        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
 
         let positions = [];
 
@@ -190,7 +210,7 @@ export const SoloTestPage = () => {
                 stopMargin
             })).sort((a, b) => b.openTime - a.openTime)
         };
-    }, [offset, isShortSellPossible, security?.lotsize, stopPaddingPercent, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [offset, isShortSellPossible, security?.lotsize, stopPaddingPercent,config.showWeekly, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.showFVG, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
@@ -264,6 +284,8 @@ export const SoloTestPage = () => {
             if (config.showRobotOB)
                 _primitives.push(...orderblocksToOrderblocksPrimitives(robotOB, checkShow, lastCandle));
             _primitives.push(...orderblocksToOrderblocksPrimitives(orderBlocks, checkShow, lastCandle));
+            // FVG на HFT
+            _primitives.push(...orderblocksToOrderblocksPrimitives(fbgs, checkShow, lastCandle));
         }
 
         function getDate(time: Time): Date {
@@ -310,7 +332,7 @@ export const SoloTestPage = () => {
         }
 
         return _primitives;
-    }, [robotOB, config.showRobotOB, orderBlocks, config.smartTrend, trend, config.imbalances, config.showSMT, config.showOB, config.showEndOB, config.imbalances, data])
+    }, [robotOB, fbgs, config.showRobotOB, orderBlocks, config.smartTrend, trend, config.imbalances, config.showSMT, config.showOB, config.showEndOB, config.imbalances, data])
 
     const poses = useMemo(() => positions.map(s => [{
         color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
@@ -507,6 +529,7 @@ export const SoloTestPage = () => {
                 <Checkbox key="swings" value="swings">Swings</Checkbox>
                 <Checkbox key="smartTrend" value="smartTrend">Умный тренд</Checkbox>
                 <Checkbox key="BOS" value="BOS">Структуры</Checkbox>
+                <Checkbox key="showFVG" value="showFVG">Показывать FVG</Checkbox>
                 <Checkbox key="showSMT" value="showSMT">Показывать SMT</Checkbox>
                 <Checkbox key="showOB" value="showOB">Актуальные OB</Checkbox>
                 <Checkbox key="showEndOB" value="showEndOB">Отработанные OB</Checkbox>
@@ -521,6 +544,7 @@ export const SoloTestPage = () => {
                 <Checkbox key="tradeEXTIFC" value="tradeEXTIFC">Торговать EXT_IFC</Checkbox>
                 <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
                 <Checkbox key="showSession" value="showSession">Показывать сессии</Checkbox>
+                <Checkbox key="showWeekly" value="showWeekly">Показывать хайлой недельки</Checkbox>
                 <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
                 <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
                 <Checkbox key="newSMT" value="newSMT">Предугадывать SMT</Checkbox>

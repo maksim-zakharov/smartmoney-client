@@ -71,6 +71,8 @@ export class Cross {
     type: 'low' | 'high';
 
     isSession?: boolean;
+    isWeekly?: boolean;
+
     isIDM?: boolean;
     isBOS?: boolean;
     isCHoCH?: boolean;
@@ -113,6 +115,11 @@ export class Cross {
             if (this.type === 'low') return 'Session Low';
             return '';
         }
+        if (this.isWeekly) {
+            if (this.type === 'high') return 'Weekly High';
+            if (this.type === 'low') return 'Weekly Low';
+            return '';
+        }
         if (this.isIDM) {
             if (this.isFake) return 'Fake IDM';
             if (this.isConfirmed) return 'IDM';
@@ -151,7 +158,9 @@ export enum POIType {
 
     CHOCH_IDM = 'CHOCH_IDM',
 
-    FLIP_IDM = 'FLIP_IDM'
+    FLIP_IDM = 'FLIP_IDM',
+
+    One_Side_FVG = 'One_Side_FVG'
 }
 
 export class POI {
@@ -203,6 +212,8 @@ export class POI {
                 return 'limit';
             case POIType.OB_EXT:
                 return 'limit';
+            case POIType.One_Side_FVG:
+                return 'limit';
             default:
                 return 'limit';
         }
@@ -210,6 +221,9 @@ export class POI {
 
     get text(): string {
         if (this.isSMT) return 'SMT';
+        if (this.type === POIType.One_Side_FVG) {
+            return '1-Side_FVG';
+        }
         if (this.type === POIType.OB_EXT) {
             return 'OB_EXT';
         }
@@ -368,11 +382,13 @@ export const calculateTesting = (
         showFake,
         showLogs,
         showSession,
+        showWeekly,
         tradeEXTIFC,
         tradeIDMIFC,
         tradeCHoCHWithIDM,
         tradeFlipWithIDM,
         tradeOBEXT,
+        showFVG
     }: THConfig,
 ) => {
     const manager = new StateManager(data, {
@@ -384,8 +400,12 @@ export const calculateTesting = (
         tradeEXTIFC,
         showLogs
     });
+
     // <-- Копировать в робота
     manager.calculateSwings();
+
+    if(showFVG)
+        manager.drawFVG();
 
     tradinghubCalculateTrendNew(manager, {
         showHiddenSwings,
@@ -396,11 +416,14 @@ export const calculateTesting = (
     if (showSession)
         calculateSession(manager);
 
+    if (showWeekly)
+    calculateWeek(manager);
+
     // Копировать в робота -->
     let orderBlocks = calculatePOI(manager, withMove, newSMT);
 
     // Увеличивает на тестинге на 3% винрейт
-    orderBlocks = orderBlocks.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM].includes(ob?.type));
+    orderBlocks = orderBlocks.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG].includes(ob?.type));
 
     return {
         swings: manager.swings,
@@ -422,7 +445,9 @@ export interface THConfig {
     tradeIDMIFC?: boolean;
     showFake?: boolean;
     showSession?: boolean;
+    showWeekly?: boolean;
     showLogs?: boolean;
+    showFVG?: boolean;
 }
 
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT;
@@ -1400,7 +1425,7 @@ export class StateManager {
                 OB_IDM_SWING = swing;
                 break;
             }
-            if (!bos || bos.isSession) {
+            if (!bos || bos.isSession || bos.isWeekly) {
                 continue; // (b => b?.isIDM && b.to?.index >= index);
             }
             if (bos.to?.index >= index) {
@@ -1484,6 +1509,79 @@ export class StateManager {
     };
 
     externalCandle?: HistoryObject;
+
+    drawFVG(){
+        for (let i = 2; i < this.candles.length; i++) {
+            const firstCandle = this.candles[i-2];
+            const middleCandle = this.candles[i];
+            const lastCandle = this.candles[i];
+
+            const isBullishOneSide = isBullish(firstCandle) && isBullish(middleCandle) && isBullish(lastCandle) && firstCandle.close < middleCandle.close
+            const isBearishOneSide = isBearish(firstCandle) && isBearish(middleCandle) && isBearish(lastCandle) && firstCandle.close > middleCandle.close
+
+            const oneSide = isBullishOneSide || isBearishOneSide
+
+            if(!oneSide){
+                continue;
+            }
+
+            if(!isImbalance(firstCandle, lastCandle)){
+                continue
+            }
+
+            const side = firstCandle.high < lastCandle.low ? 'low' : 'high';
+
+            const orderBlockPart = {
+                startCandle: {
+                    ...firstCandle,
+                    open: side === 'low' ? firstCandle.high : firstCandle.low,
+                    low: side === 'low' ? firstCandle.high : firstCandle.low,
+                    close: side === 'low' ? lastCandle.low : lastCandle.high,
+                    high: side === 'low' ? lastCandle.low : lastCandle.high,
+                },
+                lastOrderblockCandle: lastCandle,
+                lastImbalanceCandle: lastCandle,
+                firstImbalanceIndex: i-2,
+                lastImbalanceIndex: i,
+                side,
+            } as OrderblockPart;
+
+            const swing = new Swing({
+                side,
+                time: firstCandle.time,
+                _sidePrice: firstCandle,
+                index: i-2,
+            })
+
+            // Нужно для определения ближайшей цели для TakeProfit
+            const takeProfit = closestExtremumSwing(this, swing)
+
+            this.pois[i-2] = new POI({
+                ...orderBlockPart,
+                isSMT: false,
+                swing,
+                canTrade: false,
+                canTest: true,
+                // Тейк профит до ближайшего максимума
+                takeProfit: takeProfit?.price,
+                type: POIType.One_Side_FVG,
+                reasons: [],
+                // endCandle: lastCandle,
+                // endIndex: i
+            });
+
+            const obItem = this.pois[i-2];
+
+            for (let j = i + 1; j < this.candles.length; j++) {
+                const candle = this.candles[j];
+                if (hasHitOB(obItem, candle)) {
+                    obItem.endCandle = candle;
+                    obItem.endIndex = j;
+                    break;
+                }
+            }
+        }
+    }
 
     calculateSwings() {
         let lastSwingIndex: number = -1;
@@ -1814,7 +1912,7 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
     }
 
     manager.boses
-        .filter((b) => b?.type === 'high' && !b?.isIDM && !b?.isSession)
+        .filter((b) => b?.type === 'high' && !b?.isIDM && !b?.isSession && !b?.isWeekly)
         .sort((a, b) => a.from.price - b.from.price)
         .forEach((curr: any, i, array) => {
             for (let j = 0; j < i; j++) {
@@ -1827,7 +1925,7 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
         });
 
     manager.boses
-        .filter((b) => b?.type === 'low' && !b?.isIDM && !b?.isSession)
+        .filter((b) => b?.type === 'low' && !b?.isIDM && !b?.isSession && !b?.isWeekly)
         .sort((a, b) => b.from.price - a.from.price)
         .forEach((curr: any, i, array) => {
             for (let j = 0; j < i; j++) {
@@ -2557,6 +2655,102 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
     return props;
 }
 
+// Вспомогательная функция для получения номера недели в году
+function getWeekNumber(date: Date): { week: number, year: number } {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return { week: weekNo, year: d.getUTCFullYear() };
+}
+
+const calculateWeek = (manager: StateManager) => {
+    if (!manager.candles.length) {
+        return;
+    }
+
+    const lastCandle = manager.candles[manager.candles.length - 1];
+    const lastCandleDate = new Date(lastCandle.time * 1000);
+    // Получаем номер недели и год последней свечи
+    const lastCandleWeek = getWeekNumber(lastCandleDate);
+    const targetWeek = lastCandleWeek.week;
+    const targetYear = lastCandleWeek.year;
+
+    const weeklyCandlesIndexes: number[] = [];
+    // Идём с конца массива к началу
+    for (let i = manager.candles.length - 1; i >= 0; i--) {
+        const candle = manager.candles[i];
+        const candleDate = new Date(candle.time * 1000);
+        const candleWeek = getWeekNumber(candleDate);
+
+        if (candleWeek.year === targetYear && candleWeek.week === targetWeek) {
+            weeklyCandlesIndexes.push(i);
+        } else {
+            break; // Предполагаем, что массив упорядочен по времени
+        }
+    }
+
+    if (!weeklyCandlesIndexes.length) {
+        return
+    }
+
+    const weeklyHighIndex = weeklyCandlesIndexes.reduce((maxIndex, c) =>
+        manager.candles[c].high > manager.candles[maxIndex].high ? c : maxIndex, weeklyCandlesIndexes[0]);
+    const weeklyLowIndex = weeklyCandlesIndexes.reduce((minIndex, c) =>
+        manager.candles[c].low < manager.candles[minIndex].low ? c : minIndex, weeklyCandlesIndexes[0]);
+
+    // sessionHigh
+    manager.boses[weeklyHighIndex] = new Cross({
+        from: new Swing({
+            side: 'high',
+            index: weeklyHighIndex,
+            time: manager.candles[weeklyHighIndex].time,
+            _sidePrice: {
+                high: manager.candles[weeklyHighIndex].high,
+                low: manager.candles[weeklyHighIndex].high,
+            }
+        }),
+        to: new Swing({
+            side: 'high',
+            index: manager.candles.length - 1,
+            time: lastCandle.time,
+            _sidePrice: {
+                high: lastCandle.high,
+                low: lastCandle.high,
+            }
+        }),
+        type: 'high',
+        isWeekly: true, // Изменили флаг с isSession на isWeekly
+        getCandles: () => manager.candles,
+    });
+
+    // sessionLow
+    manager.boses[weeklyLowIndex] = new Cross({
+        from: new Swing({
+            side: 'low',
+            index: weeklyLowIndex,
+            time: manager.candles[weeklyLowIndex].time,
+            _sidePrice: {
+                high: manager.candles[weeklyLowIndex].low,
+                low: manager.candles[weeklyLowIndex].low,
+            }
+        }),
+        to: new Swing({
+            side: 'low',
+            index: manager.candles.length - 1,
+            time: lastCandle.time,
+            _sidePrice: {
+                high: lastCandle.low,
+                low: lastCandle.low,
+            }
+        }),
+        type: 'low',
+        isWeekly: true, // Изменили флаг с isSession на isWeekly
+        getCandles: () => manager.candles,
+    });
+}
+
 const calculateSession = (manager: StateManager) => {
     if (!manager.candles.length) {
         return;
@@ -2588,20 +2782,28 @@ const calculateSession = (manager: StateManager) => {
         return
     }
 
-    const sessionHighIndex = sessionCandlesIndexes.reduce((maxIndex, c) => manager.candles[c].high > manager.candles[maxIndex].high ? c : maxIndex, 0);
-    const sessionLowIndex = sessionCandlesIndexes.reduce((minIndex, c) => manager.candles[c].low < manager.candles[minIndex].low ? c : minIndex, 0);
+    const sessionHighIndex = sessionCandlesIndexes.reduce((maxIndex, c) => manager.candles[c].high > manager.candles[maxIndex].high ? c : maxIndex, sessionCandlesIndexes[0]);
+    const sessionLowIndex = sessionCandlesIndexes.reduce((minIndex, c) => manager.candles[c].low < manager.candles[minIndex].low ? c : minIndex, sessionCandlesIndexes[0]);
 
     // sessionHigh
     manager.boses[sessionHighIndex] = new Cross({
         from: new Swing({
             index: sessionHighIndex,
+            side: 'high',
             time: manager.candles[sessionHighIndex].time,
-            price: manager.candles[sessionHighIndex].high,
+            _sidePrice: {
+                high: manager.candles[sessionHighIndex].high,
+                low: manager.candles[sessionHighIndex].high,
+            }
         }),
         to: new Swing({
             index: manager.candles.length - 1,
+            side: 'high',
             time: lastCandle.time,
-            price: lastCandle.high,
+            _sidePrice: {
+                high: lastCandle.high,
+                low: lastCandle.high,
+            }
         }),
         type: 'high',
         isSession: true,
@@ -2612,13 +2814,21 @@ const calculateSession = (manager: StateManager) => {
     manager.boses[sessionLowIndex] = new Cross({
         from: new Swing({
             index: sessionLowIndex,
+            side: 'low',
             time: manager.candles[sessionLowIndex].time,
-            price: manager.candles[sessionLowIndex].low,
+            _sidePrice: {
+                high: manager.candles[sessionLowIndex].low,
+                low: manager.candles[sessionLowIndex].low,
+            }
         }),
         to: new Swing({
             index: manager.candles.length - 1,
+            side: 'low',
             time: lastCandle.time,
-            price: lastCandle.low,
+            _sidePrice: {
+                high: lastCandle.low,
+                low: lastCandle.low,
+            }
         }),
         type: 'low',
         isSession: true,
@@ -2638,3 +2848,6 @@ const formatDate = (_date: Date) => {
 
     return `${date} ${hour}:${minute}`;
 }
+
+export const isBearish = (candle: HistoryObject) => candle.open > candle.close;
+export const isBullish = (candle: HistoryObject) => candle.open < candle.close;
