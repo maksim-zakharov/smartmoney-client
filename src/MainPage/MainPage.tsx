@@ -52,7 +52,7 @@ const MainPage: React.FC = () => {
             liquidSweepTime: searchParams.get("liquidSweepTime")
         })
 
-    const minDate = moment('2025-05-19T00:00:00.000Z');
+    const minDate = moment('2025-05-29T00:00:00.000Z');
     const min = minDate.unix()
     const max = moment().unix()
 
