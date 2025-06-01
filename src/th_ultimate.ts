@@ -1267,6 +1267,14 @@ export class StateManager {
             const lastOrderblockCandle = this.candles[firstImbalanceIndex];
             const lastImbalanceCandle = this.candles[lastImbalanceIndex];
 
+            // Если LL оказался выше имбаланса
+            const isLowerImbalance = swing.side === 'low' && this.candles[swing.index].low > firstCandle.low;
+            // Если HH оказался ниже имбаланса
+            const isHigherImbalance = swing.side === 'high' && this.candles[swing.index].high < firstCandle.high;
+            if(isLowerImbalance || isHigherImbalance){
+                return;
+            }
+
             // Жестко нужно для БД, не трогать
             const open =
                 firstCandle.time === swing.time
