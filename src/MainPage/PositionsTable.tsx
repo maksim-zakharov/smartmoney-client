@@ -1,11 +1,17 @@
 import {Table} from "antd";
-import React, {FC, useState} from "react";
+import React, {FC, useMemo, useState} from "react";
 import moment from "moment/moment";
 import {Link, useSearchParams} from "react-router-dom";
 import {moneyFormat} from "./MainPage.tsx";
 import useWindowDimensions from "../useWindowDimensions.tsx";
+import {calculateRR} from "../utils.ts";
 
-export const PositionsTable: FC<{pageSize: number, onSelect: (row: any) => void, positions: any[], accTradesOrdernoQtyMap: any}> = ({pageSize, onSelect, positions, accTradesOrdernoQtyMap}) => {
+export const PositionsTable: FC<{
+    pageSize: number,
+    onSelect: (row: any) => void,
+    positions: any[],
+    accTradesOrdernoQtyMap: any
+}> = ({pageSize, onSelect, positions, accTradesOrdernoQtyMap}) => {
     const [searchParams, setSearchParams] = useSearchParams();
     const symbol = searchParams.get("ticker") || "SBER";
 
@@ -15,6 +21,11 @@ export const PositionsTable: FC<{pageSize: number, onSelect: (row: any) => void,
     });
 
     const {width} = useWindowDimensions();
+
+    const _positions = useMemo(() => positions.map(p => ({
+        ...p,
+        RR: calculateRR(p)
+    })), [positions]);
 
     const positionsColumns = [
         {
@@ -89,6 +100,13 @@ export const PositionsTable: FC<{pageSize: number, onSelect: (row: any) => void,
                 return `${value?.stopPrice} (${((percent - 1) * 100).toFixed(2)}%) (${moneyFormat(PnL * (accTradesOrdernoQtyMap[row.limitTrade?.orderno] || row.limitTrade?.qtyUnits), 'RUB', 2, 2)})`;
             }
         },
+        {
+            title: "RR",
+            dataIndex: "RR",
+            key: "RR",
+            align: "right",
+            render: (value) => value?.toFixed(2)
+        },
         width > 1200 && {
             title: "Действия",
             render: (value, row) => {
@@ -99,7 +117,7 @@ export const PositionsTable: FC<{pageSize: number, onSelect: (row: any) => void,
         }
     ].filter(Boolean);
 
-    return <Table size="small" dataSource={positions} columns={positionsColumns}
+    return <Table size="small" dataSource={_positions} columns={positionsColumns}
                   pagination={{
                       pageSize,
                   }}

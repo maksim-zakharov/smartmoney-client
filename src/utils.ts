@@ -119,6 +119,22 @@ export function calculateMultiple(stockPrice: number, futurePrice: number) {
     return diffsNumber;
 }
 
+export const calculateRR = (p) => {
+    const profitPrice = p.takeProfit?.stopPrice || p.takeProfitTrade?.price;
+    let lossPrice = p.stopLoss?.stopPrice || p.stopLossTrade?.price;
+    const openPrice = p.limit?.price || p.limitTrade?.price;
+
+    if(!lossPrice){
+        lossPrice = p.limitTrade.side === 'buy' ? Number(p.liquidSweepLow) : Number(p.liquidSweepHigh);
+    }
+
+    if(!lossPrice || !profitPrice || !openPrice){
+        return 0;
+    }
+
+    return Math.abs(profitPrice - openPrice) / Math.abs(lossPrice - openPrice);
+}
+
 export const calculateTakeProfit = ({
                                         side,
                                         openPrice,

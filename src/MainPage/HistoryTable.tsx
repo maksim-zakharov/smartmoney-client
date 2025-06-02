@@ -4,6 +4,7 @@ import moment from "moment/moment";
 import {Link} from "react-router-dom";
 import {moneyFormat, summ} from "./MainPage.tsx";
 import useWindowDimensions from "../useWindowDimensions.tsx";
+import {calculateRR} from "../utils.ts";
 
 export const HistoryTable: FC<{
     pageSize: number,
@@ -18,22 +19,6 @@ export const HistoryTable: FC<{
         fromDate: moment().add(-1, 'week').unix(),
         toDate: moment().unix(),
     });
-
-    const calculateRR = (p) => {
-        const profitPrice = p.takeProfit?.stopPrice || p.takeProfitTrade?.price;
-        let lossPrice = p.stopLoss?.stopPrice || p.stopLossTrade?.price;
-        const openPrice = p.limit?.price || p.limitTrade?.price;
-
-        if(!lossPrice){
-            lossPrice = p.limitTrade.side === 'buy' ? Number(p.liquidSweepLow) : Number(p.liquidSweepHigh);
-        }
-
-        if(!lossPrice || !profitPrice || !openPrice){
-            return 0;
-        }
-
-        return Math.abs(profitPrice - openPrice) / Math.abs(lossPrice - openPrice);
-    }
 
     const historyTableData = useMemo(() => {
         let data = history.map((p: any) => ({
