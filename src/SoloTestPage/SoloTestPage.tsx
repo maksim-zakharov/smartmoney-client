@@ -62,6 +62,7 @@ export const SoloTestPage = () => {
         searchParams.set('checkboxes', values.join(','));
         setSearchParams(searchParams)
     }
+    const [tralingPercent, settralingPercent] = useState(0);
 
     const [windowLength, setWindowLength] = useState(5);
     const [maxDiff, setMaxDiff] = useState(1);
@@ -185,7 +186,7 @@ export const SoloTestPage = () => {
         let positions = [];
 
         if (config.tradeOB) {
-            const fakeoutPositions = iterationCalculatePositions(security, data, swings as any, canTradeOrderBlocks, maxDiff, multiStop, stopPaddingPercent);
+            const fakeoutPositions = iterationCalculatePositions(security, data, swings as any, canTradeOrderBlocks, maxDiff, multiStop, stopPaddingPercent, tralingPercent);
             positions.push(...fakeoutPositions);
         }
 
@@ -208,7 +209,7 @@ export const SoloTestPage = () => {
                 stopMargin
             })).sort((a, b) => b.openTime - a.openTime)
         };
-    }, [offset, isShortSellPossible, security?.lotsize, stopPaddingPercent,config.showWeekly, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.showFVG, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [tralingPercent, offset, isShortSellPossible, security?.lotsize, stopPaddingPercent,config.showWeekly, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.showFVG, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
@@ -590,6 +591,7 @@ export const SoloTestPage = () => {
                         <div>Совпадений с роботом: {(robotEqualsPercent).toFixed(2)}%</div>
                     </div>
                     <Slider style={{width: 200}} defaultValue={windowLength} onChange={setWindowLength}/>
+                    <Slider style={{width: 200}} step={10} max={100} min={0} defaultValue={tralingPercent} onChange={settralingPercent}/>
                 </Row>
             </Space>
         </Sider>

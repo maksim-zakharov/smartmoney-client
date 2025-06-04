@@ -3,6 +3,7 @@ import React, {FC, useMemo} from "react";
 import useWindowDimensions from "../useWindowDimensions.tsx";
 import {moneyFormat} from "./MainPage.tsx";
 import moment from "moment/moment";
+import {calculateProdPositionFee} from "../samurai_patterns.ts";
 
 export const StatisticWidgets: FC<{fromDate: number, toDate: number, history: any[], timeframeLabelMap: any}> = ({fromDate, toDate, history, timeframeLabelMap}) => {
     const {width} = useWindowDimensions();
@@ -14,12 +15,11 @@ export const StatisticWidgets: FC<{fromDate: number, toDate: number, history: an
 
     const names = useMemo(() => Array.from(new Set(filteredHistory.filter(p => p.pattern).map(p => p.pattern))).sort((a, b) => a - b), [filteredHistory]);
 
-
     const NametotalPnL = useMemo(() => filteredHistory.filter(p => p.PnL).reduce((acc, curr) => {
         if (!acc[curr.pattern]) {
             acc[curr.pattern] = 0;
         }
-        acc[curr.pattern] += curr.PnL;
+        acc[curr.pattern] += curr.PnL
         return acc;
     }, {}), [filteredHistory])
     const Namelosses = useMemo(() => filteredHistory.filter(p => p.PnL < 0).reduce((acc, curr) => {

@@ -57,6 +57,7 @@ export const MultiTestPage = () => {
     const fromDate = dayjs().add(-2, "week");
     const toDate = dayjs().endOf('day');
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([fromDate, toDate])
+    const [tralingPercent, settralingPercent] = useState(0);
 
     const positions = useMemo(() => {
         let {swings, orderBlocks} = calculateTesting(data, {
@@ -78,7 +79,7 @@ export const MultiTestPage = () => {
 
         const fee = feePercent / 100
 
-        let positions = calculatePositionsByOrderblocks(security, data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+        let positions = calculatePositionsByOrderblocks(security, data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, 0, tralingPercent)
 
         positions = uniqueBy(v => v.openTime, positions);
 
@@ -88,7 +89,7 @@ export const MultiTestPage = () => {
         }
 
         return positions.filter(p => Boolean(p.pnl)).map(finishPosition({lotsize, fee, tf, ticker, stopMargin})).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [data, showFake, newSMT, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [tralingPercent, data, showFake, newSMT, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
@@ -111,7 +112,7 @@ export const MultiTestPage = () => {
 
             const fee = feePercent / 100;
 
-            let positions = calculatePositionsByOrderblocks(allSecurity[ticker], data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent)
+            let positions = calculatePositionsByOrderblocks(allSecurity[ticker], data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, 0, tralingPercent)
 
             const isShortSellPossible = allRiskRates[ticker]?.isShortSellPossible || false;
             if (!isShortSellPossible) {
@@ -120,7 +121,7 @@ export const MultiTestPage = () => {
 
             return positions.filter(p => Boolean(p.pnl)).map(finishPosition({ticker, tf, stopMargin, fee, lotsize}));
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [tralingPercent, tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -455,6 +456,11 @@ export const MultiTestPage = () => {
                     <Col>
                         <FormItem label="Размер комиссии в %">
                             <Slider value={feePercent} onChange={setFeePercent} min={0.01} step={0.01} max={0.4}/>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem label="Трейлинг-стоп">
+                            <Slider style={{width: 200}} step={10} max={100} min={0} defaultValue={tralingPercent} onChange={settralingPercent}/>
                         </FormItem>
                     </Col>
                 </Row>

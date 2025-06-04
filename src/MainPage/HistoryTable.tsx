@@ -179,6 +179,13 @@ export const HistoryTable: FC<{
             render: (value, row) => row.PnL ? moneyFormat(row.PnL, "RUB", 2, 2) : "-"
         },
         {
+            title: "Комиссия",
+            dataIndex: "Fee",
+            key: "Fee",
+            align: "right",
+            render: (value, row) => row.Fee ? moneyFormat(row.Fee, "RUB", 2, 2) : "-"
+        },
+        {
             title: "RR",
             dataIndex: "RR",
             key: "RR",

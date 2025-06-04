@@ -22,12 +22,12 @@ export interface Position {
 }
 
 export const finishPosition = ({
-                      lotsize,
-                      fee,
-                      stopMargin,
-                      tf,
-                      ticker
-                  }: {
+                                   lotsize,
+                                   fee,
+                                   stopMargin,
+                                   tf,
+                                   ticker
+                               }: {
     lotsize: number,
     fee: number,
     stopMargin: number,
@@ -53,7 +53,7 @@ export const finishPosition = ({
     return curr;
 }
 
-export const calculatePositionsByOrderblocks = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0) => {
+export const calculatePositionsByOrderblocks = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0, tralingPercent: number = 0) => {
     const positions: Position[] = [];
     let lastExtremumIndexMap: Record<'high' | 'low', number> = {
         high: null,
@@ -75,11 +75,11 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
         let limitOrder = obItem.tradeOrderType === 'limit';
 
         let side = obItem.side === 'high' ? 'short' : 'long';
-        if(obItem.type === POIType.Breaking_Block){
+        if (obItem.type === POIType.Breaking_Block) {
             side = obItem.side === 'low' ? 'short' : 'long';
         }
         let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
-        if(security){
+        if (security) {
             stopLoss = side === 'long' ? stopLoss - security.minstep : stopLoss + security.minstep
         }
         let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
@@ -125,6 +125,28 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
         let closePosition: Position;
 
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
+            if (tralingPercent) {
+                /**
+                 * Если цена выше на Х от стопа, двигаем выше.
+                 * 100 -> 1
+                 * 10 -> 0.1
+                 * 100 / tralingPercent (100) = 1
+                 * 100 / tralingPercent (10) = 10
+                 */
+                const multi = 100 / tralingPercent;
+                const take = Math.abs(takeProfit - stopLoss) * (1 / multi);
+                if (side === 'long') {
+                    if (candles[j].high - take > stopLoss) {
+                        stopLoss = candles[j].high - take;
+                    }
+                }
+                if (side === 'short') {
+                    if (candles[j].low + take < stopLoss) {
+                        stopLoss = candles[j].low + take;
+                    }
+                }
+            }
+
             if (side === 'long' && candles[j].low <= stopLoss) {
                 closePosition = {
                     side, name: obItem.text, takeProfit, stopLoss,
@@ -189,14 +211,14 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
     return positions;
 }
 
-export const iterationCalculatePositions = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0) => {
+export const iterationCalculatePositions = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0, tralingPercent: number = 0) => {
     let positions = {};
     for (let i = 0; i < candles.length - 1; i++) {
         const partCandles = candles.slice(0, i);
         const partSwings = swings.slice(0, i);
         const partOB = ob.slice(0, i);
 
-        const _pos = calculatePositionsByOrderblocks(security, partCandles, partSwings, partOB, maxDiff, multiStop, stopPaddingPercent);
+        const _pos = calculatePositionsByOrderblocks(security, partCandles, partSwings, partOB, maxDiff, multiStop, stopPaddingPercent, tralingPercent);
 
         _pos.forEach(pos => {
             if (!positions[pos.openTime] || !positions[pos.closeTime]) {
@@ -206,4 +228,16 @@ export const iterationCalculatePositions = (security: Security, candles: History
     }
 
     return Object.values<Position>(positions);
+}
+
+export const calculateProdPositionFee = (curr) => {
+    const openPrice = curr.limitTrade?.price;
+    const closePrice = (curr.stopLossTrade?.price || curr.takeProfitTrade?.price);
+    const quantity = curr.limitTrade?.qtyUnits;
+    const openFee = (0.04 / 100) * openPrice * quantity;
+    const closeFee = (0.04 / 100) * closePrice * quantity;
+    if (!openFee || !closeFee) {
+        return 0;
+    }
+    return openFee + closeFee;
 }

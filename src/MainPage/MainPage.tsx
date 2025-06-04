@@ -11,6 +11,7 @@ import {HistoryTable} from "./HistoryTable.tsx";
 import {OrdersTable} from "./OrdersTable.tsx";
 import {StatisticWidgets} from "./StatisticWidgets.tsx";
 import {MainPageChart} from "./MainPageChart.tsx";
+import {calculateProdPositionFee} from "../samurai_patterns.ts";
 
 export const moneyFormat = (
     money: number,
@@ -192,10 +193,11 @@ const MainPage: React.FC = () => {
             .filter(row => row.limitTrade?.price && (row.stopLossTrade?.price || row.takeProfitTrade?.price))
             .map(row => ({
                 ...row,
+                Fee: calculateProdPositionFee(row),
                 PnL: row.limitTrade?.side === "buy" ?
-                    accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price)
+                    accTradesOrdernoQtyMap[row.limitTrade?.orderno] * ((row.stopLossTrade?.price || row.takeProfitTrade?.price) - row.limitTrade?.price) - calculateProdPositionFee(row)
                     : row.limitTrade?.side === "sell" ?
-                        accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) : undefined
+                        accTradesOrdernoQtyMap[row.limitTrade?.orderno] * (row.limitTrade?.price - (row.stopLossTrade?.price || row.takeProfitTrade?.price)) - calculateProdPositionFee(row) : undefined
             }))
             .sort((a, b) => b.limitTrade?.date.localeCompare(a.limitTrade?.date)), [stopFrom, stopTo, selectedName, selectedTicker, selectedTF, accTradesOrdernoQtyMap, patterns]);
 
