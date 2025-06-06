@@ -1,15 +1,10 @@
-import {HistoryObject} from "./src/th_ultimate.ts";
+import {HistoryObject} from "./src/sm-lib/models.ts";
 
 export const symbolFuturePairs = [
     {
         "futuresSymbol": "SGZH",
         "futuresShortName": "SZZ4",
         "stockSymbol": "SGZH"
-    },
-{
-        "futuresSymbol": "SI",
-        "futuresShortName": "SIZ4",
-        "stockSymbol": "USDRUBF"
     },
     {
         "futuresSymbol": "SBRF",

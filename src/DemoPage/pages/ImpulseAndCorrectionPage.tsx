@@ -12,11 +12,11 @@ import {DatesPicker} from "../../DatesPicker";
 import type { Dayjs } from 'dayjs';
 import {
     StateManager,
-} from "../../th_ultimate.ts";
+} from "../../sm-lib/th_ultimate.ts";
 import Paragraph from "antd/es/typography/Paragraph";
-import {HistoryObject} from "../../th_ultimate.ts";
 
-import {notTradingTime} from "../../th_ultimate.ts";
+import {HistoryObject} from "../../sm-lib/models.ts";
+import {notTradingTime} from "../../sm-lib/utils.ts";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
     const manager = new StateManager(data);
     manager.calculateSwings();

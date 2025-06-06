@@ -8,12 +8,20 @@ import dayjs from 'dayjs';
 import {moneyFormat} from "./MainPage/MainPage.tsx";
 import moment from 'moment';
 import {calculatePositionsByOrderblocks, finishPosition} from "./samurai_patterns";
-import {fetchCandlesFromAlor, fetchRiskRates, getSecurity, persision, refreshToken, uniqueBy} from "./utils";
+import {
+    fetchCandlesFromAlor, fetchRisk,
+    fetchRiskRates,
+    formatDateTime,
+    getSecurity,
+    persision,
+    refreshToken,
+    uniqueBy
+} from "./utils";
 import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/UpdatedChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateTesting, HistoryObject, notTradingTime, POIType} from "./th_ultimate.ts";
+import {calculateTesting} from "./sm-lib/th_ultimate.ts";
 import {
     cacheCandles,
     cacheRiskRates,
@@ -24,6 +32,8 @@ import {
 } from "./cacheService.ts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
+import {HistoryObject, POIType} from "./sm-lib/models.ts";
+import {notTradingTime} from "./sm-lib/utils.ts";
 
 export const MultiTestPage = () => {
     const [loading, setLoading] = useState(true);
@@ -38,7 +48,7 @@ export const MultiTestPage = () => {
     const [tradeIDMIFC, settradeIDMIFC] = useState<boolean>(false);
     const [tradeCHoCHWithIDM, settradeCHoCHWithIDM] = useState<boolean>(false);
     const [tradeFlipWithIDM, settradeFlipWithIDM] = useState<boolean>(false);
-    const [tradeOBEXT, settradeOBEXT] = useState<boolean>(false);
+    const [tradeOBEXT, settradeOBEXT] = useState<boolean>(true);
     const [tradeEXTIFC, settradeEXTIFC] = useState<boolean>(false);
     const [withMove, setwithMove] = useState<boolean>(false);
     const [showFake, setfakeBOS] = useState<boolean>(false);
@@ -47,7 +57,7 @@ export const MultiTestPage = () => {
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(true);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("max");
-    const [stopMargin, setStopMargin] = useState<number>(50)
+    const [stopMargin, setStopMargin] = useState<number>(30)
     const [feePercent, setFeePercent] = useState<number>(0.04)
     const [baseTakePercent, setBaseTakePercent] = useState<number>(5)
     const [maxTakePercent, setMaxTakePercent] = useState<number>(0.5)
@@ -58,6 +68,13 @@ export const MultiTestPage = () => {
     const toDate = dayjs().endOf('day');
     const [dates, onChangeRangeDates] = useState<Dayjs[]>([fromDate, toDate])
     const [tralingPercent, settralingPercent] = useState(0);
+    const [collapsed, setCollapsed] = useState(false);
+
+    const [risk, setRisk] = useState<any>();
+
+    useEffect(() => {
+        fetchRisk(token).then(setRisk);
+    }, [token]);
 
     const positions = useMemo(() => {
         let {swings, orderBlocks} = calculateTesting(data, {
@@ -202,7 +219,7 @@ export const MultiTestPage = () => {
         return data;
     };
 
-    const loadRiskRate = async (ticker: string, useCache: boolean = true): Promise<any> => {
+    const loadRiskRate = async (ticker: string, token: string, useCache: boolean = true): Promise<any> => {
         let data;
         try {
             if (useCache) {
@@ -210,7 +227,7 @@ export const MultiTestPage = () => {
             }
 
             if (!useCache || !data) {
-                data = await fetchRiskRates(ticker);
+                data = await fetchRiskRates(ticker, token, risk?.riskCategoryId);
                 await cacheRiskRates(data);
             }
         } catch (error) {
@@ -241,8 +258,8 @@ export const MultiTestPage = () => {
     }, [ticker, token])
 
     useEffect(() => {
-        loadRiskRate(ticker).then(setRiskRates)
-    }, [ticker])
+        loadRiskRate(ticker, token).then(setRiskRates)
+    }, [ticker, token])
 
     const minStep = security?.minstep || 0.01;
 
@@ -257,10 +274,20 @@ export const MultiTestPage = () => {
             key: 'name',
         },
         {
+            title: 'Side',
+            dataIndex: 'side',
+            key: 'side',
+        },
+        {
+            title: 'OpenPrice',
+            dataIndex: 'openPrice',
+            key: 'openPrice',
+        },
+        {
             title: 'OpenTime',
             dataIndex: 'openTime',
             key: 'openTime',
-            render: (val) => dayjs(val * 1000).format('DD.MM.YYYY HH:mm')
+            render: (val) => formatDateTime(val * 1000)
         },
         {
             title: 'Open Volume',
@@ -269,15 +296,10 @@ export const MultiTestPage = () => {
             render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : minStep), persision(row.ticker ? allSecurity[ticker]?.minstep : minStep))
         },
         {
-            title: 'OpenPrice',
-            dataIndex: 'openPrice',
-            key: 'openPrice',
-        },
-        {
             title: 'CloseTime',
             dataIndex: 'closeTime',
             key: 'closeTime',
-            render: (val) => dayjs(val * 1000).format('DD.MM.YYYY HH:mm')
+            render: (val) => formatDateTime(val * 1000)
         },
         {
             title: 'Close Volume',
@@ -296,11 +318,6 @@ export const MultiTestPage = () => {
             dataIndex: 'takeProfit',
             key: 'takeProfit',
             render: (val, row) => moneyFormat(val, 'RUB', persision(row.ticker ? allSecurity[ticker]?.minstep : minStep), persision(row.ticker ? allSecurity[ticker]?.minstep : minStep))
-        },
-        {
-            title: 'Side',
-            dataIndex: 'side',
-            key: 'side',
         },
         {
             title: 'PnL',
@@ -354,7 +371,7 @@ export const MultiTestPage = () => {
     }, [isAllTickers, allPositions, positions])
 
     return <Layout style={{display: 'flex', flexDirection: 'row', gap: '8px'}}>
-        <Sider width={300} style={{padding: 16}}>
+        <Sider width={300} style={{padding: 16}} collapsedWidth={40} collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
             <Form layout="vertical" style={{height: 'calc(100vh - 84px)', overflow: 'auto', overflowX: 'hidden'}}>
                 <Row gutter={8} align="bottom">
                     <Col>

@@ -77,3 +77,10 @@ body {
     margin-block: 0px;
     width: calc(100%);
 }
+
+.ant-layout-sider .ant-layout-sider-trigger{
+    background: rgb(23, 35, 46);
+    max-width: 300px;
+    bottom: 20px;
+    left: 8px;
+}

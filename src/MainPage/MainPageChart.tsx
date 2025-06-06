@@ -1,6 +1,5 @@
 import {Col} from "antd";
 import {Chart} from "../SoloTestPage/UpdatedChart";
-import {notTradingTime} from "../th_ultimate.ts";
 import React, {FC, useMemo} from "react";
 import useWindowDimensions from "../useWindowDimensions.tsx";
 import {
@@ -12,7 +11,8 @@ import {
 } from "../utils.ts";
 import {isBusinessDay, isUTCTimestamp, SeriesMarker, Time} from "lightweight-charts";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting.ts";
-import {calculateTesting, defaultConfig} from "../th_ultimate.ts";
+import {calculateTesting, defaultConfig} from "../sm-lib/th_ultimate.ts";
+import {notTradingTime} from "../sm-lib/utils.ts";
 
 
 const markerColors = {

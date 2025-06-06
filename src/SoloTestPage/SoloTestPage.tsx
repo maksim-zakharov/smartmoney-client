@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 import {Chart} from "./UpdatedChart";
 import {
     bosesToLineSerieses,
-    fetchCandlesFromAlor,
+    fetchCandlesFromAlor, fetchRisk,
     fetchRiskRates,
     getSecurity, orderblocksToFVGPrimitives,
     orderblocksToImbalancePrimitives,
@@ -33,13 +33,15 @@ import {finishPosition, iterationCalculatePositions,} from "../samurai_patterns"
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {calculateTesting, notTradingTime, POIType} from "../th_ultimate.ts";
+import {calculateTesting} from "../sm-lib/th_ultimate.ts";
 import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 import moment from "moment";
 import {moneyFormat} from "../MainPage/MainPage.tsx";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
+import {POIType} from "../sm-lib/models.ts";
+import {notTradingTime} from "../sm-lib/utils.ts";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -71,7 +73,7 @@ export const SoloTestPage = () => {
     const tf = searchParams.get('tf') || '300';
     const fromDate = searchParams.get('fromDate') || dayjs().add(-2, "week").unix();
     const toDate = searchParams.get('toDate') || dayjs().endOf('day').unix();
-    const [stopMargin, setStopMargin] = useState(50);
+    const [stopMargin, setStopMargin] = useState(30);
     const [stopPaddingPercent, setstopPaddingPercent] = useState(0);
     const [security, setSecurity] = useState<Security>();
 
@@ -125,8 +127,8 @@ export const SoloTestPage = () => {
     }, [ticker, token])
 
     useEffect(() => {
-        fetchRiskRates(ticker).then(setRiskRate)
-    }, [ticker])
+        fetchRisk(token).then(r => fetchRiskRates(ticker, token, r.riskCategoryId).then(setRiskRate))
+    }, [ticker, token])
 
     useEffect(() => {
         fetchCandlesFromAlor(ticker, tf, fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
@@ -512,6 +514,13 @@ export const SoloTestPage = () => {
                 colSpan: row.type === 'summary' ? 4 : 1,
             }),
             render: (value, row) => moment(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm')
+        },
+        {
+            title: "RR",
+            dataIndex: "RR",
+            key: "RR",
+            align: "right",
+            render: (value) => value?.toFixed(2)
         },
         {
             title: "Финрез",

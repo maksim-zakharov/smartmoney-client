@@ -2,7 +2,7 @@ import React, {FC, useEffect, useMemo, useState} from "react";
 import {Select} from "antd";
 import {symbolFuturePairs} from "../symbolFuturePairs.ts";
 
-const fetchSecurities = () => fetch('https://apidev.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
+const fetchSecurities = () => fetch('https://api.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
 
 interface Props {
     value: string;

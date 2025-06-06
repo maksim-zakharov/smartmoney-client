@@ -1,6 +1,7 @@
 import {createApi, fetchBaseQuery} from "@reduxjs/toolkit/query/react";
 
-import {HistoryObject} from "./th_ultimate.ts";
+
+import {HistoryObject} from "./sm-lib/models.ts";
 
 export interface Security {
     symbol: string;

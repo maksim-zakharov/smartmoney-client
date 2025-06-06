@@ -13,9 +13,9 @@ import {
 import moment from 'moment';
 import {createSeries, defaultSeriesOptions, uniqueBy} from "../utils";
 import {ensureDefined} from "../lwc-plugins/helpers/assertions";
-import {isInsideBar} from "../th_ultimate.ts";
 import {TLineSeries} from "./TestChart.tsx";
 import {withErrorBoundary} from "../ErrorBoundary.tsx";
+import {isInsideBar} from "../sm-lib/utils.ts";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -216,7 +216,7 @@ const ChartFC: FC<Props> = ({
         const currentVisibleRange = timeScale.getVisibleRange();
 
         // Обработка hideInternalCandles
-        let processedData = [...data];
+        let processedData = [...data].sort((a, b) => a.time - b.time);
         if (hideInternalCandles) {
             for (let i = 0; i < data.length; i++) {
                 const currentCandle = data[i];
@@ -240,7 +240,7 @@ const ChartFC: FC<Props> = ({
         seriesRef.current.setData(processedData);
 
         // Восстанавливаем диапазон
-        if (currentVisibleRange) {
+        if (currentVisibleRange && data.length) {
             timeScale.setVisibleRange(currentVisibleRange);
         }
     }, [data, hideInternalCandles]);

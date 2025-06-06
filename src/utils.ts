@@ -17,17 +17,46 @@ import {
 import {Options} from "@vitejs/plugin-react";
 import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {TLineSeries} from "./SoloTestPage/UpdatedChart.tsx";
-import {Cross, HistoryObject, POI, Swing, Trend} from "./th_ultimate.ts";
+import moment from "moment";
+import {Cross, HistoryObject, POI, Swing, Trend} from "./sm-lib/models.ts";
 
-export async function fetchRiskRates(symbol) {
-    let url = `https://apidev.alor.ru/md/v2/risk/rates?riskCategoryId=1&ticker=${symbol}&exchange=MOEX`;
+export async function fetchRisk(token) {
+    let url = `https://api.alor.ru/md/v2/Clients/MOEX/D90487/risk`;
 
     try {
+        const headers = {
+            "Content-Type": "application/json",
+        }
+        if (token)
+            headers["Authorization"] = `Bearer ${token}`;
         const response = await fetch(url, {
             method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
+            headers
+        });
+
+        if (!response.ok) {
+            throw new Error("Ошибка при запросе данных");
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Ошибка получения данных:", error);
+    }
+}
+
+export async function fetchRiskRates(symbol, token, riskCategoryId?: string) {
+    let url = `https://api.alor.ru/md/v2/risk/rates?riskCategoryId=${riskCategoryId || 1}&ticker=${symbol}&exchange=MOEX`;
+
+    try {
+        const headers = {
+            "Content-Type": "application/json",
+        }
+        if (token)
+            headers["Authorization"] = `Bearer ${token}`;
+        const response = await fetch(url, {
+            method: "GET",
+            headers
         });
 
         if (!response.ok) {
@@ -124,11 +153,11 @@ export const calculateRR = (p) => {
     let lossPrice = p.stopLoss?.stopPrice || p.stopLossTrade?.price;
     const openPrice = p.limit?.price || p.limitTrade?.price;
 
-    if(!lossPrice){
+    if (!lossPrice) {
         lossPrice = p.limitTrade.side === 'buy' ? Number(p.liquidSweepLow) : Number(p.liquidSweepHigh);
     }
 
-    if(!lossPrice || !profitPrice || !openPrice){
+    if (!lossPrice || !profitPrice || !openPrice) {
         return 0;
     }
 
@@ -502,7 +531,10 @@ export const bosesToLineSerieses = (boses: Cross[]) => boses.filter(Boolean).map
 export const orderblocksToFVGPrimitives = (orderBlocks: POI[], filter: (ob: POI) => boolean, lastCandle: HistoryObject) =>
     orderBlocks.filter(filter).map(orderBlock => [createRectangle2({
         leftTop: {price: orderBlock.startCandle.high, time: orderBlock.startCandle.time},
-        rightBottom: {price: orderBlock.startCandle.low + (orderBlock.startCandle.high - orderBlock.startCandle.low) / 2, time: (orderBlock.endCandle || lastCandle).time}
+        rightBottom: {
+            price: orderBlock.startCandle.low + (orderBlock.startCandle.high - orderBlock.startCandle.low) / 2,
+            time: (orderBlock.endCandle || lastCandle).time
+        }
     }, {
         fillColor: 'rgba(179, 199, 219, .3)',
         showLabels: false,
@@ -513,7 +545,10 @@ export const orderblocksToFVGPrimitives = (orderBlocks: POI[], filter: (ob: POI)
         borderWidth: 1,
         borderColor: '#222'
     }), createRectangle2({
-        leftTop: {price: orderBlock.startCandle.high - (orderBlock.startCandle.high - orderBlock.startCandle.low) / 2, time: orderBlock.startCandle.time},
+        leftTop: {
+            price: orderBlock.startCandle.high - (orderBlock.startCandle.high - orderBlock.startCandle.low) / 2,
+            time: orderBlock.startCandle.time
+        },
         rightBottom: {price: orderBlock.startCandle.low, time: (orderBlock.endCandle || lastCandle).time}
     }, {
         fillColor: 'rgba(179, 199, 219, .3)',
@@ -580,3 +615,5 @@ export const roundTime = (date: any, tf: string, utc: boolean = true) => {
 
     return (utc ? timeToLocal(roundedTimestamp) : roundedTimestamp) as UTCTimestamp;
 };
+
+export const formatDateTime = (value) => moment(value).format("YYYY-MM-DD HH:mm")

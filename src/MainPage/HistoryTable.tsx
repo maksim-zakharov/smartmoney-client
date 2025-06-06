@@ -5,6 +5,7 @@ import {Link} from "react-router-dom";
 import {moneyFormat, summ} from "./MainPage.tsx";
 import useWindowDimensions from "../useWindowDimensions.tsx";
 import {calculateRR} from "../utils.ts";
+import {Chart} from "../SoloTestPage/UpdatedChart.tsx";
 
 export const HistoryTable: FC<{
     pageSize: number,
@@ -80,18 +81,18 @@ export const HistoryTable: FC<{
             key: "side",
             render: (value, row) => row?.type !== 'summary' ? row?.limitTrade?.side || "-" : ""
         },
-        width > 1200 && {
-            title: "Пересвип",
-            dataIndex: "liquidSweepTime",
-            key: "liquidSweepTime",
-            render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
-        },
-        width > 1200 && {
-            title: "ОБ",
-            dataIndex: "orderblockTime",
-            key: "orderblockTime",
-            render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
-        },
+        // width > 1200 && {
+        //     title: "Пересвип",
+        //     dataIndex: "liquidSweepTime",
+        //     key: "liquidSweepTime",
+        //     render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
+        // },
+        // width > 1200 && {
+        //     title: "ОБ",
+        //     dataIndex: "orderblockTime",
+        //     key: "orderblockTime",
+        //     render: (value, row) => row?.type !== 'summary' ? moment(value).format("YYYY-MM-DD HH:mm") : ""
+        // },
         width > 1200 && {
             title: "Вход",
             dataIndex: "limitTrade",
@@ -203,7 +204,36 @@ export const HistoryTable: FC<{
         }
     ].filter(Boolean);
 
-    return <Table size="small" dataSource={historyTableData} columns={historyColumns as any} rowKey={getPatternKey}
+    const profitChartData = useMemo(() => {
+        const data = historyTableData.filter(o => o.type !== 'summary');
+
+        return Object.entries(data.reduce((acc, curr) => {
+            const date = moment(curr.orderblockTime).format('YYYY-MM-DD');
+            if (!acc[date]) {
+                acc[date] = curr.PnL;
+            } else {
+                acc[date] += curr.PnL;
+            }
+            return acc;
+        }, {}))
+            .map(([date, PnL]) => ({time: moment(date, 'YYYY-MM-DD').unix(), value: PnL}))
+            .sort((a, b) => a.time - b.time)
+            .reduce((acc, curr, i) => {
+                if (i === 0) {
+                    acc = [curr];
+                } else {
+                    acc.push(({...curr, value: acc[i - 1].value + curr.value}))
+                }
+
+                return acc;
+            }, []);
+    }, [historyTableData])
+
+    return <>
+        <Chart height={400} showVolume={false} seriesType="Line" lineSerieses={[]} hideInternalCandles
+                    primitives={[]} markers={[]} data={profitChartData}
+                    ema={[]}/>
+        <Table size="small" dataSource={historyTableData} columns={historyColumns as any} rowKey={getPatternKey}
                   pagination={{
                       pageSize,
                   }}
@@ -220,4 +250,5 @@ export const HistoryTable: FC<{
                           className: "hoverable",
                       };
                   }}/>
+        </>
 }

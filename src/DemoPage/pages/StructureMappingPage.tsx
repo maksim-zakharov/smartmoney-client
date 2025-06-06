@@ -15,10 +15,10 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {
     StateManager, tradinghubCalculateTrendNew
-} from "../../th_ultimate.ts";
-import {HistoryObject, Swing} from "../../th_ultimate.ts";
+} from "../../sm-lib/th_ultimate.ts";
 
-import {notTradingTime} from "../../th_ultimate.ts";
+import {HistoryObject, Swing} from "../../sm-lib/models.ts";
+import {notTradingTime} from "../../sm-lib/utils.ts";
 
 const BOSChart = ({data, text = 'LL'}) => {
     const manager = new StateManager(data);

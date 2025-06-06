@@ -1,6 +1,6 @@
 import {calculateTakeProfit} from "./utils";
-import {HistoryObject, POI, POIType, Swing} from "./th_ultimate.ts";
 import {Security} from "./api.ts";
+import {HistoryObject, POI, POIType, Swing} from "./sm-lib/models.ts";
 
 export interface Position {
     side: 'short' | 'long',
@@ -38,7 +38,15 @@ export const finishPosition = ({
     const stopLossMarginPerLot = diff * lotsize
     curr.quantity = stopLossMarginPerLot ? Math.floor(stopMargin / stopLossMarginPerLot) : 0;
     curr.openVolume = curr.openPrice * curr.quantity * lotsize
+
+    const maxVolume = stopMargin * 700;
+    if(curr.openVolume > maxVolume){
+        curr.quantity = Math.floor(maxVolume / (curr.openPrice * lotsize));
+        curr.openVolume = curr.openPrice * curr.quantity * lotsize
+    }
+
     curr.closeVolume = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize
+
     // const openFee = curr.openVolume * fee;
     // const closeFee = curr.closeVolume * fee;
     const openFee = curr.openPrice * curr.quantity * lotsize * fee;

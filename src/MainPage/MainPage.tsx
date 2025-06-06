@@ -1,17 +1,17 @@
 import React, {useCallback, useMemo, useState} from "react";
 import {Card, Col, Row, Select, Slider, SliderSingleProps, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
 import {useCandlesQuery, usePortfolioQuery, useSecurityQuery} from "../api.ts";
-import moment from "moment";
+import moment, {Moment} from "moment";
 import {Link, useSearchParams} from "react-router-dom";
 import useWindowDimensions from "../useWindowDimensions.tsx";
 
-import {notTradingTime} from "../th_ultimate.ts";
 import {PositionsTable} from "./PositionsTable.tsx";
 import {HistoryTable} from "./HistoryTable.tsx";
 import {OrdersTable} from "./OrdersTable.tsx";
 import {StatisticWidgets} from "./StatisticWidgets.tsx";
 import {MainPageChart} from "./MainPageChart.tsx";
 import {calculateProdPositionFee} from "../samurai_patterns.ts";
+import {notTradingTime} from "../sm-lib/utils.ts";
 
 export const moneyFormat = (
     money: number,
@@ -111,19 +111,23 @@ const MainPage: React.FC = () => {
             if (!selectedPattern) {
                 return undefined;
             }
+            let _to: Moment;
             if (selectedPattern.takeProfitTrade) {
-                return moment(selectedPattern.takeProfitTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+                _to = moment(selectedPattern.takeProfitTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days")
             }
-            if (selectedPattern.stopLossTrade) {
-                return moment(selectedPattern.stopLossTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+            else if (selectedPattern.stopLossTrade) {
+                _to = moment(selectedPattern.stopLossTrade.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days")
             }
-            if (selectedPattern.takeProfit) {
-                return moment(selectedPattern.takeProfit.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+            else if (selectedPattern.takeProfit) {
+                _to = moment(selectedPattern.takeProfit.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days")
             }
-            if (selectedPattern.stopLoss) {
-                return moment(selectedPattern.stopLoss.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days").unix().toString();
+            else if (selectedPattern.stopLoss) {
+                _to = moment(selectedPattern.stopLoss.date).add(+(Number(selectedPattern?.timeframe) / 3600), "days")
             }
-            return undefined;
+            if(_to){
+                _to.add(10, 'minute');
+            }
+            return _to?.unix().toString();
         }, [selectedPattern]);
 
         const {

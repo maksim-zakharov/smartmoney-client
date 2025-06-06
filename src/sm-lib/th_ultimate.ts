@@ -1,267 +1,30 @@
-export interface HistoryObject {
-    high: number;
-    low: number;
-    open: number;
-    close: number;
-    time: number;
-    volume: number;
-}
-
-export class Swing {
-    side?: 'high' | 'low' | 'double';
-    time: number;
-    index: number;
-    isIFC?: boolean;
-
-    _sidePrice = {
-        high: 0,
-        low: 0
-    };
-
-    protected _isExtremum: boolean = false;
-
-    // Для подсчета на графике, только для тестов
-    protected _isDebug: boolean = false;
-
-    constructor(props: Partial<Swing>) {
-        Object.assign(this, props);
-    }
-
-    get price() {
-        if (this.side === 'double')
-            return this._sidePrice['high']
-        return this._sidePrice[this.side];
-    }
-
-    get isExtremum() {
-        return this._isExtremum;
-    }
-
-    get text() {
-        let _text = '';
-
-        if (this._isExtremum) {
-            _text = this.side === 'high' ? 'HH' : 'LL';
-        }
-
-        if (this._isDebug) {
-            _text += ` ${this.index?.toFixed()}`;
-        }
-
-        return _text;
-    }
-
-    setDebug() {
-        this._isDebug = true;
-    }
-
-    markExtremum() {
-        this._isExtremum = true;
-    }
-
-    unmarkExtremum() {
-        this._isExtremum = false;
-    }
-}
-
-export class Cross {
-    from: Swing;
-    to?: Swing;
-    extremum?: Swing;
-    type: 'low' | 'high';
-
-    isSession?: boolean;
-    isWeekly?: boolean;
-
-    isIDM?: boolean;
-    isBOS?: boolean;
-    isCHoCH?: boolean;
-
-    isFake?: boolean;
-    isConfirmed?: boolean;
-
-    constructor(props: Partial<Cross>) {
-        Object.assign(this, props);
-    }
-
-    getCandles(): HistoryObject[] {
-        return [];
-    }
-
-    get textIndex(): number {
-        return this.from.index + Math.floor((this.to.index - this.from.index) / 2);
-    }
-
-    get textCandle(): HistoryObject {
-        return this.getCandles()[this.textIndex];
-    }
-
-    markCHoCH() {
-        this.isIDM = false;
-        this.isBOS = false;
-        this.isCHoCH = true;
-    }
-
-    /**
-     * isIDM - IDM
-     * !isConfirmed && isBOS - Fake BOS
-     * isConfirmed && isBOS - BOS
-     * !isConfirmed && isCHoCH - Fake CHoCH
-     * isConfirmed && isCHoCH - CHoCH
-     */
-    get text(): string {
-        if (this.isSession) {
-            if (this.type === 'high') return 'Session High';
-            if (this.type === 'low') return 'Session Low';
-            return '';
-        }
-        if (this.isWeekly) {
-            if (this.type === 'high') return 'Weekly High';
-            if (this.type === 'low') return 'Weekly Low';
-            return '';
-        }
-        if (this.isIDM) {
-            if (this.isFake) return 'Fake IDM';
-            if (this.isConfirmed) return 'IDM';
-            return 'Non Confirmed IDM';
-        }
-        if (this.isBOS) {
-            if (this.isFake) return 'Fake BOS';
-            if (this.isConfirmed) return 'BOS';
-            return 'Non Confirmed BOS';
-        }
-        if (this.isCHoCH) {
-            if (this.isFake) return 'Fake CHoCH';
-            if (this.isConfirmed) return 'CHoCH';
-            return 'Non Confirmed CHoCH';
-        }
-
-        return '';
-    }
-}
-
-export enum POIType {
-    // IDM IFC (свип IDM свечей IFC)
-    IDM_IFC = 'IDM_IFC',
-    // OB IDM (первый ОБ над IDM)
-    OB_IDM = 'OB_IDM',
-    // OB IDM IFC (свип OB IDM свечой IFC)
-    OB_IDM_IFC = 'OB_IDM_IFC',
-    // LQ IFC (свип любого свинга свечой IFC)
-    LQ_IFC = 'LQ_IFC',
-    // EXT LQ IFC (свип экстремума свечой IFC)
-    EXT_LQ_IFC = 'EXT_LQ_IFC',
-    // OB EXT (OB На экстремуме)
-    OB_EXT = 'OB_EXT',
-    // CHOCH IFC (свич чоч свечой IFC)
-    CHOCH_IFC = 'CHOCH_IFC',
-
-    CHOCH_IDM = 'CHOCH_IDM',
-
-    FLIP_IDM = 'FLIP_IDM',
-
-    One_Side_FVG = 'One_Side_FVG',
-
-    Breaking_Block = 'Breaking_Block'
-}
-
-export class POI {
-    textTime?: number;
-    firstImbalanceIndex: number;
-    lastImbalanceIndex: number;
-    lastOrderblockCandle: HistoryObject;
-    // Направление: high - рисуем сверху (шорт на отбой), low - рисуем снизу - (лонг на отбой)
-    side: 'high' | 'low';
-    lastImbalanceCandle: HistoryObject;
-    startCandle: HistoryObject;
-    canTest?: boolean;
-    canTrade?: boolean;
-    reasons?: string[];
-
-    endCandle?: HistoryObject;
-    endIndex?: number;
-    isSMT?: boolean;
-    takeProfit?: number;
-    swing: Swing;
-    type: POIType;
-
-    constructor(props: Partial<POI>) {
-        Object.assign(this, props);
-    }
-
-    get index(): number {
-        return this.swing.index;
-    }
-
-    get time(): number {
-        return this.startCandle.time;
-    }
-
-    // Все IFC после касания торгуются маркетом. Просто ОБ - лимиткой
-    get tradeOrderType(): 'limit' | 'market' {
-        switch (this.type) {
-            case POIType.CHOCH_IFC:
-                return 'market';
-            case POIType.IDM_IFC:
-                return 'market';
-            case POIType.LQ_IFC:
-                return 'market';
-            case POIType.OB_IDM_IFC:
-                return 'market';
-            case POIType.EXT_LQ_IFC:
-                return 'market';
-            case POIType.OB_IDM:
-                return 'limit';
-            case POIType.OB_EXT:
-                return 'limit';
-            case POIType.One_Side_FVG:
-                return 'limit';
-            case POIType.Breaking_Block:
-                return 'limit';
-            default:
-                return 'limit';
-        }
-    }
-
-    get text(): string {
-        if (this.isSMT) return 'SMT';
-        if (this.type === POIType.One_Side_FVG) {
-            return '1-Side_FVG';
-        }
-        if (this.type === POIType.Breaking_Block) {
-            return 'BB';
-        }
-        if (this.type === POIType.OB_EXT) {
-            return 'OB_EXT';
-        }
-        if (this.type === POIType.OB_IDM) {
-            return 'OB_IDM';
-        }
-        if (this.type === POIType.OB_IDM_IFC) {
-            return 'OB_IDM_IFC';
-        }
-        if (this.type === POIType.LQ_IFC) {
-            return 'LQ_IFC';
-        }
-        if (this.type === POIType.EXT_LQ_IFC) {
-            return 'EXT_LQ_IFC';
-        }
-        if (this.type === POIType.CHOCH_IFC) {
-            return 'CHOCH_IFC';
-        }
-        if (this.type === POIType.IDM_IFC) {
-            return 'IDM_IFC';
-        }
-        if (this.type === POIType.CHOCH_IDM) {
-            return 'CHOCH_IDM';
-        }
-        if (this.type === POIType.FLIP_IDM) {
-            return 'FLIP_IDM';
-        }
-        if (this.swing.isExtremum) return 'Ex OB';
-        return 'OB';
-    }
-}
+import {
+    CandleWithSide,
+    Cross,
+    HistoryObject,
+    OrderblockPart,
+    POI,
+    POIType,
+    Side,
+    Swing,
+    THConfig,
+    Trend
+} from "./models.ts";
+import {
+    formatDate,
+    getWeekNumber,
+    hasClose,
+    hasHitOB,
+    hasTakenOutLiquidity,
+    highestBy,
+    isBearish,
+    isBullish,
+    isIFC,
+    isImbalance,
+    isInsideBar,
+    isInternalBOS,
+    lowestBy
+} from "./utils.ts";
 
 /**
  * OB - строится на структурных точках,
@@ -447,27 +210,6 @@ export const calculateTesting = (
     };
 };
 
-export interface THConfig {
-    withMove?: boolean;
-    tradeBB?: boolean;
-    showHiddenSwings?: boolean;
-    newSMT?: boolean;
-    showIFC?: boolean;
-    tradeEXTIFC?: boolean;
-    tradeCHoCHWithIDM?: boolean;
-    tradeFlipWithIDM?: boolean;
-    tradeOBEXT?: boolean;
-    tradeOBIDM?: boolean;
-    tradeIDMIFC?: boolean;
-    showFake?: boolean;
-    showSession?: boolean;
-    showWeekly?: boolean;
-    showLogs?: boolean;
-    showFVG?: boolean;
-}
-
-export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT;
-
 export const defaultConfig: THConfig = {
     newSMT: false,
     showHiddenSwings: true,
@@ -634,11 +376,6 @@ const filterDoubleSwings = (
     }
     updateLastSwingIndex(setIndex);
 };
-
-export interface Trend {
-    time: number;
-    trend: number;
-}
 
 /**
  * @param manager
@@ -2000,23 +1737,6 @@ const confirmBOS = (
 
     manager.liquidityCandleMapMap[type].delete(lastBosSwing);
 };
-const hasTakenOutLiquidity = (
-    type: 'high' | 'low',
-    bossCandle: HistoryObject,
-    currentCandle: HistoryObject,
-) =>
-    type === 'high'
-        ? bossCandle.high < currentCandle.high
-        : bossCandle.low > currentCandle.low;
-
-const hasClose = (
-    type: 'high' | 'low',
-    bossCandle: HistoryObject,
-    currentCandle: HistoryObject,
-) =>
-    type === 'high'
-        ? bossCandle.high < currentCandle.close
-        : bossCandle.low > currentCandle.close;
 
 const deleteInternalBOS = (manager: StateManager) => {
     // TODO Хз надо ли, выглядит ок но финрез хуже
@@ -2198,125 +1918,6 @@ const drawTrend = (manager: StateManager) => {
         }
     }
 };
-
-// Является ли candle - IFC свечой
-/**
- * Проверяем пробила ли свеча candle цену price и закрепилась ниже/выше пробития
- * @param crossPrice
- * @param candle
- */
-export const isIFC = (crossPrice: number, candle: HistoryObject): 'inside' | 'outside' | 'bottom2top' | 'top2bottom' => {
-    const maxBodyPrice = Math.max(candle.open, candle.close);
-    const minBodyPrice = Math.min(candle.open, candle.close);
-
-    if (crossPrice >= maxBodyPrice && crossPrice <= candle.high) {
-        // Пробила снизу вверх (IFC)
-        return 'bottom2top'
-    }
-
-    if (crossPrice <= minBodyPrice && crossPrice >= candle.low) {
-        // Пробила сверху вниз (IFC)
-        return 'top2bottom'
-    }
-
-    if (crossPrice > candle.high || crossPrice < candle.low) {
-        // Цена вне свечи != IFC
-        return 'outside'
-    }
-
-    // Свеча внутри тела != IFC
-    return 'inside'
-};
-
-/**
- * Проверяет есть ли правый бар внутри левого
- * @param candle
- * @param bar
- */
-export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) =>
-    candle.high > bar?.high && candle.low < bar?.low;
-
-export type OrderblockPart = Pick<
-    POI,
-    | 'side'
-    | 'lastOrderblockCandle'
-    | 'lastImbalanceCandle'
-    | 'firstImbalanceIndex'
-    | 'lastImbalanceIndex'
-    | 'startCandle'
->;
-
-const isInternalBOS = (leftBos: Cross, rightBos: Cross) =>
-    leftBos.from.index < rightBos.from.index &&
-    leftBos.to.index >= rightBos.to.index;
-const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) =>
-    leftCandle.low > rightCandle.high
-        ? 'low'
-        : leftCandle.high < rightCandle.low
-            ? 'high'
-            : null;
-
-export const hasHitOB = (ob: Partial<POI>, candle: HistoryObject) =>
-    (ob.side === 'high' && ob.startCandle.low <= candle.high) ||
-    (ob.side === 'low' &&
-        // Если был прокол
-        ob.startCandle.high >= candle.low);
-
-export const notTradingTime = (candle: HistoryObject) => {
-    const hours = new Date(candle.time * 1000).getHours();
-    const minutes = new Date(candle.time * 1000).getMinutes();
-
-    // Открытие утреннего аукциона
-    if (hours > 1 && hours < 7) {
-        return true;
-    }
-
-    // Открытие утренней сессии
-    // хз удалять ли
-    // if (hours === 10 && minutes === 0) {
-    //   return true;
-    // }
-
-    // закрытие дневной сессии
-    if (hours === 18 && minutes >= 45) {
-        return true;
-    }
-
-    // Открытие вечерней сессии
-    // хз удалять ли
-    if (hours === 19 && minutes === 0) {
-        return true;
-    }
-
-    return false;
-};
-
-const highestBy = <T>(batch: T[], key: keyof T) =>
-    batch.reduce((acc, idx, i) => {
-        if (!acc && idx) {
-            acc = idx;
-        } else if (idx && acc[key] < idx[key]) {
-            acc = idx;
-        }
-        return acc;
-    }, batch[0]);
-
-const lowestBy = <T>(batch: T[], key: keyof T) =>
-    batch.reduce((acc, idx, i) => {
-        if (!acc && idx) {
-            acc = idx;
-        } else if (idx && acc[key] > idx[key]) {
-            acc = idx;
-        }
-        return acc;
-    }, batch[0]);
-
-export enum Side {
-    Buy = 'buy',
-    Sell = 'sell',
-}
-
-export type CandleWithSide = HistoryObject & { side: Side };
 
 export const filterNearOrderblock = (
     orderBlocks: POI[],
@@ -2814,16 +2415,6 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
     return props;
 }
 
-// Вспомогательная функция для получения номера недели в году
-function getWeekNumber(date: Date): { week: number, year: number } {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return {week: weekNo, year: d.getUTCFullYear()};
-}
-
 const calculateWeek = (manager: StateManager) => {
     if (!manager.candles.length) {
         return;
@@ -2995,18 +2586,3 @@ const calculateSession = (manager: StateManager) => {
     });
 }
 
-const formatDate = (_date: Date) => {
-    // 2025-05-19T19:40:00.000Z
-
-    // Скорректированная дата под смещение
-    const adjustedDate = new Date(_date.getTime() + 180 * 60000);
-
-    const str = adjustedDate.toISOString();
-    const [date, time] = str.split('T');
-    const [hour, minute, second] = time.split(':');
-
-    return `${date} ${hour}:${minute}`;
-}
-
-export const isBearish = (candle: HistoryObject) => candle.open > candle.close;
-export const isBullish = (candle: HistoryObject) => candle.open < candle.close;
