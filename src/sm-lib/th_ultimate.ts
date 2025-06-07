@@ -12,7 +12,6 @@ import {
 } from "./models.ts";
 import {
     checkExtremumConfirmation,
-    checkNewExtremum, checkSomeNewSwing,
     cleanupOppositeExtremum,
     closestSwing,
     confirmSingleExtremum,
@@ -32,10 +31,9 @@ import {
     isImbalance,
     isInsideBar,
     isInternalBOS,
-    lowestBy, processDoubleSwing,
-    setNewLastExtremum,
-    unmarkLastExtremum
+    lowestBy
 } from "./utils.ts";
+import {updateSwingExtremums} from "./update_swing_extremums.ts";
 
 /**
  * OB - строится на структурных точках,
@@ -464,41 +462,6 @@ const updateExtremumOneIt = (
         condition
     ) {
         manager.preLastIndexMap[type] = i;
-    }
-};
-
-// Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
-const updateSwingExtremums = (
-    manager: StateManager,
-    index: number,
-    swing: Swing,
-) => {
-    // Проверяем свинг по выбранной стороне
-    if (!swing) {
-        return;
-    }
-
-    const versusSide = swing.side === 'low' ? 'high' : 'low';
-    if (manager.confirmIndexMap[versusSide] > index) {
-        return;
-    }
-
-    const {isHighest, isLowest, isOneOfEmpty} = checkNewExtremum(manager, swing);
-
-    if (!checkSomeNewSwing(swing, isHighest, isLowest, isOneOfEmpty)) {
-        return;
-    }
-
-    if (swing.side === 'double') {
-        processDoubleSwing(manager, swing, isHighest, isLowest);
-    } else {
-        /**
-         * Если у нас уже есть Главный экстремум - нужно снять с него маркер
-         */
-        if (manager.lastExtremumMap[swing.side] && !manager.lastExtremumMap[versusSide]) {
-            unmarkLastExtremum(manager, swing.side);
-        }
-        setNewLastExtremum(manager, swing, swing.side, versusSide);
     }
 };
 

@@ -6,6 +6,10 @@ import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
     {
+        files: ['**/*.{ts,tsx}'],
+        linterOptions: {
+            reportUnusedDisableDirectives: 'warn',  // Здесь используем overrideConfig для этой опции
+        },
     },
     {
         extends: [
@@ -23,18 +27,18 @@ export default tseslint.config(
         },
         rules: {
             ...reactHooks.configs.recommended.rules,
+            '@typescript-eslint/no-unused-expressions': [
+                'error',
+                {
+                    allowShortCircuit: true,
+                    allowTernary: true,
+                    allowTaggedTemplates: true,
+                },
+            ],
             'react-refresh/only-export-components': [
                 'warn',
                 { allowConstantExport: true },
             ],
         },
-        overrides: [
-            {
-                files: ['**/*.{ts,tsx}'],
-                linterOptions: {
-                    reportUnusedDisableDirectives: 'warn',  // Здесь используем overrideConfig для этой опции
-                },
-            },
-        ],
     }
 )
