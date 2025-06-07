@@ -1498,43 +1498,43 @@ export class StateManager {
 
             nextCandle = this.candles[nextIndex];
 
-            // tryCalculatePullback(
-            //     i,
-            //     'high',
-            //     prevCandle,
-            //     currentCandle,
-            //     nextCandle,
-            //     this.swings,
-            // );
-            // tryCalculatePullback(
-            //     i,
-            //     'low',
-            //     prevCandle,
-            //     currentCandle,
-            //     nextCandle,
-            //     this.swings,
-            // );
-
-            tryCalculatePullbackMulti(
+            tryCalculatePullback(
                 i,
+                'high',
                 prevCandle,
                 currentCandle,
                 nextCandle,
-                this.swings
-            )
+                this.swings,
+            );
+            tryCalculatePullback(
+                i,
+                'low',
+                prevCandle,
+                currentCandle,
+                nextCandle,
+                this.swings,
+            );
 
-            // confirmExtremum(this, i, 'high');
-            // confirmExtremum(this, i, 'low');
-            confirmExtremumsIfValid(this, i);
+            // tryCalculatePullbackMulti(
+            //     i,
+            //     prevCandle,
+            //     currentCandle,
+            //     nextCandle,
+            //     this.swings
+            // )
+
+            confirmExtremum(this, i, 'high');
+            confirmExtremum(this, i, 'low');
+            // confirmExtremumsIfValid(this, i);
 
             // markHHLL
-            updateSwingExtremums(this, i, this.swings[i])
-            // updateExtremum(this, i, 'high', this.swings[i]);
-            // updateExtremum(this, i, 'low', this.swings[i]);
+            // updateSwingExtremums(this, i, this.swings[i])
+            updateExtremum(this, i, 'high', this.swings[i]);
+            updateExtremum(this, i, 'low', this.swings[i]);
 
             // markHHLL
-            updateLastMulti(this, this.swings[i]);
-            // updateLast(this, this.swings[i]);
+            // updateLastMulti(this, this.swings[i]);
+            updateLast(this, this.swings[i]);
 
             // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
             filterDoubleSwings(
