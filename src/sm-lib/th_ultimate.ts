@@ -11,16 +11,9 @@ import {
     Trend
 } from "./models.ts";
 import {
-    checkExtremumConfirmation,
-    cleanupOppositeExtremum,
     closestSwing,
-    confirmSingleExtremum,
-    ensureIdmSwingsExist,
-    everyLastExtremumIDMIsConfirmed,
     formatDate,
     getWeekNumber,
-    hasAnyExtremums,
-    hasAnyIdmSwings,
     hasClose,
     hasHitOB,
     hasTakenOutLiquidity,
@@ -33,7 +26,8 @@ import {
     isInternalBOS,
     lowestBy
 } from "./utils.ts";
-import {updateSwingExtremums} from "./update_swing_extremums.ts";
+import {updateSwingExtremums} from "./swings/updateSwingExtremums.ts";
+import {confirmExtremumsIfValid} from "./swings/confirmExtremumsIfValid.ts";
 
 /**
  * OB - строится на структурных точках,
@@ -209,7 +203,7 @@ export const calculateTesting = (
         manager.calculateBreakerBlocks()
 
     // Увеличивает на тестинге на 3% винрейт
-    let orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.OB_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
+    const orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.OB_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
 
     return {
         swings: manager.swings,
@@ -231,7 +225,7 @@ export const defaultConfig: THConfig = {
 export const calculateProduction = (data: HistoryObject[]) => {
     const config: THConfig = defaultConfig;
 
-    let {orderBlocks} = calculateTesting(data, config);
+    const {orderBlocks} = calculateTesting(data, config);
 
     return orderBlocks.filter((o) => o?.type === POIType.OB_EXT && o.canTrade && !o.isSMT);
 };
@@ -521,63 +515,6 @@ const updateExtremum = (
     if (manager.lastSwingMap[versusSide]) {
         manager.lastExtremumMap[swing.side].idmSwing =
             manager.lastSwingMap[versusSide];
-    }
-};
-
-/**
- *
- * @param manager
- * @param index По этому индексу получаем свечку для проверки пересвипа ИДМ
- * @param side
- */
-const confirmExtremumMulti = (
-    manager: StateManager,
-    index: number,
-) => {
-    // Если экстремума нет - не смотрим
-    if (!hasAnyExtremums(manager)) {
-        return;
-    }
-
-    ensureIdmSwingsExist(manager);
-
-    if (!hasAnyIdmSwings(manager)) {
-        return;
-    }
-
-    if (everyLastExtremumIDMIsConfirmed(manager)) {
-        return;
-    }
-
-    const isHighIDMConfirmed = checkExtremumConfirmation(manager, 'high', index)
-    const isLowIDMConfirmed = checkExtremumConfirmation(manager, 'low', index)
-
-    // Если IDM не подтвержден - не смотрим
-    if (!isLowIDMConfirmed && !isHighIDMConfirmed) {
-        return;
-    }
-
-    if (isHighIDMConfirmed) {
-        confirmSingleExtremum(manager, 'high', index);
-    }
-
-    if (isLowIDMConfirmed) {
-        confirmSingleExtremum(manager, 'low', index);
-    }
-
-    /**
-     * Если IDM подтверждается - значит происходит пересвип. Текущая свечка становится первой,
-     * от которой мы ищем новый HH/LL
-     * Если у нас подтвердился HH - то у нас образовался новый LL,
-     * если предыдущий LL не был подтвержден - нужно снять с него маркер
-     */
-
-    if (isHighIDMConfirmed) {
-        cleanupOppositeExtremum(manager, 'low');
-    }
-
-    if (isLowIDMConfirmed) {
-        cleanupOppositeExtremum(manager, 'high');
     }
 };
 
@@ -1150,8 +1087,8 @@ export class StateManager {
                 this.pois[swing.index] = new POI(canTradeExtremumOrderblock(this, swing, orderBlockPart, takeProfitPrice));
 
                 if (this.pois[swing.index].canTest) {
-                    let endIndex = this.pois[swing.index].endIndex || this.candles.length - 1;
-                    let maxTakeProfitBetween = takeProfitPrice;
+                    const endIndex = this.pois[swing.index].endIndex || this.candles.length - 1;
+                    const maxTakeProfitBetween = takeProfitPrice;
                     let startIndex = swing.index;
                     // while (startIndex <= endIndex) {
                     //     const buyTake = maxTakeProfitBetween > this.candles[startIndex].high ? maxTakeProfitBetween : this.candles[startIndex].high;
@@ -1365,30 +1302,6 @@ export class StateManager {
         const bos = this.swings[index];
         if (bos && ['bottom2top', 'top2bottom'].includes(isIFC(bos.price, this.candles[bos.index]))) {
             bos.isIFC = true;
-        }
-    };
-
-    /**
-     * @deprecated
-     */
-    markIFCOld = () => {
-        for (let i = 0; i < this.swings.length; i++) {
-            this.markIFCOneIt(i);
-        }
-    };
-
-    /**
-     * @deprecated
-     */
-    markHHLLOld = () => {
-        for (let i = 0; i < this.swings.length; i++) {
-            confirmExtremum(this, i, 'low');
-            confirmExtremum(this, i, 'high');
-
-            updateExtremum(this, i, 'high', this.swings[i]);
-            updateExtremum(this, i, 'low', this.swings[i]);
-
-            updateLast(this, this.swings[i]);
         }
     };
 
@@ -1612,7 +1525,7 @@ export class StateManager {
 
             // confirmExtremum(this, i, 'high');
             // confirmExtremum(this, i, 'low');
-            confirmExtremumMulti(this, i);
+            confirmExtremumsIfValid(this, i);
 
             // markHHLL
             updateSwingExtremums(this, i, this.swings[i])
@@ -2086,7 +1999,7 @@ function findImbalance(manager: StateManager, firstCandleIndex: number): {
     lastImbalanceIndex: number,
     reasons: string[]
 } | null {
-    let reasons: string[] = [];
+    const reasons: string[] = [];
 
     // Индекс начальной свечи имбаланса
     let i = firstCandleIndex;
@@ -2135,7 +2048,7 @@ const findFirstImbalanceIndex = (manager: StateManager, i: number) => {
     // Для этого нужно проверить что следующая свеча после исследуемой - не является внутренней.
 
     let firstImbalanceIndex = i + 1;
-    let firstCandle = manager.candles[i];
+    const firstCandle = manager.candles[i];
 
     while (isInsideBar(firstCandle, manager.candles[firstImbalanceIndex])) {
         firstImbalanceIndex++;

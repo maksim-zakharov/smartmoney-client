@@ -1,6 +1,6 @@
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
-import {Swing} from "./models.ts";
-import {StateManager} from "./th_ultimate.ts";
+import {Swing} from "../models.ts";
+import {StateManager} from "../th_ultimate.ts";
 
 // Проверка на новый экстремум:
 const checkNewExtremum = (manager: StateManager, swing: Swing) => {
