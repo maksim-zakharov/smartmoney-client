@@ -43,7 +43,7 @@ export class Swing {
         const sideLabel: Record<Swing['side'], string> = {
             high: 'HH',
             low: 'LL',
-            double: 'DD'
+            double: 'DS'
         }
 
         if (this._isExtremum) {

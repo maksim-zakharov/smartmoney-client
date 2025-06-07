@@ -115,7 +115,7 @@ export const SoloTestPage = () => {
         showIFC: checkboxValues.has('showIFC'),
         showSession: checkboxValues.has('showSession'),
         showWeekly: checkboxValues.has('showWeekly'),
-        showLogs: true
+        showLogs: false
     }), [checkboxValues])
 
     useEffect(() => {
@@ -155,7 +155,7 @@ export const SoloTestPage = () => {
     }
 
     const fbgs = useMemo(() => {
-        let {
+        const {
             orderBlocks
         } = calculateTesting(HTFdata, {
             showFVG: true,
@@ -176,7 +176,7 @@ export const SoloTestPage = () => {
             }
         }
 
-        let {
+        const {
             swings,
             trend,
             boses,
@@ -266,7 +266,7 @@ export const SoloTestPage = () => {
                 if (!ob) {
                     return false;
                 }
-                if (config.showOB && !Boolean(ob.endCandle)) {
+                if (config.showOB && !ob.endCandle) {
                     result = true;
                 }
                 if (config.showEndOB && Boolean(ob.endCandle)) {
@@ -301,10 +301,10 @@ export const SoloTestPage = () => {
 
         if (config.smartTrend) {
             const sessionHighlighter = (time: Time, index) => {
-                let tr = trend[index]; // .find(c => (c?.time * 1000) >= (time as number));
+                const tr = trend[index]; // .find(c => (c?.time * 1000) >= (time as number));
 
                 // let tr = newTrend.find(c => (c?.time * 1000) >= (time as number));
-                let _trend = tr?.trend;
+                const _trend = tr?.trend;
                 if (!tr) {
                     // tr = newTrend.findLast(c => (c?.time * 1000) <= (time as number));
                     // trend = tr.trend * -1;
@@ -358,7 +358,7 @@ export const SoloTestPage = () => {
                 if (!ob) {
                     return false;
                 }
-                if (config.showOB && !Boolean(ob.endCandle)) {
+                if (config.showOB && !ob.endCandle) {
                     result = true;
                 }
                 if (config.showEndOB && Boolean(ob.endCandle)) {

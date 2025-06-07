@@ -1596,6 +1596,11 @@ const updateLastSwing = (
         return;
     }
 
+    // @ts-ignore
+    if(!manager.boses[manager.swings[i]?.idmSwing?.index]?.isConfirmed){
+        return;
+    }
+
     // Фиксируем прошлый свинг
     manager.prelastBosSwingMap[side] = manager.lastBosSwingMap[side];
     // Фиксируем текущий свинг

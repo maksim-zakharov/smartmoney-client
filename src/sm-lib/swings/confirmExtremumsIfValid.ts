@@ -1,6 +1,9 @@
 import {StateManager} from "../th_ultimate.ts";
 import {Cross, Swing} from "../models.ts";
 import {closestSwing} from "../utils.ts";
+import {unmarkLastExtremum} from "./updateSwingExtremums.ts";
+
+
 
 // Проверка наличия экстремумов
 export const hasAnyExtremums = (manager: StateManager) => Boolean(manager.lastExtremumMap['high'] || manager.lastExtremumMap['low'])
@@ -23,12 +26,12 @@ export const checkExtremumConfirmation = (
     extremumType: 'high' | 'low',
     currentIndex: number
 ) => {
-    if (extremumType === 'high') {
+    if (extremumType === 'high' && manager.lastExtremumMap['high']?.side !== 'double') {
         return manager.lastExtremumMap['high']?.idmSwing?.price >
             manager.candles[currentIndex]?.low;
     }
 
-    if (extremumType === 'low') {
+    if (extremumType === 'low' && manager.lastExtremumMap['low']?.side !== 'double') {
         return manager.lastExtremumMap['low']?.idmSwing?.price <
             manager.candles[currentIndex]?.high
     }
@@ -41,6 +44,7 @@ export const confirmSingleExtremum = (
     extremumType: 'high' | 'low',
     index: number
 ): void => {
+    console.log(`confirmSingleExtremum ${manager.lastExtremumMap[extremumType].side} Confirmed ${manager.lastExtremumMap[extremumType]?.index} at ${index}`)
     // Помечаем экстремум как подтвержденный
     manager.lastExtremumMap[extremumType].markExtremum();
     manager.confirmIndexMap[extremumType] = index;
@@ -58,7 +62,7 @@ export const confirmSingleExtremum = (
     });
 
     // На случай если и хай и лоу будет на одной свече, нужно подтверждение жестко с предыдущей свечки
-    if (manager.lastExtremumMap[extremumType].index !== to.index) {
+    if (manager.lastExtremumMap[extremumType].index !== to.index && manager.lastExtremumMap[extremumType].side !== 'double') {
         manager.boses[from.index] = new Cross({
             from,
             to,
@@ -77,13 +81,9 @@ export const cleanupOppositeExtremum = (
     manager: StateManager,
     oppositeExtremumType: 'high' | 'low'
 ): void => {
-    // TODO Проблема в том, что если свечка которая закрыла IDM - она по сути должна быть первым HH
-    if (!manager.boses[manager.lastExtremumMap[oppositeExtremumType]?.idmSwing?.index]?.isConfirmed) {
-        manager.lastExtremumMap[oppositeExtremumType]?.unmarkExtremum()
-    }
+    unmarkLastExtremum(manager, oppositeExtremumType)
+
     manager.lastExtremumMap[oppositeExtremumType] = null;
-    // manager.lastExtremumMap['low'] = manager.swings[index];
-    // manager.lastExtremumMap['low']?.markExtremum()
 }
 /**
  *
@@ -134,10 +134,10 @@ export const confirmExtremumsIfValid = (
      */
 
     if (isHighIDMConfirmed) {
-        cleanupOppositeExtremum(manager, 'low');
+        cleanupOppositeExtremum(manager, 'high');
     }
 
     if (isLowIDMConfirmed) {
-        cleanupOppositeExtremum(manager, 'high');
+        cleanupOppositeExtremum(manager, 'low');
     }
 };
