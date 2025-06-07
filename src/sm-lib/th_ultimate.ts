@@ -11,8 +11,17 @@ import {
     Trend
 } from "./models.ts";
 import {
+    checkExtremumConfirmation,
+    checkNewExtremum, checkSomeNewSwing,
+    cleanupOppositeExtremum,
+    closestSwing,
+    confirmSingleExtremum,
+    ensureIdmSwingsExist,
+    everyLastExtremumIDMIsConfirmed,
     formatDate,
     getWeekNumber,
+    hasAnyExtremums,
+    hasAnyIdmSwings,
     hasClose,
     hasHitOB,
     hasTakenOutLiquidity,
@@ -23,7 +32,9 @@ import {
     isImbalance,
     isInsideBar,
     isInternalBOS,
-    lowestBy
+    lowestBy, processDoubleSwing,
+    setNewLastExtremum,
+    unmarkLastExtremum
 } from "./utils.ts";
 
 /**
@@ -275,6 +286,7 @@ const tryCalculatePullbackMulti = (
     const highPullback = hasHighValidPullback(prevCandle, currentCandle, nextCandle);
     const lowPullback = hasLowValidPullback(prevCandle, currentCandle, nextCandle);
 
+    // Если никаких пересвипов нет - (может свеча внутренняя)
     if (!lowPullback && !highPullback) {
         return;
     }
@@ -454,6 +466,42 @@ const updateExtremumOneIt = (
         manager.preLastIndexMap[type] = i;
     }
 };
+
+// Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
+const updateSwingExtremums = (
+    manager: StateManager,
+    index: number,
+    swing: Swing,
+) => {
+    // Проверяем свинг по выбранной стороне
+    if (!swing) {
+        return;
+    }
+
+    const versusSide = swing.side === 'low' ? 'high' : 'low';
+    if (manager.confirmIndexMap[versusSide] > index) {
+        return;
+    }
+
+    const {isHighest, isLowest, isOneOfEmpty} = checkNewExtremum(manager, swing);
+
+    if (!checkSomeNewSwing(swing, isHighest, isLowest, isOneOfEmpty)) {
+        return;
+    }
+
+    if (swing.side === 'double') {
+        processDoubleSwing(manager, swing, isHighest, isLowest);
+    } else {
+        /**
+         * Если у нас уже есть Главный экстремум - нужно снять с него маркер
+         */
+        if (manager.lastExtremumMap[swing.side] && !manager.lastExtremumMap[versusSide]) {
+            unmarkLastExtremum(manager, swing.side);
+        }
+        setNewLastExtremum(manager, swing, swing.side, versusSide);
+    }
+};
+
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
 const updateExtremum = (
     manager: StateManager,
@@ -510,6 +558,63 @@ const updateExtremum = (
     if (manager.lastSwingMap[versusSide]) {
         manager.lastExtremumMap[swing.side].idmSwing =
             manager.lastSwingMap[versusSide];
+    }
+};
+
+/**
+ *
+ * @param manager
+ * @param index По этому индексу получаем свечку для проверки пересвипа ИДМ
+ * @param side
+ */
+const confirmExtremumMulti = (
+    manager: StateManager,
+    index: number,
+) => {
+    // Если экстремума нет - не смотрим
+    if (!hasAnyExtremums(manager)) {
+        return;
+    }
+
+    ensureIdmSwingsExist(manager);
+
+    if (!hasAnyIdmSwings(manager)) {
+        return;
+    }
+
+    if (everyLastExtremumIDMIsConfirmed(manager)) {
+        return;
+    }
+
+    const isHighIDMConfirmed = checkExtremumConfirmation(manager, 'high', index)
+    const isLowIDMConfirmed = checkExtremumConfirmation(manager, 'low', index)
+
+    // Если IDM не подтвержден - не смотрим
+    if (!isLowIDMConfirmed && !isHighIDMConfirmed) {
+        return;
+    }
+
+    if (isHighIDMConfirmed) {
+        confirmSingleExtremum(manager, 'high', index);
+    }
+
+    if (isLowIDMConfirmed) {
+        confirmSingleExtremum(manager, 'low', index);
+    }
+
+    /**
+     * Если IDM подтверждается - значит происходит пересвип. Текущая свечка становится первой,
+     * от которой мы ищем новый HH/LL
+     * Если у нас подтвердился HH - то у нас образовался новый LL,
+     * если предыдущий LL не был подтвержден - нужно снять с него маркер
+     */
+
+    if (isHighIDMConfirmed) {
+        cleanupOppositeExtremum(manager, 'low');
+    }
+
+    if (isLowIDMConfirmed) {
+        cleanupOppositeExtremum(manager, 'high');
     }
 };
 
@@ -587,6 +692,20 @@ const confirmExtremum = (
 
     // TODO Проблема в том, что если свечка которая закрыла IDM - она по сути должна быть первым HH
     manager.lastExtremumMap[versusSide] = null;
+};
+
+// Фиксируем последний свинг который нашли сверху или снизу
+const updateLastMulti = (manager: StateManager, swing: Swing) => {
+    if (!swing) {
+        return;
+    }
+
+    if (swing.side === 'double') {
+        manager.lastSwingMap['high'] = swing;
+        manager.lastSwingMap['low'] = swing;
+    } else {
+        manager.lastSwingMap[swing.side] = swing;
+    }
 };
 
 // Фиксируем последний свинг который нашли сверху или снизу
@@ -1008,7 +1127,7 @@ export class StateManager {
             const isLowerImbalance = swing.side === 'low' && this.candles[swing.index].low > firstCandle.low;
             // Если HH оказался ниже имбаланса
             const isHigherImbalance = swing.side === 'high' && this.candles[swing.index].high < firstCandle.high;
-            if(isLowerImbalance || isHigherImbalance){
+            if (isLowerImbalance || isHigherImbalance) {
                 return;
             }
 
@@ -1503,40 +1622,43 @@ export class StateManager {
 
             nextCandle = this.candles[nextIndex];
 
-            tryCalculatePullback(
-                i,
-                'high',
-                prevCandle,
-                currentCandle,
-                nextCandle,
-                this.swings,
-            );
-            tryCalculatePullback(
-                i,
-                'low',
-                prevCandle,
-                currentCandle,
-                nextCandle,
-                this.swings,
-            );
-
-            // tryCalculatePullbackMulti(
+            // tryCalculatePullback(
             //     i,
+            //     'high',
             //     prevCandle,
             //     currentCandle,
             //     nextCandle,
-            //     this.swings
-            // )
+            //     this.swings,
+            // );
+            // tryCalculatePullback(
+            //     i,
+            //     'low',
+            //     prevCandle,
+            //     currentCandle,
+            //     nextCandle,
+            //     this.swings,
+            // );
 
-            confirmExtremum(this, i, 'high');
-            confirmExtremum(this, i, 'low');
+            tryCalculatePullbackMulti(
+                i,
+                prevCandle,
+                currentCandle,
+                nextCandle,
+                this.swings
+            )
+
+            // confirmExtremum(this, i, 'high');
+            // confirmExtremum(this, i, 'low');
+            confirmExtremumMulti(this, i);
 
             // markHHLL
-            updateExtremum(this, i, 'high', this.swings[i]);
-            updateExtremum(this, i, 'low', this.swings[i]);
+            updateSwingExtremums(this, i, this.swings[i])
+            // updateExtremum(this, i, 'high', this.swings[i]);
+            // updateExtremum(this, i, 'low', this.swings[i]);
 
             // markHHLL
-            updateLast(this, this.swings[i]);
+            updateLastMulti(this, this.swings[i]);
+            // updateLast(this, this.swings[i]);
 
             // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
             filterDoubleSwings(
@@ -1983,18 +2105,6 @@ export const hasNear = (
 
     return false;
 };
-
-const closestSwing = (manager: StateManager, swing: Swing) => {
-    let index = swing.index - 1;
-    while (
-        index > -1 &&
-        (!manager.swings[index] || manager.swings[index].side === swing.side)
-        ) {
-        index--;
-    }
-
-    return manager.swings[index];
-}
 
 const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
     let index = swing.index - 1;

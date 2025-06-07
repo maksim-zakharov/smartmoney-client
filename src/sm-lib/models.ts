@@ -40,8 +40,14 @@ export class Swing {
     get text() {
         let _text = '';
 
+        const sideLabel: Record<Swing['side'], string> = {
+            high: 'HH',
+            low: 'LL',
+            double: 'DD'
+        }
+
         if (this._isExtremum) {
-            _text = this.side === 'high' ? 'HH' : 'LL';
+            _text = sideLabel[this.side];
         }
 
         if (this._isDebug) {
