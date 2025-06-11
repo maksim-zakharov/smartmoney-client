@@ -26,8 +26,6 @@ import {
     isInternalBOS,
     lowestBy
 } from "./utils.ts";
-import {updateSwingExtremums} from "./swings/updateSwingExtremums.ts";
-import {confirmExtremumsIfValid} from "./swings/confirmExtremumsIfValid.ts";
 
 /**
  * OB - строится на структурных точках,
@@ -1597,7 +1595,7 @@ const updateLastSwing = (
     }
 
     // @ts-ignore
-    if(!manager.boses[manager.swings[i]?.idmSwing?.index]?.isConfirmed){
+    if (!manager.boses[manager.swings[i]?.idmSwing?.index]?.isConfirmed) {
         return;
     }
 
@@ -1839,7 +1837,90 @@ export const tradinghubCalculateTrendNew = (
     drawBOS(manager, showFake);
 
     drawTrend(manager);
+    // drawTrend2(manager);
 };
+
+const drawTrend2 = (manager: StateManager) => {
+
+    for (let i = 2; i < manager.candles.length - 1; i++) {
+        const firstCandle = manager.candles[i - 2];
+        const secondCandle = manager.candles[i - 1];
+        const thirdCandle = manager.candles[i];
+        const fvgCandles = [firstCandle, secondCandle, thirdCandle];
+
+        const hasImbalance = isImbalance(firstCandle, thirdCandle);
+        if (!hasImbalance) {
+            manager.trend[i + 1] = {
+                time: manager.candles[i + 1].time,
+                trend: manager.trend[i]?.trend
+            };
+            continue;
+        }
+
+        const everyBullish = fvgCandles.every(isBullish)
+        const everyBearish = fvgCandles.every(isBearish)
+
+        const isOneSideCandle = everyBullish || everyBearish;
+
+        manager.trend[i + 1] = {
+            time: manager.candles[i + 1].time,
+            trend: isOneSideCandle ? (everyBullish ? 1 : -1) : manager.trend[i]?.trend
+        };
+
+
+        if (!isOneSideCandle) {
+            continue;
+        }
+
+        const side = everyBullish ? 'low' : 'high'
+
+        const orderBlockPart = {
+            startCandle: manager.candles[i - 2],
+            // Указываем экстремум который пробила свеча IFC
+            startCandle: {
+                ...manager.candles[i - 2],
+                // Это нужно для стопа, если свипнули хай - стоп должен быть за хаем свипа, если лоу - за лоем свипа
+                high: side === 'high' ? manager.candles[i - 2].high : manager.candles[i].low,
+                low: side === 'low' ? manager.candles[i - 2].low : manager.candles[i].high,
+            },
+            lastOrderblockCandle: manager.candles[i],
+            lastImbalanceCandle: manager.candles[i],
+            firstImbalanceIndex: i - 2,
+            lastImbalanceIndex: i,
+            side,
+        } as OrderblockPart;
+
+        const swing = new Swing({
+            index: i,
+            side: orderBlockPart.side,
+            _sidePrice: {
+                high: manager.candles[i].close,
+                low: manager.candles[i].close,
+            },
+            time: manager.candles[i].time,
+        })
+
+        const takeProfit = closestExtremumSwing(manager, swing)
+        const takeProfitPrice = takeProfit?.price;
+
+        let index = i + 1;
+        while (manager.candles[index] && !hasHitOB(orderBlockPart, manager.candles[index])) {
+            index++;
+        }
+
+        manager.pois[i - 2] = new POI({
+            ...orderBlockPart,
+            isSMT: false,
+            swing,
+            canTest: true,
+            canTrade: true,
+            takeProfit: takeProfitPrice,
+            type: POIType.OB_EXT,
+            endCandle: manager.candles[index],
+            endIndex: index,
+        });
+    }
+}
 
 /**
  * Сравнивать не cur/next а prev/cur
