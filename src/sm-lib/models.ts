@@ -286,6 +286,7 @@ export interface THConfig {
     showWeekly?: boolean;
     showLogs?: boolean;
     showFVG?: boolean;
+    trend2?: boolean;
 }
 
 export interface Trend {

@@ -115,6 +115,7 @@ export const SoloTestPage = () => {
         showIFC: checkboxValues.has('showIFC'),
         showSession: checkboxValues.has('showSession'),
         showWeekly: checkboxValues.has('showWeekly'),
+        trend2: checkboxValues.has('trend2'),
         showLogs: false
     }), [checkboxValues])
 
@@ -560,6 +561,7 @@ export const SoloTestPage = () => {
                 <Checkbox key="tradeEXTIFC" value="tradeEXTIFC">Торговать EXT_IFC</Checkbox>
                 <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
                 <Checkbox key="showSession" value="showSession">Показывать сессии</Checkbox>
+                <Checkbox key="trend2" value="trend2">trend2</Checkbox>
                 <Checkbox key="showWeekly" value="showWeekly">Показывать хайлой недельки</Checkbox>
                 <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
                 <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>

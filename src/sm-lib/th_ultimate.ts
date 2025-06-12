@@ -162,7 +162,8 @@ export const calculateTesting = (
         tradeOBEXT,
         tradeOBIDM,
         showFVG,
-        tradeBB
+        tradeBB,
+        trend2
     }: THConfig,
 ) => {
     const manager = new StateManager(data, {
@@ -186,6 +187,7 @@ export const calculateTesting = (
         showHiddenSwings,
         showFake,
         showIFC,
+        trend2
     });
 
     if (showSession)
@@ -1826,7 +1828,7 @@ export const drawBOS = (manager: StateManager, showFake: boolean = false) => {
 
 export const tradinghubCalculateTrendNew = (
     manager: StateManager,
-    {showHiddenSwings, showFake}: THConfig,
+    {showHiddenSwings, showFake, trend2}: THConfig,
 ) => {
     deleteInternalStructure(manager);
 
@@ -1836,8 +1838,10 @@ export const tradinghubCalculateTrendNew = (
 
     drawBOS(manager, showFake);
 
+    if(!trend2)
     drawTrend(manager);
-    // drawTrend2(manager);
+    else
+    drawTrend2(manager);
 };
 
 const drawTrend2 = (manager: StateManager) => {
