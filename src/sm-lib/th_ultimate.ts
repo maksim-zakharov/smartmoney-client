@@ -11,7 +11,7 @@ import {
     Trend
 } from "./models.ts";
 import {
-    closestSwing,
+    closestSwing, findClosestConfirmedCHoCH,
     formatDate,
     getWeekNumber,
     hasClose,
@@ -692,7 +692,7 @@ export class StateManager {
         const reasons = [];
 
         // Просто ищем подтвержденный чоч на этом свинге
-        const CHoCH = this.boses.find(b => b && b.extremum?.index === swing.index && b.isCHoCH && b.isConfirmed);
+        const CHoCH = findClosestConfirmedCHoCH(this, swing.index);
         if (!CHoCH) {
             return;
         }
@@ -710,7 +710,7 @@ export class StateManager {
 
         // Теперь надо искать ближайший откат слева от IDM и пытаться там построить OB
         // @ts-ignore
-        const OBSwing = closestSwing(this, {...IDM.from, side: IDM.extremum.side});
+        const OBSwing = CHoCH.extremum; // closestSwing(this, {...IDM.from, side: IDM.extremum.side});
         if (!OBSwing) {
             return;
         }
@@ -1838,14 +1838,16 @@ export const tradinghubCalculateTrendNew = (
 
     drawBOS(manager, showFake);
 
-    if(!trend2)
-    drawTrend(manager);
+    if (!trend2)
+        drawTrend(manager);
     else
-    drawTrend2(manager);
+        drawTrend2(manager);
+
+    if (trend2)
+        calculateOB2(manager)
 };
 
-const drawTrend2 = (manager: StateManager) => {
-
+const calculateOB2 = (manager: StateManager) => {
     for (let i = 2; i < manager.candles.length - 1; i++) {
         const firstCandle = manager.candles[i - 2];
         const secondCandle = manager.candles[i - 1];
@@ -1854,10 +1856,6 @@ const drawTrend2 = (manager: StateManager) => {
 
         const hasImbalance = isImbalance(firstCandle, thirdCandle);
         if (!hasImbalance) {
-            manager.trend[i + 1] = {
-                time: manager.candles[i + 1].time,
-                trend: manager.trend[i]?.trend
-            };
             continue;
         }
 
@@ -1865,12 +1863,6 @@ const drawTrend2 = (manager: StateManager) => {
         const everyBearish = fvgCandles.every(isBearish)
 
         const isOneSideCandle = everyBullish || everyBearish;
-
-        manager.trend[i + 1] = {
-            time: manager.candles[i + 1].time,
-            trend: isOneSideCandle ? (everyBullish ? 1 : -1) : manager.trend[i]?.trend
-        };
-
 
         if (!isOneSideCandle) {
             continue;
@@ -1923,6 +1915,40 @@ const drawTrend2 = (manager: StateManager) => {
             endCandle: manager.candles[index],
             endIndex: index,
         });
+
+        const currentTrend = manager.trend[index]?.trend;
+        const trendSide = currentTrend === -1  ? 'high' : currentTrend === 1 ? 'low' : 0;
+        if(trendSide !== manager.pois[i-2].side){
+            manager.pois[i-2].canTest = false;
+        }
+    }
+}
+
+const drawTrend2 = (manager: StateManager) => {
+    for (let i = 2; i < manager.candles.length - 1; i++) {
+        const firstCandle = manager.candles[i - 2];
+        const secondCandle = manager.candles[i - 1];
+        const thirdCandle = manager.candles[i];
+        const fvgCandles = [firstCandle, secondCandle, thirdCandle];
+
+        const hasImbalance = isImbalance(firstCandle, thirdCandle);
+        if (!hasImbalance) {
+            manager.trend[i + 1] = {
+                time: manager.candles[i + 1].time,
+                trend: manager.trend[i]?.trend
+            };
+            continue;
+        }
+
+        const everyBullish = fvgCandles.every(isBullish)
+        const everyBearish = fvgCandles.every(isBearish)
+
+        const isOneSideCandle = everyBullish || everyBearish;
+
+        manager.trend[i + 1] = {
+            time: manager.candles[i + 1].time,
+            trend: isOneSideCandle ? (everyBullish ? 1 : -1) : manager.trend[i]?.trend
+        };
     }
 }
 

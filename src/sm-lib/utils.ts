@@ -149,3 +149,5 @@ export const closestSwing = (manager: StateManager, swing: Swing) => {
 
     return manager.swings[index];
 }
+
+export const findClosestConfirmedCHoCH = (manager: StateManager, index: number) => manager.boses.find(b => b && b.extremum?.index === index && b.isCHoCH && b.isConfirmed)

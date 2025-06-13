@@ -54,6 +54,7 @@ export const MultiTestPage = () => {
     const [showFake, setfakeBOS] = useState<boolean>(false);
     const [showSMT, setshowSMT] = useState<boolean>(false);
     const [newSMT, setnewSMT] = useState<boolean>(false);
+    const [trend2, settrend2] = useState<boolean>(false);
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(true);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("max");
@@ -77,7 +78,7 @@ export const MultiTestPage = () => {
     }, [token]);
 
     const positions = useMemo(() => {
-        let {swings, orderBlocks} = calculateTesting(data, {
+        const {swings, orderBlocks} = calculateTesting(data, {
             withMove,
             showHiddenSwings,
             newSMT,
@@ -87,7 +88,8 @@ export const MultiTestPage = () => {
             tradeFlipWithIDM,
             tradeOBIDM,
             tradeOBEXT,
-            tradeEXTIFC
+            tradeEXTIFC,
+            trend2
         });
 
         const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.Breaking_Block, POIType.OB_IDM].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
@@ -106,14 +108,15 @@ export const MultiTestPage = () => {
         }
 
         return positions.filter(p => Boolean(p.pnl)).map(finishPosition({lotsize, fee, tf, ticker, stopMargin})).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [tralingPercent, data, showFake, newSMT, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [tralingPercent, data, showFake, newSMT, trend2, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
         return Object.entries(allData).map(([ticker, data]) => {
-            let {swings, orderBlocks} = calculateTesting(data, {
+            const {swings, orderBlocks} = calculateTesting(data, {
                 withMove,
                 showHiddenSwings,
                 newSMT,
+                trend2,
                 showFake,
                 tradeOBIDM,
                 tradeIDMIFC,
@@ -138,7 +141,7 @@ export const MultiTestPage = () => {
 
             return positions.filter(p => Boolean(p.pnl)).map(finishPosition({ticker, tf, stopMargin, fee, lotsize}));
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [tralingPercent, tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [tralingPercent, tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT, trend2, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -427,6 +430,11 @@ export const MultiTestPage = () => {
                         <FormItem>
                             <Checkbox checked={showSMT} onChange={e => setshowSMT(e.target.checked)}>Торговать
                                 SMT</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={trend2} onChange={e => settrend2(e.target.checked)}>trend2</Checkbox>
                         </FormItem>
                     </Col>
                     <Col>
