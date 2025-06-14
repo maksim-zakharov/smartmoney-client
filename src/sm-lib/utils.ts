@@ -1,4 +1,4 @@
-import {Cross, HistoryObject, POI, Swing} from "./models.ts";
+import {CandleWithSide, Cross, HistoryObject, POI, Side, Swing} from "./models.ts";
 import {StateManager} from "./th_ultimate.ts";
 
 export const formatDate = (_date: Date) => {
@@ -151,3 +151,45 @@ export const closestSwing = (manager: StateManager, swing: Swing) => {
 }
 
 export const findClosestConfirmedCHoCH = (manager: StateManager, index: number) => manager.boses.find(b => b && b.extremum?.index === index && b.isCHoCH && b.isConfirmed)
+export const hasNear = (
+    {high, low, side}: CandleWithSide,
+    currentCandle: HistoryObject,
+    minStep?: number,
+) => {
+    if (minStep) {
+        // Максимум в стакане - 50ж
+        const steps = 30;
+        const stepsRange = minStep * steps;
+
+        // Разница между закрытием свечи точки входа и хай текущей свечи меньше либо равна 40 шагам цены
+        if (side === Side.Sell && low - currentCandle.close <= stepsRange) {
+            return true;
+        }
+        // Разница между хай свечи точки входа и закрытием текущей свечи меньше либо равна 40 шагам цены
+        if (side === Side.Buy && currentCandle.close - high <= stepsRange) {
+            return true;
+        }
+    } else {
+        // Близость к цене 0.7%
+        const price = 1.006;
+        if (side === Side.Sell && low / currentCandle.high <= price) {
+            return true;
+        }
+        if (side === Side.Buy && currentCandle.low / high <= price) {
+            return true;
+        }
+    }
+
+    return false;
+};
+export const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
+    let index = swing.index - 1;
+    while (
+        index > -1 &&
+        (!manager.swings[index] || !manager.swings[index].isExtremum || manager.swings[index].side === swing.side)
+        ) {
+        index--;
+    }
+
+    return manager.swings[index];
+}
