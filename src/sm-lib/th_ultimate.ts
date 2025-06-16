@@ -18,7 +18,7 @@ import {
     isInternalBOS,
     lowestBy
 } from "./utils.ts";
-import {drawFVG, drawTrendByFVG} from "./ict_strategy.tsx";
+import {drawFVG, drawTrendByFVG} from "./ict_strategy.ts";
 
 /**
  * OB - строится на структурных точках,
@@ -211,7 +211,8 @@ export const defaultConfig: THConfig = {
     showHiddenSwings: true,
     withMove: false,
     showFake: false,
-    tradeOBEXT: true
+    // tradeOBEXT: true,
+    trend2: true
 };
 
 // Точка входа в торговлю
@@ -220,7 +221,7 @@ export const calculateProduction = (data: HistoryObject[]) => {
 
     const {orderBlocks} = calculateTesting(data, config);
 
-    return orderBlocks.filter((o) => o?.type === POIType.OB_EXT && o.canTrade && !o.isSMT);
+    return orderBlocks.filter((o) => [POIType.OB_EXT, POIType.FVG].includes(o?.type) && o.canTrade && !o.isSMT);
 };
 
 const hasHighValidPullback = (

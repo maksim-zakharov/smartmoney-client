@@ -147,6 +147,7 @@ export class Cross {
 }
 
 export enum POIType {
+    FVG = 'FVG',
     // IDM IFC (свип IDM свечей IFC)
     IDM_IFC = 'IDM_IFC',
     // OB IDM (первый ОБ над IDM)
@@ -206,6 +207,8 @@ export class POI {
     // Все IFC после касания торгуются маркетом. Просто ОБ - лимиткой
     get tradeOrderType(): 'limit' | 'market' {
         switch (this.type) {
+            case POIType.FVG:
+                return 'market';
             case POIType.CHOCH_IFC:
                 return 'market';
             case POIType.IDM_IFC:
@@ -231,6 +234,9 @@ export class POI {
 
     get text(): string {
         if (this.isSMT) return 'SMT';
+        if (this.type === POIType.FVG) {
+            return 'FVG';
+        }
         if (this.type === POIType.One_Side_FVG) {
             return '1-Side_FVG';
         }

@@ -3,6 +3,7 @@ import {OrderblockPart, POI, POIType, Swing} from "./models.ts";
 import {StateManager} from "./th_ultimate.ts";
 
 export const drawFVG = (manager: StateManager) => {
+    const lastCandle = manager.candles[manager.candles.length - 1];
     for (let i = 2; i < manager.candles.length - 1; i++) {
         const firstCandle = manager.candles[i - 2];
         const secondCandle = manager.candles[i - 1];
@@ -73,7 +74,7 @@ export const drawFVG = (manager: StateManager) => {
             isSMT: false,
             swing,
             canTest: true,
-            canTrade: true,
+            canTrade: lastCandle.time === manager.candles[index].time,
             takeProfit: takeProfitPrice,
             type: POIType.OB_EXT,
             endCandle: manager.candles[index],
@@ -84,6 +85,7 @@ export const drawFVG = (manager: StateManager) => {
         const trendSide = currentTrend === -1 ? 'high' : currentTrend === 1 ? 'low' : 0;
         if (trendSide !== manager.pois[POIIndex].side) {
             manager.pois[POIIndex].canTest = false;
+            manager.pois[POIIndex].canTrade = false;
         }
     }
 }
