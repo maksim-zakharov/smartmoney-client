@@ -57,12 +57,12 @@ export const drawFVG = (manager: StateManager) => {
         // const takeProfit = closestExtremumSwing(manager, swing)
         // const takeProfitPrice = takeProfit?.price;
 
-        const RR = 4;
+        const RR = 2;
         const stopPrice = swing.side === 'high' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
         const openCandle = manager.candles[i + 1];
         const openPrice = openCandle?.open;
         const stop = Math.abs(openPrice - stopPrice);
-        const takeProfitPrice = (swing.side === 'high' ? new Decimal(openPrice).minus(new Decimal(stop)).mul(new Decimal(RR)) :  new Decimal(openPrice).plus(new Decimal(stop)).mul(new Decimal(RR))).toNumber();
+        const takeProfitPrice = (swing.side === 'high' ? new Decimal(openPrice).minus(new Decimal(stop).mul(new Decimal(RR))) :  new Decimal(openPrice).plus(new Decimal(stop).mul(new Decimal(RR)))).toNumber();
 
         const index = i + 1;
         // while (manager.candles[index] && !hasHitOB(orderBlockPart, manager.candles[index])) {
