@@ -136,10 +136,6 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
             continue;
         }
 
-        if(RR > 300){
-            debugger
-        }
-
         let closePosition: Position;
 
         for (let j = obItem.endIndex + 1; j < candles.length; j++) {
