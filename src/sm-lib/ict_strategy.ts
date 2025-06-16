@@ -76,7 +76,7 @@ export const drawFVG = (manager: StateManager) => {
             canTest: true,
             canTrade: lastCandle.time === manager.candles[index].time,
             takeProfit: takeProfitPrice,
-            type: POIType.OB_EXT,
+            type: POIType.FVG,
             endCandle: manager.candles[index],
             endIndex: index,
         });
