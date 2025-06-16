@@ -30,7 +30,6 @@ export const drawFVG = (manager: StateManager) => {
         const POIIndex = i-1;
 
         const orderBlockPart = {
-            startCandle: manager.candles[POIIndex],
             // Указываем экстремум который пробила свеча IFC
             startCandle: {
                 ...manager.candles[POIIndex],
