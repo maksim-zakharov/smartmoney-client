@@ -211,8 +211,8 @@ export const defaultConfig: THConfig = {
     showHiddenSwings: true,
     withMove: false,
     showFake: false,
-    // tradeOBEXT: true,
-    trend2: true
+    tradeOBEXT: true,
+    // trend2: true
 };
 
 // Точка входа в торговлю
