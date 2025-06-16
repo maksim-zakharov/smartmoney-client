@@ -25,18 +25,20 @@ export const drawFVG = (manager: StateManager) => {
 
         const side = everyBullish ? 'low' : 'high'
 
+        const POIIndex = i-1;
+
         const orderBlockPart = {
-            startCandle: manager.candles[i - 2],
+            startCandle: manager.candles[POIIndex],
             // Указываем экстремум который пробила свеча IFC
             startCandle: {
-                ...manager.candles[i - 2],
+                ...manager.candles[POIIndex],
                 // Это нужно для стопа, если свипнули хай - стоп должен быть за хаем свипа, если лоу - за лоем свипа
-                high: side === 'high' ? manager.candles[i - 2].high : manager.candles[i].low,
-                low: side === 'low' ? manager.candles[i - 2].low : manager.candles[i].high,
+                high: side === 'high' ? manager.candles[POIIndex].high : manager.candles[i].low,
+                low: side === 'low' ? manager.candles[POIIndex].low : manager.candles[i].high,
             },
             lastOrderblockCandle: manager.candles[i],
             lastImbalanceCandle: manager.candles[i],
-            firstImbalanceIndex: i - 2,
+            firstImbalanceIndex: POIIndex,
             lastImbalanceIndex: i,
             side,
         } as OrderblockPart;
@@ -51,15 +53,22 @@ export const drawFVG = (manager: StateManager) => {
             time: manager.candles[i].time,
         })
 
-        const takeProfit = closestExtremumSwing(manager, swing)
-        const takeProfitPrice = takeProfit?.price;
+        // const takeProfit = closestExtremumSwing(manager, swing)
+        // const takeProfitPrice = takeProfit?.price;
 
-        let index = i + 1;
-        while (manager.candles[index] && !hasHitOB(orderBlockPart, manager.candles[index])) {
-            index++;
-        }
+        const RR = 2;
+        const stopPrice = swing.side === 'high' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
+        const openCandle = manager.candles[i + 1];
+        const openPrice = openCandle?.open;
+        const stop = Math.abs(openPrice - stopPrice);
+        const takeProfitPrice = swing.side === 'high' ? openPrice - stop * RR :  openPrice + stop * RR;
 
-        manager.pois[i - 2] = new POI({
+        const index = i + 1;
+        // while (manager.candles[index] && !hasHitOB(orderBlockPart, manager.candles[index])) {
+        //     index++;
+        // }
+
+        manager.pois[POIIndex] = new POI({
             ...orderBlockPart,
             isSMT: false,
             swing,
@@ -73,8 +82,8 @@ export const drawFVG = (manager: StateManager) => {
 
         const currentTrend = manager.trend[index]?.trend;
         const trendSide = currentTrend === -1 ? 'high' : currentTrend === 1 ? 'low' : 0;
-        if (trendSide !== manager.pois[i - 2].side) {
-            manager.pois[i - 2].canTest = false;
+        if (trendSide !== manager.pois[POIIndex].side) {
+            manager.pois[POIIndex].canTest = false;
         }
     }
 }

@@ -1,6 +1,7 @@
 import {calculateTakeProfit} from "./utils";
 import {Security} from "./api.ts";
 import {HistoryObject, POI, POIType, Swing} from "./sm-lib/models.ts";
+import Decimal from "decimal.js";
 
 export interface Position {
     side: 'short' | 'long',
@@ -63,7 +64,7 @@ export const finishPosition = ({
 
 export const calculatePositionsByOrderblocks = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0, tralingPercent: number = 0) => {
     const positions: Position[] = [];
-    let lastExtremumIndexMap: Record<'high' | 'low', number> = {
+    const lastExtremumIndexMap: Record<'high' | 'low', number> = {
         high: null,
         low: null
     }
@@ -80,7 +81,7 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
             continue;
         }
 
-        let limitOrder = obItem.tradeOrderType === 'limit';
+        const limitOrder = obItem.tradeOrderType === 'limit';
 
         let side = obItem.side === 'high' ? 'short' : 'long';
         if (obItem.type === POIType.Breaking_Block) {
@@ -88,7 +89,7 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
         }
         let stopLoss = side === 'long' ? obItem.startCandle.low : obItem.startCandle.high;
         if (security) {
-            stopLoss = side === 'long' ? stopLoss - security.minstep : stopLoss + security.minstep
+            stopLoss = side === 'long' ? new Decimal(stopLoss).minus(security.minstep).toNumber() : new Decimal(stopLoss).plus(security.minstep).toNumber()
         }
         let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
         const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
@@ -124,10 +125,19 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
         }
         const profit = Math.abs(takeProfit - openPrice);
         const loss = Math.abs(stopLoss - openPrice);
+
+        if (!loss) {
+            continue;
+        }
+
         const RR = profit / loss;
 
         if (RR < 3) {
             continue;
+        }
+
+        if(RR > 300){
+            debugger
         }
 
         let closePosition: Position;
@@ -220,7 +230,7 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
 }
 
 export const iterationCalculatePositions = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0, tralingPercent: number = 0) => {
-    let positions = {};
+    const positions = {};
     for (let i = 0; i < candles.length - 1; i++) {
         const partCandles = candles.slice(0, i);
         const partSwings = swings.slice(0, i);

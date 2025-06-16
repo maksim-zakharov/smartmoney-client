@@ -253,7 +253,7 @@ export const SoloTestPage = () => {
     }, [robotOB, config.showRobotOB, orderBlocks]);
 
     const profit = useMemo(() => ({
-        PnL: positions.reduce((acc, curr) => acc + curr.newPnl, 0),
+        PnL: positions.filter(c => c.newPnl).reduce((acc, curr) => acc + curr.newPnl, 0),
         profits: positions.filter(p => p.newPnl > 0).length,
         losses: positions.filter(p => p.newPnl < 0).length
     }), [stopMargin, positions])
