@@ -196,7 +196,7 @@ export const calculateTesting = (
         manager.calculateBreakerBlocks()
 
     // Увеличивает на тестинге на 3% винрейт
-    const orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.OB_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
+    const orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.OB_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
 
     return {
         swings: manager.swings,

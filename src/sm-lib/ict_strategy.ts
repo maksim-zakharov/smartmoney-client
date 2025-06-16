@@ -57,14 +57,14 @@ export const drawFVG = (manager: StateManager) => {
         // const takeProfit = closestExtremumSwing(manager, swing)
         // const takeProfitPrice = takeProfit?.price;
 
-        const RR = 2;
+        const RR = 3;
         const stopPrice = swing.side === 'high' ? orderBlockPart.startCandle.high : orderBlockPart.startCandle.low;
         const openCandle = manager.candles[i + 1];
         const openPrice = openCandle?.open;
         const stop = Math.abs(openPrice - stopPrice);
         const takeProfitPrice = (swing.side === 'high' ? new Decimal(openPrice).minus(new Decimal(stop).mul(new Decimal(RR))) :  new Decimal(openPrice).plus(new Decimal(stop).mul(new Decimal(RR)))).toNumber();
 
-        const index = i + 1;
+        const index = i;
         // while (manager.candles[index] && !hasHitOB(orderBlockPart, manager.candles[index])) {
         //     index++;
         // }
@@ -81,12 +81,12 @@ export const drawFVG = (manager: StateManager) => {
             endIndex: index,
         });
 
-        const currentTrend = manager.trend[index]?.trend;
-        const trendSide = currentTrend === -1 ? 'high' : currentTrend === 1 ? 'low' : 0;
-        if (trendSide !== manager.pois[POIIndex].side) {
-            manager.pois[POIIndex].canTest = false;
-            manager.pois[POIIndex].canTrade = false;
-        }
+        // const currentTrend = manager.trend[index]?.trend;
+        // const trendSide = currentTrend === -1 ? 'high' : currentTrend === 1 ? 'low' : 0;
+        // if (trendSide !== manager.pois[POIIndex].side) {
+        //     manager.pois[POIIndex].canTest = false;
+        //     manager.pois[POIIndex].canTrade = false;
+        // }
     }
 }
 export const drawTrendByFVG = (manager: StateManager) => {

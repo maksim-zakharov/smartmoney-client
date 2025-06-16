@@ -132,7 +132,7 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
 
         const RR = profit / loss;
 
-        if (RR < 3) {
+        if (RR < 3 && obItem.type !== POIType.FVG) {
             continue;
         }
 
