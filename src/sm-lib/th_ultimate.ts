@@ -228,6 +228,7 @@ export const defaultConfig: THConfig = {
     withMove: false,
     showFake: false,
     tradeOBEXT: true,
+    tradeStartSessionMorning: true
     // trend2: true
 };
 
@@ -237,7 +238,7 @@ export const calculateProduction = (data: HistoryObject[]) => {
 
     const {orderBlocks} = calculateTesting(data, config);
 
-    return orderBlocks.filter((o) => [POIType.OB_EXT, POIType.FVG].includes(o?.type) && o.canTrade && !o.isSMT);
+    return orderBlocks.filter((o) => [POIType.OB_EXT, POIType.FVG, POIType.CROSS_SESSION].includes(o?.type) && o.canTrade && !o.isSMT);
 };
 
 const hasHighValidPullback = (
