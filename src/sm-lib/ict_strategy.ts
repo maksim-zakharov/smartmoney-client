@@ -216,9 +216,9 @@ export const tradeStartSessionStrategy = ({
                 // Берем старт от средней свечи
                 ...manager.candles[FVGStartCandleIndex + 1],
                 // Внимание, по этим полям ставится стоп
-                high: side === 'low' ? manager.candles[FVGEndCandleIndex].low : manager.candles[FVGEndCandleIndex].high,
+                high: side === 'low' ? manager.candles[FVGEndCandleIndex].low : manager.candles[FVGStartCandleIndex + 1].high,
                 // Если low (покупка)
-                low: side === 'low' ? manager.candles[FVGStartCandleIndex + 1].low : manager.candles[FVGStartCandleIndex + 1].high,
+                low: side === 'low' ? manager.candles[FVGStartCandleIndex + 1].low : manager.candles[FVGEndCandleIndex].high,
             },
             lastOrderblockCandle: manager.candles[FVGEndCandleIndex],
             lastImbalanceCandle: manager.candles[FVGEndCandleIndex],
