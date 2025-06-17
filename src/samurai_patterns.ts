@@ -91,6 +91,8 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
         if (security) {
             stopLoss = side === 'long' ? new Decimal(stopLoss).minus(security.minstep).toNumber() : new Decimal(stopLoss).plus(security.minstep).toNumber()
         }
+
+        debugger
         let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
         const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
 

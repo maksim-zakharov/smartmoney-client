@@ -18,7 +18,7 @@ import {
     isInternalBOS,
     lowestBy
 } from "./utils.ts";
-import {drawFVG, drawTrendByFVG} from "./ict_strategy.ts";
+import {drawFVG, drawTrendByFVG, tradeStartSessionStrategy} from "./ict_strategy.ts";
 
 /**
  * OB - строится на структурных точках,
@@ -49,6 +49,7 @@ export const calculatePOI = (
     withMove: boolean = false,
     newSMT: boolean = false,
 ) => {
+
     // Иногда определяеются несколько ОБ на одной свечке, убираем
 
     for (let i = 0; i < manager.swings.length; i++) {
@@ -156,7 +157,10 @@ export const calculateTesting = (
         tradeOBIDM,
         showFVG,
         tradeBB,
-        trend2
+        trend2,
+        tradeStartSessionMorning,
+        tradeStartSessionDay,
+        tradeStartSessionEvening
     }: THConfig,
 ) => {
     const manager = new StateManager(data, {
@@ -167,7 +171,10 @@ export const calculateTesting = (
         tradeOBEXT,
         tradeEXTIFC,
         tradeOBIDM,
-        showLogs
+        showLogs,
+        tradeStartSessionMorning,
+        tradeStartSessionDay,
+        tradeStartSessionEvening
     });
 
     // <-- Копировать в робота
@@ -195,8 +202,17 @@ export const calculateTesting = (
     if (tradeBB)
         manager.calculateBreakerBlocks()
 
+    if(tradeStartSessionMorning)
+        tradeStartSessionStrategy({RR: 2, candlesCount: 5, sessionType: 'morning', manager});
+
+    if(tradeStartSessionDay)
+        tradeStartSessionStrategy({RR: 2, candlesCount: 5, sessionType: 'day', manager});
+
+    if(tradeStartSessionEvening)
+        tradeStartSessionStrategy({RR: 2, candlesCount: 5, sessionType: 'evening', manager});
+
     // Увеличивает на тестинге на 3% винрейт
-    const orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.OB_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
+    const orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.CROSS_SESSION, POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.OB_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));
 
     return {
         swings: manager.swings,

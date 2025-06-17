@@ -13,6 +13,18 @@ export const formatDate = (_date: Date) => {
 
     return `${date} ${hour}:${minute}`;
 }
+export const getTime = (_date: Date) => {
+    // 2025-05-19T19:40:00.000Z
+
+    // Скорректированная дата под смещение
+    const adjustedDate = new Date(_date.getTime() + 180 * 60000);
+
+    const str = adjustedDate.toISOString();
+    const [date, time] = str.split('T');
+    const [hour, minute, second] = time.split(':');
+
+    return `${hour}:${minute}`;
+}
 export const isBearish = (candle: HistoryObject) => candle.open > candle.close;
 export const isBullish = (candle: HistoryObject) => candle.open < candle.close;
 
@@ -129,6 +141,17 @@ export const hasTakenOutLiquidity = (
     type === 'high'
         ? bossCandle.high < currentCandle.high
         : bossCandle.low > currentCandle.low;
+
+// Смотрим пробила ли свеча candle цену price. 1 - пробила снизу вверх, -1 - сверху вниз, 0 - не пробила.
+export const isCrossed = (price: number, candle: HistoryObject) => {
+    if (price < candle.close) {
+        return 1
+    } else if (price > candle.close) {
+        return -1;
+    }
+    return 0;
+}
+
 export const hasClose = (
     type: 'high' | 'low',
     bossCandle: HistoryObject,

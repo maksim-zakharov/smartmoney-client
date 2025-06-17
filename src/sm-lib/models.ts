@@ -147,6 +147,7 @@ export class Cross {
 }
 
 export enum POIType {
+    CROSS_SESSION = 'CROSS_SESSION',
     FVG = 'FVG',
     // IDM IFC (свип IDM свечей IFC)
     IDM_IFC = 'IDM_IFC',
@@ -207,6 +208,8 @@ export class POI {
     // Все IFC после касания торгуются маркетом. Просто ОБ - лимиткой
     get tradeOrderType(): 'limit' | 'market' {
         switch (this.type) {
+            case POIType.CROSS_SESSION:
+                return 'market';
             case POIType.FVG:
                 return 'market';
             case POIType.CHOCH_IFC:
@@ -234,6 +237,9 @@ export class POI {
 
     get text(): string {
         if (this.isSMT) return 'SMT';
+        if (this.type === POIType.CROSS_SESSION) {
+            return 'CROSS_SESSION';
+        }
         if (this.type === POIType.FVG) {
             return 'FVG';
         }
@@ -293,6 +299,9 @@ export interface THConfig {
     showLogs?: boolean;
     showFVG?: boolean;
     trend2?: boolean;
+    tradeStartSessionMorning?: boolean;
+    tradeStartSessionDay?: boolean;
+    tradeStartSessionEvening?: boolean;
 }
 
 export interface Trend {

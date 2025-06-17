@@ -116,6 +116,9 @@ export const SoloTestPage = () => {
         showSession: checkboxValues.has('showSession'),
         showWeekly: checkboxValues.has('showWeekly'),
         trend2: checkboxValues.has('trend2'),
+        tradeStartSessionMorning: checkboxValues.has('tradeStartSessionMorning'),
+        tradeStartSessionDay: checkboxValues.has('tradeStartSessionDay'),
+        tradeStartSessionEvening: checkboxValues.has('tradeStartSessionEvening'),
         showLogs: false
     }), [checkboxValues])
 
@@ -184,7 +187,7 @@ export const SoloTestPage = () => {
             orderBlocks
         } = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
 
-        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.OB_EXT, POIType.FVG, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
+        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.CROSS_SESSION, POIType.OB_EXT, POIType.FVG, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
 
         let positions = [];
 
@@ -212,7 +215,7 @@ export const SoloTestPage = () => {
                 stopMargin
             })).sort((a, b) => b.openTime - a.openTime)
         };
-    }, [tralingPercent, offset, isShortSellPossible, security?.lotsize, stopPaddingPercent,config.showWeekly, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.showFVG, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [tralingPercent, offset, isShortSellPossible, security?.lotsize, stopPaddingPercent,config.showWeekly, config.tradeStartSessionMorning, config.tradeStartSessionDay, config.tradeStartSessionEvening, config.trend2, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.showFVG, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {
@@ -562,6 +565,9 @@ export const SoloTestPage = () => {
                 <Checkbox key="withMove" value="withMove">Двигать Имбаланс</Checkbox>
                 <Checkbox key="showSession" value="showSession">Показывать сессии</Checkbox>
                 <Checkbox key="trend2" value="trend2">trend2</Checkbox>
+                <Checkbox key="tradeStartSessionMorning" value="tradeStartSessionMorning">tradeStartSessionMorning</Checkbox>
+                <Checkbox key="tradeStartSessionDay" value="tradeStartSessionDay">tradeStartSessionDay</Checkbox>
+                <Checkbox key="tradeStartSessionEvening" value="tradeStartSessionEvening">tradeStartSessionEvening</Checkbox>
                 <Checkbox key="showWeekly" value="showWeekly">Показывать хайлой недельки</Checkbox>
                 <Checkbox key="showHiddenSwings" value="showHiddenSwings">Показывать скрытые точки</Checkbox>
                 <Checkbox key="showRobotOB" value="showRobotOB">Показывать ОБ с робота</Checkbox>
