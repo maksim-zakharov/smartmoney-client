@@ -203,13 +203,13 @@ export const calculateTesting = (
         manager.calculateBreakerBlocks()
 
     if(tradeStartSessionMorning)
-        tradeStartSessionStrategy({RR: 2, candlesCount: 5, sessionType: 'morning', manager});
+        tradeStartSessionStrategy({RR: 5, candlesCount: 5, sessionType: 'morning', manager});
 
     if(tradeStartSessionDay)
-        tradeStartSessionStrategy({RR: 2, candlesCount: 5, sessionType: 'day', manager});
+        tradeStartSessionStrategy({RR: 5, candlesCount: 5, sessionType: 'day', manager});
 
     if(tradeStartSessionEvening)
-        tradeStartSessionStrategy({RR: 2, candlesCount: 5, sessionType: 'evening', manager});
+        tradeStartSessionStrategy({RR: 5, candlesCount: 5, sessionType: 'evening', manager});
 
     // Увеличивает на тестинге на 3% винрейт
     const orderBlocks = manager.pois.filter((ob) => ob?.canTest && [POIType.CROSS_SESSION, POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.OB_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(ob?.type));

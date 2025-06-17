@@ -57,7 +57,7 @@ export const finishPosition = ({
     curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee;
     curr.ticker = ticker;
     curr.timeframe = tf;
-    curr.RR = Math.abs(curr.takeProfit - curr.openPrice) / Math.abs(curr.stopLoss - curr.openPrice);
+    // curr.RR = Math.abs(curr.takeProfit - curr.openPrice) / Math.abs(curr.stopLoss - curr.openPrice);
 
     return curr;
 }
@@ -164,18 +164,21 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
 
             if (side === 'long' && candles[j].low <= stopLoss) {
                 closePosition = {
+                    RR,
                     side, name: obItem.text, takeProfit, stopLoss,
                     openPrice, openTime, closeTime: candles[j].time, pnl: stopLoss - openPrice
                 };
                 break;
             } else if (side === 'short' && candles[j].high >= stopLoss) {
                 closePosition = {
+                    RR,
                     side, name: obItem.text, takeProfit, stopLoss,
                     openPrice, openTime, closeTime: candles[j].time, pnl: openPrice - stopLoss
                 };
                 break;
             } else if (side === 'long' && candles[j].high >= takeProfit) {
                 closePosition = {
+                    RR,
                     side,
                     name: obItem.text,
                     takeProfit,
@@ -189,6 +192,7 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
                 break;
             } else if (side === 'short' && candles[j].low <= takeProfit) {
                 closePosition = {
+                    RR,
                     side,
                     name: obItem.text,
                     takeProfit,

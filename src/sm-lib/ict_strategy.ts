@@ -175,34 +175,55 @@ export const tradeStartSessionStrategy = ({
         const sessionLow = Math.min(...candlesBatch.map(c => c.low));
 
         // Со следующей свечи после интервала ищем пробитие в какую то сторону
-        let crossedCandleIndex = i + candlesCount;
+        const crossedCandleIndex = i + candlesCount;
 
-        // Итерируемся пока есть свечи и пока не пробили ни один хай
-        while (manager.candles[crossedCandleIndex] && isCrossed(sessionHigh, manager.candles[crossedCandleIndex]) !== 1 && isCrossed(sessionLow, manager.candles[crossedCandleIndex]) !== -1) {
-            crossedCandleIndex++;
-        }
-
-        // Перебрали все свечи, дошли до конца
-        if (!manager.candles[crossedCandleIndex]) {
+        const result = searchSessionCross(manager, crossedCandleIndex, sessionHigh, sessionLow);
+        if (!result) {
             break;
         }
+        const {FVGStartCandleIndex, FVGEndCandleIndex, isHighCrossed, isLowCrossed} = result
 
-        // Проверяем какую таки вершину пробили
-        const isHighCrossed = isCrossed(sessionHigh, manager.candles[crossedCandleIndex]) === 1;
-        const isLowCrossed = isCrossed(sessionLow, manager.candles[crossedCandleIndex]) === -1;
-
-        // Далее ищем FVG но уже со следующей свечи
-        let FVGStartCandleIndex = crossedCandleIndex - 1;
-        let FVGEndCandleIndex = crossedCandleIndex + 1;
-
-        // TODO Тут также нужно проверять возврат в диапазон, если вернулись - искать пробитие заново
-        while (manager.candles[FVGEndCandleIndex] && !isImbalance(manager.candles[FVGStartCandleIndex], manager.candles[FVGEndCandleIndex])) {
-            FVGStartCandleIndex++;
-            FVGEndCandleIndex++;
-        }
+        // // Итерируемся пока есть свечи и пока не пробили ни один хай
+        // while (manager.candles[crossedCandleIndex] && isCrossed(sessionHigh, manager.candles[crossedCandleIndex]) !== 1 && isCrossed(sessionLow, manager.candles[crossedCandleIndex]) !== -1) {
+        //     crossedCandleIndex++;
+        // }
+        //
+        // // Перебрали все свечи, дошли до конца
+        // if (!manager.candles[crossedCandleIndex]) {
+        //     break;
+        // }
+        //
+        // // Проверяем какую таки вершину пробили
+        // const isHighCrossed = isCrossed(sessionHigh, manager.candles[crossedCandleIndex]) === 1;
+        // const isLowCrossed = isCrossed(sessionLow, manager.candles[crossedCandleIndex]) === -1;
+        //
+        // // Далее ищем FVG но уже со следующей свечи
+        // let FVGStartCandleIndex = crossedCandleIndex - 1;
+        // let FVGEndCandleIndex = crossedCandleIndex + 1;
+        //
+        // // TODO Тут также нужно проверять возврат в диапазон, если вернулись - искать пробитие заново
+        // // while (manager.candles[FVGEndCandleIndex] && !isImbalance(manager.candles[FVGStartCandleIndex], manager.candles[FVGEndCandleIndex])) {
+        // //     FVGStartCandleIndex++;
+        // //     FVGEndCandleIndex++;
+        // // }
+        //
+        // for(; manager.candles[FVGEndCandleIndex]; FVGStartCandleIndex++, FVGEndCandleIndex++){
+        //     // TODO Тут также нужно проверять возврат в диапазон, если вернулись - искать пробитие заново
+        //     // Если пробили хай, и далее вернулись в диапазон (пробили хай сверху вниз)
+        //     const isHighReturned = isHighCrossed && isCrossed(sessionHigh, manager.candles[FVGEndCandleIndex]) === -1;
+        //     // Если пробили хай, и далее вернулись в диапазон (пробили лой снизу вверх)
+        //     const isLowReturned = isLowCrossed && isCrossed(sessionLow, manager.candles[FVGEndCandleIndex]) === 1;
+        //     if(isHighReturned || isLowReturned){
+        //         // Вернулись в диапазон, снова ищем пробитие
+        //     }
+        //     // Если FVG найден - окей
+        //     if(isImbalance(manager.candles[FVGStartCandleIndex], manager.candles[FVGEndCandleIndex])){
+        //         break;
+        //     }
+        // }
 
         // Если последней свечи FVG уже нет - дошли до конца свечек
-        if(!manager.candles[FVGEndCandleIndex]){
+        if (!manager.candles[FVGEndCandleIndex]) {
             break;
         }
 
@@ -238,9 +259,9 @@ export const tradeStartSessionStrategy = ({
         })
 
         const openPrice = manager.candles[FVGEndCandleIndex].close;
-        const stopPrice = side === 'low' ? manager.candles[FVGStartCandleIndex + 1].low :  manager.candles[FVGStartCandleIndex + 1].high;
+        const stopPrice = side === 'low' ? manager.candles[FVGStartCandleIndex + 1].low : manager.candles[FVGStartCandleIndex + 1].high;
         const stopPoints = new Decimal(openPrice).minus(new Decimal(stopPrice)).abs().toNumber();
-        const takeProfit = side === 'low' ? new Decimal(openPrice).plus(new Decimal(stopPoints).mul(RR)) :  new Decimal(openPrice).minus(new Decimal(stopPoints).mul(RR));
+        const takeProfit = side === 'low' ? new Decimal(openPrice).plus(new Decimal(stopPoints).mul(RR)) : new Decimal(openPrice).minus(new Decimal(stopPoints).mul(RR));
 
         manager.pois[FVGStartCandleIndex] = new POI({
             ...orderBlockPart,
@@ -255,8 +276,50 @@ export const tradeStartSessionStrategy = ({
             endIndex: FVGEndCandleIndex,
         });
 
-        debugger
-
         i = FVGEndCandleIndex;
     }
+}
+
+const searchSessionCross = (manager: StateManager, crossedCandleIndex: number, sessionHigh: number, sessionLow: number) => {
+    // Итерируемся пока есть свечи и пока не пробили ни один хай
+    while (manager.candles[crossedCandleIndex] && isCrossed(sessionHigh, manager.candles[crossedCandleIndex]) !== 1 && isCrossed(sessionLow, manager.candles[crossedCandleIndex]) !== -1) {
+        crossedCandleIndex++;
+    }
+
+    // Перебрали все свечи, дошли до конца
+    if (!manager.candles[crossedCandleIndex]) {
+        return null;
+    }
+
+    // Проверяем какую таки вершину пробили
+    const isHighCrossed = isCrossed(sessionHigh, manager.candles[crossedCandleIndex]) === 1;
+    const isLowCrossed = isCrossed(sessionLow, manager.candles[crossedCandleIndex]) === -1;
+
+    // Далее ищем FVG но уже со следующей свечи
+    let FVGStartCandleIndex = crossedCandleIndex - 1;
+    let FVGEndCandleIndex = crossedCandleIndex + 1;
+
+    // TODO Тут также нужно проверять возврат в диапазон, если вернулись - искать пробитие заново
+    // while (manager.candles[FVGEndCandleIndex] && !isImbalance(manager.candles[FVGStartCandleIndex], manager.candles[FVGEndCandleIndex])) {
+    //     FVGStartCandleIndex++;
+    //     FVGEndCandleIndex++;
+    // }
+
+    for (; manager.candles[FVGEndCandleIndex]; FVGStartCandleIndex++, FVGEndCandleIndex++) {
+        // TODO Тут также нужно проверять возврат в диапазон, если вернулись - искать пробитие заново
+        // Если пробили хай, и далее вернулись в диапазон (пробили хай сверху вниз)
+        const isHighReturned = isHighCrossed && isCrossed(sessionHigh, manager.candles[FVGEndCandleIndex]) === -1;
+        // Если пробили хай, и далее вернулись в диапазон (пробили лой снизу вверх)
+        const isLowReturned = isLowCrossed && isCrossed(sessionLow, manager.candles[FVGEndCandleIndex]) === 1;
+        if (isHighReturned || isLowReturned) {
+            // Вернулись в диапазон, снова ищем пробитие
+            return searchSessionCross(manager, FVGEndCandleIndex + 1, sessionHigh, sessionLow);
+        }
+        // Если FVG найден - окей
+        if (isImbalance(manager.candles[FVGStartCandleIndex], manager.candles[FVGEndCandleIndex])) {
+            return {FVGStartCandleIndex, FVGEndCandleIndex, isHighCrossed, isLowCrossed}
+        }
+    }
+
+    return null;
 }

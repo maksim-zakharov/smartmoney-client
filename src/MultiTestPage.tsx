@@ -32,7 +32,7 @@ import {
 } from "./cacheService.ts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
-import {HistoryObject, POIType} from "./sm-lib/models.ts";
+import {HistoryObject, POI, POIType} from "./sm-lib/models.ts";
 import {notTradingTime} from "./sm-lib/utils.ts";
 
 export const MultiTestPage = () => {
@@ -55,6 +55,9 @@ export const MultiTestPage = () => {
     const [showSMT, setshowSMT] = useState<boolean>(false);
     const [newSMT, setnewSMT] = useState<boolean>(false);
     const [trend2, settrend2] = useState<boolean>(false);
+    const [tradeStartSessionMorning, settradeStartSessionMorning] = useState<boolean>(false);
+    const [tradeStartSessionDay, settradeStartSessionDay] = useState<boolean>(false);
+    const [tradeStartSessionEvening, settradeStartSessionEvening] = useState<boolean>(false);
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(true);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("max");
@@ -89,10 +92,13 @@ export const MultiTestPage = () => {
             tradeOBIDM,
             tradeOBEXT,
             tradeEXTIFC,
-            trend2
+            trend2,
+            tradeStartSessionMorning,
+            tradeStartSessionDay,
+            tradeStartSessionEvening
         });
 
-        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.Breaking_Block, POIType.OB_IDM].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
+        const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.CROSS_SESSION, POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.Breaking_Block, POIType.OB_IDM].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
 
         const lotsize = (security?.lotsize || 1)
 
@@ -108,15 +114,23 @@ export const MultiTestPage = () => {
         }
 
         return positions.filter(p => Boolean(p.pnl)).map(finishPosition({lotsize, fee, tf, ticker, stopMargin})).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
-    }, [tralingPercent, data, showFake, newSMT, trend2, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
+    }, [tralingPercent, data, showFake, newSMT, trend2,
+        tradeStartSessionMorning,
+        tradeStartSessionDay,
+        tradeStartSessionEvening, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
     const allPositions = useMemo(() => {
-        return Object.entries(allData).map(([ticker, data]) => {
+        const topLiquidStocks = ['SBER', 'GAZP', 'SBERP', 'YDEX', 'SMLT', 'LKOH', 'ROSN', 'PIKK', 'T', 'VTBR', 'RNFT'];
+
+        return Object.entries(allData).filter(([ticker]) => (!tradeStartSessionDay && !tradeStartSessionEvening && !tradeStartSessionMorning) || topLiquidStocks.includes(ticker)).map(([ticker, data]) => {
             const {swings, orderBlocks} = calculateTesting(data, {
                 withMove,
                 showHiddenSwings,
                 newSMT,
                 trend2,
+                tradeStartSessionMorning,
+                tradeStartSessionDay,
+                tradeStartSessionEvening,
                 showFake,
                 tradeOBIDM,
                 tradeIDMIFC,
@@ -126,7 +140,7 @@ export const MultiTestPage = () => {
                 tradeEXTIFC
             });
 
-            const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.Breaking_Block].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
+            const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.CROSS_SESSION, POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.Breaking_Block].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
 
             const lotsize = (allSecurity[ticker]?.lotsize || 1)
 
@@ -141,7 +155,10 @@ export const MultiTestPage = () => {
 
             return positions.filter(p => Boolean(p.pnl)).map(finishPosition({ticker, tf, stopMargin, fee, lotsize}));
         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
-    }, [tralingPercent, tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT, trend2, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+    }, [tralingPercent, tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT,
+        tradeStartSessionMorning,
+        tradeStartSessionDay,
+        tradeStartSessionEvening, trend2, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
@@ -435,6 +452,21 @@ export const MultiTestPage = () => {
                     <Col>
                         <FormItem>
                             <Checkbox checked={trend2} onChange={e => settrend2(e.target.checked)}>trend2</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={tradeStartSessionMorning} onChange={e => settradeStartSessionMorning(e.target.checked)}>tradeStartSessionMorning</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={tradeStartSessionDay} onChange={e => settradeStartSessionDay(e.target.checked)}>tradeStartSessionDay</Checkbox>
+                        </FormItem>
+                    </Col>
+                    <Col>
+                        <FormItem>
+                            <Checkbox checked={tradeStartSessionEvening} onChange={e => settradeStartSessionEvening(e.target.checked)}>tradeStartSessionEvening</Checkbox>
                         </FormItem>
                     </Col>
                     <Col>
