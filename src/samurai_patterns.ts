@@ -92,7 +92,6 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
             stopLoss = side === 'long' ? new Decimal(stopLoss).minus(security.minstep).toNumber() : new Decimal(stopLoss).plus(security.minstep).toNumber()
         }
 
-        debugger
         let openPrice = side === 'long' ? obItem.startCandle.high : obItem.startCandle.low;
         const openTime = limitOrder ? obItem.endCandle.time : candles[obItem.endIndex + 1].time;
 
@@ -134,7 +133,7 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
 
         const RR = profit / loss;
 
-        if (RR < 3 && obItem.type !== POIType.FVG) {
+        if (RR < 3 && ![POIType.FVG, POIType.CROSS_SESSION].includes(obItem.type)) {
             continue;
         }
 
