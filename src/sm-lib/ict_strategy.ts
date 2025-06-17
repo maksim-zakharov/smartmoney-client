@@ -179,9 +179,9 @@ export const tradeStartSessionStrategy = ({
 
         const result = searchSessionCross(manager, crossedCandleIndex, sessionHigh, sessionLow);
         if (!result) {
-            break;
+            continue;
         }
-        const {FVGStartCandleIndex, FVGEndCandleIndex, isHighCrossed, isLowCrossed} = result
+        const {FVGStartCandleIndex, FVGEndCandleIndex, isHighCrossed, isLowCrossed} = result;
 
         // // Итерируемся пока есть свечи и пока не пробили ни один хай
         // while (manager.candles[crossedCandleIndex] && isCrossed(sessionHigh, manager.candles[crossedCandleIndex]) !== 1 && isCrossed(sessionLow, manager.candles[crossedCandleIndex]) !== -1) {
@@ -280,7 +280,15 @@ export const tradeStartSessionStrategy = ({
     }
 }
 
+function isNewDay(date1, date2) {
+    const dateStr1 = date1.toISOString().split('T')[0];
+    const dateStr2 = date2.toISOString().split('T')[0];
+    return dateStr1 !== dateStr2;
+}
+
 const searchSessionCross = (manager: StateManager, crossedCandleIndex: number, sessionHigh: number, sessionLow: number) => {
+    const startDate =new Date(manager.candles[crossedCandleIndex].time * 1000);
+
     // Итерируемся пока есть свечи и пока не пробили ни один хай
     while (manager.candles[crossedCandleIndex] && isCrossed(sessionHigh, manager.candles[crossedCandleIndex]) !== 1 && isCrossed(sessionLow, manager.candles[crossedCandleIndex]) !== -1) {
         crossedCandleIndex++;
@@ -288,6 +296,11 @@ const searchSessionCross = (manager: StateManager, crossedCandleIndex: number, s
 
     // Перебрали все свечи, дошли до конца
     if (!manager.candles[crossedCandleIndex]) {
+        return null;
+    }
+
+    // Если новый день - то уже торговля по сессии не актуальна
+    if(isNewDay(startDate, new Date(manager.candles[crossedCandleIndex].time * 1000))){
         return null;
     }
 
@@ -306,6 +319,11 @@ const searchSessionCross = (manager: StateManager, crossedCandleIndex: number, s
     // }
 
     for (; manager.candles[FVGEndCandleIndex]; FVGStartCandleIndex++, FVGEndCandleIndex++) {
+
+        // Если новый день - то уже торговля по сессии не актуальна
+        if(isNewDay(startDate, new Date(manager.candles[FVGEndCandleIndex].time * 1000))){
+            return null;
+        }
         // TODO Тут также нужно проверять возврат в диапазон, если вернулись - искать пробитие заново
         // Если пробили хай, и далее вернулись в диапазон (пробили хай сверху вниз)
         const isHighReturned = isHighCrossed && isCrossed(sessionHigh, manager.candles[FVGEndCandleIndex]) === -1;
@@ -317,6 +335,18 @@ const searchSessionCross = (manager: StateManager, crossedCandleIndex: number, s
         }
         // Если FVG найден - окей
         if (isImbalance(manager.candles[FVGStartCandleIndex], manager.candles[FVGEndCandleIndex])) {
+
+            const fvgCandles = [manager.candles[FVGStartCandleIndex], manager.candles[FVGStartCandleIndex+1], manager.candles[FVGEndCandleIndex]];
+
+            const everyBullish = fvgCandles.every(isBullish)
+            const everyBearish = fvgCandles.every(isBearish)
+
+            const isOneSideCandle = everyBullish || everyBearish;
+
+            if (!isOneSideCandle) {
+                return null;
+            }
+
             return {FVGStartCandleIndex, FVGEndCandleIndex, isHighCrossed, isLowCrossed}
         }
     }

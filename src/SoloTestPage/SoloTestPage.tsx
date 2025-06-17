@@ -73,7 +73,7 @@ export const SoloTestPage = () => {
     const tf = searchParams.get('tf') || '300';
     const fromDate = searchParams.get('fromDate') || dayjs().add(-2, "week").unix();
     const toDate = searchParams.get('toDate') || dayjs().endOf('day').unix();
-    const [stopMargin, setStopMargin] = useState(30);
+    const [stopMargin, setStopMargin] = useState(50);
     const [stopPaddingPercent, setstopPaddingPercent] = useState(0);
     const [security, setSecurity] = useState<Security>();
 

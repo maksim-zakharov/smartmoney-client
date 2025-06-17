@@ -61,7 +61,7 @@ export const MultiTestPage = () => {
     const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(true);
     const [ticker, onSelectTicker] = useState<string>('MTLR');
     const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<"default" | "max">("max");
-    const [stopMargin, setStopMargin] = useState<number>(30)
+    const [stopMargin, setStopMargin] = useState<number>(50)
     const [feePercent, setFeePercent] = useState<number>(0.04)
     const [baseTakePercent, setBaseTakePercent] = useState<number>(5)
     const [maxTakePercent, setMaxTakePercent] = useState<number>(0.5)
@@ -122,7 +122,9 @@ export const MultiTestPage = () => {
     const allPositions = useMemo(() => {
         const topLiquidStocks = ['SBER', 'GAZP', 'SBERP', 'YDEX', 'SMLT', 'LKOH', 'ROSN', 'PIKK', 'T', 'VTBR', 'RNFT'];
 
-        return Object.entries(allData).filter(([ticker]) => (!tradeStartSessionDay && !tradeStartSessionEvening && !tradeStartSessionMorning) || topLiquidStocks.includes(ticker)).map(([ticker, data]) => {
+        return Object.entries(allData)
+            // .filter(([ticker]) => (!tradeStartSessionDay && !tradeStartSessionEvening && !tradeStartSessionMorning) || topLiquidStocks.includes(ticker))
+            .map(([ticker, data]) => {
             const {swings, orderBlocks} = calculateTesting(data, {
                 withMove,
                 showHiddenSwings,
