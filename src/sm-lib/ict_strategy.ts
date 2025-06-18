@@ -74,7 +74,7 @@ export const drawFVG = (manager: StateManager) => {
             isSMT: false,
             swing,
             canTest: true,
-            canTrade: lastCandle.time === manager.candles[index].time,
+            canTrade: lastCandle.time === manager.candles[index]?.time,
             takeProfit: takeProfitPrice,
             type: POIType.FVG,
             endCandle: manager.candles[index],
@@ -294,6 +294,11 @@ function isNewDay(date1, date2) {
 }
 
 const searchSessionCross = (manager: StateManager, crossedCandleIndex: number, sessionHigh: number, sessionLow: number) => {
+    // Перебрали все свечи, дошли до конца
+    if (!manager.candles[crossedCandleIndex]) {
+        return null;
+    }
+
     const startDate =new Date(manager.candles[crossedCandleIndex].time * 1000);
 
     // Итерируемся пока есть свечи и пока не пробили ни один хай
