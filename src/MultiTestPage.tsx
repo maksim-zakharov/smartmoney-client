@@ -392,6 +392,15 @@ export const MultiTestPage = () => {
             }, []);
     }, [isAllTickers, allPositions, positions])
 
+    const allPositionsAccumPnl = useMemo(() => Object.entries(allPositions.reduce((acc, curr) => {
+        if(!acc[curr.ticker]){
+            acc[curr.ticker] = 0;
+        }
+        acc[curr.ticker] += curr.newPnl;
+
+        return acc;
+    }, {} as any)).sort((a, b) => b[1] - a[1]), [allPositions]);
+
     return <Layout style={{display: 'flex', flexDirection: 'row', gap: '8px'}}>
         <Sider width={300} style={{padding: 16}} collapsedWidth={40} collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
             <Form layout="vertical" style={{height: 'calc(100vh - 84px)', overflow: 'auto', overflowX: 'hidden'}}>
@@ -533,7 +542,7 @@ export const MultiTestPage = () => {
             flexDirection: 'column',
             gap: '8px',
             height: 'calc(100vh - 74px)',
-            overflow: 'hidden'
+            overflowX: 'hidden'
         }}>
 
             <div style={{position: 'absolute', zIndex: 10, top: 4, left: 4, display: 'flex', gap: '8px'}}>
@@ -552,6 +561,18 @@ export const MultiTestPage = () => {
                            primitives={[]} markers={[]} data={profitChartData}
                            ema={[]}/>
                 </Col>
+            </Row>
+            <Row style={{paddingBottom: '8px'}} gutter={8}>
+                {allPositionsAccumPnl.map(([ticker, PnL]) => <Col span={2}>
+                    <Card bordered={false}>
+                        <Statistic
+                            title={ticker}
+                            value={moneyFormat(PnL, 'RUB', 2, 2)}
+                            precision={2}
+                            valueStyle={{color: PnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                        />
+                    </Card>
+                </Col>)}
             </Row>
             <Row style={{paddingBottom: '8px'}} gutter={8}>
                 <Col span={6}>
