@@ -1,4 +1,4 @@
-import {HistoryObject} from "./src/sm-lib/models.ts";
+import {HistoryObject} from "./src/sm-lib/models";
 
 export const symbolFuturePairs = [
     {

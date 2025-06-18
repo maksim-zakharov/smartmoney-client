@@ -15,7 +15,7 @@ import {createSeries, defaultSeriesOptions, uniqueBy} from "../utils";
 import {ensureDefined} from "../lwc-plugins/helpers/assertions";
 import {TLineSeries} from "./TestChart.tsx";
 import {withErrorBoundary} from "../ErrorBoundary.tsx";
-import {isInsideBar} from "../sm-lib/utils.ts";
+import {isInsideBar} from "../sm-lib/utils";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -216,7 +216,7 @@ const ChartFC: FC<Props> = ({
         const currentVisibleRange = timeScale.getVisibleRange();
 
         // Обработка hideInternalCandles
-        let processedData = [...data].sort((a, b) => a.time - b.time);
+        const processedData = [...data].sort((a, b) => a.time - b.time);
         if (hideInternalCandles) {
             for (let i = 0; i < data.length; i++) {
                 const currentCandle = data[i];
@@ -232,7 +232,7 @@ const ChartFC: FC<Props> = ({
                     }
                     break;
                 }
-                let diff = nextIndex - i - 1;
+                const diff = nextIndex - i - 1;
                 i += diff;
             }
         }
@@ -356,7 +356,7 @@ const ChartFC: FC<Props> = ({
         const timeScale = chartApiRef.current.timeScale();
         const currentVisibleRange = timeScale.getVisibleRange();
 
-        let processedData = [...data.map((d: any) => ({
+        const processedData = [...data.map((d: any) => ({
             ...d,
             // time: d.time * 1000,
             value: d.volume,

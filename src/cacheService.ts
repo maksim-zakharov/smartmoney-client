@@ -1,8 +1,8 @@
-// cacheService.ts
+// cacheService
 import { db } from './db';
 
 
-import {HistoryObject} from "./sm-lib/models.ts";
+import {HistoryObject} from "./sm-lib/models";
 
 export const getCachedCandles = async (symbol: string): Promise<HistoryObject[]> => {
     return db.candles

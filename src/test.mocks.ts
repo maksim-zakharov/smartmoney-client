@@ -1,9 +1,9 @@
 import day from './stubs/MTLR_M5_1738875600_1738961999.json';
 import oneIterationSwing from "./stubs/oneIterationSwing.json";
-import {testData1, testData2} from "./test_data.ts";
+import {testData1, testData2} from "./test_data";
 
-import {Cross, HistoryObject, POI, Swing} from "./sm-lib/models.ts";
-import {notTradingTime} from "./sm-lib/utils.ts";
+import {Cross, HistoryObject, POI, Swing} from "./sm-lib/models";
+import {notTradingTime} from "./sm-lib/utils";
 
 const convertOldHighsLowsToSwing = (candles: HistoryObject[], {highs, lows, swings}: {
     highs: any[],

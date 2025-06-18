@@ -2,7 +2,7 @@ import Sider from "antd/es/layout/Sider";
 import {Layout, Menu, MenuProps, Typography} from "antd";
 import React, {useMemo, useState} from "react";
 import {Content} from "antd/es/layout/layout";
-import {calculateTesting, defaultConfig} from "./sm-lib/th_ultimate.ts";
+import {calculateTesting, defaultConfig} from "./sm-lib/th_ultimate";
 import {Chart} from "./SoloTestPage/UpdatedChart";
 import {
     bosesToLineSerieses,
@@ -10,9 +10,9 @@ import {
     orderblocksToOrderblocksPrimitives,
     swingsToMarkers
 } from "./utils";
-import {testMocks} from "./test.mocks.ts";
+import {testMocks} from "./test.mocks";
 
-import {Cross, HistoryObject, POI, Swing} from "./sm-lib/models.ts";
+import {Cross, HistoryObject, POI, Swing} from "./sm-lib/models";
 
 type MenuItem = Required<MenuProps>['items'][number] & { description?: string, data: HistoryObject[] };
 

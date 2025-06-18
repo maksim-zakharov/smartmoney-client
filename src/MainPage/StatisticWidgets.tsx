@@ -3,7 +3,7 @@ import React, {FC, useMemo} from "react";
 import useWindowDimensions from "../useWindowDimensions.tsx";
 import {moneyFormat} from "./MainPage.tsx";
 import moment from "moment/moment";
-import {calculateProdPositionFee} from "../samurai_patterns.ts";
+import {calculateProdPositionFee} from "../samurai_patterns";
 
 export const StatisticWidgets: FC<{fromDate: number, toDate: number, history: any[], timeframeLabelMap: any}> = ({fromDate, toDate, history, timeframeLabelMap}) => {
     const {width} = useWindowDimensions();

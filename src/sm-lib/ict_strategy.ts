@@ -1,6 +1,6 @@
-import {formatDate, getTime, isBearish, isBullish, isCrossed, isImbalance} from "./utils.ts";
-import {OrderblockPart, POI, POIType, Swing} from "./models.ts";
-import {StateManager} from "./th_ultimate.ts";
+import {formatDate, getTime, isBearish, isBullish, isCrossed, isImbalance} from "./utils";
+import {OrderblockPart, POI, POIType, Swing} from "./models";
+import {StateManager} from "./th_ultimate";
 import Decimal from "decimal.js";
 
 export const drawFVG = (manager: StateManager) => {
@@ -179,13 +179,20 @@ export const tradeStartSessionStrategy = ({
         reasons.push(`Лой сессии: ${sessionLow}`)
 
         // Со следующей свечи после интервала ищем пробитие в какую то сторону
-        const crossedCandleIndex = i + candlesCount;
+        // const crossedCandleIndex = i + candlesCount;
 
-        const result = searchSessionCross(manager, crossedCandleIndex, sessionHigh, sessionLow);
+        const result = searchSessionCross(manager, i + candlesCount, sessionHigh, sessionLow);
         if (!result) {
             continue;
         }
-        const {FVGStartCandleIndex, FVGEndCandleIndex, isHighCrossed, isLowCrossed} = result;
+        const {
+            FVGStartCandleIndex,
+            FVGEndCandleIndex,
+            isHighCrossed,
+            isLowCrossed,
+            // Свеча которая сделала пробитие, стоп нужно ставить именно за нее
+            crossedCandleIndex
+        } = result;
 
         // // Итерируемся пока есть свечи и пока не пробили ни один хай
         // while (manager.candles[crossedCandleIndex] && isCrossed(sessionHigh, manager.candles[crossedCandleIndex]) !== 1 && isCrossed(sessionLow, manager.candles[crossedCandleIndex]) !== -1) {
@@ -231,6 +238,8 @@ export const tradeStartSessionStrategy = ({
             break;
         }
 
+        reasons.push(`Свеча ${formatDate(new Date(manager.candles[crossedCandleIndex].time * 1000))} пробила уровень ${isHighCrossed ? sessionHigh : sessionLow}`)
+
         reasons.push(`FVG: ${formatDate(new Date(manager.candles[FVGStartCandleIndex].time * 1000))} - ${formatDate(new Date(manager.candles[FVGEndCandleIndex].time * 1000))}`)
 
         // Если же FVG на пробитии найден - со следующей свечи открываем маркет ордер
@@ -241,11 +250,11 @@ export const tradeStartSessionStrategy = ({
         const orderBlockPart = {
             startCandle: {
                 // Берем старт от средней свечи
-                ...manager.candles[FVGStartCandleIndex + 1],
+                ...manager.candles[crossedCandleIndex],
                 // Внимание, по этим полям ставится стоп
-                high: side === 'low' ? manager.candles[FVGEndCandleIndex].low : manager.candles[FVGStartCandleIndex + 1].high,
+                high: side === 'low' ? manager.candles[FVGEndCandleIndex].low : manager.candles[crossedCandleIndex].high,
                 // Если low (покупка)
-                low: side === 'low' ? manager.candles[FVGStartCandleIndex + 1].low : manager.candles[FVGEndCandleIndex].high,
+                low: side === 'low' ? manager.candles[crossedCandleIndex].low : manager.candles[FVGEndCandleIndex].high,
             },
             lastOrderblockCandle: manager.candles[FVGEndCandleIndex],
             lastImbalanceCandle: manager.candles[FVGEndCandleIndex],
@@ -359,7 +368,7 @@ const searchSessionCross = (manager: StateManager, crossedCandleIndex: number, s
                 return null;
             }
 
-            return {FVGStartCandleIndex, FVGEndCandleIndex, isHighCrossed, isLowCrossed}
+            return {FVGStartCandleIndex, FVGEndCandleIndex, isHighCrossed, isLowCrossed, crossedCandleIndex}
         }
     }
 

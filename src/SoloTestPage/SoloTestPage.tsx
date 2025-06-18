@@ -33,15 +33,15 @@ import {finishPosition, iterationCalculatePositions,} from "../samurai_patterns"
 import {isBusinessDay, isUTCTimestamp, LineStyle, Time} from "lightweight-charts";
 import {DatesPicker} from "../DatesPicker";
 import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
-import {calculateTesting} from "../sm-lib/th_ultimate.ts";
+import {calculateTesting} from "../sm-lib/th_ultimate";
 import {Security, useOrderblocksQuery} from "../api";
 import {LeftOutlined, RightOutlined} from "@ant-design/icons";
 import moment from "moment";
 import {moneyFormat} from "../MainPage/MainPage.tsx";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
-import {POIType} from "../sm-lib/models.ts";
-import {notTradingTime} from "../sm-lib/utils.ts";
+import {POIType} from "../sm-lib/models";
+import {notTradingTime} from "../sm-lib/utils";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",

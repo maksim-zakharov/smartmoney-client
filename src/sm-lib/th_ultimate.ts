@@ -1,4 +1,4 @@
-import {Cross, HistoryObject, OrderblockPart, POI, POIType, Side, Swing, THConfig, Trend} from "./models.ts";
+import {Cross, HistoryObject, OrderblockPart, POI, POIType, Side, Swing, THConfig, Trend} from "./models";
 import {
     closestExtremumSwing,
     closestSwing,
@@ -17,8 +17,8 @@ import {
     isInsideBar,
     isInternalBOS,
     lowestBy
-} from "./utils.ts";
-import {drawFVG, drawTrendByFVG, tradeStartSessionStrategy} from "./ict_strategy.ts";
+} from "./utils";
+import {drawFVG, drawTrendByFVG, tradeStartSessionStrategy} from "./ict_strategy";
 
 /**
  * OB - строится на структурных точках,
@@ -228,7 +228,7 @@ export const defaultConfig: THConfig = {
     withMove: false,
     showFake: false,
     // tradeOBEXT: true,
-    tradeStartSessionMorning: true
+    tradeStartSessionDay: true
     // trend2: true
 };
 

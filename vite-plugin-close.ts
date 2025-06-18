@@ -1,4 +1,4 @@
-// file vite-plugin-close.ts
+// file vite-plugin-close
 
 import { PluginOption } from "vite";
 

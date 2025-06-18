@@ -11,20 +11,20 @@ import {
     fetchCandlesFromAlor,
     orderblocksToImbalancePrimitives, orderblocksToOrderblocksPrimitives,
     swingsToMarkers
-} from "./utils.ts";
+} from "./utils";
 import {
     calculateTesting,
     defaultConfig,
     filterNearOrderblock
-} from "./sm-lib/th_ultimate.ts";
+} from "./sm-lib/th_ultimate";
 import {Time} from "lightweight-charts";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
 import useWindowDimensions from "./useWindowDimensions.tsx";
 import {ItemType, MenuItemType} from "antd/es/menu/interface";
 import {LeftOutlined, RightOutlined} from '@ant-design/icons';
-import {THConfig} from "./sm-lib/models.ts";
-import {isNotSMT, notTradingTime} from "./sm-lib/utils.ts";
+import {THConfig} from "./sm-lib/models";
+import {isNotSMT, notTradingTime} from "./sm-lib/utils";
 
 const markerColors = {
     bearColor: "rgb(157, 43, 56)",
@@ -100,7 +100,7 @@ const NewTestingPage = () => {
         );
     }
     const checkShow = (ob) => {
-        let result = true;
+        const result = true;
         if(!ob){
             return false;
         }

@@ -1,6 +1,6 @@
 import {calculateTakeProfit} from "./utils";
-import {Security} from "./api.ts";
-import {HistoryObject, POI, POIType, Swing} from "./sm-lib/models.ts";
+import {Security} from "./api";
+import {HistoryObject, POI, POIType, Swing} from "./sm-lib/models";
 import Decimal from "decimal.js";
 
 export interface Position {

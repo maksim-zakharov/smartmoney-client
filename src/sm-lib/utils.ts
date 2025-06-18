@@ -1,5 +1,5 @@
-import {CandleWithSide, Cross, HistoryObject, POI, Side, Swing} from "./models.ts";
-import {StateManager} from "./th_ultimate.ts";
+import {CandleWithSide, Cross, HistoryObject, POI, Side, Swing} from "./models";
+import {StateManager} from "./th_ultimate";
 
 export const formatDate = (_date: Date) => {
     // 2025-05-19T19:40:00.000Z

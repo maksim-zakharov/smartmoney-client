@@ -1,7 +1,7 @@
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
-import {Cross, Swing} from "../models.ts";
-import {StateManager} from "../th_ultimate.ts";
-import {closestSwing} from "../utils.ts";
+import {Cross, Swing} from "../models";
+import {StateManager} from "../th_ultimate";
+import {closestSwing} from "../utils";
 
 // Проверка на новый экстремум:
 const checkNewExtremum = (manager: StateManager, swing: Swing) => {

@@ -8,7 +8,7 @@ import {calculateCandle} from "../../symbolFuturePairs";
 import {getCommonCandles} from "../utils";
 
 
-import {HistoryObject} from "../sm-lib/models.ts";
+import {HistoryObject} from "../sm-lib/models";
 
 const {RangePicker} = DatePicker
 

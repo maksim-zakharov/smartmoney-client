@@ -1,6 +1,6 @@
 import React, {useCallback, useMemo, useState} from "react";
 import {Card, Col, Row, Select, Slider, SliderSingleProps, Space, Statistic, Table, Tabs, TabsProps, theme} from "antd";
-import {useCandlesQuery, usePortfolioQuery, useSecurityQuery} from "../api.ts";
+import {useCandlesQuery, usePortfolioQuery, useSecurityQuery} from "../api";
 import moment, {Moment} from "moment";
 import {Link, useSearchParams} from "react-router-dom";
 import useWindowDimensions from "../useWindowDimensions.tsx";
@@ -10,8 +10,8 @@ import {HistoryTable} from "./HistoryTable.tsx";
 import {OrdersTable} from "./OrdersTable.tsx";
 import {StatisticWidgets} from "./StatisticWidgets.tsx";
 import {MainPageChart} from "./MainPageChart.tsx";
-import {calculateProdPositionFee} from "../samurai_patterns.ts";
-import {notTradingTime} from "../sm-lib/utils.ts";
+import {calculateProdPositionFee} from "../samurai_patterns";
+import {notTradingTime} from "../sm-lib/utils";
 
 export const moneyFormat = (
     money: number,

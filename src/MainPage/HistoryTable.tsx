@@ -4,7 +4,7 @@ import moment from "moment/moment";
 import {Link} from "react-router-dom";
 import {moneyFormat, summ} from "./MainPage.tsx";
 import useWindowDimensions from "../useWindowDimensions.tsx";
-import {calculateRR} from "../utils.ts";
+import {calculateRR} from "../utils";
 import {Chart} from "../SoloTestPage/UpdatedChart.tsx";
 
 export const HistoryTable: FC<{

@@ -4,7 +4,7 @@ import moment from "moment/moment";
 import {Link, useSearchParams} from "react-router-dom";
 import {moneyFormat} from "./MainPage.tsx";
 import useWindowDimensions from "../useWindowDimensions.tsx";
-import {calculateRR} from "../utils.ts";
+import {calculateRR} from "../utils";
 
 export const PositionsTable: FC<{
     pageSize: number,

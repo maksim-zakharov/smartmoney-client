@@ -1,8 +1,8 @@
-// db.ts
+// db
 import Dexie, { Table } from 'dexie';
 
 
-import {HistoryObject} from "./sm-lib/models.ts";
+import {HistoryObject} from "./sm-lib/models";
 
 export class TradingDataDB extends Dexie {
     candles!: Table<HistoryObject, string>;

@@ -1,7 +1,7 @@
-import {StateManager} from "../th_ultimate.ts";
-import {Cross, Swing} from "../models.ts";
-import {closestSwing} from "../utils.ts";
-import {unmarkLastExtremum} from "./updateSwingExtremums.ts";
+import {StateManager} from "../th_ultimate";
+import {Cross, Swing} from "../models";
+import {closestSwing} from "../utils";
+import {unmarkLastExtremum} from "./updateSwingExtremums";
 
 
 

@@ -8,11 +8,11 @@ import {
     orderblocksToOrderblocksPrimitives,
     roundTime,
     swingsToMarkers
-} from "../utils.ts";
+} from "../utils";
 import {isBusinessDay, isUTCTimestamp, SeriesMarker, Time} from "lightweight-charts";
-import {SessionHighlighting} from "../lwc-plugins/session-highlighting.ts";
-import {calculateTesting, defaultConfig} from "../sm-lib/th_ultimate.ts";
-import {notTradingTime} from "../sm-lib/utils.ts";
+import {SessionHighlighting} from "../lwc-plugins/session-highlighting";
+import {calculateTesting, defaultConfig} from "../sm-lib/th_ultimate";
+import {notTradingTime} from "../sm-lib/utils";
 
 
 const markerColors = {
@@ -49,10 +49,10 @@ export const MainPageChart: FC<{
             if (!ob) {
                 return false;
             }
-            if (!Boolean(ob.endCandle)) {
+            if (!ob.endCandle) {
                 result = true;
             }
-            if (Boolean(ob.endCandle)) {
+            if (ob.endCandle) {
                 result = true;
             }
             if (ob.isSMT) {
@@ -71,10 +71,10 @@ export const MainPageChart: FC<{
         }
 
         const sessionHighlighter = (time: Time, index) => {
-            let tr = trend[index]; // .find(c => (c?.time * 1000) >= (time as number));
+            const tr = trend[index]; // .find(c => (c?.time * 1000) >= (time as number));
 
             // let tr = newTrend.find(c => (c?.time * 1000) >= (time as number));
-            let _trend = tr?.trend;
+            const _trend = tr?.trend;
             if (!tr) {
                 // tr = newTrend.findLast(c => (c?.time * 1000) <= (time as number));
                 // trend = tr.trend * -1;
@@ -128,10 +128,10 @@ export const MainPageChart: FC<{
             if (!ob) {
                 return false;
             }
-            if (!Boolean(ob.endCandle)) {
+            if (!ob.endCandle) {
                 result = true;
             }
-            if (Boolean(ob.endCandle)) {
+            if (ob.endCandle) {
                 result = true;
             }
             if (ob.isSMT) {

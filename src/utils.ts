@@ -18,10 +18,10 @@ import {Options} from "@vitejs/plugin-react";
 import {Rectangle, RectangleDrawingToolOptions} from "./lwc-plugins/rectangle-drawing-tool";
 import {TLineSeries} from "./SoloTestPage/UpdatedChart.tsx";
 import moment from "moment";
-import {Cross, HistoryObject, POI, Swing, Trend} from "./sm-lib/models.ts";
+import {Cross, HistoryObject, POI, Swing, Trend} from "./sm-lib/models";
 
 export async function fetchRisk(token) {
-    let url = `https://api.alor.ru/md/v2/Clients/MOEX/D90487/risk`;
+    const url = `https://api.alor.ru/md/v2/Clients/MOEX/D90487/risk`;
 
     try {
         const headers = {
@@ -46,7 +46,7 @@ export async function fetchRisk(token) {
 }
 
 export async function fetchRiskRates(symbol, token, riskCategoryId?: string) {
-    let url = `https://api.alor.ru/md/v2/risk/rates?riskCategoryId=${riskCategoryId || 1}&ticker=${symbol}&exchange=MOEX`;
+    const url = `https://api.alor.ru/md/v2/risk/rates?riskCategoryId=${riskCategoryId || 1}&ticker=${symbol}&exchange=MOEX`;
 
     try {
         const headers = {

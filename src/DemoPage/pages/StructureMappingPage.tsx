@@ -15,10 +15,10 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import {
     StateManager, tradinghubCalculateTrendNew
-} from "../../sm-lib/th_ultimate.ts";
+} from "../../sm-lib/th_ultimate";
 
-import {HistoryObject, Swing} from "../../sm-lib/models.ts";
-import {notTradingTime} from "../../sm-lib/utils.ts";
+import {HistoryObject, Swing} from "../../sm-lib/models";
+import {notTradingTime} from "../../sm-lib/utils";
 
 const BOSChart = ({data, text = 'LL'}) => {
     const manager = new StateManager(data);
@@ -222,7 +222,7 @@ const StructureMappingPage = () => {
             ).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
-    let {swings, boses} = useMemo(() => {
+    const {swings, boses} = useMemo(() => {
         const manager = new StateManager(data);
         manager.calculateSwingsOld()
 

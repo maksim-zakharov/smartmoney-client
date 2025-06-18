@@ -12,11 +12,11 @@ import {DatesPicker} from "../../DatesPicker";
 import type { Dayjs } from 'dayjs';
 import {
     StateManager,
-} from "../../sm-lib/th_ultimate.ts";
+} from "../../sm-lib/th_ultimate";
 import Paragraph from "antd/es/typography/Paragraph";
 
-import {HistoryObject} from "../../sm-lib/models.ts";
-import {notTradingTime} from "../../sm-lib/utils.ts";
+import {HistoryObject} from "../../sm-lib/models";
+import {notTradingTime} from "../../sm-lib/utils";
 const BOSChart = ({data}: {data: HistoryObject[]}) => {
     const manager = new StateManager(data);
     manager.calculateSwings();
@@ -111,7 +111,7 @@ const ImpulseAndCorrectionPage = () => {
             ).then(setData);
     }, [tf, ticker, fromDate, toDate]);
 
-    let swings = useMemo(() => {
+    const swings = useMemo(() => {
         const manager = new StateManager(data);
         manager.calculateSwingsOld()
 

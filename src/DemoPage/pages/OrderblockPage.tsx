@@ -12,9 +12,9 @@ import {
 } from "../../utils";
 import {
     calculatePOI, StateManager
-} from "../../sm-lib/th_ultimate.ts";
+} from "../../sm-lib/th_ultimate";
 
-import {HistoryObject, Trend} from "../../sm-lib/models.ts";
+import {HistoryObject, Trend} from "../../sm-lib/models";
 
 const BOSChart = ({data, trend = -1}: {data: HistoryObject[], trend: number}) => {
     const manager = new StateManager(data);

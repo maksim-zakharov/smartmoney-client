@@ -21,7 +21,7 @@ import {symbolFuturePairs} from "../symbolFuturePairs";
 import {Chart} from "./SoloTestPage/UpdatedChart";
 import {DatesPicker} from "./DatesPicker";
 import {Link} from "react-router-dom";
-import {calculateTesting} from "./sm-lib/th_ultimate.ts";
+import {calculateTesting} from "./sm-lib/th_ultimate";
 import {
     cacheCandles,
     cacheRiskRates,
@@ -29,11 +29,11 @@ import {
     getCachedCandles,
     getCachedRiskRates,
     getCachedSecurity
-} from "./cacheService.ts";
+} from "./cacheService";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
-import {HistoryObject, POI, POIType} from "./sm-lib/models.ts";
-import {notTradingTime} from "./sm-lib/utils.ts";
+import {HistoryObject, POI, POIType} from "./sm-lib/models";
+import {notTradingTime} from "./sm-lib/utils";
 
 export const MultiTestPage = () => {
     const [loading, setLoading] = useState(true);

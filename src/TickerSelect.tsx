@@ -1,6 +1,6 @@
 import React, {FC, useEffect, useMemo, useState} from "react";
 import {Select} from "antd";
-import {symbolFuturePairs} from "../symbolFuturePairs.ts";
+import {symbolFuturePairs} from "../symbolFuturePairs";
 
 const fetchSecurities = () => fetch('https://api.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then(r => r.json())
 
