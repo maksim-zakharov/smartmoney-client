@@ -1,4 +1,4 @@
-import {getTime, isBearish, isBullish, isCrossed, isImbalance} from "./utils.ts";
+import {formatDate, getTime, isBearish, isBullish, isCrossed, isImbalance} from "./utils.ts";
 import {OrderblockPart, POI, POIType, Swing} from "./models.ts";
 import {StateManager} from "./th_ultimate.ts";
 import Decimal from "decimal.js";
@@ -163,16 +163,20 @@ export const tradeStartSessionStrategy = ({
     const lastCandle = manager.candles[manager.candles.length - 1];
     for (let i = 0; i < manager.candles.length; i++) {
         const candle = manager.candles[i];
+        const reasons = [];
         // Сначала ищем первую свечу сессии
         const time = getTime(new Date(candle.time * 1000));
         if (time !== firstSessionStartTime) {
             continue;
         }
+        reasons.push(`Сессия: ${formatDate(new Date(candle.time * 1000))}`)
 
         // Далее если наткнулись на первую свечу сессии - ищем хай и лой за первые {candlesCount} свечей
         const candlesBatch = manager.candles.slice(i, i + candlesCount);
         const sessionHigh = Math.max(...candlesBatch.map(c => c.high));
         const sessionLow = Math.min(...candlesBatch.map(c => c.low));
+        reasons.push(`Хай сессии: ${sessionHigh}`)
+        reasons.push(`Лой сессии: ${sessionLow}`)
 
         // Со следующей свечи после интервала ищем пробитие в какую то сторону
         const crossedCandleIndex = i + candlesCount;
@@ -227,6 +231,8 @@ export const tradeStartSessionStrategy = ({
             break;
         }
 
+        reasons.push(`FVG: ${formatDate(new Date(manager.candles[FVGStartCandleIndex].time * 1000))} - ${formatDate(new Date(manager.candles[FVGEndCandleIndex].time * 1000))}`)
+
         // Если же FVG на пробитии найден - со следующей свечи открываем маркет ордер
 
         // low - покупка, high - продажа
@@ -274,6 +280,7 @@ export const tradeStartSessionStrategy = ({
             type: POIType.CROSS_SESSION,
             endCandle: manager.candles[FVGEndCandleIndex],
             endIndex: FVGEndCandleIndex,
+            reasons
         });
 
         i = FVGEndCandleIndex;
