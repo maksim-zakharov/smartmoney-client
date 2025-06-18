@@ -19,6 +19,8 @@ import {
     lowestBy
 } from "./utils";
 import {drawFVG, drawTrendByFVG, tradeStartSessionStrategy} from "./ict_strategy";
+import {confirmExtremumsIfValid} from "./swings/confirmExtremumsIfValid.ts";
+import {updateSwingExtremums} from "./swings/updateSwingExtremums.ts";
 
 /**
  * OB - строится на структурных точках,
@@ -714,7 +716,7 @@ export class StateManager {
         const obSide = CHoCH.type;
 
         // После ЧОЧ нужно найти первый подтвержденный справа ПРОТИВПОЛОЖНЫЙ IDM
-        const IDM = this.boses.find(b => b && b?.to?.index > CHoCH?.to?.index && b.isIDM && b.isConfirmed && b.from.side !== obSide);
+        const IDM = this.boses.find(b => b && b?.to?.index > CHoCH?.extremum?.index && b.isIDM && b.isConfirmed && b.from.side !== obSide);
         if (!IDM) {
             return;
         }
@@ -776,18 +778,24 @@ export class StateManager {
         } as OrderblockPart;
 
         if (
-            orderBlockPart?.side === OBSwing?.side
+            orderBlockPart?.side !== OBSwing?.side
         ) {
-            debugger
-
-            // Нужно для определения ближайшей цели для TakeProfit
-            const takeProfit = IDM.extremum
-
-            this.pois[OBSwing.index] = new POI(canTradeCHoCHExtremumOrderblock(this, OBSwing, CHoCH, IDM, orderBlockPart, takeProfit?.price));
-            this.pois[OBSwing.index].type = POIType.CHOCH_IDM
-            this.pois[OBSwing.index].reasons.unshift(...imbalance.reasons);
-            this.pois[OBSwing.index].reasons.unshift(...reasons);
+            return;
         }
+
+        const takeProfit = IDM.extremum
+        this.pois[OBSwing.index] = new POI(canTradeCHoCHExtremumOrderblock(this, OBSwing, CHoCH, IDM, orderBlockPart, takeProfit?.price));
+        this.pois[OBSwing.index].type = POIType.CHOCH_IDM
+        this.pois[OBSwing.index].reasons.unshift(...imbalance.reasons);
+        this.pois[OBSwing.index].reasons.unshift(...reasons);
+
+        /**
+         * Далее нужно подтверждение
+         * У нас есть ОБ на М5, есть касание (и индекс касания),
+         * Из скачанных M1 свечек мы берем X перед касанием и начинаем тупо ставить ХХ ЛЛ и свинги на M1 свечках, без босов и чочей
+         * (можно вообще сделать отдельный график М1 свечек тупо с свингами и ХХ ЛЛ, заранее)
+         * После касания ищем ближайший экстремум (подтвержденный ИДМ), от него строим ОБ но уже на М1, при касании по нему - вот уже подтверждение с лимиткой
+         */
     }
 
     calculateBOSWithIDM(swing: Swing) {
@@ -1510,43 +1518,43 @@ export class StateManager {
 
             nextCandle = this.candles[nextIndex];
 
-            tryCalculatePullback(
-                i,
-                'high',
-                prevCandle,
-                currentCandle,
-                nextCandle,
-                this.swings,
-            );
-            tryCalculatePullback(
-                i,
-                'low',
-                prevCandle,
-                currentCandle,
-                nextCandle,
-                this.swings,
-            );
-
-            // tryCalculatePullbackMulti(
+            // tryCalculatePullback(
             //     i,
+            //     'high',
             //     prevCandle,
             //     currentCandle,
             //     nextCandle,
-            //     this.swings
-            // )
+            //     this.swings,
+            // );
+            // tryCalculatePullback(
+            //     i,
+            //     'low',
+            //     prevCandle,
+            //     currentCandle,
+            //     nextCandle,
+            //     this.swings,
+            // );
 
-            confirmExtremum(this, i, 'high');
-            confirmExtremum(this, i, 'low');
-            // confirmExtremumsIfValid(this, i);
+            tryCalculatePullbackMulti(
+                i,
+                prevCandle,
+                currentCandle,
+                nextCandle,
+                this.swings
+            )
+
+            // confirmExtremum(this, i, 'high');
+            // confirmExtremum(this, i, 'low');
+            confirmExtremumsIfValid(this, i);
 
             // markHHLL
-            // updateSwingExtremums(this, i, this.swings[i])
-            updateExtremum(this, i, 'high', this.swings[i]);
-            updateExtremum(this, i, 'low', this.swings[i]);
+            updateSwingExtremums(this, i, this.swings[i])
+            // updateExtremum(this, i, 'high', this.swings[i]);
+            // updateExtremum(this, i, 'low', this.swings[i]);
 
             // markHHLL
-            // updateLastMulti(this, this.swings[i]);
-            updateLast(this, this.swings[i]);
+            updateLastMulti(this, this.swings[i]);
+            // updateLast(this, this.swings[i]);
 
             // фильтруем вершины подряд. Просто итерируемся по свингам, если подряд
             filterDoubleSwings(
@@ -1869,9 +1877,10 @@ const drawTrend = (manager: StateManager) => {
         (bos) => manager.swings[bos?.from?.index]?.isExtremum,
     );
     let endlessTrend = false;
+
     for (let i = 0; i < onlyBOSes.length; i++) {
         const prevBos = onlyBOSes[i - 1];
-        const curBos = onlyBOSes[i];
+        let curBos = onlyBOSes[i];
         const nextBos = onlyBOSes[i + 1];
 
         let to = !nextBos ? manager.trend.length : nextBos.to.index;
@@ -1890,7 +1899,10 @@ const drawTrend = (manager: StateManager) => {
             && prevBos?.isConfirmed
         ) {
             manager.boses[curBos.from.index] = null;
-            continue;
+
+            // Поскольку текущий бос был внутренним - мы его удаляем, предыдущий нам уже не важен, а текущим делаем предыдущий
+            curBos = prevBos;
+            // continue;
         }
 
         const type = curBos.type;
