@@ -228,7 +228,7 @@ export const defaultConfig: THConfig = {
     withMove: false,
     showFake: false,
     // tradeOBEXT: true,
-    tradeStartSessionMorning: true
+    tradeStartSessionDay: true
     // trend2: true
 };
 
