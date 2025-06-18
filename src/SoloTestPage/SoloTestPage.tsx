@@ -53,6 +53,7 @@ export const SoloTestPage = () => {
     const [offset, setOffset] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState([]);
+    const [LTFdata, setLTFData] = useState([]);
     const [HTFdata, setHTFData] = useState([]);
 
     const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -142,6 +143,10 @@ export const SoloTestPage = () => {
         fetchCandlesFromAlor(ticker, "3600", fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setHTFData);
     }, [ticker, fromDate, toDate, token]);
 
+    useEffect(() => {
+        fetchCandlesFromAlor(ticker, "60", fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setLTFData);
+    }, [ticker, fromDate, toDate, token]);
+
     const setSize = (tf: string) => {
         searchParams.set('tf', tf);
         setSearchParams(searchParams)
@@ -185,7 +190,7 @@ export const SoloTestPage = () => {
             trend,
             boses,
             orderBlocks
-        } = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config);
+        } = calculateTesting(offset >= 0 ? data.slice(0, data.length - offset) : data.slice(-offset, data.length), config, LTFdata);
 
         const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.CROSS_SESSION, POIType.OB_EXT, POIType.FVG, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.One_Side_FVG, POIType.Breaking_Block].includes(o?.type) && (config.showSMT || !o.isSMT) && o.canTest);
 
@@ -215,7 +220,7 @@ export const SoloTestPage = () => {
                 stopMargin
             })).sort((a, b) => b.openTime - a.openTime)
         };
-    }, [tralingPercent, offset, isShortSellPossible, security?.lotsize, stopPaddingPercent,config.showWeekly, config.tradeStartSessionMorning, config.tradeStartSessionDay, config.tradeStartSessionEvening, config.trend2, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.showFVG, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [LTFdata, tralingPercent, offset, isShortSellPossible, security?.lotsize, stopPaddingPercent,config.showWeekly, config.tradeStartSessionMorning, config.tradeStartSessionDay, config.tradeStartSessionEvening, config.trend2, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.showFVG, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {

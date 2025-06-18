@@ -164,6 +164,7 @@ export const calculateTesting = (
         tradeStartSessionDay,
         tradeStartSessionEvening
     }: THConfig,
+    lowTFData: HistoryObject[] = [],
 ) => {
     const manager = new StateManager(data, {
         showIFC,
@@ -181,6 +182,14 @@ export const calculateTesting = (
 
     // <-- Копировать в робота
     manager.calculateSwings();
+
+
+    const lowTFManager = new StateManager(lowTFData, {
+        tradeOBEXT,
+    });
+
+    // <-- Копировать в робота
+    lowTFManager.calculateSwings();
 
     if (showFVG)
         manager.drawFVG();
@@ -201,16 +210,18 @@ export const calculateTesting = (
     // Копировать в робота -->
     calculatePOI(manager, withMove, newSMT);
 
+    confirmCHoCH_IDM_OB(manager, lowTFManager);
+
     if (tradeBB)
         manager.calculateBreakerBlocks()
 
-    if(tradeStartSessionMorning)
+    if (tradeStartSessionMorning)
         tradeStartSessionStrategy({RR: 5, candlesCount: 5, sessionType: 'morning', manager});
 
-    if(tradeStartSessionDay)
+    if (tradeStartSessionDay)
         tradeStartSessionStrategy({RR: 5, candlesCount: 5, sessionType: 'day', manager});
 
-    if(tradeStartSessionEvening)
+    if (tradeStartSessionEvening)
         tradeStartSessionStrategy({RR: 5, candlesCount: 5, sessionType: 'evening', manager});
 
     // Увеличивает на тестинге на 3% винрейт
@@ -722,9 +733,7 @@ export class StateManager {
         }
         reasons.push(`IDM ${formatDate(new Date(IDM.from.time * 1000))} - ${formatDate(new Date(IDM.to.time * 1000))}`)
 
-        // Теперь надо искать ближайший откат слева от IDM и пытаться там построить OB
-        // @ts-ignore
-        const OBSwing = CHoCH.extremum; // closestSwing(this, {...IDM.from, side: IDM.extremum.side});
+        const OBSwing = CHoCH.extremum;
         if (!OBSwing) {
             return;
         }
@@ -788,14 +797,6 @@ export class StateManager {
         this.pois[OBSwing.index].type = POIType.CHOCH_IDM
         this.pois[OBSwing.index].reasons.unshift(...imbalance.reasons);
         this.pois[OBSwing.index].reasons.unshift(...reasons);
-
-        /**
-         * Далее нужно подтверждение
-         * У нас есть ОБ на М5, есть касание (и индекс касания),
-         * Из скачанных M1 свечек мы берем X перед касанием и начинаем тупо ставить ХХ ЛЛ и свинги на M1 свечках, без босов и чочей
-         * (можно вообще сделать отдельный график М1 свечек тупо с свингами и ХХ ЛЛ, заранее)
-         * После касания ищем ближайший экстремум (подтвержденный ИДМ), от него строим ОБ но уже на М1, при касании по нему - вот уже подтверждение с лимиткой
-         */
     }
 
     calculateBOSWithIDM(swing: Swing) {
@@ -1566,6 +1567,108 @@ export class StateManager {
 
             if (this.config.showIFC) this.markIFCOneIt(i);
         }
+    }
+}
+
+/**
+ * Далее нужно подтверждение
+ * У нас есть ОБ на М5, есть касание (и индекс касания),
+ * Из скачанных M1 свечек мы берем X перед касанием и начинаем тупо ставить ХХ ЛЛ и свинги на M1 свечках, без босов и чочей
+ * (можно вообще сделать отдельный график М1 свечек тупо с свингами и ХХ ЛЛ, заранее)
+ * После касания ищем ближайший экстремум (подтвержденный ИДМ), от него строим ОБ но уже на М1, при касании по нему - вот уже подтверждение с лимиткой
+ */
+export const confirmCHoCH_IDM_OB = (manager: StateManager, lowTFManager: StateManager) => {
+    const onlyCHOCHPOI = manager.pois.filter(p => p?.type === POIType.CHOCH_IDM && p.canTest);
+
+    for (let i = 0; i < onlyCHOCHPOI.length; i++) {
+        const poi = onlyCHOCHPOI[i];
+        const hitIndex = poi.endCandle;
+        const startLTFIndex = lowTFManager.candles.findIndex(c => c.time === poi.endCandle.time);
+        // Если почему то на M1 индекс не найден - идем к следующему ОБ
+        if (startLTFIndex === -1) {
+            poi.canTest = false;
+            poi.canTrade = false;
+            continue;
+        }
+        const closestIDM = lowTFManager.boses.find(b => b?.isIDM && b?.extremum?.index >= startLTFIndex && b?.extremum?.side === poi.side);
+        if(!closestIDM) {
+            poi.canTest = false;
+            poi.canTrade = false;
+            continue;
+        }
+        poi.reasons.push(`LTF IDM ${formatDate(new Date(closestIDM.from.time * 1000))} - ${formatDate(new Date(closestIDM.to.time * 1000))} после касания`)
+
+        // если между касанием и сформированием IDM было пробитие
+        // poi.canTest = false;
+        // poi.canTrade = false;
+
+        // Далее от этого IDM строим ОБ и ждем уже его пробитие
+
+        const OBSwing = closestIDM.extremum;
+
+        const imbalance = findImbalance(lowTFManager, OBSwing.index);
+        if (!imbalance) {
+            poi.canTest = false;
+            poi.canTrade = false;
+            continue;
+        }
+
+        const {firstImbalanceIndex, lastImbalanceIndex} = imbalance;
+        const firstCandle = lowTFManager.candles[firstImbalanceIndex];
+
+        const lastOrderblockCandle = lowTFManager.candles[firstImbalanceIndex];
+        const lastImbalanceCandle = lowTFManager.candles[lastImbalanceIndex];
+
+        // Жестко нужно для БД, не трогать
+        const open =
+            firstCandle.time === OBSwing.time
+                ? firstCandle.open
+                : lastOrderblockCandle.open;
+        const close =
+            firstCandle.time !== OBSwing.time
+                ? firstCandle.close
+                : lastOrderblockCandle.close;
+        const side =
+            lastImbalanceCandle.low > firstCandle.high
+                ? 'low'
+                : lastImbalanceCandle.high < firstCandle.low
+                    ? 'high'
+                    : null;
+
+        if (!side) {
+            poi.canTest = false;
+            poi.canTrade = false;
+            continue;
+        }
+
+        // Здесь по идее нужно создавать "задачу" на поиск ордерблока.
+        // И итерироваться в дальшейшем по всем задачам чтобы понять, ордерблок можно создать или пора задачу удалить.
+        const orderBlockPart = {
+            startCandle: {
+                time: firstCandle.time,
+                open,
+                close,
+                high: Math.max(firstCandle.high, lastOrderblockCandle.high),
+                low: Math.min(firstCandle.low, lastOrderblockCandle.low),
+            } as HistoryObject,
+            lastOrderblockCandle,
+            lastImbalanceCandle,
+            firstImbalanceIndex: firstImbalanceIndex - OBSwing.index,
+            lastImbalanceIndex: lastImbalanceIndex - OBSwing.index,
+            side,
+        } as OrderblockPart;
+
+        // if (
+        //     orderBlockPart?.side !== OBSwing?.side
+        // ) {
+        //     poi.canTest = false;
+        //     poi.canTrade = false;
+        //     continue;
+        // }
+
+        const LTFOB = new POI(canTradeExtremumOrderblock(lowTFManager, closestIDM, orderBlockPart, poi.takeProfit));
+        debugger
+
     }
 }
 
