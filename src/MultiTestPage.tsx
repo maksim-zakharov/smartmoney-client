@@ -172,7 +172,7 @@ export const MultiTestPage = () => {
             result[stockSymbols[i]] = await loadData(stockSymbols[i], tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle)));
             if (token)
                 result1[stockSymbols[i]] = await loadSecurity(stockSymbols[i], token);
-            result2[stockSymbols[i]] = await loadRiskRate(stockSymbols[i]);
+            result2[stockSymbols[i]] = await loadRiskRate(stockSymbols[i], token);
             setSuccessSymbols({total: stockSymbols.length * 2, current: i + 1});
         }
         setAllRiskRates(result2)
@@ -394,12 +394,15 @@ export const MultiTestPage = () => {
 
     const allPositionsAccumPnl = useMemo(() => Object.entries(allPositions.reduce((acc, curr) => {
         if(!acc[curr.ticker]){
-            acc[curr.ticker] = 0;
+            acc[curr.ticker] = {newPnl: 0, positions: []};
         }
-        acc[curr.ticker] += curr.newPnl;
+        acc[curr.ticker].newPnl += curr.newPnl;
+        acc[curr.ticker].positions.push(curr);
 
         return acc;
-    }, {} as any)).sort((a, b) => b[1] - a[1]), [allPositions]);
+    }, {} as any))
+        .map(([ticker, value]: any[]) => [ticker, {...value, profits: value.positions.filter(p => p.newPnl > 0).length, losses: value.positions.filter(p => p.newPnl < 0).length}])
+        .sort((a: any, b: any) => b[1].newPnl - a[1].newPnl), [allPositions]);
 
     return <Layout style={{display: 'flex', flexDirection: 'row', gap: '8px'}}>
         <Sider width={300} style={{padding: 16}} collapsedWidth={40} collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
@@ -563,13 +566,14 @@ export const MultiTestPage = () => {
                 </Col>
             </Row>
             <Row style={{paddingBottom: '8px'}} gutter={8}>
-                {allPositionsAccumPnl.map(([ticker, PnL]) => <Col span={2}>
+                {allPositionsAccumPnl.map(([ticker, value]) => <Col span={2}>
                     <Card bordered={false}>
                         <Statistic
                             title={ticker}
-                            value={moneyFormat(PnL, 'RUB', 2, 2)}
+                            value={moneyFormat(value.newPnl, 'RUB', 2, 2)}
                             precision={2}
-                            valueStyle={{color: PnL > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                            valueStyle={{color: value.newPnl > 0 ? "rgb(44, 232, 156)" : "rgb(255, 117, 132)"}}
+                            suffix={`(${!value.profits ? 0 : (value.profits * 100 / (value.profits + value.losses)).toFixed(2)})%`}
                         />
                     </Card>
                 </Col>)}
