@@ -230,12 +230,32 @@ export const calculatePositionsByOrderblocks = (security: Security, candles: His
     return positions;
 }
 
-export const iterationCalculatePositions = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0, tralingPercent: number = 0) => {
+export const iterationCalculatePositions = (security: Security, candles: HistoryObject[], swings: Swing[], ob: POI[], maxDiff?: number, multiStop?: number, stopPaddingPercent: number = 0, tralingPercent: number = 0, LTFdata?: HistoryObject[] = []) => {
     const positions = {};
+
+    const nonCHOCHOB = ob.filter(o => o.type !== POIType.CHOCH_IDM);
+    const CHOCHOB = ob.filter(o => o.type === POIType.CHOCH_IDM);
+
+    // HTF candles
     for (let i = 0; i < candles.length - 1; i++) {
         const partCandles = candles.slice(0, i);
         const partSwings = swings.slice(0, i);
-        const partOB = ob.slice(0, i);
+        const partOB = nonCHOCHOB.slice(0, i);
+
+        const _pos = calculatePositionsByOrderblocks(security, partCandles, partSwings, partOB, maxDiff, multiStop, stopPaddingPercent, tralingPercent);
+
+        _pos.forEach(pos => {
+            if (!positions[pos.openTime] || !positions[pos.closeTime]) {
+                positions[pos.openTime] = pos;
+            }
+        })
+    }
+
+    // LTF candles
+    for (let i = 0; i < LTFdata.length - 1; i++) {
+        const partCandles = LTFdata.slice(0, i);
+        const partSwings = swings.slice(0, i);
+        const partOB = CHOCHOB.slice(0, i);
 
         const _pos = calculatePositionsByOrderblocks(security, partCandles, partSwings, partOB, maxDiff, multiStop, stopPaddingPercent, tralingPercent);
 

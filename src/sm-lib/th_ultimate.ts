@@ -1,8 +1,9 @@
 import {Cross, HistoryObject, OrderblockPart, POI, POIType, Side, Swing, THConfig, Trend} from "./models";
 import {
     closestExtremumSwing,
-    findClosestRevertSwing,
     findClosestConfirmedCHoCH,
+    findClosestRevertSwing,
+    findIDMConfirmationIndex,
     formatDate,
     getWeekNumber,
     hasClose,
@@ -16,7 +17,7 @@ import {
     isImbalance,
     isInsideBar,
     isInternalBOS,
-    lowestBy, findIDMConfirmationIndex
+    lowestBy
 } from "./utils";
 import {drawFVG, drawTrendByFVG, tradeStartSessionStrategy} from "./ict_strategy";
 import {confirmExtremumsIfValid} from "./swings/confirmExtremumsIfValid.ts";
@@ -1583,7 +1584,7 @@ export const confirmCHoCH_IDM_OB = (manager: StateManager, lowTFManager: StateMa
     for (let i = 0; i < onlyCHOCHPOI.length; i++) {
         const poi = onlyCHOCHPOI[i];
         const hitIndex = poi.endCandle;
-        const startLTFIndex = lowTFManager.candles.findIndex(c => c.time === poi.endCandle.time);
+        const startLTFIndex = lowTFManager.candles.findIndex(c => c.time === poi.endCandle?.time);
         // Если почему то на M1 индекс не найден - идем к следующему ОБ
         if (startLTFIndex === -1) {
             poi.canTest = false;
@@ -1591,12 +1592,39 @@ export const confirmCHoCH_IDM_OB = (manager: StateManager, lowTFManager: StateMa
             continue;
         }
         const closestIDM = lowTFManager.boses.find(b => b?.isIDM && b?.extremum?.index >= startLTFIndex && b?.extremum?.side === poi.side);
-        if(!closestIDM) {
+        if (!closestIDM) {
             poi.canTest = false;
             poi.canTrade = false;
             continue;
         }
         poi.reasons.push(`LTF IDM ${formatDate(new Date(closestIDM.from.time * 1000))} - ${formatDate(new Date(closestIDM.to.time * 1000))} после касания`)
+
+
+        // Здесь баг с closestIDM.extremum поэтому надо его вычислить руками
+        let maxValue = closestIDM.from.price;
+        let maxValueIndex = closestIDM.from.index;
+
+        for (let j = closestIDM.from.index; j < closestIDM.to.index; j++) {
+            // Ищем минимальный лоу
+            if(closestIDM.from.side === 'high' && lowTFManager.candles[j].low < maxValue) {
+                maxValue = lowTFManager.candles[j].low;
+                maxValueIndex = j;
+            }
+
+            // Ищем максимальный хай
+            if(closestIDM.from.side === 'low' && lowTFManager.candles[j].high > maxValue){
+                maxValue = lowTFManager.candles[j].high;
+                maxValueIndex = j;
+            }
+        }
+
+        closestIDM.extremum = new Swing({
+            index: maxValueIndex,
+            side: closestIDM.from.side === 'high' ? 'low' : 'high',
+            _sidePrice: lowTFManager.candles[maxValueIndex],
+            time: lowTFManager.candles[maxValueIndex].time,
+        });
+        closestIDM.extremum.markExtremum();
 
         // если между касанием и сформированием IDM было пробитие
         // poi.canTest = false;
@@ -1613,7 +1641,9 @@ export const confirmCHoCH_IDM_OB = (manager: StateManager, lowTFManager: StateMa
             continue;
         }
 
-        const {firstImbalanceIndex, lastImbalanceIndex} = imbalance;
+        // const {firstImbalanceIndex, lastImbalanceIndex} = imbalance;
+        const firstImbalanceIndex = OBSwing.index;
+        const lastImbalanceIndex = OBSwing.index + 2;
         const firstCandle = lowTFManager.candles[firstImbalanceIndex];
 
         const lastOrderblockCandle = lowTFManager.candles[firstImbalanceIndex];
@@ -1628,12 +1658,12 @@ export const confirmCHoCH_IDM_OB = (manager: StateManager, lowTFManager: StateMa
             firstCandle.time !== OBSwing.time
                 ? firstCandle.close
                 : lastOrderblockCandle.close;
-        const side =
-            lastImbalanceCandle.low > firstCandle.high
-                ? 'low'
-                : lastImbalanceCandle.high < firstCandle.low
-                    ? 'high'
-                    : null;
+        const side = OBSwing.side;
+            // lastImbalanceCandle.low > firstCandle.high
+            //     ? 'low'
+            //     : lastImbalanceCandle.high < firstCandle.low
+            //         ? 'high'
+            //         : null;
 
         if (!side) {
             poi.canTest = false;
@@ -1658,18 +1688,18 @@ export const confirmCHoCH_IDM_OB = (manager: StateManager, lowTFManager: StateMa
             side,
         } as OrderblockPart;
 
-        // if (
-        //     orderBlockPart?.side !== OBSwing?.side
-        // ) {
-        //     poi.canTest = false;
-        //     poi.canTrade = false;
-        //     continue;
-        // }
+        const LTFOB = new POI(canTradeExtremumOrderblock(lowTFManager, closestIDM.extremum, orderBlockPart, poi.takeProfit, false, false));
 
-        // const takeProfit = closestExtremumSwing(lowTFManager, closestIDM.extremum)
-        const LTFOB = new POI(canTradeExtremumOrderblock(lowTFManager, closestIDM.extremum, orderBlockPart, poi.takeProfit));
-        debugger
+        if (LTFOB.canTest) {
+            poi.canTest = false;
+            poi.canTrade = false;
 
+            manager.pois[OBSwing.index] = LTFOB;
+            manager.pois[OBSwing.index].type = POIType.CHOCH_IDM;
+            manager.pois[OBSwing.index].reasons.unshift(...imbalance.reasons);
+            debugger
+            // manager.pois[OBSwing.index].reasons = POIType.CHOCH_IDM;
+        }
     }
 }
 
@@ -2280,8 +2310,6 @@ const canTradeCHoCHExtremumOrderblock = (manager: StateManager, swing: Swing, CH
         reasons: []
     }
 
-    const idmStartSwing = CHoCH.from;
-
     // Берем Индекс закрытия имбаланса и начинаем считать пробитие со следующей свечи
     let hitIndex = swing.index + orderBlockPart.lastImbalanceIndex + 1;
 
@@ -2355,7 +2383,7 @@ const canTradeCHoCHExtremumOrderblock = (manager: StateManager, swing: Swing, CH
     return props;
 }
 
-const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBlockPart: OrderblockPart, takeProfit?: number) => {
+const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBlockPart: OrderblockPart, takeProfit?: number, checkTrend: boolean = true, confirmIDMEqual = true) => {
     const props: Partial<POI> = {
         ...orderBlockPart,
         isSMT: false,
@@ -2404,12 +2432,33 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
     props.reasons.push(`${formatDate(new Date(manager.candles[IDMConfirmationIndex].time * 1000))} Подтверждение IDM`)
 
     // Проверяем чтоб LL/HH находились четко между краями IDM
-    if (swing.index <= startIDMIndex || swing.index >= IDMConfirmationIndex) {
+    if (swing.index <= startIDMIndex || swing.index > IDMConfirmationIndex) {
         manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] Свинг за пределами IDM`)
         props.canTest = false;
         props.canTrade = false;
         props.reasons.push(`Свинг ${swing.index} за пределами IDM ${formatDate(new Date(manager.candles[startIDMIndex].time * 1000))} - ${formatDate(new Date(manager.candles[IDMConfirmationIndex].time * 1000))}`)
         return props;
+    }
+
+    const startTrend = manager.trend[props.swing.index]?.trend;
+    if (checkTrend) {
+        if (!startTrend) {
+            props.canTest = false;
+            props.canTrade = false;
+            props.reasons.push(`Тренд отсутствует`)
+            return props;
+        }
+
+        const isBuy = startTrend === -1 && props?.side === 'high';
+        const isSell = startTrend === 1 && props?.side === 'low';
+
+        // Если тренд лонг а ОБ в шорт, или тренд в шорт а ОБ в лонг - не торгуем и не тестируем
+        if (!isBuy && !isSell) {
+            props.canTrade = false;
+            props.canTest = false;
+            props.reasons.push(`ОБ не по тренду: Тренд: ${startTrend === 1 ? 'Бычий' : startTrend === -1 ? 'Медвежий' : 'undefined'} Направление ОБ: ${props?.side === 'low' ? 'Продажа' : 'Покупка'}`)
+            return props;
+        }
     }
 
     // Берем Индекс закрытия имбаланса и начинаем считать пробитие со следующей свечи
@@ -2423,25 +2472,6 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         hitIndex++
     }
 
-    const startTrend = manager.trend[props.swing.index]?.trend;
-    if (!startTrend) {
-        props.canTest = false;
-        props.canTrade = false;
-        props.reasons.push(`Тренд отсутствует`)
-        return props;
-    }
-
-    const isBuy = startTrend === -1 && props?.side === 'high';
-    const isSell = startTrend === 1 && props?.side === 'low';
-
-    // Если тренд лонг а ОБ в шорт, или тренд в шорт а ОБ в лонг - не торгуем и не тестируем
-    if (!isBuy && !isSell) {
-        props.canTrade = false;
-        props.canTest = false;
-        props.reasons.push(`ОБ не по тренду: Тренд: ${startTrend === 1 ? 'Бычий' : startTrend === -1 ? 'Медвежий' : 'undefined'} Направление ОБ: ${props?.side === 'low' ? 'Продажа' : 'Покупка'}`)
-        return props;
-    }
-
     // Если пробитие состоялось
     if (manager.candles[hitIndex]) {
         manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] пробитие состоялось`)
@@ -2449,7 +2479,7 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         props.endCandle = manager.candles[hitIndex];
         props.endIndex = hitIndex;
         props.reasons.push(`Есть пробитие: ${formatDate(new Date(manager.candles[hitIndex].time * 1000))}`)
-        if (IDMConfirmationIndex >= hitIndex) {
+        if (confirmIDMEqual && IDMConfirmationIndex >= hitIndex) {
             props.isSMT = true;
             props.reasons.push(`SMT: Находимся между ${formatDate(new Date(manager.candles[startIDMIndex].time * 1000))} и ${formatDate(new Date(manager.candles[IDMConfirmationIndex].time * 1000))}`)
         }
@@ -2457,7 +2487,7 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         const endTrend = manager.trend[hitIndex]?.trend;
 
         // Если начальный и конечный тренд не равны - то и не тестируем
-        if (startTrend !== endTrend) {
+        if (checkTrend && startTrend !== endTrend) {
             props.canTest = false;
             props.canTrade = false;
             props.reasons.push(`Тренды не равны: ${startTrend} != ${endTrend}`)
@@ -2466,13 +2496,15 @@ const canTradeExtremumOrderblock = (manager: StateManager, swing: Swing, orderBl
         return props;
     }
 
-    // Тренд на последнюю свечку
-    const currentTrend = manager.trend[manager.trend.length - 1]?.trend;
-    // Если тренда у ОБ нет или он не совпадает с текущим - не торгуем
-    if (!startTrend || currentTrend !== startTrend) {
-        props.canTrade = false;
-        props.reasons.push(`Тренд ОБ не равен текущему тренду: ${startTrend} != ${currentTrend}`)
-        return props;
+    if (checkTrend) {
+        // Тренд на последнюю свечку
+        const currentTrend = manager.trend[manager.trend.length - 1]?.trend;
+        // Если тренда у ОБ нет или он не совпадает с текущим - не торгуем
+        if (!startTrend || currentTrend !== startTrend) {
+            props.canTrade = false;
+            props.reasons.push(`Тренд ОБ не равен текущему тренду: ${startTrend} != ${currentTrend}`)
+            return props;
+        }
     }
 
     manager.config.showLogs && console.log(`[${new Date(swing.time * 1000).toISOString()}] OB_IDM найден`)

@@ -197,7 +197,7 @@ export const SoloTestPage = () => {
         let positions = [];
 
         if (config.tradeOB) {
-            const fakeoutPositions = iterationCalculatePositions(security, data, swings as any, canTradeOrderBlocks, maxDiff, multiStop, stopPaddingPercent, tralingPercent);
+            const fakeoutPositions = iterationCalculatePositions(security, data, swings as any, canTradeOrderBlocks, maxDiff, multiStop, stopPaddingPercent, tralingPercent, LTFdata);
             positions.push(...fakeoutPositions);
         }
 
