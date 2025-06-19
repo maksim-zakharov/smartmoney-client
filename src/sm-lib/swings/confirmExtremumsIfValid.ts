@@ -44,7 +44,7 @@ export const confirmSingleExtremum = (
     extremumType: 'high' | 'low',
     index: number
 ): void => {
-    console.log(`confirmSingleExtremum ${manager.lastExtremumMap[extremumType].side} Confirmed ${manager.lastExtremumMap[extremumType]?.index} at ${index}`)
+    // console.log(`confirmSingleExtremum ${manager.lastExtremumMap[extremumType].side} Confirmed ${manager.lastExtremumMap[extremumType]?.index} at ${index}`)
     // Помечаем экстремум как подтвержденный
     manager.lastExtremumMap[extremumType].markExtremum();
     manager.confirmIndexMap[extremumType] = index;

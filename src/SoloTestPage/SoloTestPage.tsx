@@ -52,8 +52,8 @@ export const SoloTestPage = () => {
     const [env, setEnv] = useState<'dev' | 'prod'>('dev');
     const [offset, setOffset] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
-    const [data, setData] = useState([]);
-    const [LTFdata, setLTFData] = useState([]);
+    const [{data = [], LTFdata = []}, setData] = useState({data: [], LTFdata: []});
+    // const [LTFdata, setLTFData] = useState([]);
     const [HTFdata, setHTFData] = useState([]);
 
     const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -136,15 +136,18 @@ export const SoloTestPage = () => {
     }, [ticker, token])
 
     useEffect(() => {
-        fetchCandlesFromAlor(ticker, tf, fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setData);
+        Promise.all([
+            fetchCandlesFromAlor(ticker, tf, fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle)))
+            , fetchCandlesFromAlor(ticker, "60", fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle)))]
+        ).then(([data, LTFdata]) => setData({data, LTFdata}))
     }, [tf, ticker, fromDate, toDate, token]);
+
+    // useEffect(() => {
+    //     fetchCandlesFromAlor(ticker, "60", fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setLTFData);
+    // }, [ticker, fromDate, toDate, token]);
 
     useEffect(() => {
         fetchCandlesFromAlor(ticker, "3600", fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setHTFData);
-    }, [ticker, fromDate, toDate, token]);
-
-    useEffect(() => {
-        fetchCandlesFromAlor(ticker, "60", fromDate, toDate, undefined, token).then(candles => candles.filter(candle => !notTradingTime(candle))).then(setLTFData);
     }, [ticker, fromDate, toDate, token]);
 
     const setSize = (tf: string) => {
@@ -175,7 +178,7 @@ export const SoloTestPage = () => {
     }, [HTFdata])
 
     const {swings, trend, boses, orderBlocks, positions} = useMemo(() => {
-        if (!security) {
+        if (!security || riskRate?.instrument !== ticker) {
             return {
                 swings: [],
                 trend: [],
@@ -220,7 +223,7 @@ export const SoloTestPage = () => {
                 stopMargin
             })).sort((a, b) => b.openTime - a.openTime)
         };
-    }, [LTFdata, tralingPercent, offset, isShortSellPossible, security?.lotsize, stopPaddingPercent,config.showWeekly, config.tradeStartSessionMorning, config.tradeStartSessionDay, config.tradeStartSessionEvening, config.trend2, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.showFVG, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
+    }, [riskRate, ticker, LTFdata, tralingPercent, offset, isShortSellPossible, security?.lotsize, stopPaddingPercent,config.showWeekly, config.tradeStartSessionMorning, config.tradeStartSessionDay, config.tradeStartSessionEvening, config.trend2, config.showSession, config.showIFC, config.showFake, config.showSMT, config.newSMT, config.showHiddenSwings, config.withMove, config.removeEmpty, config.onlyExtremum, config.tradeEXTIFC, config.tradeOBEXT, config.tradeFlipWithIDM, config.tradeCHoCHWithIDM, config.tradeIDMIFC, config.showFVG, config.tradeOBIDM, config.tradeOB, config.tradeIFC, config.withTrendConfirm, config.tradeFakeouts, config.excludeWick, data, maxDiff, multiStop])
 
     const robotEqualsPercent = useMemo(() => {
         if (!config.showRobotOB || !robotOB.length) {

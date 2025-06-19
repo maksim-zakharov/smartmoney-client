@@ -26,7 +26,7 @@ export const unmarkLastExtremum = (manager: StateManager, side: Swing['side']) =
         return;
     }
 
-    console.log(`unmarkLastExtremum ${manager.lastExtremumMap[side]?.index}`)
+    // console.log(`unmarkLastExtremum ${manager.lastExtremumMap[side]?.index}`)
 
     // Если снимаем марку с неподтвержденного HH - все последующие LL считаются невалидными
     const versusSide = side === 'high' ? 'low' : 'high';
@@ -116,7 +116,7 @@ function setNewLastExtremum(
     side: Swing['side'],
     versusSide: Swing['side']
 ) {
-    console.log(`setNewLastExtremum ${swing?.index} ${swing.side}`)
+    // console.log(`setNewLastExtremum ${swing?.index} ${swing.side}`)
 
     manager.lastExtremumMap[side] = swing;
     if (side !== 'double') {
