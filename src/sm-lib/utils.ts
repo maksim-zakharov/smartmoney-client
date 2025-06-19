@@ -161,7 +161,8 @@ export const hasClose = (
         ? bossCandle.high < currentCandle.close
         : bossCandle.low > currentCandle.close;
 
-export const closestSwing = (manager: StateManager, swing: Swing) => {
+// Поиск ближайшего слева противоположного свинга
+export const findClosestRevertSwing = (manager: StateManager, swing: Swing) => {
     let index = swing.index - 1;
     while (
         index > -1 &&
@@ -215,4 +216,17 @@ export const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
     }
 
     return manager.swings[index];
+}
+
+// Ищем индекс свечи на которой подтверждается IDM
+export const findIDMConfirmationIndex = (manager: StateManager, idmStartSwing: Swing, idmExtremumSwing: Swing) => {
+    let endIDMIndex = idmStartSwing.index + 1;
+    while (manager.candles[endIDMIndex]
+        && ((idmExtremumSwing.side === 'high' && idmStartSwing.price <= manager.candles[endIDMIndex].low)
+            ||
+            (idmExtremumSwing.side === 'low' && idmStartSwing.price >= manager.candles[endIDMIndex].high))
+        ) {
+        endIDMIndex++;
+    }
+    return endIDMIndex;
 }

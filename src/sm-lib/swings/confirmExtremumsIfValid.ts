@@ -1,6 +1,6 @@
 import {StateManager} from "../th_ultimate";
 import {Cross, Swing} from "../models";
-import {closestSwing} from "../utils";
+import {findClosestRevertSwing} from "../utils";
 import {unmarkLastExtremum} from "./updateSwingExtremums";
 
 
@@ -13,11 +13,11 @@ export const hasAnyIdmSwings = (manager: StateManager) => Boolean(manager.lastEx
 export const ensureIdmSwingsExist = (manager: StateManager) => {
     // Экстремум есть но нет IDM - не смотрим
     if (!manager.lastExtremumMap['high']?.idmSwing && manager.lastExtremumMap['high']) {
-        manager.lastExtremumMap['high'].idmSwing = closestSwing(manager, manager.lastExtremumMap['high']);
+        manager.lastExtremumMap['high'].idmSwing = findClosestRevertSwing(manager, manager.lastExtremumMap['high']);
     }
 
     if (!manager.lastExtremumMap['low']?.idmSwing && manager.lastExtremumMap['low']) {
-        manager.lastExtremumMap['low'].idmSwing = closestSwing(manager, manager.lastExtremumMap['low']);
+        manager.lastExtremumMap['low'].idmSwing = findClosestRevertSwing(manager, manager.lastExtremumMap['low']);
     }
 }
 // Проверка подтверждения экстремума по текущей свече

@@ -1,7 +1,7 @@
 // Если восходящий тренд - перезаписываем каждый ХХ, прошлый удаляем
 import {Cross, Swing} from "../models";
 import {StateManager} from "../th_ultimate";
-import {closestSwing} from "../utils";
+import {findClosestRevertSwing} from "../utils";
 
 // Проверка на новый экстремум:
 const checkNewExtremum = (manager: StateManager, swing: Swing) => {
@@ -35,7 +35,7 @@ export const unmarkLastExtremum = (manager: StateManager, side: Swing['side']) =
 
     if (manager.lastExtremumMap[side]?.side === 'double') {
         manager.lastExtremumMap[side].side = side === 'high' ? 'low' : 'high';
-        manager.lastExtremumMap[side].idmSwing = closestSwing(manager, manager.lastExtremumMap[side]);
+        manager.lastExtremumMap[side].idmSwing = findClosestRevertSwing(manager, manager.lastExtremumMap[side]);
 
         if (!manager.lastExtremumMap[side].idmSwing) {
             return;
