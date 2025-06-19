@@ -2210,10 +2210,8 @@ const canTradeIFC = (manager: StateManager, swing: Swing, orderBlockPart: Orderb
         return props;
     }
 
-    let startIDMIndex = swing.index - 1;
-    while (startIDMIndex > -1 && (!manager.swings[startIDMIndex] || manager.swings[startIDMIndex].side === swing.side)) {
-        startIDMIndex--;
-    }
+    const closestRevertSwing = findClosestRevertSwing(manager, swing);
+    const startIDMIndex = closestRevertSwing?.index || -1;
 
     // Если не нашли ближайший свинг слева - ИДМ нет
     if (startIDMIndex === -1) {
@@ -2226,14 +2224,7 @@ const canTradeIFC = (manager: StateManager, swing: Swing, orderBlockPart: Orderb
     const idmStartSwing = manager.swings[startIDMIndex];
 
     // тут IDM свинг найден, теперь надо проверить что он закрылся
-    let endIDMIndex = startIDMIndex + 1;
-    while (manager.candles[endIDMIndex]
-        && ((swing.side === 'high' && idmStartSwing.price <= manager.candles[endIDMIndex].low)
-            ||
-            (swing.side === 'low' && idmStartSwing.price >= manager.candles[endIDMIndex].high))
-        ) {
-        endIDMIndex++;
-    }
+    const endIDMIndex = findIDMConfirmationIndex(manager, idmStartSwing, swing)
 
     // Если IDM не подтвержден - не смотрим
     if (!manager.candles[endIDMIndex]) {
