@@ -13,7 +13,9 @@ export const getCachedCandles = async (symbol: string): Promise<HistoryObject[]>
 
 export const getCachedSecurity = async (symbol: string): Promise<any> => {
     return db.securities
-        .get(symbol);
+        .where('symbol')
+        .equals(symbol)
+        .first();
 };
 
 export const cacheSecurity = async (security: any): Promise<void> => {
@@ -22,7 +24,9 @@ export const cacheSecurity = async (security: any): Promise<void> => {
 
 export const getCachedRiskRates = async (symbol: string): Promise<any> => {
     return db.riskRates
-        .get(symbol);
+        .where('instrument')
+        .equals(symbol)
+        .first();
 };
 
 export const cacheRiskRates = async (security: any): Promise<void> => {
