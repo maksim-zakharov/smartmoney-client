@@ -7,6 +7,9 @@ export default defineConfig({
     outDir: './dist',
     emptyOutDir: true, // also necessary
   },
+  worker: {
+    format: 'es', // Важно для Worker'ов в Vite
+  },
   plugins: [react()],
   define: {
     'process.env': JSON.stringify(process.env.NODE_ENV),

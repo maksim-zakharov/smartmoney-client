@@ -9,7 +9,8 @@ import {moneyFormat} from "./MainPage/MainPage.tsx";
 import moment from 'moment';
 import {calculatePositionsByOrderblocks, finishPosition} from "./samurai_patterns";
 import {
-    fetchCandlesFromAlor, fetchRisk,
+    fetchCandlesFromAlor,
+    fetchRisk,
     fetchRiskRates,
     formatDateTime,
     getSecurity,
@@ -32,12 +33,12 @@ import {
 } from "./cacheService";
 import Sider from "antd/es/layout/Sider";
 import {Content} from "antd/es/layout/layout";
-import {HistoryObject, POI, POIType} from "./sm-lib/models";
+import {HistoryObject, POIType} from "./sm-lib/models";
 import {notTradingTime} from "./sm-lib/utils";
 
 export const MultiTestPage = () => {
     const [loading, setLoading] = useState(true);
-    const [allData, setAllData] = useState({});
+    const [allData, setAllData] = useState({data: {}, LTFData: {}});
     const [successSymbols, setSuccessSymbols] = useState<{ current: number, total: number }>({current: 0, total: 0});
     const [allSecurity, setAllSecurity] = useState({});
     const [allRiskRates, setAllRiskRates] = useState({});
@@ -48,7 +49,7 @@ export const MultiTestPage = () => {
     const [tradeIDMIFC, settradeIDMIFC] = useState<boolean>(false);
     const [tradeCHoCHWithIDM, settradeCHoCHWithIDM] = useState<boolean>(false);
     const [tradeFlipWithIDM, settradeFlipWithIDM] = useState<boolean>(false);
-    const [tradeOBEXT, settradeOBEXT] = useState<boolean>(true);
+    const [tradeOBEXT, settradeOBEXT] = useState<boolean>(false);
     const [tradeEXTIFC, settradeEXTIFC] = useState<boolean>(false);
     const [withMove, setwithMove] = useState<boolean>(false);
     const [showFake, setfakeBOS] = useState<boolean>(false);
@@ -113,19 +114,28 @@ export const MultiTestPage = () => {
             positions = positions.filter(p => p.side !== 'short');
         }
 
-        return positions.filter(p => Boolean(p.pnl)).map(finishPosition({lotsize, fee, tf, ticker, stopMargin})).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
+        return positions.filter(p => Boolean(p.pnl)).map(finishPosition({
+            lotsize,
+            fee,
+            tf,
+            ticker,
+            stopMargin
+        })).filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime);
     }, [tralingPercent, data, showFake, newSMT, trend2,
         tradeStartSessionMorning,
         tradeStartSessionDay,
         tradeStartSessionEvening, showHiddenSwings, showSMT, withMove, tradeEXTIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeIDMIFC, tradeOBIDM, feePercent, riskRates, security, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy]);
 
-    const allPositions = useMemo(() => {
-        const topLiquidStocks = ['SBER', 'GAZP', 'SBERP', 'YDEX', 'SMLT', 'LKOH', 'ROSN', 'PIKK', 'T', 'VTBR', 'RNFT'];
 
-        return Object.entries(allData)
-            // .filter(([ticker]) => (!tradeStartSessionDay && !tradeStartSessionEvening && !tradeStartSessionMorning) || topLiquidStocks.includes(ticker))
-            .map(([ticker, data]) => {
-            const {swings, orderBlocks} = calculateTesting(data, {
+    const [allPositions, setallPositions] = useState([]);
+
+    useEffect(() => {
+        const worker = new Worker(new URL('/src/worker.ts', import.meta.url), {
+            type: 'module', // Важно для Vite
+        });
+
+        worker.postMessage({
+            config: {
                 withMove,
                 showHiddenSwings,
                 newSMT,
@@ -139,37 +149,97 @@ export const MultiTestPage = () => {
                 tradeCHoCHWithIDM,
                 tradeFlipWithIDM,
                 tradeOBEXT,
-                tradeEXTIFC
-            });
+                tradeEXTIFC,
+                showSMT
+            }, allData, allSecurity,
+            tf,
+            stopMargin,
+            feePercent, allRiskRates, maxTakePercent, baseTakePercent, tralingPercent, takeProfitStrategy
+        });
 
-            const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.CROSS_SESSION, POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.Breaking_Block].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
+        worker.onmessage = (e: MessageEvent) => {
+            setallPositions(e.data);
+            worker.terminate(); // Закрываем Worker после выполнения
+        };
 
-            const lotsize = (allSecurity[ticker]?.lotsize || 1)
-
-            const fee = feePercent / 100;
-
-            let positions = calculatePositionsByOrderblocks(allSecurity[ticker], data, swings, canTradeOrderBlocks, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, 0, tralingPercent)
-
-            const isShortSellPossible = allRiskRates[ticker]?.isShortSellPossible || false;
-            if (!isShortSellPossible) {
-                positions = positions.filter(p => p.side !== 'short');
-            }
-
-            return positions.filter(p => Boolean(p.pnl)).map(finishPosition({ticker, tf, stopMargin, fee, lotsize}));
-        }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
+        worker.onerror = (error) => {
+            console.error('Worker error:', error);
+            worker.terminate();
+        };
     }, [tralingPercent, tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT,
         tradeStartSessionMorning,
         tradeStartSessionDay,
-        tradeStartSessionEvening, trend2, showHiddenSwings, withMove, allData, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+        tradeStartSessionEvening, trend2, showHiddenSwings, withMove, allData.LTFData, allData.data, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
+
+    // const allPositions = useMemo(() => {
+    //     const topLiquidStocks = ['SBER', 'GAZP', 'SBERP', 'YDEX', 'SMLT', 'LKOH', 'ROSN', 'PIKK', 'T', 'VTBR', 'RNFT'];
+    //
+    //     return Object.entries(allData.data)
+    //         // .filter(([ticker]) => (!tradeStartSessionDay && !tradeStartSessionEvening && !tradeStartSessionMorning) || topLiquidStocks.includes(ticker))
+    //         .map(([ticker, data]: any[]) => {
+    //             const {swings, orderBlocks} = calculateTesting(data, {
+    //                     withMove,
+    //                     showHiddenSwings,
+    //                     newSMT,
+    //                     trend2,
+    //                     tradeStartSessionMorning,
+    //                     tradeStartSessionDay,
+    //                     tradeStartSessionEvening,
+    //                     showFake,
+    //                     tradeOBIDM,
+    //                     tradeIDMIFC,
+    //                     tradeCHoCHWithIDM,
+    //                     tradeFlipWithIDM,
+    //                     tradeOBEXT,
+    //                     tradeEXTIFC,
+    //                 },
+    //                 allData.LTFData[ticker]
+    //             );
+    //
+    //             const canTradeOrderBlocks = orderBlocks.filter((o) => [POIType.CROSS_SESSION, POIType.FVG, POIType.OB_EXT, POIType.EXT_LQ_IFC, POIType.IDM_IFC, POIType.CHOCH_IDM, POIType.FLIP_IDM, POIType.Breaking_Block].includes(o?.type) && (showSMT || !o.isSMT) && o.canTest);
+    //
+    //
+    //             const nonCHOCHOB = canTradeOrderBlocks.filter(o => o.type !== POIType.CHOCH_IDM);
+    //             const CHOCHOB = canTradeOrderBlocks.filter(o => o.type === POIType.CHOCH_IDM);
+    //
+    //             const lotsize = (allSecurity[ticker]?.lotsize || 1)
+    //
+    //             const fee = feePercent / 100;
+    //
+    //             let positions = calculatePositionsByOrderblocks(allSecurity[ticker], data, swings, nonCHOCHOB, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, 0, tralingPercent)
+    //
+    //             const LTFPositions = calculatePositionsByOrderblocks(allSecurity[ticker], allData.LTFData[ticker], swings, CHOCHOB, takeProfitStrategy === 'default' ? 0 : maxTakePercent, baseTakePercent, 0, tralingPercent)
+    //
+    //             positions.push(...LTFPositions);
+    //
+    //             const isShortSellPossible = allRiskRates[ticker]?.isShortSellPossible || false;
+    //             if (!isShortSellPossible) {
+    //                 positions = positions.filter(p => p.side !== 'short');
+    //             }
+    //
+    //             return positions.filter(p => Boolean(p.pnl)).map(finishPosition({
+    //                 ticker,
+    //                 tf,
+    //                 stopMargin,
+    //                 fee,
+    //                 lotsize
+    //             }));
+    //         }).flat().filter(s => s.quantity).sort((a, b) => b.openTime - a.openTime)
+    // }, [tralingPercent, tradeIDMIFC, tradeCHoCHWithIDM, tradeFlipWithIDM, tradeOBEXT, tradeEXTIFC, tradeOBIDM, showFake, showSMT, newSMT,
+    //     tradeStartSessionMorning,
+    //     tradeStartSessionDay,
+    //     tradeStartSessionEvening, trend2, showHiddenSwings, withMove, allData.LTFData, allData.data, feePercent, allRiskRates, allSecurity, stopMargin, baseTakePercent, maxTakePercent, takeProfitStrategy])
 
     const fetchAllTickerCandles = async () => {
         setLoading(true);
         const result = {};
+        const resultLTF = {};
         const result1 = {};
         const result2 = {};
         const stockSymbols = symbolFuturePairs.map(curr => curr.stockSymbol);
         for (let i = 0; i < stockSymbols.length; i++) {
-            result[stockSymbols[i]] = await loadData(stockSymbols[i], tf, dates[0].unix(), dates[1].unix()).then(candles => candles.filter(candle => !notTradingTime(candle)));
+            result[stockSymbols[i]] = await loadData(stockSymbols[i], tf, dates[0].unix(), dates[1].unix(), false).then(candles => candles.filter(candle => !notTradingTime(candle)));
+            resultLTF[stockSymbols[i]] = await loadData(stockSymbols[i], "60", dates[0].unix(), dates[1].unix(), false).then(candles => candles.filter(candle => !notTradingTime(candle)));
             if (token)
                 result1[stockSymbols[i]] = await loadSecurity(stockSymbols[i], token);
             result2[stockSymbols[i]] = await loadRiskRate(stockSymbols[i], token);
@@ -177,7 +247,7 @@ export const MultiTestPage = () => {
         }
         setAllRiskRates(result2)
         setAllSecurity(result1)
-        setAllData(result)
+        setAllData({data: result, LTFData: resultLTF})
         setLoading(false);
     }
 
@@ -356,8 +426,9 @@ export const MultiTestPage = () => {
         {
             title: "Действия",
             render: (value, row) => {
-                return <Link to={`/test?ticker=${row.ticker || ticker}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowEndOB%2CshowHiddenSwings%2CshowPositions%2CsmartTrend%2CtradeOBEXT&toDate=${dayjs(row.closeTime * 1000).add(1, 'day').unix()}&fromDate=${dayjs(row.openTime * 1000).add(-2, 'week').unix()}`}
-                             target="_blank">Тестер</Link>;
+                return <Link
+                    to={`/test?ticker=${row.ticker || ticker}&tf=${row.timeframe}&checkboxes=tradeOB%2CBOS%2Cswings%2CshowEndOB%2CshowHiddenSwings%2CshowPositions%2CsmartTrend%2CtradeOBEXT&toDate=${dayjs(row.closeTime * 1000).add(1, 'day').unix()}&fromDate=${dayjs(row.openTime * 1000).add(-2, 'week').unix()}`}
+                    target="_blank">Тестер</Link>;
             }
         }
     ].filter(Boolean);
@@ -393,7 +464,7 @@ export const MultiTestPage = () => {
     }, [isAllTickers, allPositions, positions])
 
     const allPositionsAccumPnl = useMemo(() => Object.entries(allPositions.reduce((acc, curr) => {
-        if(!acc[curr.ticker]){
+        if (!acc[curr.ticker]) {
             acc[curr.ticker] = {newPnl: 0, positions: []};
         }
         acc[curr.ticker].newPnl += curr.newPnl;
@@ -401,11 +472,16 @@ export const MultiTestPage = () => {
 
         return acc;
     }, {} as any))
-        .map(([ticker, value]: any[]) => [ticker, {...value, profits: value.positions.filter(p => p.newPnl > 0).length, losses: value.positions.filter(p => p.newPnl < 0).length}])
+        .map(([ticker, value]: any[]) => [ticker, {
+            ...value,
+            profits: value.positions.filter(p => p.newPnl > 0).length,
+            losses: value.positions.filter(p => p.newPnl < 0).length
+        }])
         .sort((a: any, b: any) => b[1].newPnl - a[1].newPnl), [allPositions]);
 
     return <Layout style={{display: 'flex', flexDirection: 'row', gap: '8px'}}>
-        <Sider width={300} style={{padding: 16}} collapsedWidth={40} collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
+        <Sider width={300} style={{padding: 16}} collapsedWidth={40} collapsible collapsed={collapsed}
+               onCollapse={(value) => setCollapsed(value)}>
             <Form layout="vertical" style={{height: 'calc(100vh - 84px)', overflow: 'auto', overflowX: 'hidden'}}>
                 <Row gutter={8} align="bottom">
                     <Col>
@@ -470,17 +546,20 @@ export const MultiTestPage = () => {
                     </Col>
                     <Col>
                         <FormItem>
-                            <Checkbox checked={tradeStartSessionMorning} onChange={e => settradeStartSessionMorning(e.target.checked)}>tradeStartSessionMorning</Checkbox>
+                            <Checkbox checked={tradeStartSessionMorning}
+                                      onChange={e => settradeStartSessionMorning(e.target.checked)}>tradeStartSessionMorning</Checkbox>
                         </FormItem>
                     </Col>
                     <Col>
                         <FormItem>
-                            <Checkbox checked={tradeStartSessionDay} onChange={e => settradeStartSessionDay(e.target.checked)}>tradeStartSessionDay</Checkbox>
+                            <Checkbox checked={tradeStartSessionDay}
+                                      onChange={e => settradeStartSessionDay(e.target.checked)}>tradeStartSessionDay</Checkbox>
                         </FormItem>
                     </Col>
                     <Col>
                         <FormItem>
-                            <Checkbox checked={tradeStartSessionEvening} onChange={e => settradeStartSessionEvening(e.target.checked)}>tradeStartSessionEvening</Checkbox>
+                            <Checkbox checked={tradeStartSessionEvening}
+                                      onChange={e => settradeStartSessionEvening(e.target.checked)}>tradeStartSessionEvening</Checkbox>
                         </FormItem>
                     </Col>
                     <Col>
@@ -531,7 +610,8 @@ export const MultiTestPage = () => {
                     </Col>
                     <Col>
                         <FormItem label="Трейлинг-стоп">
-                            <Slider style={{width: 200}} step={10} max={100} min={0} defaultValue={tralingPercent} onChange={settralingPercent}/>
+                            <Slider style={{width: 200}} step={10} max={100} min={0} defaultValue={tralingPercent}
+                                    onChange={settralingPercent}/>
                         </FormItem>
                     </Col>
                 </Row>
