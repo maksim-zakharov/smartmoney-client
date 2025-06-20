@@ -1,9 +1,35 @@
 .order-books-container{
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 24px;
 }
 
 .order-book{
-    min-height: 400px;
+}
+
+.order-book_container{
+    min-height: 200px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.order-book-side{
+    background-color: rgb(30, 44, 57);
+    padding: 2px 0px;
+
+    border-radius: 4px;
+    width: 260px;
+
+    td{
+        padding: 2px 4px;
+        width: 33%;
+    }
+    td:not(:last-child), th:not(:last-child){
+        text-align: left;
+    }
+    td:last-child, th:last-child{
+        text-align: right;
+    }
+
 }

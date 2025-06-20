@@ -107,47 +107,61 @@ export const ScreenerPage = () => {
           .map((symbol) => (
             <div key={symbol} className="order-book">
               <h3>{symbol}</h3>
-              <div className="order-book-side">
-                <h4>Bids</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Цена</th>
-                      <th>Количество</th>
-                      <th>Сумма</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orderBooks[symbol]?.bids.map(([price, quantity], i) => (
-                      <tr key={`bid-${i}`}>
-                        <td>{price.toFixed(2)}</td>
-                        <td>{quantity}</td>
-                        <td>{moneyFormat(price * quantity * orderBooks[symbol].lotSize)}</td>
+              <div className="order-book_container">
+                <div className="order-book-side">
+                  <h4>Bids</h4>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Цена</th>
+                        <th>Кол-во</th>
+                        <th>Сумма</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="order-book-side">
-                <h4>Asks</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Цена</th>
-                      <th>Количество</th>
-                      <th>Сумма</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orderBooks[symbol]?.asks.map(([price, quantity], i) => (
-                      <tr key={`ask-${i}`}>
-                        <td>{price.toFixed(2)}</td>
-                        <td>{quantity}</td>
-                        <td>{moneyFormat(price * quantity * orderBooks[symbol].lotSize)}</td>
+                    </thead>
+                    <tbody>
+                      {orderBooks[symbol]?.bids.map(([price, quantity], i) => (
+                        <tr
+                          key={`bid-${i}`}
+                          style={{
+                            backgroundColor: '#15785566',
+                            color: 'rgb(44, 232, 156)',
+                          }}
+                        >
+                          <td>{price.toFixed(2)}</td>
+                          <td>{quantity}</td>
+                          <td>{moneyFormat(price * quantity * orderBooks[symbol].lotSize)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="order-book-side">
+                  <h4>Asks</h4>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Цена</th>
+                        <th>Кол-во</th>
+                        <th>Сумма</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {orderBooks[symbol]?.asks.map(([price, quantity], i) => (
+                        <tr
+                          key={`ask-${i}`}
+                          style={{
+                            backgroundColor: '#d1261b66',
+                            color: 'rgb(255, 117, 132)',
+                          }}
+                        >
+                          <td>{price.toFixed(2)}</td>
+                          <td>{quantity}</td>
+                          <td>{moneyFormat(price * quantity * orderBooks[symbol].lotSize)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           ))}
