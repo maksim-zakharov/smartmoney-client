@@ -1,0 +1,9 @@
+.order-books-container{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.order-book{
+    min-height: 400px;
+}

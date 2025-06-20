@@ -1,18 +1,4 @@
-import {
-  Card,
-  Checkbox,
-  Col,
-  Divider,
-  Form,
-  Input,
-  Layout,
-  Radio,
-  Row,
-  Slider,
-  Space,
-  Statistic,
-  Table,
-} from 'antd';
+import { Card, Checkbox, Col, Divider, Form, Input, Layout, Radio, Row, Slider, Space, Statistic, Table } from 'antd';
 import { TickerSelect } from './TickerSelect';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import FormItem from 'antd/es/form/FormItem';
@@ -21,34 +7,14 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { moneyFormat } from './MainPage/MainPage.tsx';
 import moment from 'moment';
-import {
-  calculatePositionsByOrderblocks,
-  finishPosition,
-  Position,
-} from './samurai_patterns';
-import {
-  fetchCandlesFromAlor,
-  fetchRisk,
-  fetchRiskRates,
-  formatDateTime,
-  getSecurity,
-  persision,
-  refreshToken,
-  uniqueBy,
-} from './utils';
+import { calculatePositionsByOrderblocks, finishPosition, Position } from './samurai_patterns';
+import { fetchCandlesFromAlor, fetchRisk, fetchRiskRates, formatDateTime, getSecurity, persision, refreshToken, uniqueBy } from './utils';
 import { symbolFuturePairs } from '../symbolFuturePairs';
 import { Chart } from './SoloTestPage/UpdatedChart';
 import { DatesPicker } from './DatesPicker';
 import { Link } from 'react-router-dom';
 import { calculateTesting } from './sm-lib/th_ultimate';
-import {
-  cacheCandles,
-  cacheRiskRates,
-  cacheSecurity,
-  getCachedCandles,
-  getCachedRiskRates,
-  getCachedSecurity,
-} from './cacheService';
+import { cacheCandles, cacheRiskRates, cacheSecurity, getCachedCandles, getCachedRiskRates, getCachedSecurity } from './cacheService';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { HistoryObject, POI, POIType } from './sm-lib/models';
@@ -79,17 +45,12 @@ export const MultiTestPage = () => {
   const [showSMT, setshowSMT] = useState<boolean>(false);
   const [newSMT, setnewSMT] = useState<boolean>(false);
   const [trend2, settrend2] = useState<boolean>(false);
-  const [tradeStartSessionMorning, settradeStartSessionMorning] =
-    useState<boolean>(false);
-  const [tradeStartSessionDay, settradeStartSessionDay] =
-    useState<boolean>(false);
-  const [tradeStartSessionEvening, settradeStartSessionEvening] =
-    useState<boolean>(false);
+  const [tradeStartSessionMorning, settradeStartSessionMorning] = useState<boolean>(false);
+  const [tradeStartSessionDay, settradeStartSessionDay] = useState<boolean>(false);
+  const [tradeStartSessionEvening, settradeStartSessionEvening] = useState<boolean>(false);
   const [showHiddenSwings, setshowHiddenSwings] = useState<boolean>(true);
   const [ticker, onSelectTicker] = useState<string>('MTLR');
-  const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<
-    'default' | 'max'
-  >('max');
+  const [takeProfitStrategy, onChangeTakeProfitStrategy] = useState<'default' | 'max'>('max');
   const [stopMargin, setStopMargin] = useState<number>(50);
   const [feePercent, setFeePercent] = useState<number>(0.04);
   const [baseTakePercent, setBaseTakePercent] = useState<number>(5);
@@ -103,7 +64,7 @@ export const MultiTestPage = () => {
   const [tralingPercent, settralingPercent] = useState(0);
   const [collapsed, setCollapsed] = useState(false);
 
-  const workerManager = useRef(new WorkerManager());
+  const workerManager = useMemo(() => new WorkerManager(), []);
 
   const [risk, setRisk] = useState<any>();
 
@@ -238,7 +199,7 @@ export const MultiTestPage = () => {
         const iterationStart = Date.now();
 
         // console.log(`[${ticker}] Вычисляем стратегию.`)
-        const positions = await workerManager.current.emit<Position[]>({
+        const positions = await workerManager.emit<Position[]>({
           config: {
             withMove,
             showHiddenSwings,
@@ -283,9 +244,7 @@ export const MultiTestPage = () => {
         }
 
         // Рассчитываем среднее время итерации
-        const avgDuration =
-          previousDurations.reduce((sum, d) => sum + d, 0) /
-          previousDurations.length;
+        const avgDuration = previousDurations.reduce((sum, d) => sum + d, 0) / previousDurations.length;
 
         // Рассчитываем оставшееся время
         const remainingIterations = tickers.length - positionBatches.length;
@@ -401,20 +360,12 @@ export const MultiTestPage = () => {
     const result2 = {};
     const stockSymbols = symbolFuturePairs.map((curr) => curr.stockSymbol);
     for (let i = 0; i < stockSymbols.length; i++) {
-      result[stockSymbols[i]] = await loadData(
-        stockSymbols[i],
-        tf,
-        dates[0].unix(),
-        dates[1].unix(),
-        false,
-      ).then((candles) => candles.filter((candle) => !notTradingTime(candle)));
-      resultLTF[stockSymbols[i]] = await loadData(
-        stockSymbols[i],
-        '60',
-        dates[0].unix(),
-        dates[1].unix(),
-        false,
-      ).then((candles) => candles.filter((candle) => !notTradingTime(candle)));
+      result[stockSymbols[i]] = await loadData(stockSymbols[i], tf, dates[0].unix(), dates[1].unix(), false).then((candles) =>
+        candles.filter((candle) => !notTradingTime(candle)),
+      );
+      resultLTF[stockSymbols[i]] = await loadData(stockSymbols[i], '60', dates[0].unix(), dates[1].unix(), false).then((candles) =>
+        candles.filter((candle) => !notTradingTime(candle)),
+      );
       if (token) {
         result1[stockSymbols[i]] = await loadSecurity(stockSymbols[i], token);
         result2[stockSymbols[i]] = await loadRiskRate(stockSymbols[i], token);
@@ -457,13 +408,7 @@ export const MultiTestPage = () => {
     };
   }, [isAllTickers, allPositions, positions, security?.lotsize]);
 
-  const loadData = async (
-    ticker: string,
-    tf: string,
-    from: number,
-    to: number,
-    useCache: boolean = true,
-  ): Promise<HistoryObject[]> => {
+  const loadData = async (ticker: string, tf: string, from: number, to: number, useCache: boolean = true): Promise<HistoryObject[]> => {
     let data: HistoryObject[] = [];
     try {
       if (useCache) {
@@ -480,11 +425,7 @@ export const MultiTestPage = () => {
     return data;
   };
 
-  const loadSecurity = async (
-    ticker: string,
-    token: string,
-    useCache: boolean = true,
-  ): Promise<any> => {
+  const loadSecurity = async (ticker: string, token: string, useCache: boolean = true): Promise<any> => {
     let data;
     try {
       if (useCache) {
@@ -501,11 +442,7 @@ export const MultiTestPage = () => {
     return data;
   };
 
-  const loadRiskRate = async (
-    ticker: string,
-    token: string,
-    useCache: boolean = true,
-  ): Promise<any> => {
+  const loadRiskRate = async (ticker: string, token: string, useCache: boolean = true): Promise<any> => {
     let data;
     try {
       if (useCache) {
@@ -740,154 +677,105 @@ export const MultiTestPage = () => {
           <Row gutter={8} align="bottom">
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={tradeOBIDM}
-                  onChange={(e) => settradeOBIDM(e.target.checked)}
-                >
+                <Checkbox checked={tradeOBIDM} onChange={(e) => settradeOBIDM(e.target.checked)}>
                   Торговать OB_IDM
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={tradeIDMIFC}
-                  onChange={(e) => settradeIDMIFC(e.target.checked)}
-                >
+                <Checkbox checked={tradeIDMIFC} onChange={(e) => settradeIDMIFC(e.target.checked)}>
                   Торговать IDM_IFC
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={tradeOBEXT}
-                  onChange={(e) => settradeOBEXT(e.target.checked)}
-                >
+                <Checkbox checked={tradeOBEXT} onChange={(e) => settradeOBEXT(e.target.checked)}>
                   Торговать OBEXT
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={tradeFlipWithIDM}
-                  onChange={(e) => settradeFlipWithIDM(e.target.checked)}
-                >
+                <Checkbox checked={tradeFlipWithIDM} onChange={(e) => settradeFlipWithIDM(e.target.checked)}>
                   Торговать FlipWithIDM
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={tradeCHoCHWithIDM}
-                  onChange={(e) => settradeCHoCHWithIDM(e.target.checked)}
-                >
+                <Checkbox checked={tradeCHoCHWithIDM} onChange={(e) => settradeCHoCHWithIDM(e.target.checked)}>
                   Торговать CHoCHWithIDM
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={tradeEXTIFC}
-                  onChange={(e) => settradeEXTIFC(e.target.checked)}
-                >
+                <Checkbox checked={tradeEXTIFC} onChange={(e) => settradeEXTIFC(e.target.checked)}>
                   Торговать EXT_IFC
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={withMove}
-                  onChange={(e) => setwithMove(e.target.checked)}
-                >
+                <Checkbox checked={withMove} onChange={(e) => setwithMove(e.target.checked)}>
                   Двигать к имбалансу
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={showFake}
-                  onChange={(e) => setfakeBOS(e.target.checked)}
-                >
+                <Checkbox checked={showFake} onChange={(e) => setfakeBOS(e.target.checked)}>
                   Fake BOS
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={showSMT}
-                  onChange={(e) => setshowSMT(e.target.checked)}
-                >
+                <Checkbox checked={showSMT} onChange={(e) => setshowSMT(e.target.checked)}>
                   Торговать SMT
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={trend2}
-                  onChange={(e) => settrend2(e.target.checked)}
-                >
+                <Checkbox checked={trend2} onChange={(e) => settrend2(e.target.checked)}>
                   trend2
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={tradeStartSessionMorning}
-                  onChange={(e) =>
-                    settradeStartSessionMorning(e.target.checked)
-                  }
-                >
+                <Checkbox checked={tradeStartSessionMorning} onChange={(e) => settradeStartSessionMorning(e.target.checked)}>
                   tradeStartSessionMorning
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={tradeStartSessionDay}
-                  onChange={(e) => settradeStartSessionDay(e.target.checked)}
-                >
+                <Checkbox checked={tradeStartSessionDay} onChange={(e) => settradeStartSessionDay(e.target.checked)}>
                   tradeStartSessionDay
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={tradeStartSessionEvening}
-                  onChange={(e) =>
-                    settradeStartSessionEvening(e.target.checked)
-                  }
-                >
+                <Checkbox checked={tradeStartSessionEvening} onChange={(e) => settradeStartSessionEvening(e.target.checked)}>
                   tradeStartSessionEvening
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={newSMT}
-                  onChange={(e) => setnewSMT(e.target.checked)}
-                >
+                <Checkbox checked={newSMT} onChange={(e) => setnewSMT(e.target.checked)}>
                   Предугадывать SMT
                 </Checkbox>
               </FormItem>
             </Col>
             <Col>
               <FormItem>
-                <Checkbox
-                  checked={showHiddenSwings}
-                  onChange={(e) => setshowHiddenSwings(e.target.checked)}
-                >
+                <Checkbox checked={showHiddenSwings} onChange={(e) => setshowHiddenSwings(e.target.checked)}>
                   Показывать скрытые точки
                 </Checkbox>
               </FormItem>
@@ -899,10 +787,7 @@ export const MultiTestPage = () => {
           <Row gutter={8} align="bottom">
             <Col>
               <FormItem label="Тейк-профит стратегия">
-                <Radio.Group
-                  onChange={(e) => onChangeTakeProfitStrategy(e.target.value)}
-                  value={takeProfitStrategy}
-                >
+                <Radio.Group onChange={(e) => onChangeTakeProfitStrategy(e.target.value)} value={takeProfitStrategy}>
                   <Radio value="default">Стоп-лосс</Radio>
                   <Radio value="max">Экстремум</Radio>
                 </Radio.Group>
@@ -934,33 +819,17 @@ export const MultiTestPage = () => {
             </Col>
             <Col>
               <FormItem label="Риск на сделку">
-                <Input
-                  value={stopMargin}
-                  onChange={(e) => setStopMargin(Number(e.target.value))}
-                />
+                <Input value={stopMargin} onChange={(e) => setStopMargin(Number(e.target.value))} />
               </FormItem>
             </Col>
             <Col>
               <FormItem label="Размер комиссии в %">
-                <Slider
-                  value={feePercent}
-                  onChange={setFeePercent}
-                  min={0.01}
-                  step={0.01}
-                  max={0.4}
-                />
+                <Slider value={feePercent} onChange={setFeePercent} min={0.01} step={0.01} max={0.4} />
               </FormItem>
             </Col>
             <Col>
               <FormItem label="Трейлинг-стоп">
-                <Slider
-                  style={{ width: 200 }}
-                  step={10}
-                  max={100}
-                  min={0}
-                  defaultValue={tralingPercent}
-                  onChange={settralingPercent}
-                />
+                <Slider style={{ width: 200 }} step={10} max={100} min={0} defaultValue={tralingPercent} onChange={settralingPercent} />
               </FormItem>
             </Col>
           </Row>
@@ -989,17 +858,10 @@ export const MultiTestPage = () => {
           }}
         >
           <Space>
-            <Checkbox
-              checked={isAllTickers}
-              onChange={(e) => onCheckAllTickers(e.target.checked)}
-            >
+            <Checkbox checked={isAllTickers} onChange={(e) => onCheckAllTickers(e.target.checked)}>
               Все
             </Checkbox>
-            <TickerSelect
-              value={ticker}
-              disabled={isAllTickers}
-              onSelect={onSelectTicker}
-            />
+            <TickerSelect value={ticker} disabled={isAllTickers} onSelect={onSelectTicker} />
           </Space>
           <DatesPicker value={dates} onChange={onChangeRangeDates} />
           <TimeframeSelect value={tf} onChange={onChangeTF} />
@@ -1028,10 +890,7 @@ export const MultiTestPage = () => {
                   value={moneyFormat(value.newPnl, 'RUB', 2, 2)}
                   precision={2}
                   valueStyle={{
-                    color:
-                      value.newPnl > 0
-                        ? 'rgb(44, 232, 156)'
-                        : 'rgb(255, 117, 132)',
+                    color: value.newPnl > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
                   }}
                   suffix={`(${!value.profits ? 0 : ((value.profits * 100) / (value.profits + value.losses)).toFixed(2)})%`}
                 />
@@ -1102,10 +961,7 @@ export const MultiTestPage = () => {
           <Table
             style={{ width: '100%' }}
             loading={{
-              percent: +(
-                (successSymbols.current * 100) /
-                successSymbols.total
-              ).toFixed(2),
+              percent: +((successSymbols.current * 100) / successSymbols.total).toFixed(2),
               spinning: loading,
               tip: successSymbols.text,
             }}
