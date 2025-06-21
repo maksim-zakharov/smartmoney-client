@@ -1,7 +1,63 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, FC } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { moneyFormat } from './MainPage/MainPage';
 import './ScreenerPage.css';
+import { Chart } from './SoloTestPage/UpdatedChart.tsx';
+import { notTradingTime } from './sm-lib/utils.ts';
+import { LineStyle, Time } from 'lightweight-charts';
+import { fetchCandlesFromAlor } from './utils.ts';
+import dayjs from 'dayjs';
+
+const markerColors = {
+  bearColor: 'rgb(157, 43, 56)',
+  bullColor: 'rgb(20, 131, 92)',
+};
+
+export const ScreenerChart: FC<{ symbol: string }> = ({ symbol }) => {
+  const [levels, setLevels] = useState([]);
+
+  const [{ from, to }] = useState({ from: dayjs().add(-21, 'day').unix(), to: dayjs().endOf('day').unix() });
+  const [candles, setCandles] = useState([]);
+
+  const lastCandle = useMemo(() => (candles ? candles[candles.length - 1] : undefined), [candles]);
+
+  const lineSerieses = useMemo(
+    () =>
+      lastCandle
+        ? levels
+            .map((open) => ({
+              options: {
+                color: open.type === 'support' ? markerColors.bullColor : markerColors.bearColor, // Цвет линии
+                priceLineVisible: false,
+                lastValueVisible: false,
+                lineWidth: 1,
+                lineStyle: LineStyle.Solid,
+              },
+              data: [
+                { time: open.time as Time, value: open.price }, // начальная точка между свечками
+                { time: lastCandle?.time as Time, value: open.price }, // конечная точка между свечками
+              ],
+            }))
+            .slice(0, 3)
+        : [],
+    [levels, lastCandle],
+  );
+
+  useEffect(() => {
+    fetchCandlesFromAlor(symbol, '3600', from, to)
+      .then(setCandles)
+      .catch(() => setCandles([]));
+  }, [symbol, from, to]);
+
+  useEffect(() => {
+    fetch(`http://localhost:3000/levels?symbol=${symbol}`).then(async (res) => {
+      if (res.ok) setLevels(await res.json());
+      else setLevels([]);
+    });
+  }, [symbol]);
+
+  return <Chart data={candles} lineSerieses={lineSerieses} primitives={[]} ema={[]} markers={[]} width={528} height={300} />;
+};
 
 export const ScreenerPage = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -103,10 +159,12 @@ export const ScreenerPage = () => {
 
       <div className="order-books-container">
         {symbols
-          .filter((symbol) => orderBooks[symbol]?.bids?.length || orderBooks[symbol]?.asks?.length)
+          // .filter((symbol) => orderBooks[symbol]?.bids?.length || orderBooks[symbol]?.asks?.length)
           .map((symbol) => (
             <div key={symbol} className="order-book">
               <h3>{symbol}</h3>
+
+              <ScreenerChart symbol={symbol} />
               <div className="order-book_container">
                 <div className="order-book-side">
                   <h4>Bids</h4>
