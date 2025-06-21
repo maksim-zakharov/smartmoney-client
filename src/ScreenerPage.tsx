@@ -3,7 +3,6 @@ import { io, Socket } from 'socket.io-client';
 import { moneyFormat } from './MainPage/MainPage';
 import './ScreenerPage.css';
 import { Chart } from './SoloTestPage/UpdatedChart.tsx';
-import { notTradingTime } from './sm-lib/utils.ts';
 import { LineStyle, Time } from 'lightweight-charts';
 import { fetchCandlesFromAlor } from './utils.ts';
 import dayjs from 'dayjs';
