@@ -110,7 +110,7 @@ export const ScreenerPage = () => {
   const subscribe = useCallback(
     (symbols: string[], minAmount: number) => {
       if (socket?.connected) {
-        socket.emit('subscribe', {
+        socket.emit('orderbook', {
           symbols,
           minAmount,
         });
