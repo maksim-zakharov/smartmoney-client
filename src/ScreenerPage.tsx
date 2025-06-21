@@ -12,17 +12,29 @@ const markerColors = {
   bullColor: 'rgb(20, 131, 92)',
 };
 
-export const ScreenerChart: FC<{ symbol: string }> = ({ symbol }) => {
+export const ScreenerChart: FC<{ symbol: string; lastCandle: any }> = ({ symbol, lastCandle }) => {
   const [levels, setLevels] = useState([]);
 
   const [{ from, to }] = useState({ from: dayjs().add(-21, 'day').unix(), to: dayjs().endOf('day').unix() });
   const [candles, setCandles] = useState([]);
 
-  const lastCandle = useMemo(() => (candles ? candles[candles.length - 1] : undefined), [candles]);
+  useEffect(() => {
+    if (lastCandle && candles.length) {
+      const last = candles[candles.length - 1];
+      if (last.time !== lastCandle.time) {
+        candles.push(lastCandle);
+      } else {
+        candles[candles.length - 1] = lastCandle;
+      }
+      setCandles(candles);
+    }
+  }, [lastCandle, candles.length]);
+
+  const _lastCandle = useMemo(() => (candles ? candles[candles.length - 1] : undefined), [candles]);
 
   const lineSerieses = useMemo(
     () =>
-      lastCandle
+      _lastCandle
         ? levels
             .map((open) => ({
               options: {
@@ -34,12 +46,12 @@ export const ScreenerChart: FC<{ symbol: string }> = ({ symbol }) => {
               },
               data: [
                 { time: open.time as Time, value: open.price }, // начальная точка между свечками
-                { time: lastCandle?.time as Time, value: open.price }, // конечная точка между свечками
+                { time: _lastCandle?.time as Time, value: open.price }, // конечная точка между свечками
               ],
             }))
             .slice(0, 3)
         : [],
-    [levels, lastCandle],
+    [levels, _lastCandle],
   );
 
   useEffect(() => {
@@ -61,6 +73,7 @@ export const ScreenerChart: FC<{ symbol: string }> = ({ symbol }) => {
 export const ScreenerPage = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [orderBooks, setOrderBooks] = useState<Record<string, any>>({});
+  const [candles, setCandles] = useState<Record<string, any>>({});
   const [minAmount, setMinAmount] = useState<number>(10000000);
   const [tickersStr, settickersStr] = useState<string>(
     'GAZP SBER SBERP LKOH NVTK GMKN ROSN TATN TATNP PLZL POLY MOEX MTSS MGNT SNGS SNGSP AFKS VTBR PHOR RUAL HYDR ALRS CHMF NLMK TRNFP YNDX OZON',
@@ -84,16 +97,17 @@ export const ScreenerPage = () => {
     });
 
     newSocket.on('message', (data) => {
-      const json = JSON.parse(data) as any;
-      setOrderBooks((prev) => ({
-        ...prev,
-        [json.symbol]: {
-          bids: json.bids,
-          asks: json.asks,
-          lotSize: json.lotSize,
-          timestamp: json.timestamp,
-        },
-      }));
+      const { type, symbol, ...payload } = JSON.parse(data) as any;
+      if (type === 'orderbook')
+        setOrderBooks((prev) => ({
+          ...prev,
+          [symbol]: payload,
+        }));
+      if (type === 'candles')
+        setCandles((prev) => ({
+          ...prev,
+          [symbol]: payload,
+        }));
     });
 
     newSocket.on('disconnect', () => {
@@ -163,7 +177,7 @@ export const ScreenerPage = () => {
             <div key={symbol} className="order-book">
               <h3>{symbol}</h3>
 
-              <ScreenerChart symbol={symbol} />
+              <ScreenerChart symbol={symbol} lastCandle={candles[symbol]} />
               <div className="order-book_container">
                 <div className="order-book-side">
                   <h4>Bids</h4>
