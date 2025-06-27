@@ -1,23 +1,26 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Checkbox, DatePicker, Radio, Select, Slider, Space, TimeRangePickerProps } from 'antd';
-import dayjs from 'dayjs';
+import { Checkbox, DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
 import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import { Chart } from './Chart';
-import { calculateCandle, symbolFuturePairs } from '../symbolFuturePairs';
+import { calculateCandle, calculateEMA, symbolFuturePairs } from '../symbolFuturePairs';
 import moment from 'moment';
-import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles } from './utils';
+import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from './utils';
 import { TickerSelect } from './TickerSelect';
 import { TimeframeSelect } from './TimeframeSelect';
+import { moneyFormat } from './MainPage/MainPage.tsx';
 
 const { RangePicker } = DatePicker;
 
 export const ArbitrageMOEXPage = () => {
+  const [useHage, setuseHage] = useState<boolean>(false);
+  const [token, setToken] = useState();
   const [chartValues, onChangeChart] = useState({ filteredBuyMarkers: [], filteredSellMarkers: [] });
   const [inputTreshold, onChange] = useState(0.01); // 0.6%
+  const TresholdEnd = 0.001;
   const fee = 0.0004; // 0.04%
-  const [stockData, setStockData] = useState([]);
-  const [futureData, setFutureData] = useState([]);
+  const [_data, setData] = useState({ futureData: [], stockData: [] });
   const [searchParams, setSearchParams] = useSearchParams();
   const tickerStock = searchParams.get('ticker-stock') || 'SBER';
   const multi = Number(searchParams.get('multi'));
@@ -25,6 +28,12 @@ export const ArbitrageMOEXPage = () => {
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
+
+  const { stockData, futureData } = _data;
+
+  useEffect(() => {
+    localStorage.getItem('token') && refreshToken().then(setToken);
+  }, []);
 
   const tickerFuture = useMemo(() => {
     if (_tickerFuture) {
@@ -41,21 +50,22 @@ export const ArbitrageMOEXPage = () => {
   const multiple = useMemo(
     () =>
       multi ||
-      (stockData?.length && futureData?.length
-        ? calculateMultiple(stockData[stockData.length - 1].close, futureData[futureData.length - 1].close)
+      (_data.stockData?.length && _data.futureData?.length
+        ? calculateMultiple(_data.stockData[_data.stockData.length - 1].close, _data.futureData[_data.futureData.length - 1].close)
         : 0),
-    [futureData, stockData, multi],
+    [_data, multi],
   );
 
   const stockTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.stockSymbol), []);
 
   useEffect(() => {
-    tickerStock && fetchCandlesFromAlor(tickerStock, tf, fromDate, toDate).then(setStockData);
-  }, [tf, tickerStock, fromDate, toDate]);
-
-  useEffect(() => {
-    tickerFuture && fetchCandlesFromAlor(tickerFuture, tf, fromDate, toDate).then(setFutureData);
-  }, [tf, tickerFuture, fromDate, toDate]);
+    tickerFuture &&
+      token &&
+      Promise.all([
+        fetchCandlesFromAlor(tickerFuture, tf, fromDate, toDate, null, token),
+        fetchCandlesFromAlor(tickerStock, tf, fromDate, toDate, null, token),
+      ]).then(([futureData, stockData]) => setData({ stockData, futureData }));
+  }, [tf, tickerStock, tickerFuture, fromDate, toDate, token]);
 
   const commonCandles = useMemo(() => getCommonCandles(stockData, futureData), [stockData, futureData]);
 
@@ -69,6 +79,15 @@ export const ArbitrageMOEXPage = () => {
     }
     return stockData;
   }, [stockData, futureData, multiple]);
+
+  const ema = useMemo(
+    () =>
+      calculateEMA(
+        data.map((h) => h.close),
+        100,
+      )[1],
+    [data],
+  );
 
   const profit = useMemo(() => {
     let PnL = 0;
@@ -97,6 +116,81 @@ export const ArbitrageMOEXPage = () => {
     };
   }, [chartValues, inputTreshold, commonCandles]);
 
+  const searchEndPosition = (side: 'buy' | 'sell', type: string, openTime: number, commonData: any[], data: any[]) => {
+    const openCandle = commonData.find((f) => f.time === openTime / 1000);
+
+    const endTime = data.find((d, index) => d.time > openCandle?.time && Math.abs(d.close - ema[index]) < TresholdEnd)?.time;
+
+    const closeCandle = commonData.find((f) => f.time === endTime);
+
+    const priceType = side === 'buy' ? 'low' : 'high';
+
+    const currentPosition = {
+      side,
+      type,
+      openPrice: openCandle?.[priceType],
+      closePrice: closeCandle?.[priceType],
+      openTime: openCandle?.time,
+      closeTime: closeCandle?.time,
+      PnL: 0,
+    };
+
+    if (currentPosition.closePrice && currentPosition.openPrice) {
+      currentPosition.PnL = currentPosition.closePrice - currentPosition.openPrice;
+    }
+
+    return currentPosition;
+  };
+
+  const positions = useMemo(() => {
+    const result = {
+      positions: [],
+      totalPnL: 0,
+    };
+
+    for (let i = 0; i < chartValues.filteredBuyMarkers.length; i++) {
+      const marker = chartValues.filteredBuyMarkers[i];
+
+      result.positions.push(searchEndPosition('buy', 'future', marker.time, futureData, data));
+
+      if (useHage) {
+        const stockPosition = searchEndPosition('sell', 'stock', marker.time, stockData, data);
+
+        stockPosition.PnL *= multiple;
+        result.positions.push(stockPosition);
+      }
+    }
+
+    for (let i = 0; i < chartValues.filteredSellMarkers.length; i++) {
+      const marker = chartValues.filteredSellMarkers[i];
+
+      result.positions.push(searchEndPosition('sell', 'future', marker.time, futureData, data));
+
+      if (useHage) {
+        const stockPosition = searchEndPosition('buy', 'stock', marker.time, stockData, data);
+
+        stockPosition.PnL *= multiple;
+        result.positions.push(stockPosition);
+      }
+    }
+
+    result.totalPnL = result.positions.reduce((acc, curr) => acc + curr.PnL, 0);
+
+    return result;
+  }, [
+    chartValues.filteredBuyMarkers,
+    chartValues.filteredSellMarkers,
+    useHage,
+    multiple,
+    data,
+    ema,
+    futureData,
+    searchEndPosition,
+    stockData,
+  ]);
+
+  console.log(positions);
+
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
     setSearchParams(searchParams);
@@ -117,6 +211,7 @@ export const ArbitrageMOEXPage = () => {
   };
 
   const rangePresets: TimeRangePickerProps['presets'] = [
+    { label: 'Сегодня', value: [dayjs().startOf('day'), dayjs()] },
     { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
     { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
     { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
@@ -145,10 +240,15 @@ export const ArbitrageMOEXPage = () => {
           format="YYYY-MM-DD"
           onChange={onChangeRangeDates}
         />
-        {profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades}
+        {profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}
+        <Checkbox checked={useHage} onChange={(e) => setuseHage(e.target.checked)}>
+          Хеджировать акцией
+        </Checkbox>
       </Space>
       <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange} />
       <Chart inputTreshold={inputTreshold} data={data} tf={tf} onChange={onChangeChart} />
+      <Chart data={futureData} tf={tf} />
+      <Chart data={stockData} tf={tf} />
     </>
   );
 };
