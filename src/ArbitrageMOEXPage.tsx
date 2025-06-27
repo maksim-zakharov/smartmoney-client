@@ -14,29 +14,33 @@ const { RangePicker } = DatePicker;
 
 export const ArbitrageMOEXPage = () => {
   const [chartValues, onChangeChart] = useState({ filteredBuyMarkers: [], filteredSellMarkers: [] });
-  const [inputTreshold, onChange] = useState(0.006); // 0.6%
+  const [inputTreshold, onChange] = useState(0.01); // 0.6%
   const fee = 0.0004; // 0.04%
   const [stockData, setStockData] = useState([]);
   const [futureData, setFutureData] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const tickerStock = searchParams.get('ticker-stock') || 'SBER';
   const multi = Number(searchParams.get('multi'));
-  const tickerFuture = searchParams.get('ticker-future') || 'SBRF-12.24';
+  const _tickerFuture = searchParams.get('ticker-future');
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
 
-  // const tickerFuture = useMemo(() => {
-  //   const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
-  //   if (ticker) {
-  //     return `${ticker}-6.25`;
-  //   }
-  //   return ticker;
-  // }, [tickerStock]);
+  const tickerFuture = useMemo(() => {
+    if (_tickerFuture) {
+      return _tickerFuture;
+    }
+
+    const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
+    if (ticker) {
+      return `${ticker}-9.25`;
+    }
+    return ticker;
+  }, [tickerStock, _tickerFuture]);
 
   const multiple = useMemo(
     () =>
-      multi ??
+      multi ||
       (stockData?.length && futureData?.length
         ? calculateMultiple(stockData[stockData.length - 1].close, futureData[futureData.length - 1].close)
         : 0),

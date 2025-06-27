@@ -300,10 +300,10 @@ export const calculateCandle = (stockCandle: HistoryObject, futureCandle: Histor
   }
 
   return {
-    open: (futureCandle.open / stockCandle.open) * multiple,
-    close: (futureCandle.close / stockCandle.close) * multiple,
-    high: (futureCandle.high / stockCandle.high) * multiple,
-    low: (futureCandle.low / stockCandle.low) * multiple,
+    open: futureCandle.open / stockCandle.open / multiple,
+    close: futureCandle.close / stockCandle.close / multiple,
+    high: futureCandle.high / stockCandle.high / multiple,
+    low: futureCandle.low / stockCandle.low / multiple,
     time: stockCandle.time,
   } as HistoryObject;
 };
