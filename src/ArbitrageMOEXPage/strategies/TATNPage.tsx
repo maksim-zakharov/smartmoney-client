@@ -11,15 +11,15 @@ import { calculateCandle } from '../../../symbolFuturePairs.ts';
 
 const { RangePicker } = DatePicker;
 
-export const MTLRPage = () => {
+export const TATNPage = () => {
   const [token, setToken] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
-  const [diff, setDiff] = useState<number>(0.024);
-  const tickerStock = 'MTLR';
-  const tickerFuture = 'MTLRP';
+  const [diff, setDiff] = useState<number>(0.015);
+  const tickerStock = 'TATN';
+  const tickerFuture = 'TATNP';
   const [_data, setData] = useState({ futureData: [], stockData: [] });
   const { stockData, futureData } = _data;
 
@@ -79,9 +79,10 @@ export const MTLRPage = () => {
       ]).then(([futureData, stockData]) => setData({ stockData, futureData }));
   }, [tf, tickerStock, tickerFuture, fromDate, toDate, token]);
 
-  const sellLineData = useMemo(() => stockData.map((s) => 1 + diff), [stockData, diff]);
-  const zeroLineData = useMemo(() => stockData.map((s) => 1), [stockData]);
-  const buyLineData = useMemo(() => stockData.map((s) => 1 - diff), [stockData, diff]);
+  const avg = 0.946;
+  const sellLineData = useMemo(() => stockData.map((s) => avg + diff), [stockData, diff]);
+  const zeroLineData = useMemo(() => stockData.map((s) => avg), [stockData]);
+  const buyLineData = useMemo(() => stockData.map((s) => avg - diff), [stockData, diff]);
 
   return (
     <>
