@@ -17,6 +17,16 @@ export const symbolFuturePairs = [
     stockSymbol: 'CNYRUB_TOM',
   },
   {
+    futuresSymbol: 'MOEX',
+    futuresShortName: 'MOEX',
+    stockSymbol: 'IMOEX',
+  },
+  {
+    futuresSymbol: 'GD',
+    futuresShortName: 'GD',
+    stockSymbol: 'GOLD',
+  },
+  {
     futuresSymbol: 'GAZR',
     futuresShortName: 'GZZ4',
     stockSymbol: 'GAZP',

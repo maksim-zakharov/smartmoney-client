@@ -4,7 +4,7 @@ import React from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import MainPage from './MainPage/MainPage';
 import SoloTestPage from './SoloTestPage/SoloTestPage';
-import { ArbitrageMOEXPage } from './ArbitrageMOEXPage';
+import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage.tsx';
 import { ArbitrageBYBITPage } from './ArbitrageBYBITPage/ArbitrageBYBITPage';
 import { DiscrepancyRatingPage } from './DiscrepancyRatingPage';
 import { MultiTestPage } from './MultiTestPage';

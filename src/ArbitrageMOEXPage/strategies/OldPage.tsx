@@ -1,44 +1,21 @@
+import { Checkbox, DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
+import { TimeframeSelect } from '../../TimeframeSelect.tsx';
+import { TickerSelect } from '../../TickerSelect.tsx';
+import dayjs, { type Dayjs } from 'dayjs';
+import { moneyFormat } from '../../MainPage/MainPage.tsx';
+import { Chart } from '../../Chart.tsx';
+import { LineStyle } from 'lightweight-charts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Checkbox, DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
-import type { Dayjs } from 'dayjs';
-import dayjs from 'dayjs';
-import { Chart } from './Chart';
-import { calculateCandle, calculateEMA, symbolFuturePairs } from '../symbolFuturePairs';
-import moment from 'moment';
-import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from './utils';
-import { TickerSelect } from './TickerSelect';
-import { TimeframeSelect } from './TimeframeSelect';
-import { moneyFormat } from './MainPage/MainPage';
+import moment from 'moment/moment';
 import Decimal from 'decimal.js';
+import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
+import { calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
+import { fetchSecurityDetails } from '../ArbitrageMOEXPage.tsx';
 
 const { RangePicker } = DatePicker;
 
-export async function fetchSecurityDetails(symbol, token) {
-  const url = `https://api.alor.ru/md/v2/Securities/MOEX/${symbol}?instrumentGroup=RFUD`;
-
-  try {
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers,
-    });
-
-    if (!response.ok) {
-      throw new Error('Ошибка при запросе данных');
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Ошибка получения данных:', error);
-  }
-}
-
-export const ArbitrageMOEXPage = () => {
+export const OldPage = () => {
   const [useHage, setuseHage] = useState<boolean>(false);
   const [token, setToken] = useState();
   const [details, setdetails] = useState();
@@ -131,7 +108,7 @@ export const ArbitrageMOEXPage = () => {
 
     const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
     if (ticker) {
-      return `${ticker}-9.25`;
+      return `${ticker}-6.25`;
     }
     return ticker;
   }, [tickerStock, _tickerFuture]);
@@ -187,6 +164,10 @@ export const ArbitrageMOEXPage = () => {
     () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), taxRate, 0) - 0.015),
     [calculateArbitrageThreshold, stockData],
   );
+
+  const sellLineData = useMemo(() => stockData.map((s) => 1 + 0.03), [stockData]);
+  const zeroLineData = useMemo(() => stockData.map((s) => 1), [stockData]);
+  const buyLineData = useMemo(() => stockData.map((s) => 1 - 0.03), [stockData]);
 
   const ema = useMemo(
     () =>
@@ -322,6 +303,8 @@ export const ArbitrageMOEXPage = () => {
     { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
     { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
     { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
+    { label: 'Последние 182 дня', value: [dayjs().add(-182, 'd'), dayjs()] },
+    { label: 'Последние 365 дней', value: [dayjs().add(-365, 'd'), dayjs()] },
   ];
 
   return (
@@ -358,23 +341,44 @@ export const ArbitrageMOEXPage = () => {
         onChange={onChangeChart}
         maximumFractionDigits={3}
         customSeries={[
+          // {
+          //   color: 'rgb(255, 186, 102)',
+          //   lineWidth: 1,
+          //   priceLineVisible: false,
+          //   data: truthPriceSeriesData,
+          // },
+          // {
+          //   color: 'rgb(20, 131, 92)',
+          //   lineWidth: 1,
+          //   priceLineVisible: false,
+          //   data: ArbitrageBuyPriceSeriesData,
+          // },
+          // {
+          //   color: 'rgb(157, 43, 56)',
+          //   lineWidth: 1,
+          //   priceLineVisible: false,
+          //   data: ArbitrageSellPriceSeriesData,
+          // },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellLineData,
+            lineStyle: LineStyle.Dashed,
+          },
           {
             color: 'rgb(255, 186, 102)',
             lineWidth: 1,
             priceLineVisible: false,
-            data: truthPriceSeriesData,
+            data: zeroLineData,
+            lineStyle: LineStyle.Dashed,
           },
           {
             color: 'rgb(20, 131, 92)',
             lineWidth: 1,
             priceLineVisible: false,
-            data: ArbitrageBuyPriceSeriesData,
-          },
-          {
-            color: 'rgb(157, 43, 56)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: ArbitrageSellPriceSeriesData,
+            data: buyLineData,
+            lineStyle: LineStyle.Dashed,
           },
         ]}
       />
