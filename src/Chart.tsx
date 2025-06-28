@@ -233,6 +233,7 @@ export const Chart: FC<{
       chart.remove();
     };
   }, [
+    customSeries,
     inputTreshold,
     data,
     backgroundColor,

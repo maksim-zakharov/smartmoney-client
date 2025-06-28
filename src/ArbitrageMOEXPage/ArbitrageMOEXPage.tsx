@@ -1,11 +1,9 @@
 import React, { ReactNode, useMemo, useState } from 'react';
-import { DatePicker, Layout, Menu, MenuProps, Typography } from 'antd';
+import { Layout, Menu, MenuProps, Typography } from 'antd';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { MTLRPage } from './strategies/MTLRPage.tsx';
 import { OldPage } from './strategies/OldPage.tsx';
-
-const { RangePicker } = DatePicker;
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
