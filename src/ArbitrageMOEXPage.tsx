@@ -14,9 +14,34 @@ import Decimal from 'decimal.js';
 
 const { RangePicker } = DatePicker;
 
+export async function fetchSecurityDetails(symbol, token) {
+  const url = `https://api.alor.ru/md/v2/Securities/MOEX/${symbol}?instrumentGroup=RFUD`;
+
+  try {
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при запросе данных');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Ошибка получения данных:', error);
+  }
+}
+
 export const ArbitrageMOEXPage = () => {
   const [useHage, setuseHage] = useState<boolean>(false);
   const [token, setToken] = useState();
+  const [details, setdetails] = useState();
   const [chartValues, onChangeChart] = useState({ filteredBuyMarkers: [], filteredSellMarkers: [] });
   const [inputTreshold, onChange] = useState(0.01); // 0.6%
   const TresholdEnd = 0.001;
@@ -31,6 +56,9 @@ export const ArbitrageMOEXPage = () => {
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
 
   const { stockData, futureData } = _data;
+
+  const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
+  const taxRate = 0.13;
 
   /**
    *
@@ -103,10 +131,14 @@ export const ArbitrageMOEXPage = () => {
 
     const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
     if (ticker) {
-      return `${ticker}-6.25`;
+      return `${ticker}-9.25`;
     }
     return ticker;
   }, [tickerStock, _tickerFuture]);
+
+  useEffect(() => {
+    tickerFuture && token && fetchSecurityDetails(tickerFuture, token).then(setdetails);
+  }, [tickerFuture, token]);
 
   const multiple = useMemo(
     () =>
@@ -142,17 +174,17 @@ export const ArbitrageMOEXPage = () => {
   }, [stockData, futureData, multiple]);
 
   const truthPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs('2025-06-19')) / close),
+    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close),
     [stockData],
   );
 
   const ArbitrageBuyPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs('2025-06-19'), 0.13, 0) + 0.015),
+    () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), taxRate, 0) + 0.015),
     [calculateArbitrageThreshold, stockData],
   );
 
   const ArbitrageSellPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs('2025-06-19'), 0.13, 0) - 0.015),
+    () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), taxRate, 0) - 0.015),
     [calculateArbitrageThreshold, stockData],
   );
 
@@ -265,8 +297,6 @@ export const ArbitrageMOEXPage = () => {
     stockData,
   ]);
 
-  console.log(positions);
-
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
     setSearchParams(searchParams);
@@ -348,8 +378,6 @@ export const ArbitrageMOEXPage = () => {
           },
         ]}
       />
-      <Chart data={futureData} tf={tf} />
-      <Chart data={stockData} tf={tf} />
     </>
   );
 };
