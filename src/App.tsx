@@ -2,16 +2,17 @@ import { Content, Header } from 'antd/es/layout/layout';
 import { Layout, Menu, theme } from 'antd';
 import React from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import MainPage from './MainPage/MainPage.tsx';
-import SoloTestPage from './SoloTestPage/SoloTestPage.tsx';
+import MainPage from './MainPage/MainPage';
+import SoloTestPage from './SoloTestPage/SoloTestPage';
 import { ArbitrageMOEXPage } from './ArbitrageMOEXPage';
 import { ArbitrageBYBITPage } from './ArbitrageBYBITPage/ArbitrageBYBITPage';
 import { DiscrepancyRatingPage } from './DiscrepancyRatingPage';
 import { MultiTestPage } from './MultiTestPage';
 import DemoPage from './DemoPage/DemoPage';
 import UnitTestPage from './UnitTestPage';
-import NewTestingPage from './NewTestingPage.tsx';
-import { ScreenerPage } from './ScreenerPage.tsx';
+import NewTestingPage from './NewTestingPage';
+import { ScreenerPage } from './ScreenerPage';
+import { CNYFundingPage } from './CNYFundingPage';
 
 export default function App() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function App() {
     { key: '/unit-testing', label: 'Мок-тестирование', element: <UnitTestPage /> },
     { key: '/new-testing', label: 'Новые тесты', element: <NewTestingPage /> },
     { key: '/screener', label: 'Скринер плотностей', element: <ScreenerPage /> },
+    { key: '/cny-funding', label: 'CNY Funding', element: <CNYFundingPage /> },
   ];
 
   function onClick(params) {

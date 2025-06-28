@@ -9,7 +9,8 @@ import moment from 'moment';
 import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from './utils';
 import { TickerSelect } from './TickerSelect';
 import { TimeframeSelect } from './TimeframeSelect';
-import { moneyFormat } from './MainPage/MainPage.tsx';
+import { moneyFormat } from './MainPage/MainPage';
+import Decimal from 'decimal.js';
 
 const { RangePicker } = DatePicker;
 
@@ -31,6 +32,66 @@ export const ArbitrageMOEXPage = () => {
 
   const { stockData, futureData } = _data;
 
+  /**
+   *
+   * @param stockPrice Цена акции (их свечки)
+   * @param stockTime Время цены акции
+   * @param expirationDate Дата экспироции фьюча
+   */
+  const calculateTruthFuturePrice = (stockPrice: number, stockTime: number, expirationDate: Dayjs) => {
+    // Ставка ЦБ РФ
+    const ruR = 0.2;
+    // Ставка ЦБ КНР
+    const cyR = 0.03;
+    // Сколько осталось дней до экспирации
+    const t = expirationDate.diff(dayjs(stockTime * 1000), 'day');
+
+    // Рассчетная цена фьючерса
+    const price = stockPrice * (1 + ((ruR - cyR) * t) / 365);
+
+    return price;
+  };
+
+  /**
+   * Рассчитывает порог арбитража (справедливая премия + издержки)
+   * @param stockPrice - Цена акции
+   * @param stockTime - Время цены
+   * @param expirationDate - Дата экспирации
+   * @param taxRate - Налог (например, 0.13 для НДФЛ)
+   * @param borrowRate - Ставка по займу (например, 0.20 для 20%)
+   */
+  const calculateArbitrageThreshold = (
+    stockPrice: number,
+    stockTime: number,
+    expirationDate: Dayjs,
+    // commission = 0.004,
+    taxRate = 0.13,
+    borrowRate = 0.2,
+  ) => {
+    // Биржевой сбор - процент поделил на 100, 0.00462 - за валютный фьючерс (например Юань)
+    const exchangeCommission = new Decimal(0.00462).div(100); // 0.0000462 (0.00462%)
+    // Комиссия брокера - 50% биржевого сбора
+    const brokerCommission = exchangeCommission.mul(0.5); // 0.0000231
+    const totalCommissionRate = exchangeCommission.plus(brokerCommission).toNumber(); // 0.0000693 (0.00693%)
+
+    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate);
+
+    // Дни до экспирации (дробные)
+    const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
+
+    // Издержки:
+    const tradeCost = stockPrice * totalCommissionRate * 2; // Покупка + продажа
+
+    // Если бабки берем в кредит
+    const borrowCost = stockPrice * ((borrowRate * t) / 365);
+    const totalCost = tradeCost + borrowCost;
+
+    // Пороговая цена фьючерса
+    const thresholdPrice = truthPrice + totalCost;
+
+    return thresholdPrice / stockPrice;
+  };
+
   useEffect(() => {
     localStorage.getItem('token') && refreshToken().then(setToken);
   }, []);
@@ -42,7 +103,7 @@ export const ArbitrageMOEXPage = () => {
 
     const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
     if (ticker) {
-      return `${ticker}-9.25`;
+      return `${ticker}-6.25`;
     }
     return ticker;
   }, [tickerStock, _tickerFuture]);
@@ -79,6 +140,21 @@ export const ArbitrageMOEXPage = () => {
     }
     return stockData;
   }, [stockData, futureData, multiple]);
+
+  const truthPriceSeriesData = useMemo(
+    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs('2025-06-19')) / close),
+    [stockData],
+  );
+
+  const ArbitrageBuyPriceSeriesData = useMemo(
+    () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs('2025-06-19'), 0.13, 0) + 0.015),
+    [calculateArbitrageThreshold, stockData],
+  );
+
+  const ArbitrageSellPriceSeriesData = useMemo(
+    () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs('2025-06-19'), 0.13, 0) - 0.015),
+    [calculateArbitrageThreshold, stockData],
+  );
 
   const ema = useMemo(
     () =>
@@ -246,7 +322,32 @@ export const ArbitrageMOEXPage = () => {
         </Checkbox>
       </Space>
       <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange} />
-      <Chart inputTreshold={inputTreshold} data={data} tf={tf} onChange={onChangeChart} />
+      <Chart
+        data={data}
+        tf={tf}
+        onChange={onChangeChart}
+        maximumFractionDigits={3}
+        customSeries={[
+          {
+            color: 'rgb(255, 186, 102)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: truthPriceSeriesData,
+          },
+          {
+            color: 'rgb(20, 131, 92)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: ArbitrageBuyPriceSeriesData,
+          },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: ArbitrageSellPriceSeriesData,
+          },
+        ]}
+      />
       <Chart data={futureData} tf={tf} />
       <Chart data={stockData} tf={tf} />
     </>

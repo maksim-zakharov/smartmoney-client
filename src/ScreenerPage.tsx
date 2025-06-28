@@ -2,9 +2,9 @@ import React, { useEffect, useState, useCallback, useMemo, FC } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { moneyFormat } from './MainPage/MainPage';
 import './ScreenerPage.css';
-import { Chart } from './SoloTestPage/UpdatedChart.tsx';
+import { Chart } from './SoloTestPage/UpdatedChart';
 import { LineStyle, Time } from 'lightweight-charts';
-import { fetchCandlesFromAlor } from './utils.ts';
+import { fetchCandlesFromAlor } from './utils';
 import dayjs from 'dayjs';
 
 const markerColors = {

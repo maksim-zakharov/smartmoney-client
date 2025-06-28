@@ -1,7 +1,6 @@
 import React, { FC, useEffect, useRef } from 'react';
 import { ColorType, createChart, CrosshairMode, Time } from 'lightweight-charts';
 import moment from 'moment';
-import { calculateEMA } from '../symbolFuturePairs';
 
 function capitalizeFirstLetter(str) {
   return str[0].toUpperCase() + str.slice(1);
@@ -12,7 +11,9 @@ export const Chart: FC<{
   inputTreshold?: number;
   tf: number;
   onChange?: (value: any) => any;
-}> = ({ data, inputTreshold, tf, onChange }) => {
+  maximumFractionDigits?: number;
+  customSeries?: any[];
+}> = ({ data, inputTreshold, tf, onChange, maximumFractionDigits, customSeries }) => {
   const {
     backgroundColor = 'rgb(30,44,57)',
     color = 'rgb(166,189,213)',
@@ -55,8 +56,8 @@ export const Chart: FC<{
         },
         priceFormatter: (price) => {
           const formatter = new Intl.NumberFormat('en-US', {
-            minimumFractionDigits: 8, // Минимальное количество знаков после запятой
-            maximumFractionDigits: 8, // Максимальное количество знаков после запятой
+            minimumFractionDigits: maximumFractionDigits || 8, // Минимальное количество знаков после запятой
+            maximumFractionDigits: maximumFractionDigits || 8, // Максимальное количество знаков после запятой
           });
           return formatter.format(price);
         },
@@ -150,22 +151,30 @@ export const Chart: FC<{
 
     newSeries.setData(data.map((t) => ({ ...t, time: t.time * 1000 })));
 
-    const emaSeries = chart.addLineSeries({
-      color: 'rgb(255, 186, 102)',
-      lineWidth: 1,
-      priceLineVisible: false,
-    });
+    // const emaSeries = chart.addLineSeries({
+    //   color: 'rgb(255, 186, 102)',
+    //   lineWidth: 1,
+    //   priceLineVisible: false,
+    // });
+    //
+    // const ema = calculateEMA(
+    //   data.map((h) => h.close),
+    //   100,
+    // )[1];
+    //
+    // const emaSeriesData = data.map((extremum, i) => ({ time: extremum.time * 1000, value: ema[i] }));
+    // // @ts-ignore
+    // emaSeries.setData(emaSeriesData);
 
-    const treshold = inputTreshold || 0.007;
+    if (customSeries) {
+      customSeries.forEach(({ data: _data, ...options }) => {
+        const emaSeries = chart.addLineSeries(options);
 
-    const ema = calculateEMA(
-      data.map((h) => h.close),
-      100,
-    )[1];
-
-    const emaSeriesData = data.map((extremum, i) => ({ time: extremum.time * 1000, value: ema[i] }));
-    // @ts-ignore
-    emaSeries.setData(emaSeriesData);
+        const emaSeriesData = data.map((extremum, i) => ({ time: extremum.time * 1000, value: _data[i] }));
+        // @ts-ignore
+        emaSeries.setData(emaSeriesData);
+      });
+    }
 
     const sellSeries = chart.addLineSeries({
       color: markerColors.bearColor,
@@ -173,41 +182,43 @@ export const Chart: FC<{
       priceLineVisible: false,
     });
 
-    const sellSeriesData = data.map((extremum, i) => ({ time: extremum.time * 1000, index: i, value: ema[i] + treshold }));
-    // @ts-ignore
-    sellSeries.setData(sellSeriesData);
+    if (inputTreshold) {
+      const sellSeriesData = data.map((extremum, i) => ({ time: extremum.time * 1000, index: i, value: ema[i] + inputTreshold }));
+      // @ts-ignore
+      sellSeries.setData(sellSeriesData);
 
-    const filteredSellMarkers = sellSeriesData.filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value);
+      const filteredSellMarkers = sellSeriesData.filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value);
 
-    const sellMarkers = filteredSellMarkers.map((extremum) => ({
-      color: markerColors.bearColor,
-      time: extremum.time as Time,
-      shape: 'circle',
-      position: 'aboveBar',
-    }));
+      const sellMarkers = filteredSellMarkers.map((extremum) => ({
+        color: markerColors.bearColor,
+        time: extremum.time as Time,
+        shape: 'circle',
+        position: 'aboveBar',
+      }));
 
-    const buySeries = chart.addLineSeries({
-      color: markerColors.bullColor,
-      lineWidth: 1,
-      priceLineVisible: false,
-    });
+      const buySeries = chart.addLineSeries({
+        color: markerColors.bullColor,
+        lineWidth: 1,
+        priceLineVisible: false,
+      });
 
-    const buySeriesData = data.map((extremum, i) => ({ time: extremum.time * 1000, index: i, value: ema[i] - treshold }));
-    // @ts-ignore
-    buySeries.setData(buySeriesData);
+      const buySeriesData = data.map((extremum, i) => ({ time: extremum.time * 1000, index: i, value: ema[i] - inputTreshold }));
+      // @ts-ignore
+      buySeries.setData(buySeriesData);
 
-    const filteredBuyMarkers = buySeriesData.filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value);
+      const filteredBuyMarkers = buySeriesData.filter((extremum, i) => data[i]?.high > extremum.value && data[i]?.low < extremum.value);
 
-    const buyMarkers = filteredBuyMarkers.map((extremum) => ({
-      color: markerColors.bullColor,
-      time: extremum.time as Time,
-      shape: 'circle',
-      position: 'belowBar',
-    }));
+      const buyMarkers = filteredBuyMarkers.map((extremum) => ({
+        color: markerColors.bullColor,
+        time: extremum.time as Time,
+        shape: 'circle',
+        position: 'belowBar',
+      }));
 
-    onChange?.({ filteredBuyMarkers, filteredSellMarkers });
+      onChange?.({ filteredBuyMarkers, filteredSellMarkers });
 
-    newSeries.setMarkers([...sellMarkers, ...buyMarkers].sort((a, b) => a.time - b.time) as any[]);
+      newSeries.setMarkers([...sellMarkers, ...buyMarkers].sort((a, b) => a.time - b.time) as any[]);
+    }
 
     chart.timeScale().setVisibleRange({
       from: moment().add(-2, 'month').unix() * 1000,
@@ -221,7 +232,20 @@ export const Chart: FC<{
 
       chart.remove();
     };
-  }, [inputTreshold, data, backgroundColor, lineColor, textColor, areaTopColor, areaBottomColor, tf]);
+  }, [
+    inputTreshold,
+    data,
+    backgroundColor,
+    lineColor,
+    textColor,
+    areaTopColor,
+    areaBottomColor,
+    tf,
+    borderColor,
+    color,
+    onChange,
+    maximumFractionDigits,
+  ]);
 
   return <div ref={chartContainerRef} />;
 };

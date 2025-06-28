@@ -1,11 +1,11 @@
 import { Card, Checkbox, Col, Divider, Form, Input, Layout, Radio, Row, Slider, Space, Statistic, Table } from 'antd';
 import { TickerSelect } from './TickerSelect';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import FormItem from 'antd/es/form/FormItem';
 import { TimeframeSelect } from './TimeframeSelect';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { moneyFormat } from './MainPage/MainPage.tsx';
+import { moneyFormat } from './MainPage/MainPage';
 import moment from 'moment';
 import { calculatePositionsByOrderblocks, finishPosition, Position } from './samurai_patterns';
 import { fetchCandlesFromAlor, fetchRisk, fetchRiskRates, formatDateTime, getSecurity, persision, refreshToken, uniqueBy } from './utils';
@@ -17,7 +17,7 @@ import { calculateTesting } from './sm-lib/th_ultimate';
 import { cacheCandles, cacheRiskRates, cacheSecurity, getCachedCandles, getCachedRiskRates, getCachedSecurity } from './cacheService';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
-import { HistoryObject, POI, POIType } from './sm-lib/models';
+import { HistoryObject, POIType } from './sm-lib/models';
 import { notTradingTime } from './sm-lib/utils';
 import { WorkerManager } from './workerManager';
 
