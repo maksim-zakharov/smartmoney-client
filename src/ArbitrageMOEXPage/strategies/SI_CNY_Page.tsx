@@ -11,52 +11,50 @@ import { calculateCandle } from '../../../symbolFuturePairs.js';
 
 const { RangePicker } = DatePicker;
 
-export const EDPage = () => {
+export const SI_CNY_Page = () => {
   const [token, setToken] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
   const [diff, setDiff] = useState<number>(0.015);
-  const tickerStock = 'TATN';
-  const tickerFuture = 'TATNP';
-  const [_data, setData] = useState({ euData: [], edData: [], siData: [] });
-  const { siData, edData, euData } = _data;
+  const [_data, setData] = useState({ cnyData: [], ucnyData: [], siData: [] });
+  const { siData, ucnyData, cnyData } = _data;
 
-  const month = '3.25';
+  const month = '9.25';
 
-  const EUR_USD_data = useMemo(() => {
-    const { filteredStockCandles: euCandles, filteredFuturesCandles: siCandles } = getCommonCandles(edData, siData);
+  const SI_data = useMemo(() => {
+    const { filteredStockCandles: ucnyCandles, filteredFuturesCandles: cnyCandles } = getCommonCandles(ucnyData, cnyData);
 
-    return euCandles
-      .map((item, index) => {
-        const siCandle = siCandles[index];
-        if (!siCandle) {
+    return ucnyCandles
+      .map((ucnyCandle, index) => {
+        const cnyCandle = cnyCandles[index];
+        if (!cnyCandle) {
           return null;
         }
-        if (!item) {
+        if (!ucnyCandle) {
           return null;
         }
 
         return {
-          open: siCandle.open * item.open,
-          close: siCandle.close * item.close,
-          high: siCandle.high * item.high,
-          low: siCandle.low * item.low,
-          time: siCandle.time,
+          open: cnyCandle.open * ucnyCandle.open,
+          close: cnyCandle.close * ucnyCandle.close,
+          high: cnyCandle.high * ucnyCandle.high,
+          low: cnyCandle.low * ucnyCandle.low,
+          time: cnyCandle.time,
         } as HistoryObject;
       })
       .filter(Boolean);
-  }, [edData, siData]);
+  }, [ucnyData, cnyData]);
 
   const data = useMemo(() => {
-    if (EUR_USD_data?.length && euData?.length) {
-      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(EUR_USD_data, euData);
+    if (SI_data?.length && siData?.length) {
+      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(SI_data, siData);
 
       return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 1)).filter(Boolean);
     }
-    return EUR_USD_data;
-  }, [EUR_USD_data, euData]);
+    return SI_data;
+  }, [SI_data, siData]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
@@ -87,14 +85,13 @@ export const EDPage = () => {
   ];
 
   useEffect(() => {
-    tickerFuture &&
-      token &&
+    token &&
       Promise.all([
-        fetchCandlesFromAlor(`EU-${month}`, tf, fromDate, toDate, null, token),
-        fetchCandlesFromAlor(`ED-${month}`, tf, fromDate, toDate, null, token),
         fetchCandlesFromAlor(`SI-${month}`, tf, fromDate, toDate, null, token),
-      ]).then(([euData, edData, siData]) => setData({ siData, edData, euData }));
-  }, [tf, tickerStock, tickerFuture, fromDate, toDate, token]);
+        fetchCandlesFromAlor(`CNY-${month}`, tf, fromDate, toDate, null, token),
+        fetchCandlesFromAlor(`UCNY-${month}`, tf, fromDate, toDate, null, token),
+      ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
+  }, [tf, fromDate, toDate, token]);
 
   const avg = 0.946;
   // const sellLineData = useMemo(() => stockData.map((s) => avg + diff), [stockData, diff]);
@@ -115,8 +112,8 @@ export const EDPage = () => {
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
       </Space>
       <Chart data={data} tf={tf} maximumFractionDigits={3} />
-      <Chart data={edData} tf={tf} maximumFractionDigits={3} />
-      <Chart data={euData} tf={tf} maximumFractionDigits={3} />
+      <Chart data={ucnyData} tf={tf} maximumFractionDigits={3} />
+      <Chart data={cnyData} tf={tf} maximumFractionDigits={3} />
       <Chart data={siData} tf={tf} maximumFractionDigits={3} />
     </>
   );
