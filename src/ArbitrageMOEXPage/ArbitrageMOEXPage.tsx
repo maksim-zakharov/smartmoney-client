@@ -5,6 +5,7 @@ import { Content } from 'antd/es/layout/layout';
 import { MTLRPage } from './strategies/MTLRPage.tsx';
 import { OldPage } from './strategies/OldPage.tsx';
 import { TATNPage } from './strategies/TATNPage.tsx';
+import { EDPage } from './strategies/EDPage.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -39,6 +40,7 @@ export const ArbitrageMOEXPage = () => {
     { key: 'old', label: 'Old', element: <OldPage /> },
     { key: 'mtlr', label: 'MTLR - MTLRP', element: <MTLRPage /> },
     { key: 'tatn', label: 'TATN - TATNP', element: <TATNPage /> },
+    { key: 'ed', label: 'ED-SI-EU', element: <EDPage /> },
   ];
 
   const menuMap = useMemo(
