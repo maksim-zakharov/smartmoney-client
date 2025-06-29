@@ -7,6 +7,7 @@ import { OldPage } from './strategies/OldPage.tsx';
 import { TATNPage } from './strategies/TATNPage.tsx';
 import { EDPage } from './strategies/EDPage.tsx';
 import { SI_CNY_Page } from './strategies/SI_CNY_Page.tsx';
+import { SI_GOLD_Page } from './strategies/SI_GOLD_Page.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -43,6 +44,7 @@ export const ArbitrageMOEXPage = () => {
     { key: 'tatn', label: 'TATN - TATNP', element: <TATNPage /> },
     { key: 'ed', label: 'ED-SI-EU', element: <EDPage /> },
     { key: 'SI_CNY', label: 'SI_CNY', element: <SI_CNY_Page /> },
+    { key: 'SI_GOLD', label: 'SI_GOLD', element: <SI_GOLD_Page /> },
   ];
 
   const menuMap = useMemo(
