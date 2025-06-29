@@ -17,7 +17,7 @@ export const MTLRPage = () => {
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
-  const [diff, setDiff] = useState<number>(0.024);
+  const [diff, setDiff] = useState<number>(0.015);
   const tickerStock = 'MTLR';
   const tickerFuture = 'MTLRP';
   const [_data, setData] = useState({ futureData: [], stockData: [] });
@@ -80,8 +80,12 @@ export const MTLRPage = () => {
   }, [tf, tickerStock, tickerFuture, fromDate, toDate, token]);
 
   const sellLineData = useMemo(() => stockData.map((s) => 1 + diff), [stockData, diff]);
+  const sellLineDataX2 = useMemo(() => stockData.map((s) => 1 + diff * 2), [stockData, diff]);
+  const sellLineDataX3 = useMemo(() => stockData.map((s) => 1 + diff * 3), [stockData, diff]);
+  const sellLineDataX4 = useMemo(() => stockData.map((s) => 1 + diff * 4), [stockData, diff]);
   const zeroLineData = useMemo(() => stockData.map((s) => 1), [stockData]);
   const buyLineData = useMemo(() => stockData.map((s) => 1 - diff), [stockData, diff]);
+  const buyLineDataX2 = useMemo(() => stockData.map((s) => 1 - diff * 2), [stockData, diff]);
 
   return (
     <>
@@ -120,6 +124,27 @@ export const MTLRPage = () => {
             lineStyle: LineStyle.Dashed,
           },
           {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellLineDataX2,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellLineDataX3,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellLineDataX4,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
             color: 'rgb(255, 186, 102)',
             lineWidth: 1,
             priceLineVisible: false,
@@ -131,6 +156,13 @@ export const MTLRPage = () => {
             lineWidth: 1,
             priceLineVisible: false,
             data: buyLineData,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(20, 131, 92)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: buyLineDataX2,
             lineStyle: LineStyle.Dashed,
           },
         ]}
