@@ -1,7 +1,7 @@
 import { DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
-import { TimeframeSelect } from '../../TimeframeSelect.tsx';
+import { TimeframeSelect } from '../../TimeframeSelect';
 import dayjs, { type Dayjs } from 'dayjs';
-import { Chart } from '../../Chart.tsx';
+import { Chart } from '../../Chart';
 import { LineStyle } from 'lightweight-charts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';

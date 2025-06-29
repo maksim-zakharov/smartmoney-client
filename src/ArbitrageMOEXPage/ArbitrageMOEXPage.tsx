@@ -2,13 +2,14 @@ import React, { ReactNode, useMemo, useState } from 'react';
 import { Layout, Menu, MenuProps, Typography } from 'antd';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
-import { MTLRPage } from './strategies/MTLRPage.tsx';
-import { OldPage } from './strategies/OldPage.tsx';
-import { TATNPage } from './strategies/TATNPage.tsx';
-import { EDPage } from './strategies/EDPage.tsx';
-import { SI_CNY_Page } from './strategies/SI_CNY_Page.tsx';
-import { SI_GOLD_Page } from './strategies/SI_GOLD_Page.tsx';
-import { BANEPage } from './strategies/BANEPage.tsx';
+import { MTLRPage } from './strategies/MTLRPage';
+import { OldPage } from './strategies/OldPage';
+import { TATNPage } from './strategies/TATNPage';
+import { EDPage } from './strategies/EDPage';
+import { SI_CNY_Page } from './strategies/SI_CNY_Page';
+import { SI_GOLD_Page } from './strategies/SI_GOLD_Page';
+import { BANEPage } from './strategies/BANEPage';
+import { CNY_TOM_Page } from './strategies/CNY_TOM_Page';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -41,10 +42,11 @@ export const ArbitrageMOEXPage = () => {
 
   const items: MenuItem[] = [
     { key: 'old', label: 'Old', element: <OldPage /> },
-    { key: 'mtlr', label: 'MTLR - MTLRP', element: <MTLRPage /> },
-    { key: 'tatn', label: 'TATN - TATNP', element: <TATNPage /> },
-    { key: 'bane', label: 'BANE - BANEP', element: <BANEPage /> },
+    { key: 'mtlr', label: 'MTLRP/MTLR', element: <MTLRPage /> },
+    { key: 'tatn', label: 'TATNP/TATN', element: <TATNPage /> },
+    { key: 'bane', label: 'BANEP/BANE', element: <BANEPage /> },
     // { key: 'CNTL', label: 'CNTL - CNTLP', element: <CNTLPage /> },
+    { key: 'cny_tom', label: 'CNY!1 / CNYRUB_TOM', element: <CNY_TOM_Page /> },
     { key: 'ed', label: 'EU!1/(ED*SI)', element: <EDPage /> },
     { key: 'SI_CNY', label: 'SI!1/(CNY*UCNY)', element: <SI_CNY_Page /> },
     { key: 'SI_GOLD', label: 'SI_GOLD', element: <SI_GOLD_Page /> },

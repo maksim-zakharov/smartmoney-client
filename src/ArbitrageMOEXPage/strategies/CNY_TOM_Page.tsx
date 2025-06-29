@@ -1,10 +1,9 @@
-import { Checkbox, DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
+import { DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 import { moneyFormat } from '../../MainPage/MainPage';
 import { Chart } from '../../Chart';
-import { LineStyle } from 'lightweight-charts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
@@ -15,7 +14,7 @@ import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
 
 const { RangePicker } = DatePicker;
 
-export const OldPage = () => {
+export const CNY_TOM_Page = () => {
   const [useHage, setuseHage] = useState<boolean>(false);
   const [token, setToken] = useState();
   const [details, setdetails] = useState();
@@ -25,9 +24,9 @@ export const OldPage = () => {
   const fee = 0.0004; // 0.04%
   const [_data, setData] = useState({ futureData: [], stockData: [] });
   const [searchParams, setSearchParams] = useSearchParams();
-  const tickerStock = searchParams.get('ticker-stock') || 'SBER';
+  const tickerStock = 'CNYRUB_TOM';
   const multi = Number(searchParams.get('multi'));
-  const _tickerFuture = searchParams.get('ticker-future');
+  const tickerFuture = 'CNY-9.25';
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
@@ -101,18 +100,6 @@ export const OldPage = () => {
     localStorage.getItem('token') && refreshToken().then(setToken);
   }, []);
 
-  const tickerFuture = useMemo(() => {
-    if (_tickerFuture) {
-      return _tickerFuture;
-    }
-
-    const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
-    if (ticker) {
-      return `${ticker}-6.25`;
-    }
-    return ticker;
-  }, [tickerStock, _tickerFuture]);
-
   useEffect(() => {
     tickerFuture && token && fetchSecurityDetails(tickerFuture, token).then(setdetails);
   }, [tickerFuture, token]);
@@ -164,10 +151,6 @@ export const OldPage = () => {
     () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), taxRate, 0) - inputTreshold),
     [calculateArbitrageThreshold, stockData],
   );
-
-  const sellLineData = useMemo(() => stockData.map((s) => 1 + 0.03), [stockData]);
-  const zeroLineData = useMemo(() => stockData.map((s) => 1), [stockData]);
-  const buyLineData = useMemo(() => stockData.map((s) => 1 - 0.03), [stockData]);
 
   const ema = useMemo(
     () =>
@@ -312,17 +295,6 @@ export const OldPage = () => {
       <Space>
         <TimeframeSelect value={tf} onChange={setSize} />
         <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
-        {/*<Select*/}
-        {/*    value={tickerFuture}*/}
-        {/*    showSearch*/}
-        {/*    placeholder="Введи тикер"*/}
-        {/*    onSelect={onSelectTicker('future')}*/}
-        {/*    filterOption={(input, option) =>*/}
-        {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
-        {/*    }*/}
-        {/*    style={{width: 160}}*/}
-        {/*    options={options}*/}
-        {/*/>*/}
         <RangePicker
           presets={rangePresets}
           value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
@@ -330,9 +302,6 @@ export const OldPage = () => {
           onChange={onChangeRangeDates}
         />
         {profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}
-        <Checkbox checked={useHage} onChange={(e) => setuseHage(e.target.checked)}>
-          Хеджировать акцией
-        </Checkbox>
       </Space>
       <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange} />
       <Chart
@@ -358,27 +327,6 @@ export const OldPage = () => {
             lineWidth: 1,
             priceLineVisible: false,
             data: ArbitrageSellPriceSeriesData,
-          },
-          {
-            color: 'rgb(157, 43, 56)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: sellLineData,
-            lineStyle: LineStyle.Dashed,
-          },
-          {
-            color: 'rgb(255, 186, 102)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: zeroLineData,
-            lineStyle: LineStyle.Dashed,
-          },
-          {
-            color: 'rgb(20, 131, 92)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: buyLineData,
-            lineStyle: LineStyle.Dashed,
           },
         ]}
       />
