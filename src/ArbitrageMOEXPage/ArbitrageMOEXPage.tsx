@@ -14,6 +14,7 @@ import { KZT_TOM_Page } from './strategies/KZT_TOM_Page.tsx';
 import { RTKMPage } from './strategies/RTKMPage.tsx';
 import { NVTKPage } from './strategies/NVTKPage.tsx';
 import { PLZLPage } from './strategies/PLZLPage.tsx';
+import { CNYRUBF_Page } from './strategies/CNYRUBF_Page.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -54,6 +55,7 @@ export const ArbitrageMOEXPage = () => {
     { key: 'plzl', label: 'PLZL/GOLD', element: <PLZLPage /> },
     // { key: 'CNTL', label: 'CNTL - CNTLP', element: <CNTLPage /> },
     { key: 'cny_tom', label: 'CNY!1 / CNYRUB_TOM', element: <CNY_TOM_Page /> },
+    { key: 'cnyrubf', label: 'CNY!1 / CNYRUBF', element: <CNYRUBF_Page /> },
     { key: 'KZT_tom', label: 'KZT!1 / KZTRUB_TOM', element: <KZT_TOM_Page /> },
     { key: 'ed', label: 'EU!1/(ED*SI)', element: <EDPage /> },
     { key: 'SI_CNY', label: 'SI!1/(CNY*UCNY)', element: <SI_CNY_Page /> },
