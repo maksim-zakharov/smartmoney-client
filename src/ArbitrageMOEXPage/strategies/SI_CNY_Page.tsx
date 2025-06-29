@@ -1,4 +1,4 @@
-import { DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
+import { DatePicker, Slider, Space, TimeRangePickerProps, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect.tsx';
 import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../Chart.tsx';
@@ -112,9 +112,14 @@ export const SI_CNY_Page = () => {
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
       </Space>
       <Chart data={data} tf={tf} maximumFractionDigits={3} />
-      <Chart data={ucnyData} tf={tf} maximumFractionDigits={3} />
-      <Chart data={cnyData} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>SI-sint</Typography.Title>
+      <Chart data={SI_data} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>SI-{month}</Typography.Title>
       <Chart data={siData} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>UCNY-{month}</Typography.Title>
+      <Chart data={ucnyData} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>CNY-{month}</Typography.Title>
+      <Chart data={cnyData} tf={tf} maximumFractionDigits={3} />
     </>
   );
 };

@@ -1,4 +1,4 @@
-import { DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
+import { DatePicker, Slider, Space, TimeRangePickerProps, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect.tsx';
 import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../Chart.tsx';
@@ -29,20 +29,20 @@ export const EDPage = () => {
     const { filteredStockCandles: euCandles, filteredFuturesCandles: siCandles } = getCommonCandles(edData, siData);
 
     return euCandles
-      .map((item, index) => {
+      .map((euCandle, index) => {
         const siCandle = siCandles[index];
         if (!siCandle) {
           return null;
         }
-        if (!item) {
+        if (!euCandle) {
           return null;
         }
 
         return {
-          open: siCandle.open * item.open,
-          close: siCandle.close * item.close,
-          high: siCandle.high * item.high,
-          low: siCandle.low * item.low,
+          open: siCandle.open * euCandle.open,
+          close: siCandle.close * euCandle.close,
+          high: siCandle.high * euCandle.high,
+          low: siCandle.low * euCandle.low,
           time: siCandle.time,
         } as HistoryObject;
       })
@@ -115,8 +115,13 @@ export const EDPage = () => {
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
       </Space>
       <Chart data={data} tf={tf} maximumFractionDigits={3} />
-      <Chart data={edData} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>EUR_USD-sint</Typography.Title>
+      <Chart data={EUR_USD_data} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>EU-{month}</Typography.Title>
       <Chart data={euData} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>ED-{month}</Typography.Title>
+      <Chart data={edData} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>SI-{month}</Typography.Title>
       <Chart data={siData} tf={tf} maximumFractionDigits={3} />
     </>
   );

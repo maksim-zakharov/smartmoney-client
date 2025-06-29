@@ -1,4 +1,4 @@
-import { DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
+import { DatePicker, Slider, Space, TimeRangePickerProps, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect.tsx';
 import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../Chart.tsx';
@@ -23,7 +23,7 @@ export const SI_GOLD_Page = () => {
 
   const month = '9.25';
 
-  const SI_data = useMemo(() => {
+  const GOLD_data = useMemo(() => {
     const { filteredStockCandles: ucnyCandles, filteredFuturesCandles: cnyCandles } = getCommonCandles(siData, GD_Data);
 
     return ucnyCandles
@@ -48,13 +48,13 @@ export const SI_GOLD_Page = () => {
   }, [siData, GD_Data]);
 
   const data = useMemo(() => {
-    if (SI_data?.length && GLDRUBF_Data?.length) {
-      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(SI_data, GLDRUBF_Data);
+    if (GOLD_data?.length && GLDRUBF_Data?.length) {
+      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(GOLD_data, GLDRUBF_Data);
 
       return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 1)).filter(Boolean);
     }
-    return SI_data;
-  }, [SI_data, GLDRUBF_Data]);
+    return GOLD_data;
+  }, [GOLD_data, GLDRUBF_Data]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
@@ -112,9 +112,14 @@ export const SI_GOLD_Page = () => {
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
       </Space>
       <Chart data={data} tf={tf} maximumFractionDigits={3} />
-      <Chart data={GLDRUBF_Data} tf={tf} maximumFractionDigits={3} />
-      <Chart data={GD_Data} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>GOLD-sint</Typography.Title>
+      <Chart data={GOLD_data} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>SI-{month}</Typography.Title>
       <Chart data={siData} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>GLDRUBF</Typography.Title>
+      <Chart data={GLDRUBF_Data} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>GD-{month}</Typography.Title>
+      <Chart data={GD_Data} tf={tf} maximumFractionDigits={3} />
     </>
   );
 };
