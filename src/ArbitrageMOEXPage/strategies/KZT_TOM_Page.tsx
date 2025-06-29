@@ -14,9 +14,7 @@ import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
 
 const { RangePicker } = DatePicker;
 
-const tt = () => fetch('https://sbcharts.investing.com/events_charts/eu/1967.json').then((response) => response.json());
-
-export const CNY_TOM_Page = () => {
+export const KZT_TOM_Page = () => {
   const [useHage, setuseHage] = useState<boolean>(false);
   const [token, setToken] = useState();
   const [details, setdetails] = useState();
@@ -26,36 +24,29 @@ export const CNY_TOM_Page = () => {
   const fee = 0.0004; // 0.04%
   const [_data, setData] = useState({ futureData: [], stockData: [] });
   const [searchParams, setSearchParams] = useSearchParams();
-  const tickerStock = 'CNYRUB_TOM';
+  const tickerStock = 'KZTRUB_TOM';
   const multi = Number(searchParams.get('multi'));
-  const tickerFuture = 'CNY-6.25';
+  const tickerFuture = 'KZT-6.25';
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
-
-  const [rates, setRates] = useState<{ time: number; value: number }[]>([]);
 
   const { stockData, futureData } = _data;
 
   const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
   const taxRate = 0.13;
 
-  useEffect(() => {
-    tt()
-      .then((r) => r.data.map(([time, value]) => ({ time, value })))
-      .then(setRates);
-  }, []);
-
   /**
    *
    * @param stockPrice Цена акции (их свечки)
    * @param stockTime Время цены акции
    * @param expirationDate Дата экспироции фьюча
-   * @param cyR Ставка ЦБ КНР
    */
-  const calculateTruthFuturePrice = (stockPrice: number, stockTime: number, expirationDate: Dayjs, cyR: number = 0.03) => {
+  const calculateTruthFuturePrice = (stockPrice: number, stockTime: number, expirationDate: Dayjs) => {
     // Ставка ЦБ РФ
     const ruR = 0.2;
+    // Ставка ЦБ КНР
+    const cyR = 0.03;
     // Сколько осталось дней до экспирации
     const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
 
@@ -87,7 +78,7 @@ export const CNY_TOM_Page = () => {
     const brokerCommission = exchangeCommission.mul(0.5); // 0.0000231
     const totalCommissionRate = exchangeCommission.plus(brokerCommission).toNumber(); // 0.0000693 (0.00693%)
 
-    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate, ratesMap.get(stockTime));
+    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate);
 
     // Дни до экспирации (дробные)
     const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
@@ -124,24 +115,6 @@ export const CNY_TOM_Page = () => {
 
   const stockTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.stockSymbol), []);
 
-  const ratesMap = useMemo(() => {
-    const result = new Map<number, number>([]);
-    let currentRateIndex = -1;
-    for (let i = 0; i < stockData.length; i++) {
-      const candle = stockData[i];
-      if (currentRateIndex !== -1) {
-        currentRateIndex = rates.findIndex((r) => r.time >= candle.time * 1000);
-      }
-      const nextRate = rates[currentRateIndex + 1];
-      if (candle.time * 1000 >= nextRate?.time) {
-        currentRateIndex++;
-      }
-      const currRate = rates[currentRateIndex];
-      result.set(candle.time, currRate.value / 100);
-    }
-    return result;
-  }, [rates, stockData]);
-
   useEffect(() => {
     tickerFuture &&
       token &&
@@ -165,18 +138,18 @@ export const CNY_TOM_Page = () => {
   }, [stockData, futureData, multiple]);
 
   const truthPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate), ratesMap.get(time)) / close),
-    [stockData, ratesMap],
+    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close),
+    [stockData],
   );
 
   const ArbitrageBuyPriceSeriesData = useMemo(
     () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), taxRate, 0) + inputTreshold),
-    [calculateArbitrageThreshold, stockData, ratesMap],
+    [calculateArbitrageThreshold, stockData],
   );
 
   const ArbitrageSellPriceSeriesData = useMemo(
     () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), taxRate, 0) - inputTreshold),
-    [calculateArbitrageThreshold, stockData, ratesMap],
+    [calculateArbitrageThreshold, stockData],
   );
 
   const ema = useMemo(
