@@ -51,7 +51,7 @@ export const SI_CNY_Page = () => {
     if (SI_data?.length && siData?.length) {
       const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(SI_data, siData);
 
-      return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 1)).filter(Boolean);
+      return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 1000)).filter(Boolean);
     }
     return SI_data;
   }, [SI_data, siData]);
