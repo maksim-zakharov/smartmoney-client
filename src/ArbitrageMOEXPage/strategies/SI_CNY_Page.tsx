@@ -8,6 +8,7 @@ import { fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../util
 import moment from 'moment';
 import { HistoryObject } from '../../sm-lib/models.ts';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
+import { LineStyle } from 'lightweight-charts';
 
 const { RangePicker } = DatePicker;
 
@@ -17,11 +18,11 @@ export const SI_CNY_Page = () => {
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
-  const [diff, setDiff] = useState<number>(0.015);
+  const [diff, setDiff] = useState<number>(0.005);
   const [_data, setData] = useState({ cnyData: [], ucnyData: [], siData: [] });
   const { siData, ucnyData, cnyData } = _data;
 
-  const month = '9.25';
+  const month = '6.25';
 
   const SI_data = useMemo(() => {
     const { filteredStockCandles: ucnyCandles, filteredFuturesCandles: cnyCandles } = getCommonCandles(ucnyData, cnyData);
@@ -93,10 +94,12 @@ export const SI_CNY_Page = () => {
       ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
   }, [tf, fromDate, toDate, token]);
 
-  const avg = 0.946;
-  // const sellLineData = useMemo(() => stockData.map((s) => avg + diff), [stockData, diff]);
-  // const zeroLineData = useMemo(() => stockData.map((s) => avg), [stockData]);
-  // const buyLineData = useMemo(() => stockData.map((s) => avg - diff), [stockData, diff]);
+  const avg = 1;
+  const sellLineData = useMemo(() => data.map((s) => avg + diff), [data, diff]);
+  const sellLineDatax2 = useMemo(() => data.map((s) => avg + diff * 2), [data, diff]);
+  const zeroLineData = useMemo(() => data.map((s) => avg), [data]);
+  const buyLineData = useMemo(() => data.map((s) => avg - diff), [data, diff]);
+  const buyLineDatax2 = useMemo(() => data.map((s) => avg - diff * 2), [data, diff]);
 
   return (
     <>
@@ -111,7 +114,48 @@ export const SI_CNY_Page = () => {
         />
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
       </Space>
-      <Chart data={data} tf={tf} maximumFractionDigits={3} />
+      <Chart
+        data={data}
+        tf={tf}
+        maximumFractionDigits={3}
+        customSeries={[
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellLineData,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellLineDatax2,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(255, 186, 102)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: zeroLineData,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(20, 131, 92)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: buyLineData,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(20, 131, 92)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: buyLineDatax2,
+            lineStyle: LineStyle.Dashed,
+          },
+        ]}
+      />
       <Typography.Title>SI-sint</Typography.Title>
       <Chart data={SI_data} tf={tf} maximumFractionDigits={3} />
       <Typography.Title>SI-{month}</Typography.Title>

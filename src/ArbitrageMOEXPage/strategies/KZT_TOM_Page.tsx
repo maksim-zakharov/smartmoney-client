@@ -309,26 +309,26 @@ export const KZT_TOM_Page = () => {
         tf={tf}
         onChange={onChangeChart}
         maximumFractionDigits={3}
-        customSeries={[
-          {
-            color: 'rgb(255, 186, 102)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: truthPriceSeriesData,
-          },
-          {
-            color: 'rgb(20, 131, 92)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: ArbitrageBuyPriceSeriesData,
-          },
-          {
-            color: 'rgb(157, 43, 56)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: ArbitrageSellPriceSeriesData,
-          },
-        ]}
+        // customSeries={[
+        //   {
+        //     color: 'rgb(255, 186, 102)',
+        //     lineWidth: 1,
+        //     priceLineVisible: false,
+        //     data: truthPriceSeriesData,
+        //   },
+        //   {
+        //     color: 'rgb(20, 131, 92)',
+        //     lineWidth: 1,
+        //     priceLineVisible: false,
+        //     data: ArbitrageBuyPriceSeriesData,
+        //   },
+        //   {
+        //     color: 'rgb(157, 43, 56)',
+        //     lineWidth: 1,
+        //     priceLineVisible: false,
+        //     data: ArbitrageSellPriceSeriesData,
+        //   },
+        // ]}
       />
     </>
   );
