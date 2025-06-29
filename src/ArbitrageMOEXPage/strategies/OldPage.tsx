@@ -108,7 +108,7 @@ export const OldPage = () => {
 
     const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
     if (ticker) {
-      return `${ticker}-6.25`;
+      return `${ticker}-3.25`;
     }
     return ticker;
   }, [tickerStock, _tickerFuture]);
