@@ -26,7 +26,7 @@ export const CNY_TOM_Page = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tickerStock = 'CNYRUB_TOM';
   const multi = Number(searchParams.get('multi'));
-  const tickerFuture = 'CNY-9.25';
+  const tickerFuture = 'CNY-6.25';
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
