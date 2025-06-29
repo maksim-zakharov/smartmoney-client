@@ -12,6 +12,8 @@ import { BANEPage } from './strategies/BANEPage';
 import { CNY_TOM_Page } from './strategies/CNY_TOM_Page';
 import { KZT_TOM_Page } from './strategies/KZT_TOM_Page.tsx';
 import { RTKMPage } from './strategies/RTKMPage.tsx';
+import { NVTKPage } from './strategies/NVTKPage.tsx';
+import { PLZLPage } from './strategies/PLZLPage.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -48,6 +50,8 @@ export const ArbitrageMOEXPage = () => {
     { key: 'tatn', label: 'TATNP/TATN', element: <TATNPage /> },
     { key: 'bane', label: 'BANEP/BANE', element: <BANEPage /> },
     { key: 'rtkm', label: 'RTKMP/RTKM', element: <RTKMPage /> },
+    { key: 'nvtk', label: 'NVTK/NGM', element: <NVTKPage /> },
+    { key: 'plzl', label: 'PLZL/GOLD', element: <PLZLPage /> },
     // { key: 'CNTL', label: 'CNTL - CNTLP', element: <CNTLPage /> },
     { key: 'cny_tom', label: 'CNY!1 / CNYRUB_TOM', element: <CNY_TOM_Page /> },
     { key: 'KZT_tom', label: 'KZT!1 / KZTRUB_TOM', element: <KZT_TOM_Page /> },
