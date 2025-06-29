@@ -45,8 +45,8 @@ export const ArbitrageMOEXPage = () => {
     { key: 'tatn', label: 'TATN - TATNP', element: <TATNPage /> },
     { key: 'bane', label: 'BANE - BANEP', element: <BANEPage /> },
     // { key: 'CNTL', label: 'CNTL - CNTLP', element: <CNTLPage /> },
-    { key: 'ed', label: 'EU!1/(EU*SI)', element: <EDPage /> },
-    { key: 'SI_CNY', label: 'CNY!1/(CNY*UCNY)', element: <SI_CNY_Page /> },
+    { key: 'ed', label: 'EU!1/(ED*SI)', element: <EDPage /> },
+    { key: 'SI_CNY', label: 'SI!1/(CNY*UCNY)', element: <SI_CNY_Page /> },
     { key: 'SI_GOLD', label: 'SI_GOLD', element: <SI_GOLD_Page /> },
   ];
 
