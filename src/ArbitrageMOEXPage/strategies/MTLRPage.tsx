@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
 import moment from 'moment';
-import { calculateCandle } from '../../../symbolFuturePairs.ts';
+import { calculateCandle, calculateEMA } from '../../../symbolFuturePairs.ts';
 
 const { RangePicker } = DatePicker;
 
@@ -41,6 +41,24 @@ export const MTLRPage = () => {
     }
     return stockData;
   }, [stockData, futureData, multiple]);
+
+  const ema = useMemo(
+    () =>
+      calculateEMA(
+        data.map((h) => h.close),
+        100,
+      )[1],
+    [data],
+  );
+
+  const buyEmaLineData = useMemo(() => ema.map((s) => s + 0.01), [ema]);
+  const sellEmaLineData = useMemo(() => ema.map((s) => s - 0.01), [ema]);
+
+  const buyEmaLineData2 = useMemo(() => ema.map((s) => s + 0.01 * 2), [ema]);
+  const sellEmaLineData2 = useMemo(() => ema.map((s) => s - 0.01 * 2), [ema]);
+
+  const buyEmaLineData3 = useMemo(() => ema.map((s) => s + 0.01 * 3), [ema]);
+  const sellEmaLineData3 = useMemo(() => ema.map((s) => s - 0.01 * 3), [ema]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
@@ -116,6 +134,52 @@ export const MTLRPage = () => {
         tf={tf}
         maximumFractionDigits={3}
         customSeries={[
+          {
+            color: 'rgb(255, 186, 102)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: ema,
+          },
+          {
+            color: 'rgb(20, 131, 92)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: buyEmaLineData,
+            lineStyle: LineStyle.SparseDotted,
+          },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellEmaLineData,
+            lineStyle: LineStyle.SparseDotted,
+          },
+          {
+            color: 'rgb(20, 131, 92)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: buyEmaLineData2,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellEmaLineData2,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(20, 131, 92)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: buyEmaLineData3,
+          },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellEmaLineData3,
+          },
           {
             color: 'rgb(157, 43, 56)',
             lineWidth: 1,
