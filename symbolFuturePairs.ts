@@ -67,6 +67,11 @@ export const symbolFuturePairs = [
     stockSymbol: 'RTKM',
   },
   {
+    futuresSymbol: 'RTKM',
+    futuresShortName: 'RTZ4',
+    stockSymbol: 'RTKMP',
+  },
+  {
     futuresSymbol: 'SMLT',
     futuresShortName: 'SSZ4',
     stockSymbol: 'SMLT',
@@ -80,6 +85,11 @@ export const symbolFuturePairs = [
     futuresSymbol: 'MTLR',
     futuresShortName: 'MCZ4',
     stockSymbol: 'MTLR',
+  },
+  {
+    futuresSymbol: 'MTLR',
+    futuresShortName: 'MCZ4',
+    stockSymbol: 'MTLRP',
   },
   {
     futuresSymbol: 'LKOH',
@@ -180,6 +190,11 @@ export const symbolFuturePairs = [
     futuresSymbol: 'BANE',
     futuresShortName: 'BNZ4',
     stockSymbol: 'BANE',
+  },
+  {
+    futuresSymbol: 'BANE',
+    futuresShortName: 'BNZ4',
+    stockSymbol: 'BANEP',
   },
   {
     futuresSymbol: 'WUSH',

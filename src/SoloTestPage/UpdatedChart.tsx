@@ -56,6 +56,8 @@ interface Props {
   width?: number;
   toolTipLeft?: string;
   toolTipTop?: string;
+  hideCross?: boolean;
+  maximumFractionDigits?: number;
 }
 
 const ChartFC: FC<Props> = ({
@@ -71,6 +73,8 @@ const ChartFC: FC<Props> = ({
   height = 610,
   toolTipLeft,
   toolTipTop,
+  hideCross,
+  maximumFractionDigits,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartApiRef = useRef<IChartApi>(null);
@@ -102,6 +106,13 @@ const ChartFC: FC<Props> = ({
           // }
 
           return moment.unix(businessDayOrTimestamp).format('MMM D, YYYY HH:mm');
+        },
+        priceFormatter: (price) => {
+          const formatter = new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: maximumFractionDigits || 8, // Минимальное количество знаков после запятой
+            maximumFractionDigits: maximumFractionDigits || 8, // Максимальное количество знаков после запятой
+          });
+          return formatter.format(price);
         },
       },
       timeScale: {
@@ -156,44 +167,46 @@ const ChartFC: FC<Props> = ({
     };
     window.addEventListener('resize', handleResize);
 
-    // Создаем tooltip
-    const toolTip = document.createElement('div');
-    toolTip.style.cssText = `position: absolute; display: none; z-index: 1000; top: 12px; left: 12px; right: 66px;`;
-    chartContainerRef.current.appendChild(toolTip);
-    toolTipRef.current = toolTip;
+    if (!hideCross) {
+      // Создаем tooltip
+      const toolTip = document.createElement('div');
+      toolTip.style.cssText = `position: absolute; display: none; z-index: 1000; top: 12px; left: 12px; right: 66px;`;
+      chartContainerRef.current.appendChild(toolTip);
+      toolTipRef.current = toolTip;
 
-    // Подписка на изменение видимого диапазона
-    chartApi.timeScale().subscribeVisibleLogicalRangeChange(() => {
-      const newVisibleRange = chartApi.timeScale().getVisibleRange();
-      if (newVisibleRange) {
-        setVisibleRange({ from: newVisibleRange.from, to: newVisibleRange.to });
-      }
-    });
+      // Подписка на изменение видимого диапазона
+      chartApi.timeScale().subscribeVisibleLogicalRangeChange(() => {
+        const newVisibleRange = chartApi.timeScale().getVisibleRange();
+        if (newVisibleRange) {
+          setVisibleRange({ from: newVisibleRange.from, to: newVisibleRange.to });
+        }
+      });
 
-    // Подписка на события
-    chartApi.subscribeCrosshairMove((param) => {
-      if (
-        param.point === undefined ||
-        !param.time ||
-        param.point.x < 0 ||
-        param.point.x > chartContainerRef!.current.clientWidth ||
-        param.point.y < 0 ||
-        param.point.y > chartContainerRef!.current.clientHeight
-      ) {
-        toolTip.style.display = 'none';
-      } else {
-        // time will be in the same format that we supplied to setData.
-        toolTip.style.display = 'flex';
-        const data = param.seriesData.get(series);
-        // symbol ОТКР МАКС МИН ЗАКР ОБЪЕМ
-        const candle: any = timeDataRef.current.get(data.time);
+      // Подписка на события
+      chartApi.subscribeCrosshairMove((param) => {
+        if (
+          param.point === undefined ||
+          !param.time ||
+          param.point.x < 0 ||
+          param.point.x > chartContainerRef!.current.clientWidth ||
+          param.point.y < 0 ||
+          param.point.y > chartContainerRef!.current.clientHeight
+        ) {
+          toolTip.style.display = 'none';
+        } else {
+          // time will be in the same format that we supplied to setData.
+          toolTip.style.display = 'flex';
+          const data = param.seriesData.get(series);
+          // symbol ОТКР МАКС МИН ЗАКР ОБЪЕМ
+          const candle: any = timeDataRef.current.get(data.time);
 
-        toolTip.innerHTML = `ОТКР: ${candle.open} МАКС: ${candle.high} МИН: ${candle.low} ЗАКР: ${candle.close}`; // ОБЪЕМ: ${shortNumberFormat(candle.volume)} ОБЪЕМ (деньги): ${moneyFormat(candle.volume * candle.close * lotSize)}`;
+          toolTip.innerHTML = `ОТКР: ${candle.open} МАКС: ${candle.high} МИН: ${candle.low} ЗАКР: ${candle.close}`; // ОБЪЕМ: ${shortNumberFormat(candle.volume)} ОБЪЕМ (деньги): ${moneyFormat(candle.volume * candle.close * lotSize)}`;
 
-        toolTip.style.left = toolTipLeft || '12px';
-        toolTip.style.top = toolTipTop || '12px';
-      }
-    });
+          toolTip.style.left = toolTipLeft || '12px';
+          toolTip.style.top = toolTipTop || '12px';
+        }
+      });
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -202,7 +215,7 @@ const ChartFC: FC<Props> = ({
         chartContainerRef.current?.removeChild(toolTipRef.current);
       }
     };
-  }, []);
+  }, [maximumFractionDigits]);
 
   // Обновление данных основной серии
   useEffect(() => {
@@ -275,9 +288,11 @@ const ChartFC: FC<Props> = ({
   // Обновление маркеров
   useEffect(() => {
     if (seriesRef.current && filteredMarkers) {
-      seriesRef.current.setMarkers([...filteredMarkers].sort((a, b) => a.time - b.time));
+      try {
+        seriesRef.current.setMarkers([...filteredMarkers].sort((a, b) => a.time - b.time));
+      } catch (e) {}
     }
-  }, [filteredMarkers]);
+  }, [markers]);
 
   // Обновление EMA
   useEffect(() => {
@@ -287,34 +302,46 @@ const ChartFC: FC<Props> = ({
     }
   }, [ema, data]);
 
+  const getLineId = (lineSeries) => lineSeries?.id || lineSeries.data[0]?.time?.toString();
+
   // Обновление линий (lineSeries)
   useEffect(() => {
     if (!chartApiRef.current || !filteredLineSerieses) return;
     // Находим линий для удаления
 
     const currentLineIds = Object.keys(lineSeriesRefs.current);
-    const newLineIds = filteredLineSerieses.map((lineSeries) => lineSeries.data[0]?.time?.toString());
+    const newLineIds = filteredLineSerieses.map((lineSeries) => getLineId(lineSeries));
 
     // Удаление устаревших линий
     currentLineIds.forEach((lineId) => {
       if (!newLineIds.includes(lineId)) {
-        chartApiRef.current.removeSeries(lineSeriesRefs.current[lineId]);
-        delete lineSeriesRefs.current[lineId];
+        try {
+          chartApiRef.current.removeSeries(lineSeriesRefs.current[lineId]);
+          delete lineSeriesRefs.current[lineId];
+        } catch (error) {
+          console.error('Failed to remove series:', error);
+        }
       }
     });
 
     filteredLineSerieses.forEach((lineSeries, index) => {
-      const id = lineSeries.data[0]?.time?.toString();
+      const id = getLineId(lineSeries);
+      if (!id) {
+        return;
+      }
+
       let ls = lineSeriesRefs.current[id];
       if (!ls) {
         ls = createSeries(chartApiRef.current, 'Line', lineSeries.options);
         lineSeriesRefs.current[id] = ls;
       }
-      const sortedData = [...lineSeries.data].sort((a, b) => a.time - b.time);
-      const uniqueData = uniqueBy((v: any) => v.time, sortedData);
+      const sortedData = [...lineSeries.data].filter(Boolean).sort((a, b) => a.time - b.time);
+      const uniqueData = uniqueBy((v: any) => v?.time, sortedData);
       ls.setData(uniqueData);
       if (lineSeries.markers) {
-        ls.setMarkers(lineSeries.markers);
+        try {
+          ls.setMarkers(lineSeries.markers);
+        } catch (e) {}
       }
     });
   }, [filteredLineSerieses]);

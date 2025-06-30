@@ -46,7 +46,7 @@ export const ArbitrageMOEXPage = () => {
   const [selectedKey, setSelectedKey] = useState('mtlr');
 
   const items: MenuItem[] = [
-    { key: 'old', label: 'Old', element: <OldPage /> },
+    { key: 'old', label: 'Future/Stock', element: <OldPage /> },
     { key: 'mtlr', label: 'MTLRP/MTLR', element: <MTLRPage /> },
     { key: 'tatn', label: 'TATNP/TATN', element: <TATNPage /> },
     { key: 'bane', label: 'BANEP/BANE', element: <BANEPage /> },

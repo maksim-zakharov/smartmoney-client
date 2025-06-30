@@ -2,27 +2,34 @@ import { Checkbox, DatePicker, Slider, Space, TimeRangePickerProps } from 'antd'
 import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
-import { moneyFormat } from '../../MainPage/MainPage';
-import { Chart } from '../../Chart';
+// import { Chart } from '../../Chart';
+import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
 import Decimal from 'decimal.js';
-import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
+import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, getSecurity, refreshToken } from '../../utils.ts';
 import { calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
-import { LineStyle } from 'lightweight-charts';
+import { LineStyle, Time } from 'lightweight-charts';
+import { finishPosition } from '../../samurai_patterns.ts';
+import { Security } from '../../api.ts';
 
 const { RangePicker } = DatePicker;
 
+const markerColors = {
+  bearColor: 'rgb(157, 43, 56)',
+  bullColor: 'rgb(20, 131, 92)',
+};
+
 export const OldPage = () => {
   const [useHage, setuseHage] = useState<boolean>(false);
+  const [security, setSecurity] = useState<Security>();
   const [token, setToken] = useState();
   const [details, setdetails] = useState();
   const [chartValues, onChangeChart] = useState({ filteredBuyMarkers: [], filteredSellMarkers: [] });
   const [inputTreshold, onChange] = useState(0.006); // 0.6%
   const TresholdEnd = 0.001;
-  const fee = 0.0004; // 0.04%
   const [_data, setData] = useState({ futureData: [], stockData: [] });
   const [searchParams, setSearchParams] = useSearchParams();
   const tickerStock = searchParams.get('ticker-stock') || 'SBER';
@@ -36,6 +43,13 @@ export const OldPage = () => {
 
   const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
   const taxRate = 0.13;
+
+  const lotsize = security?.lotsize;
+  const fee = 0.04 / 100;
+
+  useEffect(() => {
+    token && getSecurity(tickerStock, token).then(setSecurity);
+  }, [tickerStock, token]);
 
   /**
    *
@@ -187,6 +201,92 @@ export const OldPage = () => {
   const buyEmaLineData3 = useMemo(() => ema.map((s) => s + 0.01 * 3), [ema]);
   const sellEmaLineData3 = useMemo(() => ema.map((s) => s - 0.01 * 3), [ema]);
 
+  const positions = useMemo(() => {
+    if (!data.length) {
+      return [];
+    }
+
+    const sellPositions = [];
+    const buyPositions = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const candle = data[i];
+
+      // Если не коснулись верха - продаем фьюч, покупаем акцию
+      if (candle.high >= sellEmaLineData2[i]) {
+        let currentPosition: any = {
+          side: 'short',
+          openPrice: candle.open,
+          stopLoss: candle.high,
+          openTime: candle.time,
+        };
+
+        for (let j = i + 1; j < data.length; j++) {
+          const candle = data[j];
+          if (candle.low >= sellEmaLineData2[j]) {
+            continue;
+          }
+
+          currentPosition = {
+            ...currentPosition,
+            closeTime: candle.time,
+            takeProfit: candle.open,
+            closePrice: candle.open,
+          };
+
+          currentPosition.pnl = currentPosition.openPrice - currentPosition.closePrice;
+          sellPositions.push(currentPosition);
+
+          i = j;
+
+          break;
+        }
+      }
+      if (candle.low <= buyEmaLineData2[i]) {
+        let currentPosition: any = {
+          side: 'long',
+          openPrice: candle.open,
+          stopLoss: candle.high,
+          openTime: candle.time,
+        };
+
+        for (let j = i + 1; j < data.length; j++) {
+          const candle = data[j];
+          if (candle.high <= buyEmaLineData2[j]) {
+            continue;
+          }
+
+          currentPosition = {
+            ...currentPosition,
+            closeTime: candle.time,
+            takeProfit: candle.open,
+            closePrice: candle.open,
+          };
+
+          currentPosition.pnl = currentPosition.closePrice - currentPosition.openPrice;
+          buyPositions.push(currentPosition);
+
+          i = j;
+
+          break;
+        }
+      }
+    }
+
+    return [...buyPositions, ...sellPositions]
+      .map(
+        finishPosition({
+          lotsize,
+          fee,
+          tf,
+          ticker: tickerStock,
+          stopMargin: 50,
+          quantity: 1,
+        }),
+      )
+      .sort((a, b) => b.openTime - a.openTime);
+  }, [data, fee, lotsize, tickerStock, buyEmaLineData2, sellEmaLineData2]);
+
   const profit = useMemo(() => {
     let PnL = 0;
     let buyTrades = 0;
@@ -240,52 +340,52 @@ export const OldPage = () => {
     return currentPosition;
   };
 
-  const positions = useMemo(() => {
-    const result = {
-      positions: [],
-      totalPnL: 0,
-    };
-
-    for (let i = 0; i < chartValues.filteredBuyMarkers.length; i++) {
-      const marker = chartValues.filteredBuyMarkers[i];
-
-      result.positions.push(searchEndPosition('buy', 'future', marker.time, futureData, data));
-
-      if (useHage) {
-        const stockPosition = searchEndPosition('sell', 'stock', marker.time, stockData, data);
-
-        stockPosition.PnL *= multiple;
-        result.positions.push(stockPosition);
-      }
-    }
-
-    for (let i = 0; i < chartValues.filteredSellMarkers.length; i++) {
-      const marker = chartValues.filteredSellMarkers[i];
-
-      result.positions.push(searchEndPosition('sell', 'future', marker.time, futureData, data));
-
-      if (useHage) {
-        const stockPosition = searchEndPosition('buy', 'stock', marker.time, stockData, data);
-
-        stockPosition.PnL *= multiple;
-        result.positions.push(stockPosition);
-      }
-    }
-
-    result.totalPnL = result.positions.reduce((acc, curr) => acc + curr.PnL, 0);
-
-    return result;
-  }, [
-    chartValues.filteredBuyMarkers,
-    chartValues.filteredSellMarkers,
-    useHage,
-    multiple,
-    data,
-    ema,
-    futureData,
-    searchEndPosition,
-    stockData,
-  ]);
+  // const positions = useMemo(() => {
+  //   const result = {
+  //     positions: [],
+  //     totalPnL: 0,
+  //   };
+  //
+  //   for (let i = 0; i < chartValues.filteredBuyMarkers.length; i++) {
+  //     const marker = chartValues.filteredBuyMarkers[i];
+  //
+  //     result.positions.push(searchEndPosition('buy', 'future', marker.time, futureData, data));
+  //
+  //     if (useHage) {
+  //       const stockPosition = searchEndPosition('sell', 'stock', marker.time, stockData, data);
+  //
+  //       stockPosition.PnL *= multiple;
+  //       result.positions.push(stockPosition);
+  //     }
+  //   }
+  //
+  //   for (let i = 0; i < chartValues.filteredSellMarkers.length; i++) {
+  //     const marker = chartValues.filteredSellMarkers[i];
+  //
+  //     result.positions.push(searchEndPosition('sell', 'future', marker.time, futureData, data));
+  //
+  //     if (useHage) {
+  //       const stockPosition = searchEndPosition('buy', 'stock', marker.time, stockData, data);
+  //
+  //       stockPosition.PnL *= multiple;
+  //       result.positions.push(stockPosition);
+  //     }
+  //   }
+  //
+  //   result.totalPnL = result.positions.reduce((acc, curr) => acc + curr.PnL, 0);
+  //
+  //   return result;
+  // }, [
+  //   chartValues.filteredBuyMarkers,
+  //   chartValues.filteredSellMarkers,
+  //   useHage,
+  //   multiple,
+  //   data,
+  //   ema,
+  //   futureData,
+  //   searchEndPosition,
+  //   stockData,
+  // ]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
@@ -316,6 +416,180 @@ export const OldPage = () => {
     { label: 'Последние 365 дней', value: [dayjs().add(-365, 'd'), dayjs()] },
   ];
 
+  const ls = useMemo(() => {
+    const markers = positions.map((s) => [
+      {
+        color: s.side === 'long' ? markerColors.bullColor : markerColors.bearColor,
+        time: s.openTime as Time,
+        shape: s.side === 'long' ? 'arrowUp' : 'arrowDown',
+        position: s.side === 'short' ? 'aboveBar' : 'belowBar',
+        price: s.openPrice,
+        pnl: s.pnl,
+      },
+      {
+        color: s.side === 'short' ? markerColors.bullColor : markerColors.bearColor,
+        time: s.closeTime as Time,
+        shape: s.side === 'short' ? 'arrowUp' : 'arrowDown',
+        position: s.side === (s.pnl > 0 ? 'long' : 'short') ? 'aboveBar' : 'belowBar',
+        price: s.pnl > 0 ? s.takeProfit : s.pnl < 0 ? s.stopLoss : s.takeProfit,
+      },
+    ]);
+
+    const lineSerieses = markers.map(([open, close]) => ({
+      options: {
+        color: open.pnl > 0 ? markerColors.bullColor : open.pnl < 0 ? markerColors.bearColor : 'rgb(166,189,213)', // Цвет линии
+        priceLineVisible: false,
+        lastValueVisible: false,
+        lineWidth: 1,
+        lineStyle: LineStyle.LargeDashed,
+      },
+      data: [
+        { time: open.time as Time, value: open.price }, // начальная точка между свечками
+        { time: close.time as Time, value: close.price }, // конечная точка между свечками
+      ],
+    }));
+
+    if (
+      !ema.length ||
+      !data.length ||
+      !sellEmaLineData.length ||
+      !buyEmaLineData.length ||
+      !buyEmaLineData2.length ||
+      !sellEmaLineData2.length ||
+      !buyEmaLineData3.length ||
+      !sellEmaLineData3.length
+    ) {
+      return [];
+    }
+
+    return [
+      ...lineSerieses,
+      {
+        id: 'ema',
+        options: {
+          color: 'rgb(255, 186, 102)',
+          lineWidth: 1,
+          priceLineVisible: false,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: ema[i] })),
+      },
+      {
+        id: 'buyEmaLineData',
+        options: {
+          color: 'rgb(20, 131, 92)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.SparseDotted,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData[i] })),
+      },
+      {
+        id: 'sellEmaLineData',
+        options: {
+          color: 'rgb(157, 43, 56)',
+          lineWidth: 1,
+          lineStyle: LineStyle.SparseDotted,
+          priceLineVisible: false,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData[i] })),
+      },
+      {
+        id: 'buyEmaLineData2',
+        options: {
+          color: 'rgb(20, 131, 92)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        // markers: positions
+        //   .filter((s) => s.side === 'long')
+        //   .map((extremum: any) => ({
+        //     color: markerColors.bullColor,
+        //     time: extremum.time as Time,
+        //     shape: 'circle',
+        //     position: 'belowBar',
+        //   }))
+        //   .sort((a, b) => a.time - b.time),
+        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData2[i] })),
+      },
+      {
+        id: 'sellEmaLineData2',
+        options: {
+          color: 'rgb(157, 43, 56)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        // markers: positions
+        //   .filter((s) => s.side === 'short')
+        //   .map((extremum: any) => ({
+        //     color: markerColors.bearColor,
+        //     time: extremum.time as Time,
+        //     shape: 'circle',
+        //     position: 'aboveBar',
+        //   }))
+        //   .sort((a, b) => a.time - b.time),
+        data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData2[i] })),
+      },
+      {
+        id: 'buyEmaLineData3',
+        options: {
+          color: 'rgb(20, 131, 92)',
+          lineWidth: 1,
+          priceLineVisible: false,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData3[i] })),
+      },
+      {
+        id: 'sellEmaLineData3',
+        options: {
+          color: 'rgb(157, 43, 56)',
+          lineWidth: 1,
+          priceLineVisible: false,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData3[i] })),
+      },
+      // {
+      //   color: 'rgb(255, 186, 102)',
+      //   lineWidth: 1,
+      //   priceLineVisible: false,
+      //   data: truthPriceSeriesData,
+      // },
+      // {
+      //   color: 'rgb(20, 131, 92)',
+      //   lineWidth: 1,
+      //   priceLineVisible: false,
+      //   data: ArbitrageBuyPriceSeriesData,
+      // },
+      // {
+      //   color: 'rgb(157, 43, 56)',
+      //   lineWidth: 1,
+      //   priceLineVisible: false,
+      //   data: ArbitrageSellPriceSeriesData,
+      // },
+      // {
+      //   color: 'rgb(157, 43, 56)',
+      //   lineWidth: 1,
+      //   priceLineVisible: false,
+      //   data: sellLineData,
+      //   lineStyle: LineStyle.Dashed,
+      // },
+      // {
+      //   color: 'rgb(255, 186, 102)',
+      //   lineWidth: 1,
+      //   priceLineVisible: false,
+      //   data: zeroLineData,
+      //   lineStyle: LineStyle.Dashed,
+      // },
+      // {
+      //   color: 'rgb(20, 131, 92)',
+      //   lineWidth: 1,
+      //   priceLineVisible: false,
+      //   data: buyLineData,
+      //   lineStyle: LineStyle.Dashed,
+    ];
+  }, [sellEmaLineData3, buyEmaLineData3, sellEmaLineData2, buyEmaLineData2, sellEmaLineData, ema, buyEmaLineData, positions]);
+
   return (
     <>
       <Space>
@@ -338,104 +612,25 @@ export const OldPage = () => {
           format="YYYY-MM-DD"
           onChange={onChangeRangeDates}
         />
-        {profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}
+        {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
+        {positions.length}
         <Checkbox checked={useHage} onChange={(e) => setuseHage(e.target.checked)}>
           Хеджировать акцией
         </Checkbox>
       </Space>
       <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange} />
+
       <Chart
+        hideCross
+        lineSerieses={ls}
+        primitives={[]}
+        markers={[]}
+        toolTipTop="40px"
+        toolTipLeft="4px"
         data={data}
-        tf={tf}
+        ema={[]}
         onChange={onChangeChart}
         maximumFractionDigits={3}
-        customSeries={[
-          {
-            color: 'rgb(255, 186, 102)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: ema,
-          },
-          {
-            color: 'rgb(20, 131, 92)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: buyEmaLineData,
-            lineStyle: LineStyle.SparseDotted,
-          },
-          {
-            color: 'rgb(157, 43, 56)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: sellEmaLineData,
-            lineStyle: LineStyle.SparseDotted,
-          },
-          {
-            color: 'rgb(20, 131, 92)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: buyEmaLineData2,
-            lineStyle: LineStyle.Dashed,
-          },
-          {
-            color: 'rgb(157, 43, 56)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: sellEmaLineData2,
-            lineStyle: LineStyle.Dashed,
-          },
-          {
-            color: 'rgb(20, 131, 92)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: buyEmaLineData3,
-          },
-          {
-            color: 'rgb(157, 43, 56)',
-            lineWidth: 1,
-            priceLineVisible: false,
-            data: sellEmaLineData3,
-          },
-          // {
-          //   color: 'rgb(255, 186, 102)',
-          //   lineWidth: 1,
-          //   priceLineVisible: false,
-          //   data: truthPriceSeriesData,
-          // },
-          // {
-          //   color: 'rgb(20, 131, 92)',
-          //   lineWidth: 1,
-          //   priceLineVisible: false,
-          //   data: ArbitrageBuyPriceSeriesData,
-          // },
-          // {
-          //   color: 'rgb(157, 43, 56)',
-          //   lineWidth: 1,
-          //   priceLineVisible: false,
-          //   data: ArbitrageSellPriceSeriesData,
-          // },
-          // {
-          //   color: 'rgb(157, 43, 56)',
-          //   lineWidth: 1,
-          //   priceLineVisible: false,
-          //   data: sellLineData,
-          //   lineStyle: LineStyle.Dashed,
-          // },
-          // {
-          //   color: 'rgb(255, 186, 102)',
-          //   lineWidth: 1,
-          //   priceLineVisible: false,
-          //   data: zeroLineData,
-          //   lineStyle: LineStyle.Dashed,
-          // },
-          // {
-          //   color: 'rgb(20, 131, 92)',
-          //   lineWidth: 1,
-          //   priceLineVisible: false,
-          //   data: buyLineData,
-          //   lineStyle: LineStyle.Dashed,
-          // },
-        ]}
       />
     </>
   );
