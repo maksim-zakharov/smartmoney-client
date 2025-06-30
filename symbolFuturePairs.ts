@@ -22,8 +22,8 @@ export const symbolFuturePairs = [
     stockSymbol: 'IMOEX',
   },
   {
-    futuresSymbol: 'GD',
-    futuresShortName: 'GD',
+    futuresSymbol: 'GOLD',
+    futuresShortName: 'GOLD',
     stockSymbol: 'GOLD',
   },
   {

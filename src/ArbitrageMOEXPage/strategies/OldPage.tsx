@@ -4,7 +4,6 @@ import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 import { moneyFormat } from '../../MainPage/MainPage';
 import { Chart } from '../../Chart';
-import { LineStyle } from 'lightweight-charts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
@@ -12,6 +11,7 @@ import Decimal from 'decimal.js';
 import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
 import { calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
+import { LineStyle } from 'lightweight-charts';
 
 const { RangePicker } = DatePicker;
 
@@ -108,7 +108,7 @@ export const OldPage = () => {
 
     const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
     if (ticker) {
-      return `${ticker}-3.25`;
+      return `${ticker}-9.25`;
     }
     return ticker;
   }, [tickerStock, _tickerFuture]);
@@ -177,6 +177,15 @@ export const OldPage = () => {
       )[1],
     [data],
   );
+
+  const buyEmaLineData = useMemo(() => ema.map((s) => s + 0.01), [ema]);
+  const sellEmaLineData = useMemo(() => ema.map((s) => s - 0.01), [ema]);
+
+  const buyEmaLineData2 = useMemo(() => ema.map((s) => s + 0.01 * 2), [ema]);
+  const sellEmaLineData2 = useMemo(() => ema.map((s) => s - 0.01 * 2), [ema]);
+
+  const buyEmaLineData3 = useMemo(() => ema.map((s) => s + 0.01 * 3), [ema]);
+  const sellEmaLineData3 = useMemo(() => ema.map((s) => s - 0.01 * 3), [ema]);
 
   const profit = useMemo(() => {
     let PnL = 0;
@@ -345,41 +354,87 @@ export const OldPage = () => {
             color: 'rgb(255, 186, 102)',
             lineWidth: 1,
             priceLineVisible: false,
-            data: truthPriceSeriesData,
+            data: ema,
           },
           {
             color: 'rgb(20, 131, 92)',
             lineWidth: 1,
             priceLineVisible: false,
-            data: ArbitrageBuyPriceSeriesData,
+            data: buyEmaLineData,
+            lineStyle: LineStyle.SparseDotted,
           },
           {
             color: 'rgb(157, 43, 56)',
             lineWidth: 1,
             priceLineVisible: false,
-            data: ArbitrageSellPriceSeriesData,
+            data: sellEmaLineData,
+            lineStyle: LineStyle.SparseDotted,
           },
           {
-            color: 'rgb(157, 43, 56)',
+            color: 'rgb(20, 131, 92)',
             lineWidth: 1,
             priceLineVisible: false,
-            data: sellLineData,
+            data: buyEmaLineData2,
             lineStyle: LineStyle.Dashed,
           },
           {
-            color: 'rgb(255, 186, 102)',
+            color: 'rgb(157, 43, 56)',
             lineWidth: 1,
             priceLineVisible: false,
-            data: zeroLineData,
+            data: sellEmaLineData2,
             lineStyle: LineStyle.Dashed,
           },
           {
             color: 'rgb(20, 131, 92)',
             lineWidth: 1,
             priceLineVisible: false,
-            data: buyLineData,
-            lineStyle: LineStyle.Dashed,
+            data: buyEmaLineData3,
           },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellEmaLineData3,
+          },
+          // {
+          //   color: 'rgb(255, 186, 102)',
+          //   lineWidth: 1,
+          //   priceLineVisible: false,
+          //   data: truthPriceSeriesData,
+          // },
+          // {
+          //   color: 'rgb(20, 131, 92)',
+          //   lineWidth: 1,
+          //   priceLineVisible: false,
+          //   data: ArbitrageBuyPriceSeriesData,
+          // },
+          // {
+          //   color: 'rgb(157, 43, 56)',
+          //   lineWidth: 1,
+          //   priceLineVisible: false,
+          //   data: ArbitrageSellPriceSeriesData,
+          // },
+          // {
+          //   color: 'rgb(157, 43, 56)',
+          //   lineWidth: 1,
+          //   priceLineVisible: false,
+          //   data: sellLineData,
+          //   lineStyle: LineStyle.Dashed,
+          // },
+          // {
+          //   color: 'rgb(255, 186, 102)',
+          //   lineWidth: 1,
+          //   priceLineVisible: false,
+          //   data: zeroLineData,
+          //   lineStyle: LineStyle.Dashed,
+          // },
+          // {
+          //   color: 'rgb(20, 131, 92)',
+          //   lineWidth: 1,
+          //   priceLineVisible: false,
+          //   data: buyLineData,
+          //   lineStyle: LineStyle.Dashed,
+          // },
         ]}
       />
     </>
