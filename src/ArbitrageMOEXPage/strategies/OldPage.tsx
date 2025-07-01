@@ -61,7 +61,7 @@ export const OldPage = () => {
     // Ставка ЦБ РФ
     const ruR = 0.2;
     // Ставка ЦБ КНР
-    const cyR = 0.03;
+    const cyR = 0; // 0.03;
     // Сколько осталось дней до экспирации
     const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
 
@@ -122,7 +122,7 @@ export const OldPage = () => {
 
     const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
     if (ticker) {
-      return `${ticker}-9.25`;
+      return `${ticker}-6.25`;
     }
     return ticker;
   }, [tickerStock, _tickerFuture]);
@@ -187,6 +187,24 @@ export const OldPage = () => {
     () =>
       calculateEMA(
         data.map((h) => h.close),
+        100,
+      )[1],
+    [data],
+  );
+
+  const emaHigh = useMemo(
+    () =>
+      calculateEMA(
+        data.map((h) => h.high),
+        100,
+      )[1],
+    [data],
+  );
+
+  const emaLow = useMemo(
+    () =>
+      calculateEMA(
+        data.map((h) => h.low),
         100,
       )[1],
     [data],
@@ -549,12 +567,16 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData3[i] })),
       },
-      // {
-      //   color: 'rgb(255, 186, 102)',
-      //   lineWidth: 1,
-      //   priceLineVisible: false,
-      //   data: truthPriceSeriesData,
-      // },
+      {
+        id: 'truthPriceSeriesData',
+        options: {
+          color: 'rgb(255, 186, 102)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: truthPriceSeriesData[i] })),
+      },
       // {
       //   color: 'rgb(20, 131, 92)',
       //   lineWidth: 1,
@@ -574,13 +596,15 @@ export const OldPage = () => {
       //   data: sellLineData,
       //   lineStyle: LineStyle.Dashed,
       // },
-      // {
-      //   color: 'rgb(255, 186, 102)',
-      //   lineWidth: 1,
-      //   priceLineVisible: false,
-      //   data: zeroLineData,
-      //   lineStyle: LineStyle.Dashed,
-      // },
+      {
+        id: 'zeroLineData',
+        options: {
+          color: 'rgb(255, 186, 102)',
+          lineWidth: 1,
+          priceLineVisible: false,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: zeroLineData[i] })),
+      },
       // {
       //   color: 'rgb(20, 131, 92)',
       //   lineWidth: 1,
