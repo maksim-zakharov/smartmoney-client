@@ -20,6 +20,29 @@ import { TLineSeries } from './SoloTestPage/UpdatedChart';
 import moment from 'moment';
 import { Cross, HistoryObject, POI, Swing, Trend } from './sm-lib/models';
 
+export async function getDividents(ticker, token) {
+  const url = `https://api.alor.ru/instruments/v1/${ticker}/stock/dividends`;
+
+  try {
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при запросе данных');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Ошибка получения данных:', error);
+  }
+}
 export async function fetchRisk(token) {
   const url = `https://api.alor.ru/md/v2/Clients/MOEX/D90487/risk`;
 

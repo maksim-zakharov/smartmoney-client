@@ -8,7 +8,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
 import Decimal from 'decimal.js';
-import { calculateMultiple, createRectangle2, fetchCandlesFromAlor, getCommonCandles, getSecurity, refreshToken } from '../../utils.ts';
+import {
+  calculateMultiple,
+  createRectangle2,
+  fetchCandlesFromAlor,
+  getCommonCandles,
+  getDividents,
+  getSecurity,
+  refreshToken,
+} from '../../utils.ts';
 import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
 import { LineStyle, Time } from 'lightweight-charts';
@@ -33,7 +41,7 @@ export const OldPage = () => {
   const [chartValues, onChangeChart] = useState({ filteredBuyMarkers: [], filteredSellMarkers: [] });
   const [inputTreshold, onChange] = useState(0.006); // 0.6%
   const TresholdEnd = 0.001;
-  const [_data, setData] = useState({ futureData: [], stockData: [] });
+  const [_data, setData] = useState({ futureData: [], stockData: [], dividends: [] });
   const [searchParams, setSearchParams] = useSearchParams();
   const tickerStock = searchParams.get('ticker-stock') || 'SBER';
   const multi = Number(searchParams.get('multi'));
@@ -85,7 +93,10 @@ export const OldPage = () => {
     setSearchParams(searchParams);
   };
 
-  const { stockData, futureData } = _data;
+  const { stockData, futureData, dividends } = _data;
+
+  const lastDividends = useMemo(() => dividends[dividends.length - 1], [dividends]);
+  const dividendPerShare = lastDividends?.dividendPerShare || 0;
 
   const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
   const taxRate = 0.13;
@@ -99,22 +110,37 @@ export const OldPage = () => {
 
   /**
    *
-   * @param stockPrice Цена акции (их свечки)
+   * @param spotPrice Цена акции (их свечки)
    * @param stockTime Время цены акции
    * @param expirationDate Дата экспироции фьюча
+   * @param dividends Массив дивидендов
    */
-  const calculateTruthFuturePrice = (stockPrice: number, stockTime: number, expirationDate: Dayjs) => {
-    // Ставка ЦБ РФ
-    const ruR = 0.2;
+  const calculateTruthFuturePrice = (spotPrice: number, stockTime: number, expirationDate: Dayjs, dividends = []) => {
+    // Ставка ЦБ РФ (безрисковая ставка)
+    const riskFreeRate = 0.2;
     // Ставка ЦБ КНР
     const cyR = 0; // 0.03;
     // Сколько осталось дней до экспирации
-    const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
+    const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
 
     // Рассчетная цена фьючерса
-    const price = stockPrice * (1 + ((ruR - cyR) * t) / 365);
+    const tradeCost = 0;
+    // Стоимость финансирования
+    const financingCost = spotPrice * (((riskFreeRate - cyR) * daysToExpiry) / 365) + tradeCost;
 
-    return price;
+    // Дисконтированные дивиденды
+    let discountedDividends = 0;
+    for (const div of dividends) {
+      const { dividendPerShare, exDividendDate } = div;
+      const daysToPayment = dayjs(exDividendDate, 'YYYY-MM-DDT00:00:00').diff(dayjs(stockTime * 1000), 'day', true);
+      if (daysToPayment > 0 && daysToPayment <= daysToExpiry) {
+        const daysToReinvest = daysToExpiry - daysToPayment;
+        discountedDividends += dividendPerShare * (1 + (riskFreeRate * daysToReinvest) / 365);
+      }
+    }
+
+    // Итоговая формула
+    return spotPrice + financingCost - discountedDividends;
   };
 
   /**
@@ -123,15 +149,16 @@ export const OldPage = () => {
    * @param stockTime - Время цены
    * @param expirationDate - Дата экспирации
    * @param taxRate - Налог (например, 0.13 для НДФЛ)
-   * @param borrowRate - Ставка по займу (например, 0.20 для 20%)
+   * @param riskFreeRate - Безрисковая ставка (например, 0.20 для 20%)
    */
   const calculateArbitrageThreshold = (
     stockPrice: number,
     stockTime: number,
     expirationDate: Dayjs,
     // commission = 0.004,
-    taxRate = 0.13,
-    borrowRate = 0.2,
+    // taxRate = 0.13,
+    riskFreeRate = 0.2,
+    dividends = [],
   ) => {
     // Биржевой сбор - процент поделил на 100, 0.00462 - за валютный фьючерс (например Юань)
     const exchangeCommission = new Decimal(0.00462).div(100); // 0.0000462 (0.00462%)
@@ -142,17 +169,28 @@ export const OldPage = () => {
     const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate);
 
     // Дни до экспирации (дробные)
-    const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
+    const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
 
     // Издержки:
     const tradeCost = stockPrice * totalCommissionRate * 2; // Покупка + продажа
 
-    // Если бабки берем в кредит
-    const borrowCost = stockPrice * ((borrowRate * t) / 365);
+    // Стоимость финансирования
+    const borrowCost = stockPrice * ((riskFreeRate * daysToExpiry) / 365);
     const totalCost = tradeCost + borrowCost;
 
+    // Дисконтированные дивиденды
+    let discountedDividends = 0;
+    for (const div of dividends) {
+      const { dividendPerShare, exDividendDate } = div;
+      const daysToPayment = dayjs(exDividendDate, 'YYYY-MM-DDT00:00:00').diff(dayjs(stockTime * 1000), 'day', true);
+      if (daysToPayment > 0 && daysToPayment <= daysToExpiry) {
+        const daysToReinvest = daysToExpiry - daysToPayment;
+        discountedDividends += dividendPerShare * (1 + (riskFreeRate * daysToReinvest) / 365);
+      }
+    }
+
     // Пороговая цена фьючерса
-    const thresholdPrice = truthPrice + totalCost;
+    const thresholdPrice = truthPrice + totalCost - discountedDividends;
 
     return thresholdPrice / stockPrice;
   };
@@ -194,7 +232,8 @@ export const OldPage = () => {
       Promise.all([
         fetchCandlesFromAlor(tickerFuture, tf, fromDate, toDate, null, token),
         fetchCandlesFromAlor(tickerStock, tf, fromDate, toDate, null, token),
-      ]).then(([futureData, stockData]) => setData({ stockData, futureData }));
+        getDividents(tickerStock, token),
+      ]).then(([futureData, stockData, dividends]) => setData({ stockData, futureData, dividends }));
   }, [tf, tickerStock, tickerFuture, fromDate, toDate, token]);
 
   const commonCandles = useMemo(() => getCommonCandles(stockData, futureData), [stockData, futureData]);
@@ -211,18 +250,20 @@ export const OldPage = () => {
   }, [stockData, futureData, multiple]);
 
   const truthPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close),
-    [stockData],
+    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close, dividends),
+    [stockData, dividends],
   );
 
   const ArbitrageBuyPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), taxRate, 0) + inputTreshold),
-    [calculateArbitrageThreshold, stockData],
+    () =>
+      stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), 0.2, dividends) + inputTreshold),
+    [calculateArbitrageThreshold, stockData, dividends],
   );
 
   const ArbitrageSellPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), taxRate, 0) - inputTreshold),
-    [calculateArbitrageThreshold, stockData],
+    () =>
+      stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), 0.2, dividends) - inputTreshold),
+    [calculateArbitrageThreshold, stockData, dividends],
   );
 
   const sellLineData = useMemo(() => stockData.map((s) => 1 + 0.03), [stockData]);

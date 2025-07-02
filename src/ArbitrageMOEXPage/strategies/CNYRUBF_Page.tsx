@@ -97,7 +97,6 @@ export const CNYRUBF_Page = () => {
 
     // Если бабки берем в кредит
     const borrowCost = stockPrice * ((borrowRate * t) / 365);
-    debugger;
 
     const totalCost = tradeCost + borrowCost;
 
