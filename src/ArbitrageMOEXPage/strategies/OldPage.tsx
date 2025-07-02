@@ -1,4 +1,4 @@
-import { Checkbox, DatePicker, Slider, Space, TimeRangePickerProps } from 'antd';
+import { Checkbox, DatePicker, Divider, Layout, Select, Slider, Space, TimeRangePickerProps } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -14,6 +14,9 @@ import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
 import { LineStyle, Time } from 'lightweight-charts';
 import { finishPosition } from '../../samurai_patterns.ts';
 import { Security } from '../../api.ts';
+import Sider from 'antd/es/layout/Sider';
+import { Content } from 'antd/es/layout/layout';
+import FormItem from 'antd/es/form/FormItem';
 
 const { RangePicker } = DatePicker;
 
@@ -38,6 +41,49 @@ export const OldPage = () => {
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
+
+  const expirationMonth = searchParams.get('expirationMonth') || '9.25';
+  const setexpirationMonth = (value) => {
+    searchParams.set('expirationMonth', value);
+    setSearchParams(searchParams);
+  };
+  const expirationMonths = useMemo(() => {
+    const startYear = 24;
+    const months = [];
+    for (let i = 0; i < 3; i++) {
+      for (let j = 1; j <= 4; j++) {
+        months.push(`${3 * j}.${startYear + i}`);
+      }
+    }
+
+    return months;
+  }, []);
+
+  const emaPeriod = Number(searchParams.get('emaPeriod') || 100);
+  const setEmaPeriod = (value) => {
+    searchParams.set('emaPeriod', value);
+    setSearchParams(searchParams);
+  };
+
+  const bbMiltiplier = Number(searchParams.get('bbMiltiplier') || 2);
+  const setbbMiltiplier = (value) => {
+    searchParams.set('bbMiltiplier', value);
+    setSearchParams(searchParams);
+  };
+
+  const emaBBPeriod = Number(searchParams.get('emaBBPeriod') || 20);
+  const setEmaBBPeriod = (value) => {
+    searchParams.set('emaBBPeriod', value);
+    setSearchParams(searchParams);
+  };
+
+  const checkboxValues = new Set(
+    (searchParams.get('checkboxes') || 'tradeOB,BOS,swings,showEndOB,showHiddenSwings,showPositions').split(','),
+  );
+  const setCheckboxValues = (values) => {
+    searchParams.set('checkboxes', values.join(','));
+    setSearchParams(searchParams);
+  };
 
   const { stockData, futureData } = _data;
 
@@ -122,10 +168,10 @@ export const OldPage = () => {
 
     const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
     if (ticker) {
-      return `${ticker}-6.25`;
+      return `${ticker}-${expirationMonth}`;
     }
     return ticker;
-  }, [tickerStock, _tickerFuture]);
+  }, [tickerStock, _tickerFuture, expirationMonth]);
 
   useEffect(() => {
     tickerFuture && token && fetchSecurityDetails(tickerFuture, token).then(setdetails);
@@ -187,18 +233,18 @@ export const OldPage = () => {
     () =>
       calculateEMA(
         data.map((h) => h.close),
-        100,
+        emaPeriod,
       )[1],
-    [data],
+    [data, emaPeriod],
   );
   const BB = useMemo(
     () =>
       calculateBollingerBands(
         data.map((h) => h.close),
-        20,
-        2,
+        emaBBPeriod,
+        bbMiltiplier,
       ),
-    [data],
+    [data, emaBBPeriod, bbMiltiplier],
   );
 
   const emaHigh = useMemo(
@@ -490,8 +536,8 @@ export const OldPage = () => {
     }
 
     return [
-      ...lineSerieses,
-      {
+      // ...lineSerieses,
+      checkboxValues.has('enableEMA') && {
         id: 'ema',
         options: {
           color: 'rgb(255, 186, 102)',
@@ -500,7 +546,7 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: ema[i] })),
       },
-      {
+      checkboxValues.has('enable1percent') && {
         id: 'buyEmaLineData',
         options: {
           color: 'rgb(20, 131, 92)',
@@ -510,7 +556,7 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData[i] })),
       },
-      {
+      checkboxValues.has('enable1percent') && {
         id: 'sellEmaLineData',
         options: {
           color: 'rgb(157, 43, 56)',
@@ -520,7 +566,7 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData[i] })),
       },
-      {
+      checkboxValues.has('enable2percent') && {
         id: 'buyEmaLineData2',
         options: {
           color: 'rgb(20, 131, 92)',
@@ -539,7 +585,7 @@ export const OldPage = () => {
         //   .sort((a, b) => a.time - b.time),
         data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData2[i] })),
       },
-      {
+      checkboxValues.has('enable2percent') && {
         id: 'sellEmaLineData2',
         options: {
           color: 'rgb(157, 43, 56)',
@@ -558,7 +604,7 @@ export const OldPage = () => {
         //   .sort((a, b) => a.time - b.time),
         data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData2[i] })),
       },
-      {
+      checkboxValues.has('enable3percent') && {
         id: 'buyEmaLineData3',
         options: {
           color: 'rgb(20, 131, 92)',
@@ -567,7 +613,7 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData3[i] })),
       },
-      {
+      checkboxValues.has('enable3percent') && {
         id: 'sellEmaLineData3',
         options: {
           color: 'rgb(157, 43, 56)',
@@ -576,7 +622,7 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData3[i] })),
       },
-      {
+      checkboxValues.has('enableCalculateFuturePrice') && {
         id: 'truthPriceSeriesData',
         options: {
           color: 'rgb(255, 186, 102)',
@@ -605,7 +651,7 @@ export const OldPage = () => {
       //   data: sellLineData,
       //   lineStyle: LineStyle.Dashed,
       // },
-      {
+      checkboxValues.has('enableZeroLine') && {
         id: 'zeroLineData',
         options: {
           color: 'rgb(255, 186, 102)',
@@ -614,7 +660,7 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: zeroLineData[i] })),
       },
-      {
+      checkboxValues.has('enableBB') && {
         id: 'BB.upper',
         options: {
           color: 'rgb(255, 186, 102)',
@@ -624,7 +670,7 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: BB.upper[i] })),
       },
-      {
+      checkboxValues.has('enableBB') && {
         id: 'BB.lower',
         options: {
           color: 'rgb(255, 186, 102)',
@@ -640,11 +686,21 @@ export const OldPage = () => {
       //   priceLineVisible: false,
       //   data: buyLineData,
       //   lineStyle: LineStyle.Dashed,
-    ];
-  }, [sellEmaLineData3, buyEmaLineData3, sellEmaLineData2, buyEmaLineData2, sellEmaLineData, ema, buyEmaLineData, positions]);
+    ].filter(Boolean);
+  }, [
+    sellEmaLineData3,
+    buyEmaLineData3,
+    sellEmaLineData2,
+    buyEmaLineData2,
+    sellEmaLineData,
+    ema,
+    buyEmaLineData,
+    positions,
+    checkboxValues,
+  ]);
 
   const primitives = useMemo(() => {
-    if (!BB.upper.length) {
+    if (!BB.upper.length || !checkboxValues.has('enableBB')) {
       return [];
     }
     const _primitives = [];
@@ -675,50 +731,101 @@ export const OldPage = () => {
     }
 
     return _primitives;
-  }, [BB, data]);
+  }, [BB, data, checkboxValues]);
 
   return (
     <>
-      <Space>
-        <TimeframeSelect value={tf} onChange={setSize} />
-        <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
-        {/*<Select*/}
-        {/*    value={tickerFuture}*/}
-        {/*    showSearch*/}
-        {/*    placeholder="Введи тикер"*/}
-        {/*    onSelect={onSelectTicker('future')}*/}
-        {/*    filterOption={(input, option) =>*/}
-        {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
-        {/*    }*/}
-        {/*    style={{width: 160}}*/}
-        {/*    options={options}*/}
-        {/*/>*/}
-        <RangePicker
-          presets={rangePresets}
-          value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-          format="YYYY-MM-DD"
-          onChange={onChangeRangeDates}
-        />
-        {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
-        {positions.length}
-        <Checkbox checked={useHage} onChange={(e) => setuseHage(e.target.checked)}>
-          Хеджировать акцией
-        </Checkbox>
-      </Space>
-      <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange} />
+      <Layout>
+        <Content style={{ padding: 0, paddingRight: 20 }}>
+          <Space>
+            <TimeframeSelect value={tf} onChange={setSize} />
+            <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
+            {/*<Select*/}
+            {/*    value={tickerFuture}*/}
+            {/*    showSearch*/}
+            {/*    placeholder="Введи тикер"*/}
+            {/*    onSelect={onSelectTicker('future')}*/}
+            {/*    filterOption={(input, option) =>*/}
+            {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
+            {/*    }*/}
+            {/*    style={{width: 160}}*/}
+            {/*    options={options}*/}
+            {/*/>*/}
+            <RangePicker
+              presets={rangePresets}
+              value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
+              format="YYYY-MM-DD"
+              onChange={onChangeRangeDates}
+            />
 
-      <Chart
-        hideCross
-        lineSerieses={ls}
-        primitives={primitives}
-        markers={[]}
-        toolTipTop="40px"
-        toolTipLeft="4px"
-        data={data}
-        ema={[]}
-        onChange={onChangeChart}
-        maximumFractionDigits={3}
-      />
+            <Select
+              value={expirationMonth}
+              onSelect={setexpirationMonth}
+              style={{ width: 160 }}
+              options={expirationMonths.map((v) => ({ label: v, value: v }))}
+            />
+            {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
+            {/*{positions.length}*/}
+            {/*<Checkbox checked={useHage} onChange={(e) => setuseHage(e.target.checked)}>*/}
+            {/*  Хеджировать акцией*/}
+            {/*</Checkbox>*/}
+          </Space>
+          <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange} />
+
+          <Chart
+            hideCross
+            lineSerieses={ls}
+            primitives={primitives}
+            markers={[]}
+            toolTipTop="40px"
+            toolTipLeft="4px"
+            data={data}
+            ema={[]}
+            onChange={onChangeChart}
+            maximumFractionDigits={3}
+          />
+        </Content>
+        <Sider width="300px" style={{ marginRight: '-20px', padding: 20 }}>
+          <Checkbox.Group
+            onChange={setCheckboxValues}
+            value={Array.from(checkboxValues)}
+            style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+          >
+            <Checkbox key="enableEMA" value="enableEMA">
+              Скользящая средняя EMA
+            </Checkbox>
+            <FormItem label="Период EMA" layout="vertical" style={{ margin: 0 }}>
+              <Slider value={emaPeriod} min={1} max={300} step={1} onChange={setEmaPeriod} />
+            </FormItem>
+            <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
+            <Checkbox key="enableBB" value="enableBB">
+              Индикатор Бойленджера
+            </Checkbox>
+            <FormItem label="Период BB EMA" layout="vertical" style={{ margin: 0 }}>
+              <Slider value={emaBBPeriod} min={1} max={300} step={1} onChange={setEmaBBPeriod} />
+            </FormItem>
+            <FormItem label="Стандартное отклонение" layout="vertical" style={{ margin: 0 }}>
+              <Slider value={bbMiltiplier} min={1} max={10} step={1} onChange={setbbMiltiplier} />
+            </FormItem>
+            <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
+            <Checkbox key="enableCalculateFuturePrice" value="enableCalculateFuturePrice">
+              Рассчетная цена фьюча
+            </Checkbox>
+            <Checkbox key="enableZeroLine" value="enableZeroLine">
+              Уровень единицы
+            </Checkbox>
+            <Checkbox key="enable1percent" value="enable1percent">
+              +-1% от машки
+            </Checkbox>
+            <Checkbox key="enable2percent" value="enable2percent">
+              +-2% от машки
+            </Checkbox>
+            <Checkbox key="enable3percent" value="enable3percent">
+              +-3% от машки
+            </Checkbox>
+          </Checkbox.Group>
+        </Sider>
+      </Layout>
     </>
   );
 };

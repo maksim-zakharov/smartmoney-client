@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo, useState } from 'react';
+import React, { ReactNode, useMemo } from 'react';
 import { Layout, Menu, MenuProps, Typography } from 'antd';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
@@ -15,6 +15,7 @@ import { RTKMPage } from './strategies/RTKMPage.tsx';
 import { NVTKPage } from './strategies/NVTKPage.tsx';
 import { PLZLPage } from './strategies/PLZLPage.tsx';
 import { CNYRUBF_Page } from './strategies/CNYRUBF_Page.tsx';
+import { useSearchParams } from 'react-router-dom';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -43,7 +44,7 @@ export async function fetchSecurityDetails(symbol, token) {
 }
 
 export const ArbitrageMOEXPage = () => {
-  const [selectedKey, setSelectedKey] = useState('mtlr');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const items: MenuItem[] = [
     { key: 'old', label: 'Future/Stock', element: <OldPage /> },
@@ -61,6 +62,11 @@ export const ArbitrageMOEXPage = () => {
     { key: 'SI_CNY', label: 'SI!1/(CNY*UCNY)', element: <SI_CNY_Page /> },
     { key: 'SI_GOLD', label: 'SI_GOLD', element: <SI_GOLD_Page /> },
   ];
+  const selectedKey = searchParams.get('tab') || items[0]?.key;
+  const setSelectedKey = (value) => {
+    searchParams.set('tab', value);
+    setSearchParams(searchParams);
+  };
 
   const menuMap = useMemo(
     () =>
