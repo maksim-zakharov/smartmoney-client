@@ -1,4 +1,4 @@
-import { Checkbox, DatePicker, Divider, Layout, Select, Slider, Space, TimeRangePickerProps } from 'antd';
+import { Checkbox, ColorPicker, DatePicker, Divider, Layout, Select, Slider, Space, TimeRangePickerProps, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -33,6 +33,17 @@ const markerColors = {
   bullColor: 'rgb(20, 131, 92)',
 };
 
+const storageState = localStorage.getItem('colors') ? JSON.parse(localStorage.getItem('colors')) : {};
+const defaultState = Object.assign(
+  {
+    ema: 'rgb(255, 186, 102)',
+    bbEma: 'rgb(255, 186, 102)',
+    zeroLevel: 'rgb(255, 186, 102)',
+    truthPrice: 'rgb(255, 186, 102)',
+  },
+  storageState,
+);
+
 export const OldPage = () => {
   const [useHage, setuseHage] = useState<boolean>(false);
   const [security, setSecurity] = useState<Security>();
@@ -49,6 +60,12 @@ export const OldPage = () => {
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
+
+  const [colors, setColors] = useState(defaultState);
+
+  useEffect(() => {
+    localStorage.setItem('colors', JSON.stringify(colors));
+  }, [colors]);
 
   const expirationMonth = searchParams.get('expirationMonth') || '9.25';
   const setexpirationMonth = (value) => {
@@ -581,7 +598,7 @@ export const OldPage = () => {
       checkboxValues.has('enableEMA') && {
         id: 'ema',
         options: {
-          color: 'rgb(255, 186, 102)',
+          color: colors.ema,
           lineWidth: 1,
           priceLineVisible: false,
         },
@@ -666,7 +683,7 @@ export const OldPage = () => {
       checkboxValues.has('enableCalculateFuturePrice') && {
         id: 'truthPriceSeriesData',
         options: {
-          color: 'rgb(255, 186, 102)',
+          color: colors.truthPrice,
           lineWidth: 1,
           priceLineVisible: false,
           lineStyle: LineStyle.Dashed,
@@ -695,7 +712,7 @@ export const OldPage = () => {
       checkboxValues.has('enableZeroLine') && {
         id: 'zeroLineData',
         options: {
-          color: 'rgb(255, 186, 102)',
+          color: colors.zeroLevel,
           lineWidth: 1,
           priceLineVisible: false,
         },
@@ -704,7 +721,7 @@ export const OldPage = () => {
       checkboxValues.has('enableBB') && {
         id: 'BB.upper',
         options: {
-          color: 'rgb(255, 186, 102)',
+          color: colors.bbEma,
           lineWidth: 1,
           priceLineVisible: false,
           lineStyle: LineStyle.Dashed,
@@ -714,7 +731,7 @@ export const OldPage = () => {
       checkboxValues.has('enableBB') && {
         id: 'BB.lower',
         options: {
-          color: 'rgb(255, 186, 102)',
+          color: colors.bbEma,
           lineWidth: 1,
           priceLineVisible: false,
           lineStyle: LineStyle.Dashed,
@@ -729,6 +746,7 @@ export const OldPage = () => {
       //   lineStyle: LineStyle.Dashed,
     ].filter(Boolean);
   }, [
+    colors,
     sellEmaLineData3,
     buyEmaLineData3,
     sellEmaLineData2,
@@ -835,26 +853,52 @@ export const OldPage = () => {
             <Checkbox key="enableEMA" value="enableEMA">
               Скользящая средняя EMA
             </Checkbox>
-            <FormItem label="Период EMA" layout="vertical" style={{ margin: 0 }}>
-              <Slider value={emaPeriod} min={1} max={300} step={1} onChange={setEmaPeriod} />
-            </FormItem>
+            <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+              <div>Период EMA</div>
+              <ColorPicker
+                value={colors.ema}
+                size="small"
+                onChange={(val) => setColors((prevState) => ({ ...prevState, ema: val.toRgbString() }))}
+              />
+            </Typography>
+            <Slider value={emaPeriod} min={1} max={300} step={1} onChange={setEmaPeriod} />
             <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
             <Checkbox key="enableBB" value="enableBB">
               Индикатор Бойленджера
             </Checkbox>
-            <FormItem label="Период BB EMA" layout="vertical" style={{ margin: 0 }}>
-              <Slider value={emaBBPeriod} min={1} max={300} step={1} onChange={setEmaBBPeriod} />
-            </FormItem>
+            <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+              <div>Период BB EMA</div>
+              <ColorPicker
+                value={colors.bbEma}
+                size="small"
+                onChange={(val) => setColors((prevState) => ({ ...prevState, bbEma: val.toRgbString() }))}
+              />
+            </Typography>
+            <Slider value={emaBBPeriod} min={1} max={300} step={1} onChange={setEmaBBPeriod} />
             <FormItem label="Стандартное отклонение" layout="vertical" style={{ margin: 0 }}>
               <Slider value={bbMiltiplier} min={1} max={10} step={1} onChange={setbbMiltiplier} />
             </FormItem>
             <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
-            <Checkbox key="enableCalculateFuturePrice" value="enableCalculateFuturePrice">
-              Рассчетная цена фьюча
-            </Checkbox>
-            <Checkbox key="enableZeroLine" value="enableZeroLine">
-              Уровень единицы
-            </Checkbox>
+            <div style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+              <Checkbox key="enableCalculateFuturePrice" value="enableCalculateFuturePrice">
+                Рассчетная цена фьюча
+              </Checkbox>
+              <ColorPicker
+                value={colors.truthPrice}
+                size="small"
+                onChange={(val) => setColors((prevState) => ({ ...prevState, truthPrice: val.toRgbString() }))}
+              />
+            </div>
+            <div style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+              <Checkbox key="enableZeroLine" value="enableZeroLine">
+                Уровень единицы
+              </Checkbox>
+              <ColorPicker
+                value={colors.zeroLevel}
+                size="small"
+                onChange={(val) => setColors((prevState) => ({ ...prevState, zeroLevel: val.toRgbString() }))}
+              />
+            </div>
             <Checkbox key="enable1percent" value="enable1percent">
               +-1% от машки
             </Checkbox>
