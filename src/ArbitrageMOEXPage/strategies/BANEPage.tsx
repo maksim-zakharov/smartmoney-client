@@ -18,8 +18,8 @@ export const BANEPage = () => {
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
   const [diff, setDiff] = useState<number>(0.015);
-  const tickerStock = 'BANE';
-  const tickerFuture = 'BANEP';
+  const tickerStock = 'BANEP';
+  const tickerFuture = 'BANE';
   const [_data, setData] = useState({ futureData: [], stockData: [] });
   const { stockData, futureData } = _data;
 

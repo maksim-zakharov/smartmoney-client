@@ -8,8 +8,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
 import Decimal from 'decimal.js';
-import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, getSecurity, refreshToken } from '../../utils.ts';
-import { calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
+import { calculateMultiple, createRectangle2, fetchCandlesFromAlor, getCommonCandles, getSecurity, refreshToken } from '../../utils.ts';
+import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
 import { LineStyle, Time } from 'lightweight-charts';
 import { finishPosition } from '../../samurai_patterns.ts';
@@ -189,6 +189,15 @@ export const OldPage = () => {
         data.map((h) => h.close),
         100,
       )[1],
+    [data],
+  );
+  const BB = useMemo(
+    () =>
+      calculateBollingerBands(
+        data.map((h) => h.close),
+        20,
+        2,
+      ),
     [data],
   );
 
@@ -605,6 +614,26 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: zeroLineData[i] })),
       },
+      {
+        id: 'BB.upper',
+        options: {
+          color: 'rgb(255, 186, 102)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: BB.upper[i] })),
+      },
+      {
+        id: 'BB.lower',
+        options: {
+          color: 'rgb(255, 186, 102)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: BB.lower[i] })),
+      },
       // {
       //   color: 'rgb(20, 131, 92)',
       //   lineWidth: 1,
@@ -613,6 +642,40 @@ export const OldPage = () => {
       //   lineStyle: LineStyle.Dashed,
     ];
   }, [sellEmaLineData3, buyEmaLineData3, sellEmaLineData2, buyEmaLineData2, sellEmaLineData, ema, buyEmaLineData, positions]);
+
+  const primitives = useMemo(() => {
+    if (!BB.upper.length) {
+      return [];
+    }
+    const _primitives = [];
+
+    for (let i = 0; i < data.length; i++) {
+      if (!BB.upper[i] || !BB.lower[i]) {
+        continue;
+      }
+      _primitives.push(
+        createRectangle2(
+          {
+            leftTop: {
+              price: BB.upper[i],
+              time: data[i].time,
+            },
+            rightBottom: {
+              price: BB.lower[i],
+              time: data[i].time,
+            },
+          },
+          {
+            fillColor: 'rgba(90, 200, 250, .3)',
+            showLabels: false,
+            borderWidth: 0.1,
+          },
+        ),
+      );
+    }
+
+    return _primitives;
+  }, [BB, data]);
 
   return (
     <>
@@ -647,7 +710,7 @@ export const OldPage = () => {
       <Chart
         hideCross
         lineSerieses={ls}
-        primitives={[]}
+        primitives={primitives}
         markers={[]}
         toolTipTop="40px"
         toolTipLeft="4px"

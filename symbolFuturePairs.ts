@@ -308,7 +308,7 @@ export const symbolFuturePairs = [
   },
 ];
 
-export function calculateEMA(prices, period) {
+export function calculateEMA(prices, period): [number, number[]] {
   const alpha = 2 / (period + 1);
   let ema = prices[0];
   const array = [prices[0]];
@@ -319,6 +319,27 @@ export function calculateEMA(prices, period) {
   }
 
   return [ema, array];
+}
+
+export function calculateBollingerBands(prices: number[], period: number = 20, multiplier: number = 2) {
+  if (prices.length < period) return { upper: [], middle: [], lower: [] };
+
+  const middleBand = calculateEMA(prices, period)[1]; // Твоя функция EMA
+  const stdDev: number[] = [];
+
+  // Рассчитываем стандартное отклонение
+  for (let i = period - 1; i < prices.length; i++) {
+    const slice = prices.slice(i - period + 1, i + 1);
+    const mean = middleBand[i];
+    const variance = slice.reduce((sum, price) => sum + Math.pow(price - mean, 2), 0) / period;
+    stdDev.push(Math.sqrt(variance));
+  }
+
+  // Строим полосы (первые (period-1) значений будут undefined)
+  const upperBand = middleBand.map((ema, i) => (i >= period - 1 ? ema + multiplier * stdDev[i - (period - 1)] : undefined));
+  const lowerBand = middleBand.map((ema, i) => (i >= period - 1 ? ema - multiplier * stdDev[i - (period - 1)] : undefined));
+
+  return { upper: upperBand, middle: middleBand, lower: lowerBand };
 }
 
 export const calculateCandle = (stockCandle: HistoryObject, futureCandle: HistoryObject, multiple: number = 100) => {

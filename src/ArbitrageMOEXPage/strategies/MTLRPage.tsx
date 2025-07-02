@@ -18,8 +18,8 @@ export const MTLRPage = () => {
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
   const [diff, setDiff] = useState<number>(0.015);
-  const tickerStock = 'MTLR';
-  const tickerFuture = 'MTLRP';
+  const tickerStock = 'MTLRP';
+  const tickerFuture = 'MTLR';
   const [_data, setData] = useState({ futureData: [], stockData: [] });
   const { stockData, futureData } = _data;
 

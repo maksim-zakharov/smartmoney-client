@@ -47,10 +47,10 @@ export const ArbitrageMOEXPage = () => {
 
   const items: MenuItem[] = [
     { key: 'old', label: 'Future/Stock', element: <OldPage /> },
-    { key: 'mtlr', label: 'MTLRP/MTLR', element: <MTLRPage /> },
-    { key: 'tatn', label: 'TATNP/TATN', element: <TATNPage /> },
-    { key: 'bane', label: 'BANEP/BANE', element: <BANEPage /> },
-    { key: 'rtkm', label: 'RTKMP/RTKM', element: <RTKMPage /> },
+    { key: 'mtlr', label: 'MTLR/MTLRP', element: <MTLRPage /> },
+    { key: 'tatn', label: 'TATN/TATNP', element: <TATNPage /> },
+    { key: 'bane', label: 'BANE/BANEP', element: <BANEPage /> },
+    { key: 'rtkm', label: 'RTKM/RTKMP', element: <RTKMPage /> },
     { key: 'nvtk', label: 'NVTK/NGM', element: <NVTKPage /> },
     { key: 'plzl', label: 'PLZL/GOLD', element: <PLZLPage /> },
     // { key: 'CNTL', label: 'CNTL - CNTLP', element: <CNTLPage /> },

@@ -18,8 +18,8 @@ export const RTKMPage = () => {
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
   const [diff, setDiff] = useState<number>(0.03);
-  const tickerStock = 'RTKM';
-  const tickerFuture = 'RTKMP';
+  const tickerStock = 'RTKMP';
+  const tickerFuture = 'RTKM';
   const [_data, setData] = useState({ futureData: [], stockData: [] });
   const { stockData, futureData } = _data;
 
