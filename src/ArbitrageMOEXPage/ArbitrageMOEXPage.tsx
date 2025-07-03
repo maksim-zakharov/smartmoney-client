@@ -4,7 +4,6 @@ import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { MTLRPage } from './strategies/MTLRPage';
 import { OldPage } from './strategies/OldPage';
-import { TATNPage } from './strategies/TATNPage';
 import { EDPage } from './strategies/EDPage';
 import { SI_CNY_Page } from './strategies/SI_CNY_Page';
 import { SI_GOLD_Page } from './strategies/SI_GOLD_Page';
@@ -16,6 +15,7 @@ import { NVTKPage } from './strategies/NVTKPage.tsx';
 import { PLZLPage } from './strategies/PLZLPage.tsx';
 import { CNYRUBF_Page } from './strategies/CNYRUBF_Page.tsx';
 import { useSearchParams } from 'react-router-dom';
+import { TATNPage } from './strategies/TATNPage.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 

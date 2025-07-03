@@ -1,4 +1,20 @@
-import { Checkbox, ColorPicker, DatePicker, Divider, Layout, Select, Slider, Space, TimeRangePickerProps, Typography } from 'antd';
+import {
+  Card,
+  Checkbox,
+  Col,
+  ColorPicker,
+  DatePicker,
+  Divider,
+  Layout,
+  Row,
+  Select,
+  Slider,
+  Space,
+  Statistic,
+  Table,
+  TimeRangePickerProps,
+  Typography,
+} from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -25,6 +41,7 @@ import { Security } from '../../api.ts';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import FormItem from 'antd/es/form/FormItem';
+import { calculateDiscountedDividends } from '../../sm-lib/utils.ts';
 
 const { RangePicker } = DatePicker;
 
@@ -112,7 +129,7 @@ export const OldPage = () => {
 
   const { stockData, futureData, dividends } = _data;
 
-  const lastDividends = useMemo(() => dividends[dividends.length - 1], [dividends]);
+  const lastDividends = useMemo(() => (dividends ? dividends[dividends.length - 1] : undefined), [dividends]);
   const dividendPerShare = lastDividends?.dividendPerShare || 0;
 
   const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
@@ -137,25 +154,23 @@ export const OldPage = () => {
     const riskFreeRate = 0.2;
     // Ставка ЦБ КНР
     const cyR = 0; // 0.03;
-    // Сколько осталось дней до экспирации
+    // Дней до экспирации
     const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
 
     // Рассчетная цена фьючерса
     const tradeCost = 0;
+
+    // Проценты годовых по фьючу на текущий день
+    const currentFutureFreeRatePercents = ((riskFreeRate - cyR) * daysToExpiry) / 365;
+
     // Стоимость финансирования
-    const financingCost = spotPrice * (((riskFreeRate - cyR) * daysToExpiry) / 365) + tradeCost;
+    const financingCost = spotPrice * currentFutureFreeRatePercents + tradeCost;
+    // const truthPrice = spotPrice - currentFutureFreeRatePercents;
 
     // Дисконтированные дивиденды
-    let discountedDividends = 0;
-    for (const div of dividends) {
-      const { dividendPerShare, exDividendDate } = div;
-      const daysToPayment = dayjs(exDividendDate, 'YYYY-MM-DDT00:00:00').diff(dayjs(stockTime * 1000), 'day', true);
-      if (daysToPayment > 0 && daysToPayment <= daysToExpiry) {
-        const daysToReinvest = daysToExpiry - daysToPayment;
-        discountedDividends += dividendPerShare * (1 + (riskFreeRate * daysToReinvest) / 365);
-      }
-    }
+    const discountedDividends = calculateDiscountedDividends(stockTime, daysToExpiry, riskFreeRate, dividends);
 
+    // return truthPrice + discountedDividends;
     // Итоговая формула
     return spotPrice + financingCost - discountedDividends;
   };
@@ -183,7 +198,7 @@ export const OldPage = () => {
     const brokerCommission = exchangeCommission.mul(0.5); // 0.0000231
     const totalCommissionRate = exchangeCommission.plus(brokerCommission).toNumber(); // 0.0000693 (0.00693%)
 
-    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate);
+    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate, dividends);
 
     // Дни до экспирации (дробные)
     const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
@@ -271,17 +286,22 @@ export const OldPage = () => {
     [stockData, dividends],
   );
 
-  const ArbitrageBuyPriceSeriesData = useMemo(
-    () =>
-      stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), 0.2, dividends) + inputTreshold),
-    [calculateArbitrageThreshold, stockData, dividends],
-  );
+  // const truthPriceSeriesData = useMemo(
+  //   () => data.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close, dividends),
+  //   [data, dividends],
+  // );
 
-  const ArbitrageSellPriceSeriesData = useMemo(
-    () =>
-      stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), 0.2, dividends) - inputTreshold),
-    [calculateArbitrageThreshold, stockData, dividends],
-  );
+  // const ArbitrageBuyPriceSeriesData = useMemo(
+  //   () =>
+  //     stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), 0.2, dividends) + inputTreshold),
+  //   [calculateArbitrageThreshold, stockData, dividends],
+  // );
+  //
+  // const ArbitrageSellPriceSeriesData = useMemo(
+  //   () =>
+  //     stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), 0.2, dividends) - inputTreshold),
+  //   [calculateArbitrageThreshold, stockData, dividends],
+  // );
 
   const sellLineData = useMemo(() => stockData.map((s) => 1 + 0.03), [stockData]);
   const zeroLineData = useMemo(() => stockData.map((s) => 1), [stockData]);
@@ -323,11 +343,11 @@ export const OldPage = () => {
     [data],
   );
 
-  const buyEmaLineData = useMemo(() => ema.map((s) => s + 0.01), [ema]);
-  const sellEmaLineData = useMemo(() => ema.map((s) => s - 0.01), [ema]);
+  const sellEmaLineData = useMemo(() => ema.map((s) => s + 0.01), [ema]);
+  const buyEmaLineData = useMemo(() => ema.map((s) => s - 0.01), [ema]);
 
-  const buyEmaLineData2 = useMemo(() => ema.map((s) => s + 0.01 * 2), [ema]);
-  const sellEmaLineData2 = useMemo(() => ema.map((s) => s - 0.01 * 2), [ema]);
+  const sellEmaLineData2 = useMemo(() => ema.map((s) => s + 0.01 * 2), [ema]);
+  const buyEmaLineData2 = useMemo(() => ema.map((s) => s - 0.01 * 2), [ema]);
 
   const buyEmaLineData3 = useMemo(() => ema.map((s) => s + 0.01 * 3), [ema]);
   const sellEmaLineData3 = useMemo(() => ema.map((s) => s - 0.01 * 3), [ema]);
@@ -344,17 +364,19 @@ export const OldPage = () => {
       const candle = data[i];
 
       // Если не коснулись верха - продаем фьюч, покупаем акцию
-      if (candle.high >= sellEmaLineData2[i]) {
+      if (candle.high >= BB.upper[i]) {
+        // if (candle.high >= sellEmaLineData[i]) {
         let currentPosition: any = {
           side: 'short',
-          openPrice: candle.open,
+          openPrice: candle.high,
           stopLoss: candle.high,
           openTime: candle.time,
         };
 
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
-          if (candle.low >= sellEmaLineData2[j]) {
+          // if (candle.low > ema[j]) {
+          if (candle.low > BB.middle[j]) {
             continue;
           }
 
@@ -368,22 +390,28 @@ export const OldPage = () => {
           currentPosition.pnl = currentPosition.openPrice - currentPosition.closePrice;
           sellPositions.push(currentPosition);
 
-          i = j;
+          i = j - 1;
 
           break;
         }
+        // Если было закрытие - продолжаем цикл
+        if (currentPosition.closeTime) {
+          continue;
+        }
       }
-      if (candle.low <= buyEmaLineData2[i]) {
+      if (candle.low <= BB.lower[i]) {
+        // if (candle.low <= buyEmaLineData[i]) {
         let currentPosition: any = {
           side: 'long',
-          openPrice: candle.open,
-          stopLoss: candle.high,
+          openPrice: candle.low,
+          stopLoss: candle.low,
           openTime: candle.time,
         };
 
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
-          if (candle.high <= buyEmaLineData2[j]) {
+          // if (candle.high <= ema[j]) {
+          if (candle.high <= BB.middle[j]) {
             continue;
           }
 
@@ -397,9 +425,13 @@ export const OldPage = () => {
           currentPosition.pnl = currentPosition.closePrice - currentPosition.openPrice;
           buyPositions.push(currentPosition);
 
-          i = j;
+          i = j - 1;
 
           break;
+        }
+        // Если было закрытие - продолжаем цикл
+        if (currentPosition.closeTime) {
+          continue;
         }
       }
     }
@@ -416,107 +448,18 @@ export const OldPage = () => {
         }),
       )
       .sort((a, b) => b.openTime - a.openTime);
-  }, [data, fee, lotsize, tickerStock, buyEmaLineData2, sellEmaLineData2]);
+  }, [data, fee, lotsize, tickerStock, BB, sellEmaLineData, buyEmaLineData, ema]);
 
-  const profit = useMemo(() => {
-    let PnL = 0;
-    let buyTrades = 0;
-    let sellTrades = 0;
-    for (let i = 0; i < chartValues.filteredBuyMarkers.length; i++) {
-      const marker = chartValues.filteredBuyMarkers[i];
-      const stockCandle = commonCandles.filteredStockCandles[marker.index];
-      PnL += inputTreshold - fee * 2; // (stockCandle.close * inputTreshold);
-      buyTrades++;
-    }
-    for (let i = 0; i < chartValues.filteredSellMarkers.length; i++) {
-      const marker = chartValues.filteredSellMarkers[i];
-      const stockCandle = commonCandles.filteredStockCandles[marker.index];
-      PnL += inputTreshold - fee * 2; // (stockCandle.close * inputTreshold);
-      sellTrades++;
-    }
+  const { PnL, profits, losses, Fee } = useMemo(() => {
+    const array = positions;
 
     return {
-      PnL: new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: 2, // Минимальное количество знаков после запятой
-        maximumFractionDigits: 2, // Максимальное количество знаков после запятой
-      }).format(PnL * 100),
-      buyTrades,
-      sellTrades,
+      PnL: array.reduce((acc, curr) => acc + (curr.newPnl || 0), 0),
+      Fee: array.reduce((acc, curr) => acc + (curr.fee || 0), 0),
+      profits: array.filter((p) => p.newPnl > 0).length,
+      losses: array.filter((p) => p.newPnl < 0).length,
     };
-  }, [chartValues, inputTreshold, commonCandles]);
-
-  const searchEndPosition = (side: 'buy' | 'sell', type: string, openTime: number, commonData: any[], data: any[]) => {
-    const openCandle = commonData.find((f) => f.time === openTime / 1000);
-
-    const endTime = data.find((d, index) => d.time > openCandle?.time && Math.abs(d.close - ema[index]) < TresholdEnd)?.time;
-
-    const closeCandle = commonData.find((f) => f.time === endTime);
-
-    const priceType = side === 'buy' ? 'low' : 'high';
-
-    const currentPosition = {
-      side,
-      type,
-      openPrice: openCandle?.[priceType],
-      closePrice: closeCandle?.[priceType],
-      openTime: openCandle?.time,
-      closeTime: closeCandle?.time,
-      PnL: 0,
-    };
-
-    if (currentPosition.closePrice && currentPosition.openPrice) {
-      currentPosition.PnL = currentPosition.closePrice - currentPosition.openPrice;
-    }
-
-    return currentPosition;
-  };
-
-  // const positions = useMemo(() => {
-  //   const result = {
-  //     positions: [],
-  //     totalPnL: 0,
-  //   };
-  //
-  //   for (let i = 0; i < chartValues.filteredBuyMarkers.length; i++) {
-  //     const marker = chartValues.filteredBuyMarkers[i];
-  //
-  //     result.positions.push(searchEndPosition('buy', 'future', marker.time, futureData, data));
-  //
-  //     if (useHage) {
-  //       const stockPosition = searchEndPosition('sell', 'stock', marker.time, stockData, data);
-  //
-  //       stockPosition.PnL *= multiple;
-  //       result.positions.push(stockPosition);
-  //     }
-  //   }
-  //
-  //   for (let i = 0; i < chartValues.filteredSellMarkers.length; i++) {
-  //     const marker = chartValues.filteredSellMarkers[i];
-  //
-  //     result.positions.push(searchEndPosition('sell', 'future', marker.time, futureData, data));
-  //
-  //     if (useHage) {
-  //       const stockPosition = searchEndPosition('buy', 'stock', marker.time, stockData, data);
-  //
-  //       stockPosition.PnL *= multiple;
-  //       result.positions.push(stockPosition);
-  //     }
-  //   }
-  //
-  //   result.totalPnL = result.positions.reduce((acc, curr) => acc + curr.PnL, 0);
-  //
-  //   return result;
-  // }, [
-  //   chartValues.filteredBuyMarkers,
-  //   chartValues.filteredSellMarkers,
-  //   useHage,
-  //   multiple,
-  //   data,
-  //   ema,
-  //   futureData,
-  //   searchEndPosition,
-  //   stockData,
-  // ]);
+  }, [positions]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
@@ -792,6 +735,79 @@ export const OldPage = () => {
     return _primitives;
   }, [BB, data, checkboxValues]);
 
+  const historyColumns = [
+    {
+      title: 'Тип',
+      dataIndex: 'side',
+      key: 'side',
+      render: (value, row) => row?.side || '-',
+    },
+    {
+      title: 'Время входа',
+      dataIndex: 'openTime',
+      key: 'openTime',
+      // colSpan: 2,
+      onCell: (row, index) => ({
+        colSpan: row.type === 'summary' ? 4 : 1,
+      }),
+      render: (value, row) => moment(row?.openTime * 1000).format('YYYY-MM-DD HH:mm'),
+    },
+    {
+      title: 'Цена входа',
+      dataIndex: 'openPrice',
+      key: 'openPrice',
+    },
+    {
+      title: 'Объем',
+      dataIndex: 'openVolume',
+      key: 'openVolume',
+    },
+    {
+      title: 'Стоп цена',
+      dataIndex: 'stopLoss',
+      key: 'stopLoss',
+      render: (value, row) => {
+        const percent = row.openPrice > row?.stopLoss ? row.openPrice / row?.stopLoss : row?.stopLoss / row.openPrice;
+
+        return `${row?.stopLoss} (${((percent - 1) * 100).toFixed(2)}%)`;
+      },
+    },
+    {
+      title: 'Тейк цена',
+      dataIndex: 'takeProfit',
+      key: 'takeProfit',
+      render: (value, row) => {
+        const percent = row.openPrice > row?.takeProfit ? row.openPrice / row?.takeProfit : row?.takeProfit / row.openPrice;
+
+        return `${row?.takeProfit} (${((percent - 1) * 100).toFixed(2)}%)`;
+      },
+    },
+    {
+      title: 'Время выхода',
+      dataIndex: 'closeTime',
+      key: 'closeTime',
+      // colSpan: 2,
+      onCell: (row, index) => ({
+        colSpan: row.type === 'summary' ? 4 : 1,
+      }),
+      render: (value, row) => moment(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm'),
+    },
+    {
+      title: 'RR',
+      dataIndex: 'RR',
+      key: 'RR',
+      align: 'right',
+      render: (value) => value?.toFixed(2),
+    },
+    {
+      title: 'Финрез',
+      dataIndex: 'newPnl',
+      key: 'newPnl',
+      align: 'right',
+      render: (value, row) => (row.newPnl ? `${row.newPnl.toFixed(2)}%` : '-'),
+    },
+  ].filter(Boolean);
+
   return (
     <>
       <Layout>
@@ -831,18 +847,88 @@ export const OldPage = () => {
           </Space>
           <Slider value={inputTreshold} min={0.001} max={0.03} step={0.001} onChange={onChange} />
 
-          <Chart
-            hideCross
-            lineSerieses={ls}
-            primitives={primitives}
-            markers={[]}
-            toolTipTop="40px"
-            toolTipLeft="4px"
-            data={data}
-            ema={[]}
-            onChange={onChangeChart}
-            maximumFractionDigits={3}
-          />
+          <div>
+            <Chart
+              hideCross
+              lineSerieses={ls}
+              primitives={primitives}
+              markers={[]}
+              toolTipTop="40px"
+              toolTipLeft="4px"
+              data={data}
+              ema={[]}
+              onChange={onChangeChart}
+              maximumFractionDigits={4}
+            />
+            <Row style={{ paddingBottom: '8px' }} gutter={8}>
+              <Col span={6}>
+                <Card bordered={false}>
+                  <Statistic
+                    title="Общий финрез"
+                    value={`${PnL.toFixed(2)}%`}
+                    precision={2}
+                    valueStyle={{
+                      color: PnL > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
+                    }}
+                  />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <Card bordered={false}>
+                  <Statistic title="Комиссия" value={`${Fee.toFixed(2)}%`} precision={2} valueStyle={{ color: 'rgb(255, 117, 132)' }} />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <Card bordered={false}>
+                  <Statistic
+                    title="Тейки"
+                    value={new Intl.NumberFormat('en-US', {
+                      notation: 'compact',
+                    }).format(profits)}
+                    valueStyle={{ color: 'rgb(44, 232, 156)' }}
+                    suffix={`(${!profits ? 0 : ((profits * 100) / (profits + losses)).toFixed(2)})%`}
+                  />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <Card bordered={false}>
+                  <Statistic
+                    title="Лоси"
+                    value={new Intl.NumberFormat('en-US', {
+                      notation: 'compact',
+                    }).format(losses)}
+                    valueStyle={{ color: 'rgb(255, 117, 132)' }}
+                    suffix={`(${!losses ? 0 : ((losses * 100) / (profits + losses)).toFixed(2)})%`}
+                  />
+                </Card>
+              </Col>
+            </Row>
+            <Table
+              size="small"
+              dataSource={positions}
+              columns={historyColumns as any}
+              pagination={{
+                pageSize: 30,
+              }}
+              onRow={(record) => {
+                return {
+                  style:
+                    record.newPnl < 0
+                      ? {
+                          backgroundColor: '#d1261b66',
+                          color: 'rgb(255, 117, 132)',
+                        }
+                      : record.newPnl > 0
+                        ? {
+                            backgroundColor: '#15785566',
+                            color: 'rgb(44, 232, 156)',
+                          }
+                        : undefined,
+                  className: 'hoverable',
+                };
+              }}
+            />
+          </div>
         </Content>
         <Sider width="300px" style={{ marginRight: '-20px', padding: 20 }}>
           <Checkbox.Group

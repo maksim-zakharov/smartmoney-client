@@ -1,12 +1,6 @@
-import {
-  CandleWithSide,
-  Cross,
-  HistoryObject,
-  POI,
-  Side,
-  Swing,
-} from './models';
+import { CandleWithSide, Cross, HistoryObject, POI, Side, Swing } from './models';
 import { StateManager } from './th_ultimate';
+import dayjs from 'dayjs';
 
 export const formatDate = (_date: Date) => {
   // 2025-05-19T19:40:00.000Z
@@ -38,15 +32,11 @@ export const isBullish = (candle: HistoryObject) => candle.open < candle.close;
 
 // Вспомогательная функция для получения номера недели в году
 export function getWeekNumber(date: Date): { week: number; year: number } {
-  const d = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
-  );
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil(
-    ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
-  );
+  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   return { week: weekNo, year: d.getUTCFullYear() };
 }
 
@@ -55,17 +45,9 @@ export function getWeekNumber(date: Date): { week: number; year: number } {
  * @param candle
  * @param bar
  */
-export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) =>
-  candle.high > bar?.high && candle.low < bar?.low;
-export const isImbalance = (
-  leftCandle: HistoryObject,
-  rightCandle: HistoryObject,
-) =>
-  leftCandle.low > rightCandle.high
-    ? 'low'
-    : leftCandle.high < rightCandle.low
-      ? 'high'
-      : null;
+export const isInsideBar = (candle: HistoryObject, bar: HistoryObject) => candle.high > bar?.high && candle.low < bar?.low;
+export const isImbalance = (leftCandle: HistoryObject, rightCandle: HistoryObject) =>
+  leftCandle.low > rightCandle.high ? 'low' : leftCandle.high < rightCandle.low ? 'high' : null;
 export const hasHitOB = (ob: Partial<POI>, candle: HistoryObject) =>
   (ob.side === 'high' && ob.startCandle.low <= candle.high) ||
   (ob.side === 'low' &&
@@ -122,10 +104,7 @@ export const lowestBy = <T>(batch: T[], key: keyof T) =>
  * @param crossPrice
  * @param candle
  */
-export const isIFC = (
-  crossPrice: number,
-  candle: HistoryObject,
-): 'inside' | 'outside' | 'bottom2top' | 'top2bottom' => {
+export const isIFC = (crossPrice: number, candle: HistoryObject): 'inside' | 'outside' | 'bottom2top' | 'top2bottom' => {
   const maxBodyPrice = Math.max(candle.open, candle.close);
   const minBodyPrice = Math.min(candle.open, candle.close);
 
@@ -148,17 +127,10 @@ export const isIFC = (
   return 'inside';
 };
 export const isInternalBOS = (leftBos: Cross, rightBos: Cross) =>
-  leftBos.from.index < rightBos.from.index &&
-  leftBos.to.index >= rightBos.to.index;
+  leftBos.from.index < rightBos.from.index && leftBos.to.index >= rightBos.to.index;
 export const isNotSMT = (obItem: POI) => !obItem || !obItem.isSMT;
-export const hasTakenOutLiquidity = (
-  type: 'high' | 'low',
-  bossCandle: HistoryObject,
-  currentCandle: HistoryObject,
-) =>
-  type === 'high'
-    ? bossCandle.high < currentCandle.high
-    : bossCandle.low > currentCandle.low;
+export const hasTakenOutLiquidity = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) =>
+  type === 'high' ? bossCandle.high < currentCandle.high : bossCandle.low > currentCandle.low;
 
 // Смотрим пробила ли свеча candle цену price. 1 - пробила снизу вверх, -1 - сверху вниз, 0 - не пробила.
 export const isCrossed = (price: number, candle: HistoryObject) => {
@@ -170,40 +142,22 @@ export const isCrossed = (price: number, candle: HistoryObject) => {
   return 0;
 };
 
-export const hasClose = (
-  type: 'high' | 'low',
-  bossCandle: HistoryObject,
-  currentCandle: HistoryObject,
-) =>
-  type === 'high'
-    ? bossCandle.high < currentCandle.close
-    : bossCandle.low > currentCandle.close;
+export const hasClose = (type: 'high' | 'low', bossCandle: HistoryObject, currentCandle: HistoryObject) =>
+  type === 'high' ? bossCandle.high < currentCandle.close : bossCandle.low > currentCandle.close;
 
 // Поиск ближайшего слева противоположного свинга
 export const findClosestRevertSwing = (manager: StateManager, swing: Swing) => {
   let index = swing.index - 1;
-  while (
-    index > -1 &&
-    (!manager.swings[index] || manager.swings[index].side === swing.side)
-  ) {
+  while (index > -1 && (!manager.swings[index] || manager.swings[index].side === swing.side)) {
     index--;
   }
 
   return manager.swings[index];
 };
 
-export const findClosestConfirmedCHoCH = (
-  manager: StateManager,
-  index: number,
-) =>
-  manager.boses.find(
-    (b) => b && b.extremum?.index === index && b.isCHoCH && b.isConfirmed,
-  );
-export const hasNear = (
-  { high, low, side }: CandleWithSide,
-  currentCandle: HistoryObject,
-  minStep?: number,
-) => {
+export const findClosestConfirmedCHoCH = (manager: StateManager, index: number) =>
+  manager.boses.find((b) => b && b.extremum?.index === index && b.isCHoCH && b.isConfirmed);
+export const hasNear = ({ high, low, side }: CandleWithSide, currentCandle: HistoryObject, minStep?: number) => {
   if (minStep) {
     // Максимум в стакане - 50ж
     const steps = 30;
@@ -233,12 +187,7 @@ export const hasNear = (
 
 export const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
   let index = swing.index - 1;
-  while (
-    index > -1 &&
-    (!manager.swings[index] ||
-      !manager.swings[index].isExtremum ||
-      manager.swings[index].side === swing.side)
-  ) {
+  while (index > -1 && (!manager.swings[index] || !manager.swings[index].isExtremum || manager.swings[index].side === swing.side)) {
     index--;
   }
 
@@ -246,40 +195,45 @@ export const closestExtremumSwing = (manager: StateManager, swing: Swing) => {
 };
 
 // Ищем индекс свечи на которой подтверждается IDM
-export const findIDMConfirmationIndex = (
-  manager: StateManager,
-  idmStartSwing: Swing,
-  idmExtremumSwing: Swing,
-) => {
+export const findIDMConfirmationIndex = (manager: StateManager, idmStartSwing: Swing, idmExtremumSwing: Swing) => {
   let endIDMIndex = idmStartSwing.index + 1;
   while (
     manager.candles[endIDMIndex] &&
-    ((idmExtremumSwing.side === 'high' &&
-      idmStartSwing.price <= manager.candles[endIDMIndex].low) ||
-      (idmExtremumSwing.side === 'low' &&
-        idmStartSwing.price >= manager.candles[endIDMIndex].high))
+    ((idmExtremumSwing.side === 'high' && idmStartSwing.price <= manager.candles[endIDMIndex].low) ||
+      (idmExtremumSwing.side === 'low' && idmStartSwing.price >= manager.candles[endIDMIndex].high))
   ) {
     endIDMIndex++;
   }
   return endIDMIndex;
 };
 
-export const findHitIndex = (
-  manager: StateManager,
-  orderBlockPart: Partial<POI>,
-  swing: Swing,
-) => {
+export const findHitIndex = (manager: StateManager, orderBlockPart: Partial<POI>, swing: Swing) => {
   let hitIndex = swing.index + orderBlockPart.lastImbalanceIndex + 1;
 
   /**
    * Важно чтобы пробитие было ПОСЛЕ закрытия IDM
    */
-  while (
-    manager.candles[hitIndex] &&
-    !hasHitOB(orderBlockPart, manager.candles[hitIndex])
-  ) {
+  while (manager.candles[hitIndex] && !hasHitOB(orderBlockPart, manager.candles[hitIndex])) {
     hitIndex++;
   }
 
   return hitIndex;
+};
+
+export const calculateDiscountedDividends = (stockTime: number, daysToExpiry: number, riskFreeRate: number, divs: any[]) => {
+  let discountedDividends = 0;
+  if (!divs.length) {
+    return 0;
+  }
+  for (let i = 0; i < divs.length; i++) {
+    const dividend = divs[i];
+    const { dividendPerShare, exDividendDate } = dividend;
+    const daysToPayment = dayjs(exDividendDate, 'YYYY-MM-DDT00:00:00').diff(dayjs(stockTime * 1000), 'day', true);
+    if (daysToPayment > 0 && daysToPayment <= daysToExpiry) {
+      const daysToReinvest = daysToExpiry - daysToPayment;
+      const percent = (riskFreeRate * daysToReinvest) / 365;
+      discountedDividends += dividendPerShare * (1 + percent);
+    }
+  }
+  return discountedDividends;
 };

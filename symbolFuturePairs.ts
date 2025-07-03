@@ -350,11 +350,25 @@ export const calculateCandle = (stockCandle: HistoryObject, futureCandle: Histor
     return null;
   }
 
+  const open = (stockCandle.open / futureCandle.open) * multiple;
+  const close = (stockCandle.close / futureCandle.close) * multiple;
+  const high = (stockCandle.high / futureCandle.high) * multiple;
+  const low = (stockCandle.low / futureCandle.low) * multiple;
+
+  // const open = futureCandle.open / stockCandle.open / multiple;
+  // const close = futureCandle.close / stockCandle.close / multiple;
+  // const high = futureCandle.high / stockCandle.high / multiple;
+  // const low = futureCandle.low / stockCandle.low / multiple;
+
+  // Корректируем high и low, чтобы high был максимальным, а low — минимальным значением
+  const correctedHigh = Math.max(open, close, high);
+  const correctedLow = Math.min(open, close, low);
+
   return {
-    open: futureCandle.open / stockCandle.open / multiple,
-    close: futureCandle.close / stockCandle.close / multiple,
-    high: futureCandle.high / stockCandle.high / multiple,
-    low: futureCandle.low / stockCandle.low / multiple,
+    open,
+    close,
+    high: correctedHigh,
+    low: correctedLow,
     time: stockCandle.time,
   } as HistoryObject;
 };
