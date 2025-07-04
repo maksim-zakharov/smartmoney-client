@@ -223,7 +223,7 @@ const getSecurityDetails =
   (api: AlorApi) =>
   ({ ticker }: { ticker: string }) =>
     api.http
-      .get(`/md/v2/Securities/MOEX/${ticker}?instrumentGroup=RFUDs`, {
+      .get(`/md/v2/Securities/MOEX/${ticker}?instrumentGroup=RFUD`, {
         baseURL: 'https://api.alor.ru',
       })
       .then((r) => r.data);

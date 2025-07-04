@@ -36,6 +36,7 @@ import {
   useGetSecurityDetailsQuery,
 } from '../../api/alor.api';
 import { DatesPicker } from '../../DatesPicker.tsx';
+import Decimal from 'decimal.js';
 
 const { RangePicker } = DatePicker;
 
@@ -282,7 +283,7 @@ export const MTLRPage = () => {
             closePrice: candle.open,
           };
 
-          currentPosition.pnl = currentPosition.openPrice - currentPosition.closePrice;
+          currentPosition.pnl = new Decimal(currentPosition.openPrice).minus(new Decimal(currentPosition.closePrice)).toNumber();
           sellPositions.push(currentPosition);
 
           i = j - 1;
@@ -317,7 +318,7 @@ export const MTLRPage = () => {
             closePrice: candle.open,
           };
 
-          currentPosition.pnl = currentPosition.closePrice - currentPosition.openPrice;
+          currentPosition.pnl = new Decimal(currentPosition.closePrice).minus(new Decimal(currentPosition.openPrice)).toNumber();
           buyPositions.push(currentPosition);
 
           i = j - 1;

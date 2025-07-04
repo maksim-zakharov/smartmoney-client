@@ -19,7 +19,6 @@ import { Rectangle, RectangleDrawingToolOptions } from './lwc-plugins/rectangle-
 import { TLineSeries } from './SoloTestPage/UpdatedChart';
 import moment from 'moment';
 import { Cross, HistoryObject, POI, Swing, Trend } from './sm-lib/models';
-import { calculateDiscountedDividends } from './sm-lib/utils.ts';
 import Decimal from 'decimal.js';
 
 export async function getDividents(ticker, token) {
@@ -683,36 +682,54 @@ export const roundTime = (date: any, tf: string, utc: boolean = true) => {
 export const formatDateTime = (value) => moment(value).format('YYYY-MM-DD HH:mm');
 
 /**
+ * Формула справедливой стоимости фьючерса (без учета дивидендов): F = S * (1 + r * t / 365)
  *
- * @param spotPrice Цена акции (их свечки)
+ * F - справедливая цена фьючерса
+ *
+ * S - текущая цена акции (спот)
+ *
+ * r - безрисковая ставка (например, ключевая ставка ЦБ в долях)
+ *
+ * t - количество дней до экспирации фьючерса
+ *
+ * 1 - базовая стоимость акции (тело)
+ *
+ * Более точная формула с экспанентой - F=S⋅e^(r⋅t)
+ *
+ *   const timeInYears = T / 365;
+ *   return S * Math.exp(r * timeInYears);
+ *
+ * @param S Цена акции (их свечки)
  * @param stockTime Время цены акции
  * @param expirationDate Дата экспироции фьюча
- * @param dividends Массив дивидендов
  */
-export const calculateTruthFuturePrice = (spotPrice: number, stockTime: number, expirationDate: Dayjs, dividends = []) => {
+export const calculateTruthFuturePrice = (S: number, stockTime: number, expirationDate: Dayjs) => {
   // Ставка ЦБ РФ (безрисковая ставка)
-  const riskFreeRate = 0.2;
-  // Ставка ЦБ КНР
-  const cyR = 0; // 0.03;
+  const r = 0.2;
   // Дней до экспирации
+  // const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
+  // //
+  // const timeInYears = t / 365;
+  // //
+  // // return S * Math.exp(r * timeInYears);
+  //
+  // // const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true) / 365;
+  // // return Math.exp(r * t);
+  //
+  // // Проценты годовых по фьючу на текущий день
+  // const currentFutureFreeRatePercents = r * timeInYears;
+  //
+  // // Стоимость финансирования
+  // const financingCost = S * currentFutureFreeRatePercents;
+  //
+  // // Итоговая формула
+  // return S + financingCost;
+
   const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
-
-  // Рассчетная цена фьючерса
-  const tradeCost = 0;
-
-  // Проценты годовых по фьючу на текущий день
-  const currentFutureFreeRatePercents = ((riskFreeRate - cyR) * daysToExpiry) / 365;
-
-  // Стоимость финансирования
-  const financingCost = spotPrice * currentFutureFreeRatePercents + tradeCost;
-  // const truthPrice = spotPrice - currentFutureFreeRatePercents;
-
-  // Дисконтированные дивиденды
-  const discountedDividends = calculateDiscountedDividends(stockTime, daysToExpiry, riskFreeRate, dividends);
-
-  // return truthPrice + discountedDividends;
-  // Итоговая формула
-  return spotPrice + financingCost - discountedDividends;
+  const t = daysToExpiry / 365;
+  // return S * (1 + r * t);
+  // return S * Math.exp(r * t);
+  return S * (1 - (1 - Math.exp(-r * t)));
 };
 
 /**

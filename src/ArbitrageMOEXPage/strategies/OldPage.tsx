@@ -23,7 +23,7 @@ import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
-import { createRectangle2, getCommonCandles } from '../../utils.ts';
+import { calculateTruthFuturePrice, createRectangle2, getCommonCandles } from '../../utils.ts';
 import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { LineStyle, Time } from 'lightweight-charts';
 import { finishPosition } from '../../samurai_patterns.ts';
@@ -187,25 +187,6 @@ export const OldPage = () => {
   const lotsize = security?.lotsize || 1;
   const fee = 0.04 / 100;
 
-  const calculateTruthFuturePrice = (spotPrice: number, riskFreeRate: number, expirationDate: Dayjs, stockTime: number, dividends = []) => {
-    // Дней до экспирации
-    const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
-    // Основная часть: цена спот + финансирование
-    let futuresPrice = spotPrice * (1 + riskFreeRate * (daysToExpiry / 365));
-
-    // Вычитаем приведённую стоимость дивидендов
-    dividends.forEach((dividend) => {
-      const { amount, daysAfterPayment } = dividend;
-      const daysBeforeExpiry = daysToExpiry - daysAfterPayment;
-      if (daysBeforeExpiry > 0) {
-        const discountFactor = 1 + riskFreeRate * (daysBeforeExpiry / 365);
-        futuresPrice -= amount * discountFactor;
-      }
-    });
-
-    return futuresPrice;
-  };
-
   const multiple = multi;
 
   const stockTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.stockSymbol), []);
@@ -213,24 +194,15 @@ export const OldPage = () => {
   const commonCandles = useMemo(() => getCommonCandles(stockData, futureData), [stockData, futureData]);
 
   const data = useMemo(() => {
-    if (stockData?.length && futureData?.length) {
-      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(stockData, futureData);
-
-      return filteredFuturesCandles
-        .map((item, index) => calculateCandle(filteredStockCandles[index], item, Number(multiple)))
-        .filter(Boolean);
-    }
-    return stockData;
-  }, [stockData, futureData, multiple]);
-
-  // const truthPriceSeriesData = useMemo(
-  //   () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, 0.2, dayjs(expirationDate), time), []),
-  //   [stockData, dividends],
-  // );
+    return commonCandles.filteredFuturesCandles
+      .map((item, index) => calculateCandle(commonCandles.filteredStockCandles[index], item, Number(multiple)))
+      .filter(Boolean);
+  }, [stockData, futureData, multiple, commonCandles]);
 
   const truthPriceSeriesData = useMemo(
-    () => data.map(({ close, time }) => calculateTruthFuturePrice(close, 0.2, dayjs(expirationDate), time, dividends) / close),
-    [data, dividends],
+    () =>
+      commonCandles.filteredStockCandles.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close),
+    [commonCandles.filteredStockCandles, dividends],
   );
 
   const sellLineData = useMemo(() => stockData.map((s) => 1 + 0.03), [stockData]);

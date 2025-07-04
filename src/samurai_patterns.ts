@@ -59,18 +59,21 @@ export const finishPosition =
     }
 
     if (!lotVolume) {
-      curr.closeVolume = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize;
+      curr.closeVolume = new Decimal(curr.pnl > 0 ? curr.takeProfit : curr.stopLoss)
+        .mul(new Decimal(curr.quantity))
+        .mul(new Decimal(lotsize))
+        .toNumber();
     } else {
       curr.closeVolume = new Decimal(lotVolume).mul(new Decimal(curr.quantity)).toNumber();
     }
 
-    const openFee = curr.openVolume * fee;
-    const closeFee = curr.closeVolume * fee;
+    const openFee = new Decimal(curr.openVolume).mul(new Decimal(fee)).toNumber();
+    const closeFee = new Decimal(curr.closeVolume).mul(new Decimal(fee)).toNumber();
     // const openFee = curr.openPrice * curr.quantity * lotsize * fee;
     // const closeFee = (curr.pnl > 0 ? curr.takeProfit : curr.stopLoss) * curr.quantity * lotsize * fee;
 
     curr.fee = openFee + closeFee;
-    curr.newPnl = curr.pnl * curr.quantity * lotsize - curr.fee;
+    curr.newPnl = new Decimal(curr.pnl).mul(new Decimal(curr.quantity)).mul(new Decimal(lotsize)).minus(new Decimal(curr.fee)).toNumber();
     curr.ticker = ticker;
     curr.timeframe = tf;
     // curr.RR = Math.abs(curr.takeProfit - curr.openPrice) / Math.abs(curr.stopLoss - curr.openPrice);
