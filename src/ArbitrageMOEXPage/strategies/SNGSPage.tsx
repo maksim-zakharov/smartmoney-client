@@ -61,7 +61,7 @@ const defaultState = Object.assign(
   storageState,
 );
 
-export const BANEPage = () => {
+export const SNGSPage = () => {
   const [useHage, setuseHage] = useState<boolean>(false);
   const [security, setSecurity] = useState<Security>();
   const [token, setToken] = useState();
@@ -70,9 +70,9 @@ export const BANEPage = () => {
   const TresholdEnd = 0.001;
   const [_data, setData] = useState({ futureData: [], stockData: [], dividends: [] });
   const [searchParams, setSearchParams] = useSearchParams();
-  const tickerStock = 'BANE';
-  const _tickerFuture = 'BANEP';
   const multi = Number(searchParams.get('multi'));
+  const tickerStock = 'SNGS';
+  const _tickerFuture = 'SNGSP';
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
@@ -134,7 +134,7 @@ export const BANEPage = () => {
   const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
   const taxRate = 0.13;
 
-  const lotsize = security?.lotsize;
+  const lotsize = 1; // security?.lotsize;
   const fee = 0.04 / 100;
 
   useEffect(() => {

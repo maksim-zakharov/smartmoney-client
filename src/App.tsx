@@ -1,6 +1,6 @@
 import { Content, Header } from 'antd/es/layout/layout';
 import { Layout, Menu, theme } from 'antd';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import MainPage from './MainPage/MainPage';
 import SoloTestPage from './SoloTestPage/SoloTestPage';
@@ -13,14 +13,24 @@ import UnitTestPage from './UnitTestPage';
 import NewTestingPage from './NewTestingPage';
 import { ScreenerPage } from './ScreenerPage';
 import { CNYFundingPage } from './CNYFundingPage';
+import { useGetUserInfoQuery } from './api/alor.api';
+import { useAppDispatch, useAppSelector } from './store';
+import { initApi } from './api/alor.slice';
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useAppDispatch();
+  const api = useAppSelector((state) => state.alorSlice.api);
+  const { refetch } = useGetUserInfoQuery({}, { skip: !localStorage.getItem('token') || !api });
 
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  useEffect(() => {
+    if (localStorage.getItem('token')) dispatch(initApi({ token: localStorage.getItem('token') }));
+  }, []);
 
   const menuItems = [
     { key: '/', label: 'Главная', element: <MainPage /> },

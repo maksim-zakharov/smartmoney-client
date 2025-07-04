@@ -24,15 +24,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
 import Decimal from 'decimal.js';
-import {
-  calculateMultiple,
-  createRectangle2,
-  fetchCandlesFromAlor,
-  getCommonCandles,
-  getDividents,
-  getSecurity,
-  refreshToken,
-} from '../../utils.ts';
+import { createRectangle2, fetchCandlesFromAlor, getCommonCandles, getDividents, getSecurity, refreshToken } from '../../utils.ts';
 import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
 import { LineStyle, Time } from 'lightweight-charts';
@@ -41,7 +33,6 @@ import { Security } from '../../api.ts';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import FormItem from 'antd/es/form/FormItem';
-import { calculateDiscountedDividends } from '../../sm-lib/utils.ts';
 
 const { RangePicker } = DatePicker;
 
@@ -142,37 +133,23 @@ export const OldPage = () => {
     token && getSecurity(tickerStock, token).then(setSecurity);
   }, [tickerStock, token]);
 
-  /**
-   *
-   * @param spotPrice Цена акции (их свечки)
-   * @param stockTime Время цены акции
-   * @param expirationDate Дата экспироции фьюча
-   * @param dividends Массив дивидендов
-   */
-  const calculateTruthFuturePrice = (spotPrice: number, stockTime: number, expirationDate: Dayjs, dividends = []) => {
-    // Ставка ЦБ РФ (безрисковая ставка)
-    const riskFreeRate = 0.2;
-    // Ставка ЦБ КНР
-    const cyR = 0; // 0.03;
+  const calculateTruthFuturePrice = (spotPrice: number, riskFreeRate: number, expirationDate: Dayjs, stockTime: number, dividends = []) => {
     // Дней до экспирации
     const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
+    // Основная часть: цена спот + финансирование
+    let futuresPrice = spotPrice * (1 + riskFreeRate * (daysToExpiry / 365));
 
-    // Рассчетная цена фьючерса
-    const tradeCost = 0;
+    // Вычитаем приведённую стоимость дивидендов
+    dividends.forEach((dividend) => {
+      const { amount, daysAfterPayment } = dividend;
+      const daysBeforeExpiry = daysToExpiry - daysAfterPayment;
+      if (daysBeforeExpiry > 0) {
+        const discountFactor = 1 + riskFreeRate * (daysBeforeExpiry / 365);
+        futuresPrice -= amount * discountFactor;
+      }
+    });
 
-    // Проценты годовых по фьючу на текущий день
-    const currentFutureFreeRatePercents = ((riskFreeRate - cyR) * daysToExpiry) / 365;
-
-    // Стоимость финансирования
-    const financingCost = spotPrice * currentFutureFreeRatePercents + tradeCost;
-    // const truthPrice = spotPrice - currentFutureFreeRatePercents;
-
-    // Дисконтированные дивиденды
-    const discountedDividends = calculateDiscountedDividends(stockTime, daysToExpiry, riskFreeRate, dividends);
-
-    // return truthPrice + discountedDividends;
-    // Итоговая формула
-    return spotPrice + financingCost - discountedDividends;
+    return futuresPrice;
   };
 
   /**
@@ -198,7 +175,7 @@ export const OldPage = () => {
     const brokerCommission = exchangeCommission.mul(0.5); // 0.0000231
     const totalCommissionRate = exchangeCommission.plus(brokerCommission).toNumber(); // 0.0000693 (0.00693%)
 
-    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate, dividends);
+    const truthPrice = calculateTruthFuturePrice(stockPrice, 0.2, expirationDate, stockTime, dividends);
 
     // Дни до экспирации (дробные)
     const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
@@ -247,14 +224,7 @@ export const OldPage = () => {
     tickerFuture && token && fetchSecurityDetails(tickerFuture, token).then(setdetails);
   }, [tickerFuture, token]);
 
-  const multiple = useMemo(
-    () =>
-      multi ||
-      (_data.stockData?.length && _data.futureData?.length
-        ? calculateMultiple(_data.stockData[_data.stockData.length - 1].close, _data.futureData[_data.futureData.length - 1].close)
-        : 0),
-    [_data, multi],
-  );
+  const multiple = multi;
 
   const stockTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.stockSymbol), []);
 
@@ -273,6 +243,7 @@ export const OldPage = () => {
   const data = useMemo(() => {
     if (stockData?.length && futureData?.length) {
       const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(stockData, futureData);
+      debugger;
 
       return filteredFuturesCandles
         .map((item, index) => calculateCandle(filteredStockCandles[index], item, Number(multiple)))
@@ -281,15 +252,15 @@ export const OldPage = () => {
     return stockData;
   }, [stockData, futureData, multiple]);
 
-  const truthPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close, dividends),
-    [stockData, dividends],
-  );
-
   // const truthPriceSeriesData = useMemo(
-  //   () => data.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close, dividends),
-  //   [data, dividends],
+  //   () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, 0.2, dayjs(expirationDate), time), []),
+  //   [stockData, dividends],
   // );
+
+  const truthPriceSeriesData = useMemo(
+    () => data.map(({ close, time }) => calculateTruthFuturePrice(close, 0.2, dayjs(expirationDate), time, dividends) / close),
+    [data, dividends],
+  );
 
   // const ArbitrageBuyPriceSeriesData = useMemo(
   //   () =>

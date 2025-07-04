@@ -16,6 +16,8 @@ import { PLZLPage } from './strategies/PLZLPage.tsx';
 import { CNYRUBF_Page } from './strategies/CNYRUBF_Page.tsx';
 import { useSearchParams } from 'react-router-dom';
 import { TATNPage } from './strategies/TATNPage.tsx';
+import { SNGSPage } from './strategies/SNGSPage.tsx';
+import { SBERPage } from './strategies/SBERPage.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -52,6 +54,8 @@ export const ArbitrageMOEXPage = () => {
     { key: 'tatn', label: 'TATN/TATNP', element: <TATNPage /> },
     { key: 'bane', label: 'BANE/BANEP', element: <BANEPage /> },
     { key: 'rtkm', label: 'RTKM/RTKMP', element: <RTKMPage /> },
+    { key: 'SNGS', label: 'SNGS/SNGSP', element: <SNGSPage /> },
+    { key: 'SBER', label: 'SBER/SBERP', element: <SBERPage /> },
     { key: 'nvtk', label: 'NVTK/NGM', element: <NVTKPage /> },
     { key: 'plzl', label: 'PLZL/GOLD', element: <PLZLPage /> },
     // { key: 'CNTL', label: 'CNTL - CNTLP', element: <CNTLPage /> },

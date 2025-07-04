@@ -70,9 +70,9 @@ export const TATNPage = () => {
   const TresholdEnd = 0.001;
   const [_data, setData] = useState({ futureData: [], stockData: [], dividends: [] });
   const [searchParams, setSearchParams] = useSearchParams();
-  const tickerStock = searchParams.get('ticker-stock') || 'SBER';
   const multi = Number(searchParams.get('multi'));
-  const _tickerFuture = searchParams.get('ticker-future');
+  const tickerStock = 'TATN';
+  const _tickerFuture = 'TATNP';
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
@@ -795,7 +795,7 @@ export const TATNPage = () => {
     <Layout>
       <Content style={{ padding: 0, paddingRight: 20 }}>
         <div style={{ position: 'relative' }}>
-          <Space style={{ top: 8, position: 'absolute', zIndex: 2, left: 8 }}>
+          <Space style={{ top: 8, position: 'absolute', zIndex: 3, left: 8 }}>
             <TimeframeSelect value={tf} onChange={setSize} />
             <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
             <TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />
