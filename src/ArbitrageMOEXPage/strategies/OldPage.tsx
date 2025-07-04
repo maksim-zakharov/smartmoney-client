@@ -23,16 +23,19 @@ import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
-import Decimal from 'decimal.js';
-import { createRectangle2, fetchCandlesFromAlor, getCommonCandles, getDividents, getSecurity, refreshToken } from '../../utils.ts';
+import { createRectangle2, getCommonCandles } from '../../utils.ts';
 import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
-import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
 import { LineStyle, Time } from 'lightweight-charts';
 import { finishPosition } from '../../samurai_patterns.ts';
-import { Security } from '../../api.ts';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import FormItem from 'antd/es/form/FormItem';
+import {
+  useGetDividendsQuery,
+  useGetHistoryQuery,
+  useGetSecurityByExchangeAndSymbolQuery,
+  useGetSecurityDetailsQuery,
+} from '../../api/alor.api.ts';
 
 const { RangePicker } = DatePicker;
 
@@ -53,17 +56,9 @@ const defaultState = Object.assign(
 );
 
 export const OldPage = () => {
-  const [useHage, setuseHage] = useState<boolean>(false);
-  const [security, setSecurity] = useState<Security>();
-  const [token, setToken] = useState();
-  const [details, setdetails] = useState();
-  const [chartValues, onChangeChart] = useState({ filteredBuyMarkers: [], filteredSellMarkers: [] });
   const [inputTreshold, onChange] = useState(0.006); // 0.6%
-  const TresholdEnd = 0.001;
-  const [_data, setData] = useState({ futureData: [], stockData: [], dividends: [] });
   const [searchParams, setSearchParams] = useSearchParams();
   const tickerStock = searchParams.get('ticker-stock') || 'SBER';
-  const multi = Number(searchParams.get('multi'));
   const _tickerFuture = searchParams.get('ticker-future');
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
@@ -80,6 +75,13 @@ export const OldPage = () => {
     searchParams.set('expirationMonth', value);
     setSearchParams(searchParams);
   };
+  const multi = Number(searchParams.get('multi'));
+
+  const setmulti = (value) => {
+    searchParams.set('multi', value.toString());
+    setSearchParams(value);
+  };
+
   const expirationMonths = useMemo(() => {
     const startYear = 24;
     const months = [];
@@ -118,20 +120,72 @@ export const OldPage = () => {
     setSearchParams(searchParams);
   };
 
-  const { stockData, futureData, dividends } = _data;
+  const tickerFuture = useMemo(() => {
+    if (_tickerFuture) {
+      return _tickerFuture;
+    }
+
+    const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
+    if (ticker) {
+      return `${ticker}-${expirationMonth}`;
+    }
+    return ticker;
+  }, [tickerStock, _tickerFuture, expirationMonth]);
+
+  const { data: security } = useGetSecurityByExchangeAndSymbolQuery({
+    symbol: tickerStock,
+    exchange: 'MOEX',
+  });
+
+  const { data: _futureData } = useGetHistoryQuery(
+    {
+      tf,
+      from: fromDate,
+      to: toDate,
+      symbol: tickerFuture,
+      exchange: 'MOEX',
+    },
+    {
+      skip: !tickerFuture,
+    },
+  );
+
+  const futureData = _futureData?.history || [];
+
+  const { data: _stockData } = useGetHistoryQuery(
+    {
+      tf,
+      from: fromDate,
+      to: toDate,
+      symbol: tickerStock,
+      exchange: 'MOEX',
+    },
+    {
+      skip: !tickerStock,
+    },
+  );
+
+  const stockData = _stockData?.history || [];
+
+  const { data: dividends = [] } = useGetDividendsQuery(
+    {
+      ticker: tickerStock,
+    },
+    {
+      skip: !tickerStock,
+    },
+  );
 
   const lastDividends = useMemo(() => (dividends ? dividends[dividends.length - 1] : undefined), [dividends]);
   const dividendPerShare = lastDividends?.dividendPerShare || 0;
 
+  const { data: details } = useGetSecurityDetailsQuery({ ticker: tickerFuture });
+
   const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
   const taxRate = 0.13;
 
-  const lotsize = security?.lotsize;
+  const lotsize = security?.lotsize || 1;
   const fee = 0.04 / 100;
-
-  useEffect(() => {
-    token && getSecurity(tickerStock, token).then(setSecurity);
-  }, [tickerStock, token]);
 
   const calculateTruthFuturePrice = (spotPrice: number, riskFreeRate: number, expirationDate: Dayjs, stockTime: number, dividends = []) => {
     // Дней до экспирации
@@ -152,98 +206,15 @@ export const OldPage = () => {
     return futuresPrice;
   };
 
-  /**
-   * Рассчитывает порог арбитража (справедливая премия + издержки)
-   * @param stockPrice - Цена акции
-   * @param stockTime - Время цены
-   * @param expirationDate - Дата экспирации
-   * @param taxRate - Налог (например, 0.13 для НДФЛ)
-   * @param riskFreeRate - Безрисковая ставка (например, 0.20 для 20%)
-   */
-  const calculateArbitrageThreshold = (
-    stockPrice: number,
-    stockTime: number,
-    expirationDate: Dayjs,
-    // commission = 0.004,
-    // taxRate = 0.13,
-    riskFreeRate = 0.2,
-    dividends = [],
-  ) => {
-    // Биржевой сбор - процент поделил на 100, 0.00462 - за валютный фьючерс (например Юань)
-    const exchangeCommission = new Decimal(0.00462).div(100); // 0.0000462 (0.00462%)
-    // Комиссия брокера - 50% биржевого сбора
-    const brokerCommission = exchangeCommission.mul(0.5); // 0.0000231
-    const totalCommissionRate = exchangeCommission.plus(brokerCommission).toNumber(); // 0.0000693 (0.00693%)
-
-    const truthPrice = calculateTruthFuturePrice(stockPrice, 0.2, expirationDate, stockTime, dividends);
-
-    // Дни до экспирации (дробные)
-    const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
-
-    // Издержки:
-    const tradeCost = stockPrice * totalCommissionRate * 2; // Покупка + продажа
-
-    // Стоимость финансирования
-    const borrowCost = stockPrice * ((riskFreeRate * daysToExpiry) / 365);
-    const totalCost = tradeCost + borrowCost;
-
-    // Дисконтированные дивиденды
-    let discountedDividends = 0;
-    for (const div of dividends) {
-      const { dividendPerShare, exDividendDate } = div;
-      const daysToPayment = dayjs(exDividendDate, 'YYYY-MM-DDT00:00:00').diff(dayjs(stockTime * 1000), 'day', true);
-      if (daysToPayment > 0 && daysToPayment <= daysToExpiry) {
-        const daysToReinvest = daysToExpiry - daysToPayment;
-        discountedDividends += dividendPerShare * (1 + (riskFreeRate * daysToReinvest) / 365);
-      }
-    }
-
-    // Пороговая цена фьючерса
-    const thresholdPrice = truthPrice + totalCost - discountedDividends;
-
-    return thresholdPrice / stockPrice;
-  };
-
-  useEffect(() => {
-    localStorage.getItem('token') && refreshToken().then(setToken);
-  }, []);
-
-  const tickerFuture = useMemo(() => {
-    if (_tickerFuture) {
-      return _tickerFuture;
-    }
-
-    const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
-    if (ticker) {
-      return `${ticker}-${expirationMonth}`;
-    }
-    return ticker;
-  }, [tickerStock, _tickerFuture, expirationMonth]);
-
-  useEffect(() => {
-    tickerFuture && token && fetchSecurityDetails(tickerFuture, token).then(setdetails);
-  }, [tickerFuture, token]);
-
   const multiple = multi;
 
   const stockTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.stockSymbol), []);
-
-  useEffect(() => {
-    tickerFuture &&
-      token &&
-      Promise.all([
-        fetchCandlesFromAlor(tickerFuture, tf, fromDate, toDate, null, token),
-        fetchCandlesFromAlor(tickerStock, tf, fromDate, toDate, null, token),
-        getDividents(tickerStock, token),
-      ]).then(([futureData, stockData, dividends]) => setData({ stockData, futureData, dividends }));
-  }, [tf, tickerStock, tickerFuture, fromDate, toDate, token]);
 
   const commonCandles = useMemo(() => getCommonCandles(stockData, futureData), [stockData, futureData]);
 
   const data = useMemo(() => {
     if (stockData?.length && futureData?.length) {
       const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(stockData, futureData);
-      debugger;
 
       return filteredFuturesCandles
         .map((item, index) => calculateCandle(filteredStockCandles[index], item, Number(multiple)))
@@ -261,18 +232,6 @@ export const OldPage = () => {
     () => data.map(({ close, time }) => calculateTruthFuturePrice(close, 0.2, dayjs(expirationDate), time, dividends) / close),
     [data, dividends],
   );
-
-  // const ArbitrageBuyPriceSeriesData = useMemo(
-  //   () =>
-  //     stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), 0.2, dividends) + inputTreshold),
-  //   [calculateArbitrageThreshold, stockData, dividends],
-  // );
-  //
-  // const ArbitrageSellPriceSeriesData = useMemo(
-  //   () =>
-  //     stockData.map(({ close, time }) => calculateArbitrageThreshold(close, time, dayjs(expirationDate), 0.2, dividends) - inputTreshold),
-  //   [calculateArbitrageThreshold, stockData, dividends],
-  // );
 
   const sellLineData = useMemo(() => stockData.map((s) => 1 + 0.03), [stockData]);
   const zeroLineData = useMemo(() => stockData.map((s) => 1), [stockData]);
@@ -294,24 +253,6 @@ export const OldPage = () => {
         bbMiltiplier,
       ),
     [data, emaBBPeriod, bbMiltiplier],
-  );
-
-  const emaHigh = useMemo(
-    () =>
-      calculateEMA(
-        data.map((h) => h.high),
-        100,
-      )[1],
-    [data],
-  );
-
-  const emaLow = useMemo(
-    () =>
-      calculateEMA(
-        data.map((h) => h.low),
-        100,
-      )[1],
-    [data],
   );
 
   const sellEmaLineData = useMemo(() => ema.map((s) => s + 0.01), [ema]);
@@ -778,6 +719,7 @@ export const OldPage = () => {
       render: (value, row) => (row.newPnl ? `${row.newPnl.toFixed(2)}%` : '-'),
     },
   ].filter(Boolean);
+  const multiOptions = [10000, 1000, 100, 10, 1, 0.1, 0.01];
 
   return (
     <>
@@ -810,6 +752,8 @@ export const OldPage = () => {
               style={{ width: 160 }}
               options={expirationMonths.map((v) => ({ label: v, value: v }))}
             />
+            <Select value={multi} onSelect={setmulti} style={{ width: 80 }} options={multiOptions.map((v) => ({ label: v, value: v }))} />
+
             {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
             {/*{positions.length}*/}
             {/*<Checkbox checked={useHage} onChange={(e) => setuseHage(e.target.checked)}>*/}
@@ -828,7 +772,6 @@ export const OldPage = () => {
               toolTipLeft="4px"
               data={data}
               ema={[]}
-              onChange={onChangeChart}
               maximumFractionDigits={4}
             />
             <Row style={{ paddingBottom: '8px' }} gutter={8}>

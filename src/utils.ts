@@ -1,6 +1,6 @@
 // Функция для получения данных из Alor API
 
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import {
   AreaSeriesPartialOptions,
   BarSeriesPartialOptions,
@@ -19,6 +19,8 @@ import { Rectangle, RectangleDrawingToolOptions } from './lwc-plugins/rectangle-
 import { TLineSeries } from './SoloTestPage/UpdatedChart';
 import moment from 'moment';
 import { Cross, HistoryObject, POI, Swing, Trend } from './sm-lib/models';
+import { calculateDiscountedDividends } from './sm-lib/utils.ts';
+import Decimal from 'decimal.js';
 
 export async function getDividents(ticker, token) {
   const url = `https://api.alor.ru/instruments/v1/${ticker}/stock/dividends`;
@@ -679,3 +681,88 @@ export const roundTime = (date: any, tf: string, utc: boolean = true) => {
 };
 
 export const formatDateTime = (value) => moment(value).format('YYYY-MM-DD HH:mm');
+
+/**
+ *
+ * @param spotPrice Цена акции (их свечки)
+ * @param stockTime Время цены акции
+ * @param expirationDate Дата экспироции фьюча
+ * @param dividends Массив дивидендов
+ */
+export const calculateTruthFuturePrice = (spotPrice: number, stockTime: number, expirationDate: Dayjs, dividends = []) => {
+  // Ставка ЦБ РФ (безрисковая ставка)
+  const riskFreeRate = 0.2;
+  // Ставка ЦБ КНР
+  const cyR = 0; // 0.03;
+  // Дней до экспирации
+  const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
+
+  // Рассчетная цена фьючерса
+  const tradeCost = 0;
+
+  // Проценты годовых по фьючу на текущий день
+  const currentFutureFreeRatePercents = ((riskFreeRate - cyR) * daysToExpiry) / 365;
+
+  // Стоимость финансирования
+  const financingCost = spotPrice * currentFutureFreeRatePercents + tradeCost;
+  // const truthPrice = spotPrice - currentFutureFreeRatePercents;
+
+  // Дисконтированные дивиденды
+  const discountedDividends = calculateDiscountedDividends(stockTime, daysToExpiry, riskFreeRate, dividends);
+
+  // return truthPrice + discountedDividends;
+  // Итоговая формула
+  return spotPrice + financingCost - discountedDividends;
+};
+
+/**
+ * Рассчитывает порог арбитража (справедливая премия + издержки)
+ * @param stockPrice - Цена акции
+ * @param stockTime - Время цены
+ * @param expirationDate - Дата экспирации
+ * @param taxRate - Налог (например, 0.13 для НДФЛ)
+ * @param riskFreeRate - Безрисковая ставка (например, 0.20 для 20%)
+ */
+const calculateArbitrageThreshold = (
+  stockPrice: number,
+  stockTime: number,
+  expirationDate: Dayjs,
+  // commission = 0.004,
+  // taxRate = 0.13,
+  riskFreeRate = 0.2,
+  dividends = [],
+) => {
+  // Биржевой сбор - процент поделил на 100, 0.00462 - за валютный фьючерс (например Юань)
+  const exchangeCommission = new Decimal(0.00462).div(100); // 0.0000462 (0.00462%)
+  // Комиссия брокера - 50% биржевого сбора
+  const brokerCommission = exchangeCommission.mul(0.5); // 0.0000231
+  const totalCommissionRate = exchangeCommission.plus(brokerCommission).toNumber(); // 0.0000693 (0.00693%)
+
+  const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate, dividends);
+
+  // Дни до экспирации (дробные)
+  const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
+
+  // Издержки:
+  const tradeCost = stockPrice * totalCommissionRate * 2; // Покупка + продажа
+
+  // Стоимость финансирования
+  const borrowCost = stockPrice * ((riskFreeRate * daysToExpiry) / 365);
+  const totalCost = tradeCost + borrowCost;
+
+  // Дисконтированные дивиденды
+  let discountedDividends = 0;
+  for (const div of dividends) {
+    const { dividendPerShare, exDividendDate } = div;
+    const daysToPayment = dayjs(exDividendDate, 'YYYY-MM-DDT00:00:00').diff(dayjs(stockTime * 1000), 'day', true);
+    if (daysToPayment > 0 && daysToPayment <= daysToExpiry) {
+      const daysToReinvest = daysToExpiry - daysToPayment;
+      discountedDividends += dividendPerShare * (1 + (riskFreeRate * daysToReinvest) / 365);
+    }
+  }
+
+  // Пороговая цена фьючерса
+  const thresholdPrice = truthPrice + totalCost - discountedDividends;
+
+  return thresholdPrice / stockPrice;
+};

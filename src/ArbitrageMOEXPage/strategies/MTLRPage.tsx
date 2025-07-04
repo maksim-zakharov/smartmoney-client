@@ -12,7 +12,6 @@ import {
   Space,
   Statistic,
   Table,
-  TimeRangePickerProps,
   Typography,
 } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
@@ -23,21 +22,20 @@ import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
-import Decimal from 'decimal.js';
-import { calculateMultiple, createRectangle2, getCommonCandles } from '../../utils.ts';
-import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
+import { calculateMultiple, calculateTruthFuturePrice, createRectangle2, getCommonCandles } from '../../utils';
+import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs';
 import { LineStyle, Time } from 'lightweight-charts';
-import { finishPosition } from '../../samurai_patterns.ts';
+import { finishPosition } from '../../samurai_patterns';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import FormItem from 'antd/es/form/FormItem';
-import { calculateDiscountedDividends } from '../../sm-lib/utils.ts';
 import {
   useGetDividendsQuery,
   useGetHistoryQuery,
   useGetSecurityByExchangeAndSymbolQuery,
   useGetSecurityDetailsQuery,
-} from '../../api/alor.api.ts';
+} from '../../api/alor.api';
+import { DatesPicker } from '../../DatesPicker.tsx';
 
 const { RangePicker } = DatePicker;
 
@@ -188,91 +186,6 @@ export const MTLRPage = () => {
   const lotsize = security?.lotsize || 1;
   const fee = 0.04 / 100;
 
-  /**
-   *
-   * @param spotPrice Цена акции (их свечки)
-   * @param stockTime Время цены акции
-   * @param expirationDate Дата экспироции фьюча
-   * @param dividends Массив дивидендов
-   */
-  const calculateTruthFuturePrice = (spotPrice: number, stockTime: number, expirationDate: Dayjs, dividends = []) => {
-    // Ставка ЦБ РФ (безрисковая ставка)
-    const riskFreeRate = 0.2;
-    // Ставка ЦБ КНР
-    const cyR = 0; // 0.03;
-    // Дней до экспирации
-    const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
-
-    // Рассчетная цена фьючерса
-    const tradeCost = 0;
-
-    // Проценты годовых по фьючу на текущий день
-    const currentFutureFreeRatePercents = ((riskFreeRate - cyR) * daysToExpiry) / 365;
-
-    // Стоимость финансирования
-    const financingCost = spotPrice * currentFutureFreeRatePercents + tradeCost;
-    // const truthPrice = spotPrice - currentFutureFreeRatePercents;
-
-    // Дисконтированные дивиденды
-    const discountedDividends = calculateDiscountedDividends(stockTime, daysToExpiry, riskFreeRate, dividends);
-
-    // return truthPrice + discountedDividends;
-    // Итоговая формула
-    return spotPrice + financingCost - discountedDividends;
-  };
-
-  /**
-   * Рассчитывает порог арбитража (справедливая премия + издержки)
-   * @param stockPrice - Цена акции
-   * @param stockTime - Время цены
-   * @param expirationDate - Дата экспирации
-   * @param taxRate - Налог (например, 0.13 для НДФЛ)
-   * @param riskFreeRate - Безрисковая ставка (например, 0.20 для 20%)
-   */
-  const calculateArbitrageThreshold = (
-    stockPrice: number,
-    stockTime: number,
-    expirationDate: Dayjs,
-    // commission = 0.004,
-    // taxRate = 0.13,
-    riskFreeRate = 0.2,
-    dividends = [],
-  ) => {
-    // Биржевой сбор - процент поделил на 100, 0.00462 - за валютный фьючерс (например Юань)
-    const exchangeCommission = new Decimal(0.00462).div(100); // 0.0000462 (0.00462%)
-    // Комиссия брокера - 50% биржевого сбора
-    const brokerCommission = exchangeCommission.mul(0.5); // 0.0000231
-    const totalCommissionRate = exchangeCommission.plus(brokerCommission).toNumber(); // 0.0000693 (0.00693%)
-
-    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate, dividends);
-
-    // Дни до экспирации (дробные)
-    const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
-
-    // Издержки:
-    const tradeCost = stockPrice * totalCommissionRate * 2; // Покупка + продажа
-
-    // Стоимость финансирования
-    const borrowCost = stockPrice * ((riskFreeRate * daysToExpiry) / 365);
-    const totalCost = tradeCost + borrowCost;
-
-    // Дисконтированные дивиденды
-    let discountedDividends = 0;
-    for (const div of dividends) {
-      const { dividendPerShare, exDividendDate } = div;
-      const daysToPayment = dayjs(exDividendDate, 'YYYY-MM-DDT00:00:00').diff(dayjs(stockTime * 1000), 'day', true);
-      if (daysToPayment > 0 && daysToPayment <= daysToExpiry) {
-        const daysToReinvest = daysToExpiry - daysToPayment;
-        discountedDividends += dividendPerShare * (1 + (riskFreeRate * daysToReinvest) / 365);
-      }
-    }
-
-    // Пороговая цена фьючерса
-    const thresholdPrice = truthPrice + totalCost - discountedDividends;
-
-    return thresholdPrice / stockPrice;
-  };
-
   const multiple = useMemo(
     () =>
       multi ||
@@ -323,24 +236,6 @@ export const MTLRPage = () => {
         bbMiltiplier,
       ),
     [data, emaBBPeriod, bbMiltiplier],
-  );
-
-  const emaHigh = useMemo(
-    () =>
-      calculateEMA(
-        data.map((h) => h.high),
-        100,
-      )[1],
-    [data],
-  );
-
-  const emaLow = useMemo(
-    () =>
-      calculateEMA(
-        data.map((h) => h.low),
-        100,
-      )[1],
-    [data],
   );
 
   const sellEmaLineData = useMemo(() => ema.map((s) => s + 0.01 * multi), [ema, multi]);
@@ -479,16 +374,6 @@ export const MTLRPage = () => {
     searchParams.set('toDate', value[1].unix());
     setSearchParams(searchParams);
   };
-
-  const rangePresets: TimeRangePickerProps['presets'] = [
-    { label: 'Сегодня', value: [dayjs().startOf('day'), dayjs()] },
-    { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
-    { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
-    { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
-    { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
-    { label: 'Последние 182 дня', value: [dayjs().add(-182, 'd'), dayjs()] },
-    { label: 'Последние 365 дней', value: [dayjs().add(-365, 'd'), dayjs()] },
-  ];
 
   const ls = useMemo(() => {
     const markers = positions.map((s) => [
@@ -827,13 +712,8 @@ export const MTLRPage = () => {
             {/*    style={{width: 160}}*/}
             {/*    options={options}*/}
             {/*/>*/}
-            <RangePicker
-              presets={rangePresets}
-              value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-              format="YYYY-MM-DD"
-              style={{ width: '240px' }}
-              onChange={onChangeRangeDates}
-            />
+
+            <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
 
             <Select
               value={expirationMonth}
