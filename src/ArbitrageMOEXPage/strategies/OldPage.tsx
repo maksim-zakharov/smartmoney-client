@@ -234,112 +234,83 @@ export const OldPage = () => {
     [data, emaBBPeriod, bbMiltiplier],
   );
 
-  const sellEmaLineData = useMemo(() => ema.map((s) => s + 0.01), [ema]);
-  const buyEmaLineData = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.01), [truthPriceSeriesDivsData, multi]);
+  const buyEmaLineDataSmall = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.01 * 0.5), [truthPriceSeriesDivsData]);
 
-  const buyEmaLineDataSmall = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.005), [truthPriceSeriesDivsData]);
+  const buyEmaLineData = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.01), [truthPriceSeriesDivsData]);
 
-  const sellEmaLineData2 = useMemo(() => ema.map((s) => s + 0.01 * 2), [ema]);
-  const buyEmaLineData2 = useMemo(() => ema.map((s) => s - 0.01 * 2), [ema]);
-
-  const buyEmaLineData3 = useMemo(() => ema.map((s) => s + 0.01 * 3), [ema]);
-  const sellEmaLineData3 = useMemo(() => ema.map((s) => s - 0.01 * 3), [ema]);
+  const buyEmaLineData1per5 = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.01 * 1.5), [truthPriceSeriesDivsData]);
 
   const positions = useMemo(() => {
     if (!data.length) {
       return [];
     }
 
-    const sellPositions = [];
     const buyPositions = [];
+
+    let currentPosition;
 
     for (let i = 0; i < data.length; i++) {
       const candle = data[i];
 
-      // Если не коснулись верха - продаем фьюч, покупаем акцию
-      // if (candle.high >= BB.upper[i]) {
-      //   // if (candle.high >= sellEmaLineData[i]) {
-      //   let currentPosition: any = {
-      //     side: 'short',
-      //     openPrice: candle.high,
-      //     stopLoss: candle.high,
-      //     openTime: candle.time,
-      //   };
-      //
-      //   for (let j = i + 1; j < data.length; j++) {
-      //     const candle = data[j];
-      //     // if (candle.low > ema[j]) {
-      //     if (candle.low > BB.middle[j]) {
-      //       continue;
-      //     }
-      //
-      //     currentPosition = {
-      //       ...currentPosition,
-      //       closeTime: candle.time,
-      //       takeProfit: candle.open,
-      //       closePrice: candle.open,
-      //     };
-      //
-      //     currentPosition.pnl = currentPosition.openPrice - currentPosition.closePrice;
-      //     sellPositions.push(currentPosition);
-      //
-      //     i = j - 1;
-      //
-      //     break;
-      //   }
-      //   // Если было закрытие - продолжаем цикл
-      //   if (currentPosition.closeTime) {
-      //     continue;
-      //   }
-      // }
-
-      if (candle.low <= buyEmaLineDataSmall[i]) {
-        // if (candle.low <= buyEmaLineData[i]) {
-        let currentPosition: any = {
-          side: 'long',
-          openPrice: candle.low,
-          stopLoss: candle.low,
-          openTime: candle.time,
-        };
-
-        for (let j = i + 1; j < data.length; j++) {
-          const candle = data[j];
-          // if (candle.high <= ema[j]) {
-          if (candle.high <= truthPriceSeriesDivsData[j]) {
-            continue;
-          }
-
+      // Если позы еще нет
+      if (!currentPosition) {
+        // И появился сигнал на покупку
+        if (
+          (checkboxValues.has('tradePercent0.5') && candle.low <= buyEmaLineDataSmall[i]) ||
+          (checkboxValues.has('tradePercent1') && candle.low <= buyEmaLineData[i]) ||
+          (checkboxValues.has('tradePercent1.5') && candle.low <= buyEmaLineData1per5[i])
+        ) {
+          // Покупаем
           currentPosition = {
-            ...currentPosition,
-            closeTime: candle.time,
-            takeProfit: candle.open,
-            closePrice: candle.open,
+            side: 'long',
+            openPrice: candle.low,
+            stopLoss: candle.low,
+            openTime: candle.time,
           };
-
-          currentPosition.pnl = currentPosition.closePrice - currentPosition.openPrice;
-          buyPositions.push(currentPosition);
-
-          i = j - 1;
-
-          break;
         }
-        // Если было закрытие - продолжаем цикл
-        if (currentPosition.closeTime) {
+      } else {
+        // Если поза есть и сигнал на покупку усилился - усредняемся
+        if (
+          (checkboxValues.has('avg1') && candle.low <= buyEmaLineData[i]) ||
+          (checkboxValues.has('avg1.5') && candle.low <= buyEmaLineData1per5[i])
+        ) {
+          currentPosition = {
+            side: 'long',
+            openPrice: candle.low,
+            stopLoss: candle.low,
+            openTime: candle.time,
+          };
           continue;
         }
+
+        // Если цель не достигнута - мимо
+        if (candle.high <= truthPriceSeriesDivsData[i]) {
+          continue;
+        }
+
+        // Цель достигнута, закрываем позу
+        currentPosition = {
+          ...currentPosition,
+          closeTime: candle.time,
+          takeProfit: candle.open,
+          closePrice: candle.open,
+        };
+
+        currentPosition.fee = fee * 200;
+
+        const percent =
+          currentPosition.openPrice > currentPosition?.takeProfit
+            ? currentPosition.openPrice / currentPosition?.takeProfit
+            : currentPosition?.takeProfit / currentPosition.openPrice;
+        currentPosition.newPnl = (percent - 1) * 100 - currentPosition.fee;
+        buyPositions.push(currentPosition);
+
+        currentPosition = null;
       }
     }
 
-    return [...buyPositions, ...sellPositions]
-      .map((row) => {
-        const newPnl = row.openPrice > row?.takeProfit ? row.openPrice / row?.takeProfit : row?.takeProfit / row.openPrice;
-
-        row.newPnl = newPnl - fee * 200;
-
-        return row;
-      })
-      .sort((a, b) => b.openTime - a.openTime);
-  }, [data, fee, lotsize, tickerStock, BB, sellEmaLineData, buyEmaLineData, ema, buyEmaLineDataSmall, truthPriceSeriesDivsData]);
+    return buyPositions.sort((a, b) => b.openTime - a.openTime);
+  }, [checkboxValues, data, fee, tickerStock, buyEmaLineData, buyEmaLineData1per5, buyEmaLineDataSmall, truthPriceSeriesDivsData]);
 
   const { PnL, profits, losses, Fee } = useMemo(() => {
     const array = positions;
@@ -414,17 +385,7 @@ export const OldPage = () => {
       ],
     }));
 
-    if (
-      !ema.length ||
-      !data.length ||
-      !sellEmaLineData.length ||
-      !buyEmaLineData.length ||
-      !buyEmaLineData2.length ||
-      !sellEmaLineData2.length ||
-      !buyEmaLineData3.length ||
-      !buyEmaLineDataSmall.length ||
-      !sellEmaLineData3.length
-    ) {
+    if (!ema.length || !data.length || !buyEmaLineData.length || !buyEmaLineData1per5.length || !buyEmaLineDataSmall.length) {
       return [];
     }
 
@@ -459,8 +420,8 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineDataSmall[i] })),
       },
-      checkboxValues.has('enable2percent') && {
-        id: 'buyEmaLineData2',
+      checkboxValues.has('buyEmaLineData1per5') && {
+        id: 'buyEmaLineData1per5',
         options: {
           color: 'rgb(20, 131, 92)',
           lineWidth: 1,
@@ -476,44 +437,7 @@ export const OldPage = () => {
         //     position: 'belowBar',
         //   }))
         //   .sort((a, b) => a.time - b.time),
-        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData2[i] })),
-      },
-      checkboxValues.has('enable2percent') && {
-        id: 'sellEmaLineData2',
-        options: {
-          color: 'rgb(157, 43, 56)',
-          lineWidth: 1,
-          priceLineVisible: false,
-          lineStyle: LineStyle.Dashed,
-        },
-        // markers: positions
-        //   .filter((s) => s.side === 'short')
-        //   .map((extremum: any) => ({
-        //     color: markerColors.bearColor,
-        //     time: extremum.time as Time,
-        //     shape: 'circle',
-        //     position: 'aboveBar',
-        //   }))
-        //   .sort((a, b) => a.time - b.time),
-        data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData2[i] })),
-      },
-      checkboxValues.has('enable3percent') && {
-        id: 'buyEmaLineData3',
-        options: {
-          color: 'rgb(20, 131, 92)',
-          lineWidth: 1,
-          priceLineVisible: false,
-        },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData3[i] })),
-      },
-      checkboxValues.has('enable3percent') && {
-        id: 'sellEmaLineData3',
-        options: {
-          color: 'rgb(157, 43, 56)',
-          lineWidth: 1,
-          priceLineVisible: false,
-        },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData3[i] })),
+        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData1per5[i] })),
       },
       checkboxValues.has('enableCalculateFuturePrice') && {
         id: 'truthPriceSeriesData',
@@ -591,18 +515,7 @@ export const OldPage = () => {
       //   data: buyLineData,
       //   lineStyle: LineStyle.Dashed,
     ].filter(Boolean);
-  }, [
-    colors,
-    sellEmaLineData3,
-    buyEmaLineData3,
-    sellEmaLineData2,
-    buyEmaLineData2,
-    sellEmaLineData,
-    ema,
-    buyEmaLineData,
-    positions,
-    checkboxValues,
-  ]);
+  }, [colors, buyEmaLineData1per5, buyEmaLineDataSmall, buyEmaLineData, positions, checkboxValues]);
 
   const primitives = useMemo(() => {
     if (!BB.upper.length || !checkboxValues.has('enableBB')) {
@@ -640,12 +553,6 @@ export const OldPage = () => {
 
   const historyColumns = [
     {
-      title: 'Тип',
-      dataIndex: 'side',
-      key: 'side',
-      render: (value, row) => row?.side || '-',
-    },
-    {
       title: 'Время входа',
       dataIndex: 'openTime',
       key: 'openTime',
@@ -659,21 +566,6 @@ export const OldPage = () => {
       title: 'Цена входа',
       dataIndex: 'openPrice',
       key: 'openPrice',
-    },
-    {
-      title: 'Объем',
-      dataIndex: 'openVolume',
-      key: 'openVolume',
-    },
-    {
-      title: 'Стоп цена',
-      dataIndex: 'stopLoss',
-      key: 'stopLoss',
-      render: (value, row) => {
-        const percent = row.openPrice > row?.stopLoss ? row.openPrice / row?.stopLoss : row?.stopLoss / row.openPrice;
-
-        return `${row?.stopLoss} (${((percent - 1) * 100).toFixed(2)}%)`;
-      },
     },
     {
       title: 'Тейк цена',
@@ -694,13 +586,6 @@ export const OldPage = () => {
         colSpan: row.type === 'summary' ? 4 : 1,
       }),
       render: (value, row) => moment(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm'),
-    },
-    {
-      title: 'RR',
-      dataIndex: 'RR',
-      key: 'RR',
-      align: 'right',
-      render: (value) => value?.toFixed(2),
     },
     {
       title: 'Финрез',
@@ -899,11 +784,25 @@ export const OldPage = () => {
             <Checkbox key="enable1percent" value="enable1percent">
               -1% от справедливой
             </Checkbox>
-            <Checkbox key="enable2percent" value="enable2percent">
-              +-2% от машки
+            <Checkbox key="buyEmaLineData1per5" value="buyEmaLineData1per5">
+              -1.5% от справедливой
             </Checkbox>
-            <Checkbox key="enable3percent" value="enable3percent">
-              +-3% от машки
+            <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
+            <Checkbox key="tradePercent0.5" value="tradePercent0.5">
+              Заходим на 0.5%
+            </Checkbox>
+            <Checkbox key="tradePercent1" value="tradePercent1">
+              Заходим на 1%
+            </Checkbox>
+            <Checkbox key="tradePercent1.5" value="tradePercent1.5">
+              Заходим на 1.5%
+            </Checkbox>
+            <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
+            <Checkbox key="avg1" value="avg1">
+              Усредняемся на 1%
+            </Checkbox>
+            <Checkbox key="avg1.5" value="avg1.5">
+              Усредняемся на 1.5%
             </Checkbox>
           </Checkbox.Group>
         </Sider>

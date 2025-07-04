@@ -217,7 +217,7 @@ const getDividends =
       .get(`/instruments/v1/${ticker}/stock/dividends`, {
         baseURL: 'https://api.alor.ru',
       })
-      .then((r) => r.data);
+      .then((r) => (Array.isArray(r.data) ? r.data : []));
 
 const getSecurityDetails =
   (api: AlorApi) =>
