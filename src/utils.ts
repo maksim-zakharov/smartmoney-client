@@ -703,33 +703,46 @@ export const formatDateTime = (value) => moment(value).format('YYYY-MM-DD HH:mm'
  * @param stockTime Время цены акции
  * @param expirationDate Дата экспироции фьюча
  */
-export const calculateTruthFuturePrice = (S: number, stockTime: number, expirationDate: Dayjs) => {
+export const calculateTruthFuturePrice = (S: number, stockTime: number, expirationDate: Dayjs, dividends = []) => {
   // Ставка ЦБ РФ (безрисковая ставка)
   const r = 0.2;
-  // Дней до экспирации
-  // const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
-  // //
-  // const timeInYears = t / 365;
-  // //
-  // // return S * Math.exp(r * timeInYears);
-  //
-  // // const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true) / 365;
-  // // return Math.exp(r * t);
-  //
-  // // Проценты годовых по фьючу на текущий день
-  // const currentFutureFreeRatePercents = r * timeInYears;
-  //
-  // // Стоимость финансирования
-  // const financingCost = S * currentFutureFreeRatePercents;
-  //
-  // // Итоговая формула
-  // return S + financingCost;
 
-  const daysToExpiry = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
+  const dayjsStockTime = dayjs(stockTime * 1000);
+
+  const daysToExpiry = expirationDate.diff(dayjsStockTime, 'day', true);
   const t = daysToExpiry / 365;
+  // Стремится к единице сверху вниз
   // return S * (1 + r * t);
+  // Правильный банковский вариант
   // return S * Math.exp(r * t);
-  return S * (1 - (1 - Math.exp(-r * t)));
+  // Банк. вариант стремится к единице снизу вверх.
+  const futurePriceWithoutDividends = S * (1 - (1 - Math.exp(-r * t)));
+  // return futurePriceWithoutDividends;
+
+  // 2. Вычитаем приведённую стоимость дивидендов
+  let pvDividends = 0;
+  dividends.forEach((div) => {
+    const { dividendPerShare, exDividendDate } = div;
+    // Компания не выплатила дивиденды
+    if (!dividendPerShare) {
+      return;
+    }
+    const dayjsExDividendDate = dayjs(exDividendDate, 'YYYY-MM-DDT00:00:00');
+
+    const daysToDiv = dayjsExDividendDate.diff(dayjsStockTime, 'day', true);
+    const tDiv = daysToDiv / 365;
+    // Дивы уже прошли
+    if (tDiv < 0) {
+      return;
+    }
+
+    // Дивиденды, которые будут выплачены до экспирации
+    if (tDiv <= t) {
+      pvDividends += dividendPerShare * Math.exp(-r * (t - tDiv));
+    }
+  });
+
+  return futurePriceWithoutDividends + pvDividends;
 };
 
 /**

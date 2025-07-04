@@ -26,7 +26,6 @@ import moment from 'moment/moment';
 import { calculateTruthFuturePrice, createRectangle2, getCommonCandles } from '../../utils.ts';
 import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { LineStyle, Time } from 'lightweight-charts';
-import { finishPosition } from '../../samurai_patterns.ts';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import FormItem from 'antd/es/form/FormItem';
@@ -79,7 +78,7 @@ export const OldPage = () => {
 
   const setmulti = (value) => {
     searchParams.set('multi', value.toString());
-    setSearchParams(value);
+    setSearchParams(searchParams);
   };
 
   const expirationMonths = useMemo(() => {
@@ -201,13 +200,21 @@ export const OldPage = () => {
 
   const truthPriceSeriesData = useMemo(
     () =>
-      commonCandles.filteredStockCandles.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close),
+      commonCandles.filteredStockCandles.map(
+        ({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate), []) / close,
+      ),
+    [commonCandles.filteredStockCandles],
+  );
+
+  const truthPriceSeriesDivsData = useMemo(
+    () =>
+      commonCandles.filteredStockCandles.map(
+        ({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate), dividends) / close,
+      ),
     [commonCandles.filteredStockCandles, dividends],
   );
 
-  const sellLineData = useMemo(() => stockData.map((s) => 1 + 0.03), [stockData]);
   const zeroLineData = useMemo(() => stockData.map((s) => 1), [stockData]);
-  const buyLineData = useMemo(() => stockData.map((s) => 1 - 0.03), [stockData]);
 
   const ema = useMemo(
     () =>
@@ -228,7 +235,9 @@ export const OldPage = () => {
   );
 
   const sellEmaLineData = useMemo(() => ema.map((s) => s + 0.01), [ema]);
-  const buyEmaLineData = useMemo(() => ema.map((s) => s - 0.01), [ema]);
+  const buyEmaLineData = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.01), [truthPriceSeriesDivsData, multi]);
+
+  const buyEmaLineDataSmall = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.005), [truthPriceSeriesDivsData]);
 
   const sellEmaLineData2 = useMemo(() => ema.map((s) => s + 0.01 * 2), [ema]);
   const buyEmaLineData2 = useMemo(() => ema.map((s) => s - 0.01 * 2), [ema]);
@@ -248,42 +257,43 @@ export const OldPage = () => {
       const candle = data[i];
 
       // Если не коснулись верха - продаем фьюч, покупаем акцию
-      if (candle.high >= BB.upper[i]) {
-        // if (candle.high >= sellEmaLineData[i]) {
-        let currentPosition: any = {
-          side: 'short',
-          openPrice: candle.high,
-          stopLoss: candle.high,
-          openTime: candle.time,
-        };
+      // if (candle.high >= BB.upper[i]) {
+      //   // if (candle.high >= sellEmaLineData[i]) {
+      //   let currentPosition: any = {
+      //     side: 'short',
+      //     openPrice: candle.high,
+      //     stopLoss: candle.high,
+      //     openTime: candle.time,
+      //   };
+      //
+      //   for (let j = i + 1; j < data.length; j++) {
+      //     const candle = data[j];
+      //     // if (candle.low > ema[j]) {
+      //     if (candle.low > BB.middle[j]) {
+      //       continue;
+      //     }
+      //
+      //     currentPosition = {
+      //       ...currentPosition,
+      //       closeTime: candle.time,
+      //       takeProfit: candle.open,
+      //       closePrice: candle.open,
+      //     };
+      //
+      //     currentPosition.pnl = currentPosition.openPrice - currentPosition.closePrice;
+      //     sellPositions.push(currentPosition);
+      //
+      //     i = j - 1;
+      //
+      //     break;
+      //   }
+      //   // Если было закрытие - продолжаем цикл
+      //   if (currentPosition.closeTime) {
+      //     continue;
+      //   }
+      // }
 
-        for (let j = i + 1; j < data.length; j++) {
-          const candle = data[j];
-          // if (candle.low > ema[j]) {
-          if (candle.low > BB.middle[j]) {
-            continue;
-          }
-
-          currentPosition = {
-            ...currentPosition,
-            closeTime: candle.time,
-            takeProfit: candle.open,
-            closePrice: candle.open,
-          };
-
-          currentPosition.pnl = currentPosition.openPrice - currentPosition.closePrice;
-          sellPositions.push(currentPosition);
-
-          i = j - 1;
-
-          break;
-        }
-        // Если было закрытие - продолжаем цикл
-        if (currentPosition.closeTime) {
-          continue;
-        }
-      }
-      if (candle.low <= BB.lower[i]) {
+      if (candle.low <= buyEmaLineDataSmall[i]) {
         // if (candle.low <= buyEmaLineData[i]) {
         let currentPosition: any = {
           side: 'long',
@@ -295,7 +305,7 @@ export const OldPage = () => {
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
           // if (candle.high <= ema[j]) {
-          if (candle.high <= BB.middle[j]) {
+          if (candle.high <= truthPriceSeriesDivsData[j]) {
             continue;
           }
 
@@ -321,18 +331,15 @@ export const OldPage = () => {
     }
 
     return [...buyPositions, ...sellPositions]
-      .map(
-        finishPosition({
-          lotsize,
-          fee,
-          tf,
-          ticker: tickerStock,
-          stopMargin: 50,
-          quantity: 1,
-        }),
-      )
+      .map((row) => {
+        const newPnl = row.openPrice > row?.takeProfit ? row.openPrice / row?.takeProfit : row?.takeProfit / row.openPrice;
+
+        row.newPnl = newPnl - fee * 200;
+
+        return row;
+      })
       .sort((a, b) => b.openTime - a.openTime);
-  }, [data, fee, lotsize, tickerStock, BB, sellEmaLineData, buyEmaLineData, ema]);
+  }, [data, fee, lotsize, tickerStock, BB, sellEmaLineData, buyEmaLineData, ema, buyEmaLineDataSmall, truthPriceSeriesDivsData]);
 
   const { PnL, profits, losses, Fee } = useMemo(() => {
     const array = positions;
@@ -415,6 +422,7 @@ export const OldPage = () => {
       !buyEmaLineData2.length ||
       !sellEmaLineData2.length ||
       !buyEmaLineData3.length ||
+      !buyEmaLineDataSmall.length ||
       !sellEmaLineData3.length
     ) {
       return [];
@@ -441,15 +449,15 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData[i] })),
       },
-      checkboxValues.has('enable1percent') && {
-        id: 'sellEmaLineData',
+      checkboxValues.has('buyEmaLineDataSmall') && {
+        id: 'buyEmaLineDataSmall',
         options: {
-          color: 'rgb(157, 43, 56)',
+          color: 'rgb(20, 131, 92)',
           lineWidth: 1,
-          lineStyle: LineStyle.SparseDotted,
           priceLineVisible: false,
+          lineStyle: LineStyle.SparseDotted,
         },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData[i] })),
+        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineDataSmall[i] })),
       },
       checkboxValues.has('enable2percent') && {
         id: 'buyEmaLineData2',
@@ -517,6 +525,17 @@ export const OldPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: truthPriceSeriesData[i] })),
       },
+      checkboxValues.has('truthPriceSeriesDivsData') && {
+        id: 'truthPriceSeriesDivsData',
+        options: {
+          color: colors.truthPrice,
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: truthPriceSeriesDivsData[i] })),
+      },
+
       // {
       //   color: 'rgb(20, 131, 92)',
       //   lineWidth: 1,
@@ -853,7 +872,7 @@ export const OldPage = () => {
             <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
             <div style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
               <Checkbox key="enableCalculateFuturePrice" value="enableCalculateFuturePrice">
-                Рассчетная цена фьюча
+                Справедливая цена фьюча
               </Checkbox>
               <ColorPicker
                 value={colors.truthPrice}
@@ -861,6 +880,9 @@ export const OldPage = () => {
                 onChange={(val) => setColors((prevState) => ({ ...prevState, truthPrice: val.toRgbString() }))}
               />
             </div>
+            <Checkbox key="truthPriceSeriesDivsData" value="truthPriceSeriesDivsData">
+              Справедливая цена фьюча с дивами
+            </Checkbox>
             <div style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
               <Checkbox key="enableZeroLine" value="enableZeroLine">
                 Уровень единицы
@@ -871,8 +893,11 @@ export const OldPage = () => {
                 onChange={(val) => setColors((prevState) => ({ ...prevState, zeroLevel: val.toRgbString() }))}
               />
             </div>
+            <Checkbox key="buyEmaLineDataSmall" value="buyEmaLineDataSmall">
+              -0.5% от справедливой
+            </Checkbox>
             <Checkbox key="enable1percent" value="enable1percent">
-              +-1% от машки
+              -1% от справедливой
             </Checkbox>
             <Checkbox key="enable2percent" value="enable2percent">
               +-2% от машки
