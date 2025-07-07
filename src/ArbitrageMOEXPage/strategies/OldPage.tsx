@@ -30,7 +30,7 @@ import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import FormItem from 'antd/es/form/FormItem';
 import {
-  useGetDividendsQuery,
+  useGetBCSDividendsQuery,
   useGetHistoryQuery,
   useGetSecurityByExchangeAndSymbolQuery,
   useGetSecurityDetailsQuery,
@@ -166,14 +166,32 @@ export const OldPage = () => {
 
   const stockData = _stockData?.history || [];
 
-  const { data: dividends = [] } = useGetDividendsQuery(
-    {
-      ticker: tickerStock,
-    },
-    {
-      skip: !tickerStock,
-    },
+  const { data: dividendsData } = useGetBCSDividendsQuery({
+    actual: 1,
+    limit: 300,
+    order: 2,
+    sorting: 0,
+  });
+
+  const dividends = useMemo(
+    () =>
+      (dividendsData?.data || [])
+        .filter((d) => d.secure_code === tickerStock)
+        .map((d) => ({
+          dividendPerShare: d.dividend_value,
+          exDividendDate: d.closing_date,
+        })),
+    [dividendsData, tickerStock],
   );
+
+  // const { data: dividends = [] } = useGetDividendsQuery(
+  //   {
+  //     ticker: tickerStock,
+  //   },
+  //   {
+  //     skip: !tickerStock,
+  //   },
+  // );
 
   const lastDividends = useMemo(() => (dividends ? dividends[dividends.length - 1] : undefined), [dividends]);
   const dividendPerShare = lastDividends?.dividendPerShare || 0;
@@ -234,11 +252,11 @@ export const OldPage = () => {
     [data, emaBBPeriod, bbMiltiplier],
   );
 
-  const buyEmaLineDataSmall = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.01 * 0.5), [truthPriceSeriesDivsData]);
+  const buyEmaLineDataSmall = useMemo(() => truthPriceSeriesDivsData.map((s) => s * (1 - 0.005)), [truthPriceSeriesDivsData]);
 
-  const buyEmaLineData = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.01), [truthPriceSeriesDivsData]);
+  const buyEmaLineData = useMemo(() => truthPriceSeriesDivsData.map((s) => s * (1 - 0.01)), [truthPriceSeriesDivsData]);
 
-  const buyEmaLineData1per5 = useMemo(() => truthPriceSeriesDivsData.map((s) => s - 0.01 * 1.5), [truthPriceSeriesDivsData]);
+  const buyEmaLineData1per5 = useMemo(() => truthPriceSeriesDivsData.map((s) => s * (1 - 0.015)), [truthPriceSeriesDivsData]);
 
   const positions = useMemo(() => {
     if (!data.length) {

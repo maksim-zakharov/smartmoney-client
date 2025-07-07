@@ -295,7 +295,7 @@ export const alorApi = createApi({
       BCSDividendsResponse,
       {
         actual: number;
-        emitent: string;
+        emitent?: string;
         limit: number;
         order: number;
         sorting: number;
