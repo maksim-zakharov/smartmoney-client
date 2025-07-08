@@ -10,7 +10,6 @@ import moment from 'moment/moment';
 import { calculateMultiple, createRectangle2, getCommonCandles } from '../../utils';
 import { calculateBollingerBands, calculateCandle, symbolFuturePairs } from '../../../symbolFuturePairs';
 import { LineStyle, Time } from 'lightweight-charts';
-import { finishPosition } from '../../samurai_patterns';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery } from '../../api/alor.api';
@@ -204,7 +203,16 @@ export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
             closePrice: candle.open,
           };
 
-          currentPosition.pnl = new Decimal(currentPosition.closePrice).minus(new Decimal(currentPosition.openPrice)).toNumber();
+          currentPosition.fee = fee * 200;
+
+          const spread = 0.01;
+
+          const percent =
+            currentPosition.openPrice > currentPosition?.takeProfit
+              ? currentPosition.openPrice / currentPosition?.takeProfit
+              : currentPosition?.takeProfit / currentPosition.openPrice;
+          currentPosition.newPnl = (percent - 1) * 100 - currentPosition.fee - spread * 2;
+
           buyPositions.push(currentPosition);
 
           i = j - 1;
@@ -218,18 +226,7 @@ export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
       }
     }
 
-    return [...buyPositions, ...sellPositions]
-      .map(
-        finishPosition({
-          lotsize,
-          fee,
-          tf,
-          ticker: tickerStock,
-          stopMargin: 50,
-          quantity: 1,
-        }),
-      )
-      .sort((a, b) => b.openTime - a.openTime);
+    return [...buyPositions, ...sellPositions].sort((a, b) => b.openTime - a.openTime);
   }, [data, fee, lotsize, tickerStock, BB]);
 
   const { PnL, profits, losses, Fee } = useMemo(() => {
@@ -409,11 +406,6 @@ export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
       key: 'openPrice',
     },
     {
-      title: 'Объем',
-      dataIndex: 'openVolume',
-      key: 'openVolume',
-    },
-    {
       title: 'Стоп цена',
       dataIndex: 'stopLoss',
       key: 'stopLoss',
@@ -442,13 +434,6 @@ export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
         colSpan: row.type === 'summary' ? 4 : 1,
       }),
       render: (value, row) => moment(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm'),
-    },
-    {
-      title: 'RR',
-      dataIndex: 'RR',
-      key: 'RR',
-      align: 'right',
-      render: (value) => value?.toFixed(2),
     },
     {
       title: 'Финрез',
