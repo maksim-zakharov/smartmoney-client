@@ -64,6 +64,7 @@ export const ArbitrageMOEXPage = () => {
     { key: 'LSNG', label: 'LSNG/LSNGP', element: <KZOSPage tickerStock="LSNG" _tickerFuture="LSNGP" /> },
     // { key: 'MISB', label: 'MISB/MISBP', element: <KZOSPage tickerStock="MISB" _tickerFuture="MISBP" /> },
     { key: 'mtlr', label: 'MTLR/MTLRP', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLRP" /> },
+    { key: 'rosn-tatn', label: 'ROSN/TATN', element: <KZOSPage tickerStock="ROSN" _tickerFuture="TATN" /> },
     { key: 'BANE-spbe', label: 'BANE/BANE-spbe', element: <KZOSPage tickerStock="BANE" _tickerFuture="BANE" righExchange="SPBX" /> },
     { key: 'mtlr-spbe', label: 'MTLR/MTLR-spbe', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLR" righExchange="SPBX" /> },
     { key: 'mtlrp-spbe', label: 'MTLRP/MTLRP-spbe', element: <KZOSPage tickerStock="MTLRP" _tickerFuture="MTLRP" righExchange="SPBX" /> },
