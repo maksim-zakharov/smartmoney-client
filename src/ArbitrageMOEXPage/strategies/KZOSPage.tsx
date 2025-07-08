@@ -173,10 +173,7 @@ export const KZOSPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', ri
 
           const spread = 0.01;
 
-          const percent =
-            currentPosition.openPrice > currentPosition?.takeProfit
-              ? currentPosition.openPrice / currentPosition?.takeProfit
-              : currentPosition?.takeProfit / currentPosition.openPrice;
+          const percent = currentPosition.openPrice / currentPosition?.takeProfit;
           currentPosition.newPnl = (percent - 1) * 100 - currentPosition.fee - spread * 2;
           sellPositions.push(currentPosition);
 
@@ -214,10 +211,7 @@ export const KZOSPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', ri
 
           const spread = 0.1;
 
-          const percent =
-            currentPosition.openPrice > currentPosition?.takeProfit
-              ? currentPosition.openPrice / currentPosition?.takeProfit
-              : currentPosition?.takeProfit / currentPosition.openPrice;
+          const percent = currentPosition?.takeProfit / currentPosition.openPrice;
           currentPosition.newPnl = (percent - 1) * 100 - currentPosition.fee - spread * 2;
 
           buyPositions.push(currentPosition);
