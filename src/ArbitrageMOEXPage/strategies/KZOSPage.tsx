@@ -1,19 +1,4 @@
-import {
-  Card,
-  Checkbox,
-  Col,
-  ColorPicker,
-  DatePicker,
-  Divider,
-  Layout,
-  Row,
-  Select,
-  Slider,
-  Space,
-  Statistic,
-  Table,
-  Typography,
-} from 'antd';
+import { Card, Checkbox, Col, ColorPicker, Layout, Row, Slider, Space, Statistic, Table, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -22,23 +7,15 @@ import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
-import { calculateMultiple, calculateTruthFuturePrice, createRectangle2, getCommonCandles } from '../../utils';
-import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs';
+import { calculateMultiple, createRectangle2, getCommonCandles } from '../../utils';
+import { calculateBollingerBands, calculateCandle, symbolFuturePairs } from '../../../symbolFuturePairs';
 import { LineStyle, Time } from 'lightweight-charts';
 import { finishPosition } from '../../samurai_patterns';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
-import FormItem from 'antd/es/form/FormItem';
-import {
-  useGetDividendsQuery,
-  useGetHistoryQuery,
-  useGetSecurityByExchangeAndSymbolQuery,
-  useGetSecurityDetailsQuery,
-} from '../../api/alor.api';
-import { DatesPicker } from '../../DatesPicker.tsx';
+import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery } from '../../api/alor.api';
+import { DatesPicker } from '../../DatesPicker';
 import Decimal from 'decimal.js';
-
-const { RangePicker } = DatePicker;
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',
@@ -51,20 +28,13 @@ const defaultState = Object.assign(
     ema: 'rgb(255, 186, 102)',
     bbEma: 'rgb(255, 186, 102)',
     zeroLevel: 'rgb(255, 186, 102)',
-    truthPrice: 'rgb(255, 186, 102)',
   },
   storageState,
 );
 
-export const MTLRPage = () => {
+export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const multi = Number(searchParams.get('multi'));
-  const setmulti = (value) => {
-    searchParams.set('multi', value);
-    setSearchParams(value);
-  };
-  const tickerStock = 'MTLR';
-  const _tickerFuture = 'MTLRP';
+  const multi = 100;
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
@@ -74,31 +44,6 @@ export const MTLRPage = () => {
   useEffect(() => {
     localStorage.setItem('colors', JSON.stringify(colors));
   }, [colors]);
-
-  const expirationMonth = searchParams.get('expirationMonth') || '9.25';
-  const setexpirationMonth = (value) => {
-    searchParams.set('expirationMonth', value);
-    setSearchParams(searchParams);
-  };
-  const expirationMonths = useMemo(() => {
-    const startYear = 24;
-    const months = [];
-    for (let i = 0; i < 3; i++) {
-      for (let j = 1; j <= 4; j++) {
-        months.push(`${3 * j}.${startYear + i}`);
-      }
-    }
-
-    return months;
-  }, []);
-
-  const multiOptions = [100, 10, 1, 0.1, 0.01];
-
-  const emaPeriod = Number(searchParams.get('emaPeriod') || 100);
-  const setEmaPeriod = (value) => {
-    searchParams.set('emaPeriod', value);
-    setSearchParams(searchParams);
-  };
 
   const bbMiltiplier = Number(searchParams.get('bbMiltiplier') || 2);
   const setbbMiltiplier = (value) => {
@@ -120,17 +65,7 @@ export const MTLRPage = () => {
     setSearchParams(searchParams);
   };
 
-  const tickerFuture = useMemo(() => {
-    if (_tickerFuture) {
-      return _tickerFuture;
-    }
-
-    const ticker = symbolFuturePairs.find((pair) => pair.stockSymbol === tickerStock)?.futuresSymbol;
-    if (ticker) {
-      return `${ticker}-${expirationMonth}`;
-    }
-    return ticker;
-  }, [tickerStock, _tickerFuture, expirationMonth]);
+  const tickerFuture = _tickerFuture;
 
   const { data: security } = useGetSecurityByExchangeAndSymbolQuery({
     symbol: tickerStock,
@@ -165,24 +100,7 @@ export const MTLRPage = () => {
     },
   );
 
-  const { data: dividends = [] } = useGetDividendsQuery(
-    {
-      ticker: tickerStock,
-    },
-    {
-      skip: !tickerStock,
-    },
-  );
-
-  const { data: details } = useGetSecurityDetailsQuery({ ticker: tickerFuture });
-
   const stockData = _stockData?.history || [];
-
-  const lastDividends = useMemo(() => (dividends ? dividends[dividends.length - 1] : undefined), [dividends]);
-  const dividendPerShare = lastDividends?.dividendPerShare || 0;
-
-  const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
-  const taxRate = 0.13;
 
   const lotsize = security?.lotsize || 1;
   const fee = 0.04 / 100;
@@ -199,8 +117,6 @@ export const MTLRPage = () => {
   const stockTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.stockSymbol), []);
   const futureTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.futuresSymbol), []);
 
-  const commonCandles = useMemo(() => getCommonCandles(stockData, futureData), [stockData, futureData]);
-
   const data = useMemo(() => {
     if (stockData?.length && futureData?.length) {
       const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(stockData, futureData);
@@ -212,23 +128,6 @@ export const MTLRPage = () => {
     return stockData;
   }, [stockData, futureData, multiple]);
 
-  const truthPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate)) / close, dividends),
-    [stockData, dividends],
-  );
-
-  const sellLineData = useMemo(() => stockData.map((s) => 1 + 0.03), [stockData]);
-  const zeroLineData = useMemo(() => stockData.map((s) => 1 * multi), [stockData, multi]);
-  const buyLineData = useMemo(() => stockData.map((s) => 1 - 0.03), [stockData]);
-
-  const ema = useMemo(
-    () =>
-      calculateEMA(
-        data.map((h) => h.close),
-        emaPeriod,
-      )[1],
-    [data, emaPeriod],
-  );
   const BB = useMemo(
     () =>
       calculateBollingerBands(
@@ -238,15 +137,6 @@ export const MTLRPage = () => {
       ),
     [data, emaBBPeriod, bbMiltiplier],
   );
-
-  const sellEmaLineData = useMemo(() => ema.map((s) => s + 0.01 * multi), [ema, multi]);
-  const buyEmaLineData = useMemo(() => ema.map((s) => s - 0.01 * multi), [ema, multi]);
-
-  const sellEmaLineData2 = useMemo(() => ema.map((s) => s + 0.01 * 2 * multi), [ema, multi]);
-  const buyEmaLineData2 = useMemo(() => ema.map((s) => s - 0.01 * 2 * multi), [ema, multi]);
-
-  const buyEmaLineData3 = useMemo(() => ema.map((s) => s + 0.01 * 3 * multi), [ema, multi]);
-  const sellEmaLineData3 = useMemo(() => ema.map((s) => s - 0.01 * 3 * multi), [ema, multi]);
 
   const positions = useMemo(() => {
     if (!data.length) {
@@ -261,7 +151,6 @@ export const MTLRPage = () => {
 
       // Если не коснулись верха - продаем фьюч, покупаем акцию
       if (candle.high >= BB.upper[i]) {
-        // if (candle.high >= sellEmaLineData[i]) {
         let currentPosition: any = {
           side: 'short',
           openPrice: candle.high,
@@ -271,7 +160,6 @@ export const MTLRPage = () => {
 
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
-          // if (candle.low > ema[j]) {
           if (candle.low > BB.middle[j]) {
             continue;
           }
@@ -296,7 +184,6 @@ export const MTLRPage = () => {
         }
       }
       if (candle.low <= BB.lower[i]) {
-        // if (candle.low <= buyEmaLineData[i]) {
         let currentPosition: any = {
           side: 'long',
           openPrice: candle.low,
@@ -306,7 +193,6 @@ export const MTLRPage = () => {
 
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
-          // if (candle.high <= ema[j]) {
           if (candle.high <= BB.middle[j]) {
             continue;
           }
@@ -344,7 +230,7 @@ export const MTLRPage = () => {
         }),
       )
       .sort((a, b) => b.openTime - a.openTime);
-  }, [data, fee, lotsize, tickerStock, BB, sellEmaLineData, buyEmaLineData, ema]);
+  }, [data, fee, lotsize, tickerStock, BB]);
 
   const { PnL, profits, losses, Fee } = useMemo(() => {
     const array = positions;
@@ -409,115 +295,20 @@ export const MTLRPage = () => {
       ],
     }));
 
-    if (
-      !ema.length ||
-      !data.length ||
-      !sellEmaLineData.length ||
-      !buyEmaLineData.length ||
-      !buyEmaLineData2.length ||
-      !sellEmaLineData2.length ||
-      !buyEmaLineData3.length ||
-      !sellEmaLineData3.length
-    ) {
+    if (!data.length) {
       return [];
     }
 
     return [
       // ...lineSerieses,
-      checkboxValues.has('enableEMA') && {
+      checkboxValues.has('enableBB') && {
         id: 'ema',
         options: {
           color: colors.ema,
           lineWidth: 1,
           priceLineVisible: false,
         },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: ema[i] })),
-      },
-      checkboxValues.has('enable1percent') && {
-        id: 'buyEmaLineData',
-        options: {
-          color: 'rgb(20, 131, 92)',
-          lineWidth: 1,
-          priceLineVisible: false,
-          lineStyle: LineStyle.SparseDotted,
-        },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData[i] })),
-      },
-      checkboxValues.has('enable1percent') && {
-        id: 'sellEmaLineData',
-        options: {
-          color: 'rgb(157, 43, 56)',
-          lineWidth: 1,
-          lineStyle: LineStyle.SparseDotted,
-          priceLineVisible: false,
-        },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData[i] })),
-      },
-      checkboxValues.has('enable2percent') && {
-        id: 'buyEmaLineData2',
-        options: {
-          color: 'rgb(20, 131, 92)',
-          lineWidth: 1,
-          priceLineVisible: false,
-          lineStyle: LineStyle.Dashed,
-        },
-        // markers: positions
-        //   .filter((s) => s.side === 'long')
-        //   .map((extremum: any) => ({
-        //     color: markerColors.bullColor,
-        //     time: extremum.time as Time,
-        //     shape: 'circle',
-        //     position: 'belowBar',
-        //   }))
-        //   .sort((a, b) => a.time - b.time),
-        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData2[i] })),
-      },
-      checkboxValues.has('enable2percent') && {
-        id: 'sellEmaLineData2',
-        options: {
-          color: 'rgb(157, 43, 56)',
-          lineWidth: 1,
-          priceLineVisible: false,
-          lineStyle: LineStyle.Dashed,
-        },
-        // markers: positions
-        //   .filter((s) => s.side === 'short')
-        //   .map((extremum: any) => ({
-        //     color: markerColors.bearColor,
-        //     time: extremum.time as Time,
-        //     shape: 'circle',
-        //     position: 'aboveBar',
-        //   }))
-        //   .sort((a, b) => a.time - b.time),
-        data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData2[i] })),
-      },
-      checkboxValues.has('enable3percent') && {
-        id: 'buyEmaLineData3',
-        options: {
-          color: 'rgb(20, 131, 92)',
-          lineWidth: 1,
-          priceLineVisible: false,
-        },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineData3[i] })),
-      },
-      checkboxValues.has('enable3percent') && {
-        id: 'sellEmaLineData3',
-        options: {
-          color: 'rgb(157, 43, 56)',
-          lineWidth: 1,
-          priceLineVisible: false,
-        },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: sellEmaLineData3[i] })),
-      },
-      checkboxValues.has('enableCalculateFuturePrice') && {
-        id: 'truthPriceSeriesData',
-        options: {
-          color: colors.truthPrice,
-          lineWidth: 1,
-          priceLineVisible: false,
-          lineStyle: LineStyle.Dashed,
-        },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: truthPriceSeriesData[i] })),
+        data: data.map((extremum, i) => ({ time: extremum.time, value: BB.middle[i] })),
       },
       // {
       //   color: 'rgb(20, 131, 92)',
@@ -538,15 +329,6 @@ export const MTLRPage = () => {
       //   data: sellLineData,
       //   lineStyle: LineStyle.Dashed,
       // },
-      checkboxValues.has('enableZeroLine') && {
-        id: 'zeroLineData',
-        options: {
-          color: colors.zeroLevel,
-          lineWidth: 1,
-          priceLineVisible: false,
-        },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: zeroLineData[i] })),
-      },
       checkboxValues.has('enableBB') && {
         id: 'BB.upper',
         options: {
@@ -567,25 +349,8 @@ export const MTLRPage = () => {
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: BB.lower[i] })),
       },
-      // {
-      //   color: 'rgb(20, 131, 92)',
-      //   lineWidth: 1,
-      //   priceLineVisible: false,
-      //   data: buyLineData,
-      //   lineStyle: LineStyle.Dashed,
     ].filter(Boolean);
-  }, [
-    colors,
-    sellEmaLineData3,
-    buyEmaLineData3,
-    sellEmaLineData2,
-    buyEmaLineData2,
-    sellEmaLineData,
-    ema,
-    buyEmaLineData,
-    positions,
-    checkboxValues,
-  ]);
+  }, [colors, positions, checkboxValues]);
 
   const primitives = useMemo(() => {
     if (!BB.upper.length || !checkboxValues.has('enableBB')) {
@@ -715,19 +480,6 @@ export const MTLRPage = () => {
             {/*/>*/}
 
             <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
-
-            <Select
-              value={expirationMonth}
-              onSelect={setexpirationMonth}
-              style={{ width: 80 }}
-              options={expirationMonths.map((v) => ({ label: v, value: v }))}
-            />
-            <Select value={multi} onSelect={setmulti} style={{ width: 80 }} options={multiOptions.map((v) => ({ label: v, value: v }))} />
-            {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
-            {/*{positions.length}*/}
-            {/*<Checkbox checked={useHage} onChange={(e) => setuseHage(e.target.checked)}>*/}
-            {/*  Хеджировать акцией*/}
-            {/*</Checkbox>*/}
           </Space>
           <Chart
             hideCross
@@ -738,7 +490,7 @@ export const MTLRPage = () => {
             toolTipLeft="4px"
             data={data}
             ema={[]}
-            maximumFractionDigits={4}
+            maximumFractionDigits={3}
           />
           <Row style={{ paddingBottom: '8px', paddingTop: 8 }} gutter={8}>
             <Col span={6}>
@@ -816,64 +568,27 @@ export const MTLRPage = () => {
           value={Array.from(checkboxValues)}
           style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
         >
-          <Checkbox key="enableEMA" value="enableEMA">
-            Скользящая средняя EMA
-          </Checkbox>
-          <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
-            <div>Период EMA</div>
-            <ColorPicker
-              value={colors.ema}
-              size="small"
-              onChange={(val) => setColors((prevState) => ({ ...prevState, ema: val.toRgbString() }))}
-            />
-          </Typography>
-          <Slider value={emaPeriod} min={1} max={300} step={1} onChange={setEmaPeriod} />
-          <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
           <Checkbox key="enableBB" value="enableBB">
             Индикатор Бойленджера
           </Checkbox>
           <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
             <div>Период BB EMA</div>
             <ColorPicker
+              value={colors.ema}
+              size="small"
+              onChange={(val) => setColors((prevState) => ({ ...prevState, ema: val.toRgbString() }))}
+            />
+          </Typography>
+          <Slider value={emaBBPeriod} min={1} max={300} step={1} onChange={setEmaBBPeriod} />
+          <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+            <div>Стандартное отклонение</div>
+            <ColorPicker
               value={colors.bbEma}
               size="small"
               onChange={(val) => setColors((prevState) => ({ ...prevState, bbEma: val.toRgbString() }))}
             />
           </Typography>
-          <Slider value={emaBBPeriod} min={1} max={300} step={1} onChange={setEmaBBPeriod} />
-          <FormItem label="Стандартное отклонение" layout="vertical" style={{ margin: 0 }}>
-            <Slider value={bbMiltiplier} min={1} max={10} step={1} onChange={setbbMiltiplier} />
-          </FormItem>
-          <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
-          <div style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
-            <Checkbox key="enableCalculateFuturePrice" value="enableCalculateFuturePrice">
-              Рассчетная цена фьюча
-            </Checkbox>
-            <ColorPicker
-              value={colors.truthPrice}
-              size="small"
-              onChange={(val) => setColors((prevState) => ({ ...prevState, truthPrice: val.toRgbString() }))}
-            />
-          </div>
-          <div style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
-            <Checkbox key="enableZeroLine" value="enableZeroLine">
-              Уровень единицы
-            </Checkbox>
-            <ColorPicker
-              value={colors.zeroLevel}
-              size="small"
-              onChange={(val) => setColors((prevState) => ({ ...prevState, zeroLevel: val.toRgbString() }))}
-            />
-          </div>
-          <Checkbox key="enable1percent" value="enable1percent">
-            +-1% от машки
-          </Checkbox>
-          <Checkbox key="enable2percent" value="enable2percent">
-            +-2% от машки
-          </Checkbox>
-          <Checkbox key="enable3percent" value="enable3percent">
-            +-3% от машки
-          </Checkbox>
+          <Slider value={bbMiltiplier} min={1} max={10} step={1} onChange={setbbMiltiplier} />
         </Checkbox.Group>
       </Sider>
     </Layout>
