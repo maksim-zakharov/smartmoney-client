@@ -212,7 +212,7 @@ export const KZOSPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', ri
 
           currentPosition.fee = fee * 200;
 
-          const spread = 0.01;
+          const spread = 0.1;
 
           const percent =
             currentPosition.openPrice > currentPosition?.takeProfit
