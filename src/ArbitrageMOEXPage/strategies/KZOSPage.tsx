@@ -14,7 +14,6 @@ import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery } from '../../api/alor.api';
 import { DatesPicker } from '../../DatesPicker';
-import Decimal from 'decimal.js';
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',
@@ -170,7 +169,15 @@ export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
             closePrice: candle.open,
           };
 
-          currentPosition.pnl = new Decimal(currentPosition.openPrice).minus(new Decimal(currentPosition.closePrice)).toNumber();
+          currentPosition.fee = fee * 200;
+
+          const spread = 0.01;
+
+          const percent =
+            currentPosition.openPrice > currentPosition?.takeProfit
+              ? currentPosition.openPrice / currentPosition?.takeProfit
+              : currentPosition?.takeProfit / currentPosition.openPrice;
+          currentPosition.newPnl = (percent - 1) * 100 - currentPosition.fee - spread * 2;
           sellPositions.push(currentPosition);
 
           i = j - 1;
