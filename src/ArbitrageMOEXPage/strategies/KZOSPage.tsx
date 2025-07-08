@@ -30,7 +30,7 @@ const defaultState = Object.assign(
   storageState,
 );
 
-export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
+export const KZOSPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', righExchange = 'MOEX' }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const multi = 100;
   const tf = searchParams.get('tf') || '900';
@@ -76,7 +76,7 @@ export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
       from: fromDate,
       to: toDate,
       symbol: tickerFuture,
-      exchange: 'MOEX',
+      exchange: leftExchange,
     },
     {
       skip: !tickerFuture,
@@ -91,7 +91,7 @@ export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
       from: fromDate,
       to: toDate,
       symbol: tickerStock,
-      exchange: 'MOEX',
+      exchange: righExchange,
     },
     {
       skip: !tickerStock,
@@ -553,6 +553,28 @@ export const KZOSPage = ({ tickerStock, _tickerFuture }) => {
             }}
           />
         </div>
+        <Chart
+          hideCross
+          lineSerieses={[]}
+          primitives={[]}
+          markers={[]}
+          toolTipTop="40px"
+          toolTipLeft="4px"
+          data={stockData}
+          ema={[]}
+          maximumFractionDigits={2}
+        />
+        <Chart
+          hideCross
+          lineSerieses={[]}
+          primitives={[]}
+          markers={[]}
+          toolTipTop="40px"
+          toolTipLeft="4px"
+          data={futureData}
+          ema={[]}
+          maximumFractionDigits={2}
+        />
       </Content>
       <Sider width="300px" style={{ marginRight: '-20px', padding: 20 }}>
         <Checkbox.Group

@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo } from 'react';
+import React, { ReactNode, useEffect, useMemo } from 'react';
 import { Layout, Menu, MenuProps, Typography } from 'antd';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
@@ -13,6 +13,8 @@ import { PLZLPage } from './strategies/PLZLPage.tsx';
 import { CNYRUBF_Page } from './strategies/CNYRUBF_Page.tsx';
 import { useSearchParams } from 'react-router-dom';
 import { KZOSPage } from './strategies/KZOSPage.tsx';
+import { useAppSelector } from '../store.ts';
+import { Format } from 'alor-api';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -42,6 +44,19 @@ export async function fetchSecurityDetails(symbol, token) {
 
 export const ArbitrageMOEXPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const api = useAppSelector((state) => state.alorSlice.api);
+
+  useEffect(() => {
+    if (api) {
+      api.instruments
+        .getSecuritiesByExchange({
+          format: Format.Simple,
+          exchange: 'SPBX',
+          sector: 'FOND',
+        })
+        .then((r) => console.log(r.filter((r) => r.currency === 'RUB')));
+    }
+  }, [api]);
 
   const items: MenuItem[] = [
     { key: 'old', label: 'Future/Stock', element: <OldPage /> },
@@ -49,6 +64,9 @@ export const ArbitrageMOEXPage = () => {
     { key: 'LSNG', label: 'LSNG/LSNGP', element: <KZOSPage tickerStock="LSNG" _tickerFuture="LSNGP" /> },
     // { key: 'MISB', label: 'MISB/MISBP', element: <KZOSPage tickerStock="MISB" _tickerFuture="MISBP" /> },
     { key: 'mtlr', label: 'MTLR/MTLRP', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLRP" /> },
+    { key: 'BANE-spbe', label: 'BANE/BANE-spbe', element: <KZOSPage tickerStock="BANE" _tickerFuture="BANE" righExchange="SPBX" /> },
+    { key: 'mtlr-spbe', label: 'MTLR/MTLR-spbe', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLR" righExchange="SPBX" /> },
+    { key: 'mtlrp-spbe', label: 'MTLRP/MTLRP-spbe', element: <KZOSPage tickerStock="MTLRP" _tickerFuture="MTLRP" righExchange="SPBX" /> },
     { key: 'tatn', label: 'TATN/TATNP', element: <KZOSPage tickerStock="TATN" _tickerFuture="TATNP" /> },
     { key: 'rtkm', label: 'RTKM/RTKMP', element: <KZOSPage tickerStock="RTKM" _tickerFuture="RTKMP" /> },
     { key: 'SNGS', label: 'SNGS/SNGSP', element: <KZOSPage tickerStock="SNGS" _tickerFuture="SNGSP" /> },
