@@ -3,7 +3,6 @@ import { Layout, Menu, MenuProps, Typography } from 'antd';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { OldPage } from './strategies/OldPage';
-import { EDPage } from './strategies/EDPage';
 import { SI_CNY_Page } from './strategies/SI_CNY_Page';
 import { SI_GOLD_Page } from './strategies/SI_GOLD_Page';
 import { CNY_TOM_Page } from './strategies/CNY_TOM_Page';
@@ -16,6 +15,7 @@ import { KZOSPage } from './strategies/KZOSPage.tsx';
 import { useAppSelector } from '../store.ts';
 import { Format } from 'alor-api';
 import { MOEX_CNY_Page } from './strategies/MOEX_CNY_Page.tsx';
+import { ED_SI_Page } from './strategies/ED_SI_Page.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -85,7 +85,7 @@ export const ArbitrageMOEXPage = () => {
     { key: 'cny_tom', label: 'CNY!1 / CNYRUB_TOM', element: <CNY_TOM_Page /> },
     { key: 'cnyrubf', label: 'CNY!1 / CNYRUBF', element: <CNYRUBF_Page /> },
     { key: 'KZT_tom', label: 'KZT!1 / KZTRUB_TOM', element: <KZT_TOM_Page /> },
-    { key: 'ed', label: 'EU!1/(ED*SI)', element: <EDPage /> },
+    { key: 'ed', label: 'EU/SI/ED', element: <ED_SI_Page /> },
     { key: 'SI_CNY', label: 'SI/CR/UC', element: <SI_CNY_Page /> },
     { key: 'MOEXCN', label: 'MOEX/CR/MOEXCN', element: <MOEX_CNY_Page /> },
     { key: 'SI_GOLD', label: 'SI_GOLD', element: <SI_GOLD_Page /> },

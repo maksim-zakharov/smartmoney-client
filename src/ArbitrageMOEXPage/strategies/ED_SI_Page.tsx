@@ -1,4 +1,4 @@
-import { DatePicker, Slider, Space, TimeRangePickerProps, Typography } from 'antd';
+import { DatePicker, Select, Slider, Space, TimeRangePickerProps, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../Chart';
@@ -12,52 +12,70 @@ import { LineStyle } from 'lightweight-charts';
 
 const { RangePicker } = DatePicker;
 
-export const EDPage = () => {
+export const ED_SI_Page = () => {
   const [token, setToken] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
   const [diff, setDiff] = useState<number>(0.005);
-  const tickerStock = 'TATN';
-  const tickerFuture = 'TATNP';
-  const [_data, setData] = useState({ euData: [], edData: [], siData: [] });
-  const { siData, edData, euData } = _data;
+  const [_data, setData] = useState({ cnyData: [], ucnyData: [], siData: [] });
+  const { siData, ucnyData, cnyData } = _data;
 
-  const month = '6.25';
+  const expirationMonth = searchParams.get('expirationMonth') || '9.25';
+  const setexpirationMonth = (value) => {
+    searchParams.set('expirationMonth', value);
+    setSearchParams(searchParams);
+  };
 
-  const EUR_USD_data = useMemo(() => {
-    const { filteredStockCandles: euCandles, filteredFuturesCandles: siCandles } = getCommonCandles(edData, siData);
+  const expirationMonths = useMemo(() => {
+    const startYear = 24;
+    const months = [];
+    for (let i = 0; i < 3; i++) {
+      for (let j = 1; j <= 4; j++) {
+        months.push(`${3 * j}.${startYear + i}`);
+      }
+    }
 
-    return euCandles
-      .map((euCandle, index) => {
-        const siCandle = siCandles[index];
-        if (!siCandle) {
+    return months;
+  }, []);
+
+  const _data2 = useMemo(() => {
+    const { filteredStockCandles: leftCandles, filteredFuturesCandles } = getCommonCandles(siData, cnyData);
+
+    return filteredFuturesCandles
+      .map((rightCandle, index) => {
+        const leftCandle = leftCandles[index];
+        if (!leftCandle) {
           return null;
         }
-        if (!euCandle) {
+        if (!rightCandle) {
           return null;
         }
+
+        const open = leftCandle.open / rightCandle.open;
+        const close = leftCandle.close / rightCandle.close;
+        const high = leftCandle.high / rightCandle.high;
+        const low = leftCandle.low / rightCandle.low;
 
         return {
-          open: siCandle.open * euCandle.open,
-          close: siCandle.close * euCandle.close,
-          high: siCandle.high * euCandle.high,
-          low: siCandle.low * euCandle.low,
-          time: siCandle.time,
+          open,
+          close,
+          high,
+          low,
+          time: leftCandle.time,
         } as HistoryObject;
       })
       .filter(Boolean);
-  }, [edData, siData]);
+  }, [siData, cnyData]);
 
   const data = useMemo(() => {
-    if (EUR_USD_data?.length && euData?.length) {
-      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(EUR_USD_data, euData);
-
+    if (_data2?.length && ucnyData?.length) {
+      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(_data2, ucnyData);
       return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 1)).filter(Boolean);
     }
-    return EUR_USD_data;
-  }, [EUR_USD_data, euData]);
+    return _data2;
+  }, [_data, _data2, ucnyData]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
@@ -88,20 +106,20 @@ export const EDPage = () => {
   ];
 
   useEffect(() => {
-    tickerFuture &&
-      token &&
+    token &&
       Promise.all([
-        fetchCandlesFromAlor(`EU-${month}`, tf, fromDate, toDate, null, token),
-        fetchCandlesFromAlor(`ED-${month}`, tf, fromDate, toDate, null, token),
-        fetchCandlesFromAlor(`SI-${month}`, tf, fromDate, toDate, null, token),
-      ]).then(([euData, edData, siData]) => setData({ siData, edData, euData }));
-  }, [tf, tickerStock, tickerFuture, fromDate, toDate, token]);
+        fetchCandlesFromAlor(`EU-${expirationMonth}`, tf, fromDate, toDate, null, token),
+        fetchCandlesFromAlor(`SI-${expirationMonth}`, tf, fromDate, toDate, null, token),
+        fetchCandlesFromAlor(`ED-${expirationMonth}`, tf, fromDate, toDate, null, token),
+      ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
+  }, [tf, fromDate, toDate, token, expirationMonth]);
 
   const avg = 1;
-  const sellLineData = useMemo(() => data.map((s) => avg + diff), [data, diff]);
+  const sellLineData = useMemo(() => data.map((s) => avg + 0.002), [data, diff]);
+  const sellLineDatax2 = useMemo(() => data.map((s) => avg + 0.003), [data, diff]);
   const zeroLineData = useMemo(() => data.map((s) => avg), [data]);
-  const buyLineData = useMemo(() => data.map((s) => avg - diff), [data, diff]);
-  const buyLineDatax2 = useMemo(() => data.map((s) => avg - diff * 2), [data, diff]);
+  const buyLineData = useMemo(() => data.map((s) => avg - 0.002), [data, diff]);
+  const buyLineDatax2 = useMemo(() => data.map((s) => avg - 0.003), [data, diff]);
 
   return (
     <>
@@ -113,6 +131,12 @@ export const EDPage = () => {
           value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
           format="YYYY-MM-DD"
           onChange={onChangeRangeDates}
+        />
+        <Select
+          value={expirationMonth}
+          onSelect={setexpirationMonth}
+          style={{ width: 160 }}
+          options={expirationMonths.map((v) => ({ label: v, value: v }))}
         />
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
       </Space>
@@ -126,6 +150,13 @@ export const EDPage = () => {
             lineWidth: 1,
             priceLineVisible: false,
             data: sellLineData,
+            lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(157, 43, 56)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            data: sellLineDatax2,
             lineStyle: LineStyle.Dashed,
           },
           {
@@ -151,14 +182,14 @@ export const EDPage = () => {
           },
         ]}
       />
-      <Typography.Title>EUR_USD-sint</Typography.Title>
-      <Chart data={EUR_USD_data} tf={tf} maximumFractionDigits={3} />
-      <Typography.Title>EU-{month}</Typography.Title>
-      <Chart data={euData} tf={tf} maximumFractionDigits={3} />
-      <Typography.Title>ED-{month}</Typography.Title>
-      <Chart data={edData} tf={tf} maximumFractionDigits={3} />
-      <Typography.Title>SI-{month}</Typography.Title>
+      <Typography.Title>SI-sint</Typography.Title>
+      <Chart data={_data2} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>SI-{expirationMonth}</Typography.Title>
       <Chart data={siData} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>UCNY-{expirationMonth}</Typography.Title>
+      <Chart data={ucnyData} tf={tf} maximumFractionDigits={3} />
+      <Typography.Title>CNY-{expirationMonth}</Typography.Title>
+      <Chart data={cnyData} tf={tf} maximumFractionDigits={3} />
     </>
   );
 };
