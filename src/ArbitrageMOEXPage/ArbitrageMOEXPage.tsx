@@ -16,6 +16,7 @@ import { useAppSelector } from '../store.ts';
 import { Format } from 'alor-api';
 import { MOEX_CNY_Page } from './strategies/MOEX_CNY_Page.tsx';
 import { ED_SI_Page } from './strategies/ED_SI_Page.tsx';
+import { SPBXPage } from './strategies/SPBXPage.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -70,7 +71,7 @@ export const ArbitrageMOEXPage = () => {
     { key: 'SBER-VTBR', label: 'SBER/VTBR', element: <KZOSPage tickerStock="SPBE" _tickerFuture="MOEX" /> },
     { key: 'GAZP-SIBN', label: 'GAZP/SIBN', element: <KZOSPage tickerStock="GAZP" _tickerFuture="SIBN" /> },
     { key: 'YDEX/OZON', label: 'YDEX/OZON', element: <KZOSPage tickerStock="YDEX" _tickerFuture="OZON" /> },
-    { key: 'BANE-spbe', label: 'BANE/BANE-spbe', element: <KZOSPage tickerStock="BANE" _tickerFuture="BANE" righExchange="SPBX" /> },
+    { key: 'SPBX-arbs', label: 'SPBX-arbs', element: <SPBXPage tickerStock="BANE" _tickerFuture="BANE" righExchange="SPBX" /> },
     { key: 'mtlr-spbe', label: 'MTLR/MTLR-spbe', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLR" righExchange="SPBX" /> },
     { key: 'mtlrp-spbe', label: 'MTLRP/MTLRP-spbe', element: <KZOSPage tickerStock="MTLRP" _tickerFuture="MTLRP" righExchange="SPBX" /> },
     { key: 'tatn', label: 'TATN/TATNP', element: <KZOSPage tickerStock="TATN" _tickerFuture="TATNP" /> },
