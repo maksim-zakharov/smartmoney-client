@@ -4,16 +4,21 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../Chart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
+import { calculateTruthFuturePrice, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
 import moment from 'moment';
 import { HistoryObject } from '../../sm-lib/models.ts';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
 import { LineStyle } from 'lightweight-charts';
+import { useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
 
 const { RangePicker } = DatePicker;
 
-export const SI_CNY_Page = () => {
+export const MOEX_CNY_Page = () => {
   const [token, setToken] = useState();
+
+  const month = '6.25';
+
+  const { data: details } = useGetSecurityDetailsQuery({ ticker: `CNY-${month}` });
   const [searchParams, setSearchParams] = useSearchParams();
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
@@ -22,7 +27,7 @@ export const SI_CNY_Page = () => {
   const [_data, setData] = useState({ cnyData: [], ucnyData: [], siData: [] });
   const { siData, ucnyData, cnyData } = _data;
 
-  const month = '9.25';
+  const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
 
   const _data2 = useMemo(() => {
     const { filteredStockCandles: leftCandles, filteredFuturesCandles } = getCommonCandles(siData, cnyData);
@@ -56,10 +61,10 @@ export const SI_CNY_Page = () => {
   const data = useMemo(() => {
     if (_data2?.length && ucnyData?.length) {
       const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(_data2, ucnyData);
-      return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 0.001)).filter(Boolean);
+      return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 4.5)).filter(Boolean);
     }
     return _data2;
-  }, [_data, _data2, ucnyData]);
+  }, [_data2, ucnyData]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
@@ -92,9 +97,9 @@ export const SI_CNY_Page = () => {
   useEffect(() => {
     token &&
       Promise.all([
-        fetchCandlesFromAlor(`SI-${month}`, tf, fromDate, toDate, null, token),
+        fetchCandlesFromAlor(`IMOEXF`, tf, fromDate, toDate, null, token),
         fetchCandlesFromAlor(`CNY-${month}`, tf, fromDate, toDate, null, token),
-        fetchCandlesFromAlor(`UCNY-${month}`, tf, fromDate, toDate, null, token),
+        fetchCandlesFromAlor(`MOEXCNY-${month}`, tf, fromDate, toDate, null, token),
       ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
   }, [tf, fromDate, toDate, token]);
 
@@ -104,6 +109,11 @@ export const SI_CNY_Page = () => {
   const zeroLineData = useMemo(() => data.map((s) => avg), [data]);
   const buyLineData = useMemo(() => data.map((s) => avg - 0.002), [data, diff]);
   const buyLineDatax2 = useMemo(() => data.map((s) => avg - 0.003), [data, diff]);
+
+  const truthPriceSeriesData = useMemo(
+    () => _data2.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate), []) / close),
+    [_data2, expirationDate],
+  );
 
   return (
     <>
@@ -129,6 +139,13 @@ export const SI_CNY_Page = () => {
             priceLineVisible: false,
             data: sellLineData,
             lineStyle: LineStyle.Dashed,
+          },
+          {
+            color: 'rgb(255, 186, 102)',
+            lineWidth: 1,
+            priceLineVisible: false,
+            lineStyle: LineStyle.Dashed,
+            data: truthPriceSeriesData,
           },
           {
             color: 'rgb(157, 43, 56)',

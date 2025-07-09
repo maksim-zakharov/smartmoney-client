@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
 import Decimal from 'decimal.js';
-import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
+import { calculateMultiple, calculateTruthFuturePrice, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
 import { calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
 
@@ -17,7 +17,6 @@ const { RangePicker } = DatePicker;
 const tt = () => fetch('https://sbcharts.investing.com/events_charts/eu/1967.json').then((response) => response.json());
 
 export const CNYRUBF_Page = () => {
-  const [useHage, setuseHage] = useState<boolean>(false);
   const [token, setToken] = useState();
   const [details, setdetails] = useState();
   const [chartValues, onChangeChart] = useState({ filteredBuyMarkers: [], filteredSellMarkers: [] });
@@ -47,25 +46,6 @@ export const CNYRUBF_Page = () => {
   }, []);
 
   /**
-   *
-   * @param stockPrice Цена акции (их свечки)
-   * @param stockTime Время цены акции
-   * @param expirationDate Дата экспироции фьюча
-   * @param cyR Ставка ЦБ КНР
-   */
-  const calculateTruthFuturePrice = (stockPrice: number, stockTime: number, expirationDate: Dayjs, cyR: number = 0.03) => {
-    // Ставка ЦБ РФ
-    const ruR = 0.2;
-    // Сколько осталось дней до экспирации
-    const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
-
-    // Рассчетная цена фьючерса
-    const price = stockPrice * (1 + ((ruR - cyR) * t) / 365);
-
-    return price;
-  };
-
-  /**
    * Рассчитывает порог арбитража (справедливая премия + издержки)
    * @param stockPrice - Цена акции
    * @param stockTime - Время цены
@@ -87,7 +67,7 @@ export const CNYRUBF_Page = () => {
     const brokerCommission = exchangeCommission.mul(0.5); // 0.0000231
     const totalCommissionRate = exchangeCommission.plus(brokerCommission).toNumber(); // 0.0000693 (0.00693%)
 
-    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate, ratesMap.get(stockTime));
+    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate, []); // , ratesMap.get(stockTime));
 
     // Дни до экспирации (дробные)
     const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);
@@ -166,7 +146,7 @@ export const CNYRUBF_Page = () => {
   }, [stockData, futureData, multiple]);
 
   const truthPriceSeriesData = useMemo(
-    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate), ratesMap.get(time)) / close),
+    () => stockData.map(({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate), []) / close),
     [stockData, ratesMap],
   );
 
@@ -252,42 +232,18 @@ export const CNYRUBF_Page = () => {
       const marker = chartValues.filteredBuyMarkers[i];
 
       result.positions.push(searchEndPosition('buy', 'future', marker.time, futureData, data));
-
-      if (useHage) {
-        const stockPosition = searchEndPosition('sell', 'stock', marker.time, stockData, data);
-
-        stockPosition.PnL *= multiple;
-        result.positions.push(stockPosition);
-      }
     }
 
     for (let i = 0; i < chartValues.filteredSellMarkers.length; i++) {
       const marker = chartValues.filteredSellMarkers[i];
 
       result.positions.push(searchEndPosition('sell', 'future', marker.time, futureData, data));
-
-      if (useHage) {
-        const stockPosition = searchEndPosition('buy', 'stock', marker.time, stockData, data);
-
-        stockPosition.PnL *= multiple;
-        result.positions.push(stockPosition);
-      }
     }
 
     result.totalPnL = result.positions.reduce((acc, curr) => acc + curr.PnL, 0);
 
     return result;
-  }, [
-    chartValues.filteredBuyMarkers,
-    chartValues.filteredSellMarkers,
-    useHage,
-    multiple,
-    data,
-    ema,
-    futureData,
-    searchEndPosition,
-    stockData,
-  ]);
+  }, [chartValues.filteredBuyMarkers, chartValues.filteredSellMarkers, multiple, data, ema, futureData, searchEndPosition, stockData]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);

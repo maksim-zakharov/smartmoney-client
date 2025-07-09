@@ -15,6 +15,7 @@ import { useSearchParams } from 'react-router-dom';
 import { KZOSPage } from './strategies/KZOSPage.tsx';
 import { useAppSelector } from '../store.ts';
 import { Format } from 'alor-api';
+import { MOEX_CNY_Page } from './strategies/MOEX_CNY_Page.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -66,7 +67,9 @@ export const ArbitrageMOEXPage = () => {
     { key: 'mtlr', label: 'MTLR/MTLRP', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLRP" /> },
     { key: 'rosn-tatn', label: 'ROSN/TATN', element: <KZOSPage tickerStock="ROSN" _tickerFuture="TATN" /> },
     { key: 'rosn-LKOH', label: 'ROSN/LKOH', element: <KZOSPage tickerStock="ROSN" _tickerFuture="LKOH" /> },
-    { key: 'URAL/DORS', label: 'URAL/DORS', element: <KZOSPage tickerStock="NVTK" _tickerFuture="T" /> },
+    { key: 'SBER-VTBR', label: 'SBER/VTBR', element: <KZOSPage tickerStock="SPBE" _tickerFuture="MOEX" /> },
+    { key: 'GAZP-SIBN', label: 'GAZP/SIBN', element: <KZOSPage tickerStock="GAZP" _tickerFuture="SIBN" /> },
+    { key: 'YDEX/OZON', label: 'YDEX/OZON', element: <KZOSPage tickerStock="YDEX" _tickerFuture="OZON" /> },
     { key: 'BANE-spbe', label: 'BANE/BANE-spbe', element: <KZOSPage tickerStock="BANE" _tickerFuture="BANE" righExchange="SPBX" /> },
     { key: 'mtlr-spbe', label: 'MTLR/MTLR-spbe', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLR" righExchange="SPBX" /> },
     { key: 'mtlrp-spbe', label: 'MTLRP/MTLRP-spbe', element: <KZOSPage tickerStock="MTLRP" _tickerFuture="MTLRP" righExchange="SPBX" /> },
@@ -83,7 +86,8 @@ export const ArbitrageMOEXPage = () => {
     { key: 'cnyrubf', label: 'CNY!1 / CNYRUBF', element: <CNYRUBF_Page /> },
     { key: 'KZT_tom', label: 'KZT!1 / KZTRUB_TOM', element: <KZT_TOM_Page /> },
     { key: 'ed', label: 'EU!1/(ED*SI)', element: <EDPage /> },
-    { key: 'SI_CNY', label: 'SI!1/(CNY*UCNY)', element: <SI_CNY_Page /> },
+    { key: 'SI_CNY', label: 'SI/CR/UC', element: <SI_CNY_Page /> },
+    { key: 'MOEXCN', label: 'MOEX/CR/MOEXCN', element: <MOEX_CNY_Page /> },
     { key: 'SI_GOLD', label: 'SI_GOLD', element: <SI_GOLD_Page /> },
   ];
   const selectedKey = searchParams.get('tab') || items[0]?.key;
