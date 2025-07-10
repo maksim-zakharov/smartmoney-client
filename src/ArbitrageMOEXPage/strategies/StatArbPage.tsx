@@ -30,7 +30,7 @@ const defaultState = Object.assign(
   storageState,
 );
 
-export const KZOSPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', righExchange = 'MOEX' }) => {
+export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', righExchange = 'MOEX' }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const multi = 100;
   const tf = searchParams.get('tf') || '900';

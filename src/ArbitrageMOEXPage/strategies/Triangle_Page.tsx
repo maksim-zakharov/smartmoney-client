@@ -19,7 +19,6 @@ export const Triangle_Page = ({ first, second, third, multiple }) => {
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
-  const [diff, setDiff] = useState<number>(0.005);
   const [_data, setData] = useState({ cnyData: [], ucnyData: [], siData: [] });
   const { siData, ucnyData, cnyData } = _data;
 
@@ -113,7 +112,7 @@ export const Triangle_Page = ({ first, second, third, multiple }) => {
         fetchCandlesFromAlor(`${second}-${expirationMonth}`, tf, fromDate, toDate, null, token),
         fetchCandlesFromAlor(`${third}-${expirationMonth}`, tf, fromDate, toDate, null, token),
       ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
-  }, [tf, fromDate, toDate, token, expirationMonth]);
+  }, [tf, fromDate, toDate, token, expirationMonth, first, second, third]);
 
   const positions = useMemo(() => {
     if (!data.length) {
@@ -128,6 +127,8 @@ export const Triangle_Page = ({ first, second, third, multiple }) => {
       const candle = data[i];
 
       const goal = 0.001;
+      const goal2 = 0.002;
+      const goal3 = 0.003;
 
       // Если позы еще нет
       if (!currentPosition) {
@@ -139,6 +140,7 @@ export const Triangle_Page = ({ first, second, third, multiple }) => {
             openPrice: 1 - goal,
             stopLoss: 1 - goal,
             openTime: candle.time,
+            qty: 1,
           };
         } else if (candle.high >= 1 + goal) {
           // Покупаем
@@ -147,22 +149,28 @@ export const Triangle_Page = ({ first, second, third, multiple }) => {
             openPrice: 1 + goal,
             stopLoss: 1 + goal,
             openTime: candle.time,
+            qty: 1,
           };
         }
       } else {
         // Если поза есть и сигнал на покупку усилился - усредняемся
-        // if (
-        //   (checkboxValues.has('avg1') && candle.low <= buyEmaLineData[i]) ||
-        //   (checkboxValues.has('avg1.5') && candle.low <= buyEmaLineData1per5[i])
-        // ) {
-        //   currentPosition = {
-        //     side: 'long',
-        //     openPrice: candle.low,
-        //     stopLoss: candle.low,
-        //     openTime: candle.time,
-        //   };
-        //   continue;
-        // }
+        if (currentPosition.qty === 1 && currentPosition.side === 'short' && candle.high >= 1 + goal2) {
+          currentPosition.qty = 2;
+          // continue;
+        }
+        if (currentPosition.qty === 2 && currentPosition.side === 'short' && candle.high >= 1 + goal3) {
+          currentPosition.qty = 3;
+          // continue;
+        }
+
+        if (currentPosition.qty === 1 && currentPosition.side === 'long' && candle.low <= 1 - goal2) {
+          currentPosition.qty = 2;
+          // continue;
+        }
+        if (currentPosition.qty === 2 && currentPosition.side === 'long' && candle.low <= 1 - goal3) {
+          currentPosition.qty = 3;
+          // continue;
+        }
 
         // Если цель не достигнута - мимо
         if (
@@ -186,7 +194,7 @@ export const Triangle_Page = ({ first, second, third, multiple }) => {
           currentPosition.openPrice > currentPosition?.takeProfit
             ? currentPosition.openPrice / currentPosition?.takeProfit
             : currentPosition?.takeProfit / currentPosition.openPrice;
-        currentPosition.newPnl = (percent - 1) * 100 - currentPosition.fee;
+        currentPosition.newPnl = (percent - 1) * 100 * currentPosition.qty - currentPosition.fee;
         buyPositions.push(currentPosition);
 
         currentPosition = null;
