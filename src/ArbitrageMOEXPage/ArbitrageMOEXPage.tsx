@@ -6,9 +6,6 @@ import { OldPage } from './strategies/OldPage';
 import { SI_CNY_Page } from './strategies/SI_CNY_Page';
 import { SI_GOLD_Page } from './strategies/SI_GOLD_Page';
 import { CNY_TOM_Page } from './strategies/CNY_TOM_Page';
-import { KZT_TOM_Page } from './strategies/KZT_TOM_Page.tsx';
-import { NVTKPage } from './strategies/NVTKPage.tsx';
-import { PLZLPage } from './strategies/PLZLPage.tsx';
 import { CNYRUBF_Page } from './strategies/CNYRUBF_Page.tsx';
 import { useSearchParams } from 'react-router-dom';
 import { KZOSPage } from './strategies/KZOSPage.tsx';
@@ -63,29 +60,28 @@ export const ArbitrageMOEXPage = () => {
   const items: MenuItem[] = [
     { key: 'old', label: 'Future/Stock', element: <OldPage /> },
     { key: 'BANE', label: 'BANE/BANEP', element: <KZOSPage tickerStock="BANE" _tickerFuture="BANEP" /> },
-    { key: 'LSNG', label: 'LSNG/LSNGP', element: <KZOSPage tickerStock="LSNG" _tickerFuture="LSNGP" /> },
-    // { key: 'MISB', label: 'MISB/MISBP', element: <KZOSPage tickerStock="MISB" _tickerFuture="MISBP" /> },
-    { key: 'mtlr', label: 'MTLR/MTLRP', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLRP" /> },
-    { key: 'rosn-tatn', label: 'ROSN/TATN', element: <KZOSPage tickerStock="ROSN" _tickerFuture="TATN" /> },
-    { key: 'rosn-LKOH', label: 'ROSN/LKOH', element: <KZOSPage tickerStock="ROSN" _tickerFuture="LKOH" /> },
-    { key: 'SBER-VTBR', label: 'SBER/VTBR', element: <KZOSPage tickerStock="SPBE" _tickerFuture="MOEX" /> },
-    { key: 'GAZP-SIBN', label: 'GAZP/SIBN', element: <KZOSPage tickerStock="GAZP" _tickerFuture="SIBN" /> },
-    { key: 'YDEX/OZON', label: 'YDEX/OZON', element: <KZOSPage tickerStock="YDEX" _tickerFuture="OZON" /> },
-    { key: 'SPBX-arbs', label: 'SPBX-arbs', element: <SPBXPage tickerStock="BANE" _tickerFuture="BANE" righExchange="SPBX" /> },
-    { key: 'mtlr-spbe', label: 'MTLR/MTLR-spbe', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLR" righExchange="SPBX" /> },
-    { key: 'mtlrp-spbe', label: 'MTLRP/MTLRP-spbe', element: <KZOSPage tickerStock="MTLRP" _tickerFuture="MTLRP" righExchange="SPBX" /> },
     { key: 'tatn', label: 'TATN/TATNP', element: <KZOSPage tickerStock="TATN" _tickerFuture="TATNP" /> },
     { key: 'rtkm', label: 'RTKM/RTKMP', element: <KZOSPage tickerStock="RTKM" _tickerFuture="RTKMP" /> },
-    { key: 'SNGS', label: 'SNGS/SNGSP', element: <KZOSPage tickerStock="SNGS" _tickerFuture="SNGSP" /> },
-    // { key: 'SVET', label: 'SVET/SVETP', element: <KZOSPage tickerStock="SVET" _tickerFuture="SVETP" /> },
+    { key: 'mtlr', label: 'MTLR/MTLRP', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLRP" /> },
     { key: 'SBER', label: 'SBER/SBERP', element: <KZOSPage tickerStock="SBER" _tickerFuture="SBERP" /> },
+    // { key: 'LSNG', label: 'LSNG/LSNGP', element: <KZOSPage tickerStock="LSNG" _tickerFuture="LSNGP" /> },
+    // { key: 'MISB', label: 'MISB/MISBP', element: <KZOSPage tickerStock="MISB" _tickerFuture="MISBP" /> },
+    { key: 'rosn-tatn', label: 'ROSN/TATN', element: <KZOSPage tickerStock="ROSN" _tickerFuture="TATN" /> },
+    { key: 'rosn-LKOH', label: 'ROSN/LKOH', element: <KZOSPage tickerStock="ROSN" _tickerFuture="LKOH" /> },
+    // { key: 'GAZP-SIBN', label: 'GAZP/SIBN', element: <KZOSPage tickerStock="GAZP" _tickerFuture="SIBN" /> },
+    // { key: 'YDEX/OZON', label: 'YDEX/OZON', element: <KZOSPage tickerStock="YDEX" _tickerFuture="OZON" /> },
+    { key: 'SPBX-arbs', label: 'SPBX-arbs', element: <SPBXPage tickerStock="BANE" _tickerFuture="BANE" righExchange="SPBX" /> },
+    // { key: 'mtlr-spbe', label: 'MTLR/MTLR-spbe', element: <KZOSPage tickerStock="MTLR" _tickerFuture="MTLR" righExchange="SPBX" /> },
+    // { key: 'mtlrp-spbe', label: 'MTLRP/MTLRP-spbe', element: <KZOSPage tickerStock="MTLRP" _tickerFuture="MTLRP" righExchange="SPBX" /> },
+    // { key: 'SNGS', label: 'SNGS/SNGSP', element: <KZOSPage tickerStock="SNGS" _tickerFuture="SNGSP" /> },
+    // { key: 'SVET', label: 'SVET/SVETP', element: <KZOSPage tickerStock="SVET" _tickerFuture="SVETP" /> },
     // { key: 'KZOS', label: 'KZOS/KZOSP', element: <KZOSPage tickerStock="KZOS" _tickerFuture="KZOSP" /> },
-    { key: 'nvtk', label: 'NVTK/NGM', element: <NVTKPage /> },
-    { key: 'plzl', label: 'PLZL/GOLD', element: <PLZLPage /> },
+    // { key: 'nvtk', label: 'NVTK/NGM', element: <NVTKPage /> },
+    // { key: 'plzl', label: 'PLZL/GOLD', element: <PLZLPage /> },
     // { key: 'CNTL', label: 'CNTL - CNTLP', element: <CNTLPage /> },
     { key: 'cny_tom', label: 'CNY!1 / CNYRUB_TOM', element: <CNY_TOM_Page /> },
     { key: 'cnyrubf', label: 'CNY!1 / CNYRUBF', element: <CNYRUBF_Page /> },
-    { key: 'KZT_tom', label: 'KZT!1 / KZTRUB_TOM', element: <KZT_TOM_Page /> },
+    // { key: 'KZT_tom', label: 'KZT!1 / KZTRUB_TOM', element: <KZT_TOM_Page /> },
     { key: 'ed', label: 'EU/SI/ED', element: <ED_SI_Page /> },
     { key: 'SI_CNY', label: 'SI/CR/UC', element: <SI_CNY_Page /> },
     { key: 'MOEXCN', label: 'MOEX/CR/MOEXCN', element: <MOEX_CNY_Page /> },
