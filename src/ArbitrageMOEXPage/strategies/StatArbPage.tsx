@@ -6,7 +6,6 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import moment from 'moment/moment';
 import { calculateMultiple, createRectangle2, getCommonCandles } from '../../utils';
 import { calculateBollingerBands, calculateCandle, symbolFuturePairs } from '../../../symbolFuturePairs';
 import { LineStyle, Time } from 'lightweight-charts';
@@ -14,6 +13,7 @@ import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery } from '../../api/alor.api';
 import { DatesPicker } from '../../DatesPicker';
+import { useAppSelector } from '../../store.ts';
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',
@@ -34,8 +34,10 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
   const [searchParams, setSearchParams] = useSearchParams();
   const multi = 100;
   const tf = searchParams.get('tf') || '900';
-  const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
-  const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
+  const fromDate = searchParams.get('fromDate') || dayjs().add(-30, 'day').unix();
+  const toDate = searchParams.get('toDate') || dayjs().add(1, 'day').unix();
+
+  const apiAuth = useAppSelector((state) => state.alorSlice.apiAuth);
 
   const [colors, setColors] = useState(defaultState);
 
@@ -79,7 +81,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
       exchange: leftExchange,
     },
     {
-      skip: !tickerFuture,
+      skip: !tickerFuture || !apiAuth,
     },
   );
 
@@ -94,7 +96,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
       exchange: righExchange,
     },
     {
-      skip: !tickerStock,
+      skip: !tickerStock || !apiAuth,
     },
   );
 
@@ -399,7 +401,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
       onCell: (row, index) => ({
         colSpan: row.type === 'summary' ? 4 : 1,
       }),
-      render: (value, row) => moment(row?.openTime * 1000).format('YYYY-MM-DD HH:mm'),
+      render: (value, row) => dayjs(row?.openTime * 1000).format('YYYY-MM-DD HH:mm'),
     },
     {
       title: 'Цена входа',
@@ -434,7 +436,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
       onCell: (row, index) => ({
         colSpan: row.type === 'summary' ? 4 : 1,
       }),
-      render: (value, row) => moment(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm'),
+      render: (value, row) => dayjs(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm'),
     },
     {
       title: 'Финрез',

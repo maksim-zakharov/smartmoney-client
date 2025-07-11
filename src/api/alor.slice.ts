@@ -17,6 +17,7 @@ const initialState = {
   activeOperations: [],
   lastWithdrawals: [],
   release: undefined,
+  apiAuth: false,
   darkColors: {
     backgroundColor: 'rgb(30,44,57)',
     color: 'rgb(166,189,213)',
@@ -31,6 +32,7 @@ const initialState = {
     borderColor: string;
   };
   api: undefined | AlorApi;
+  apiAuth: boolean;
   userInfo: UserInfoResponse;
   settings: Settings;
   agreementsMap: any;
@@ -65,6 +67,7 @@ export const alorSlice = createSlice({
       state.release = action.payload;
       if (state.api) {
         state.release?.();
+        state.apiAuth = true;
       }
     },
     logout(state) {

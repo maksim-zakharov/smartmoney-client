@@ -34,8 +34,8 @@ const recurcive =
 
     if (!api) {
       // return {} as any;
-      release = await mutex.acquire();
-      dispatch(acquire(release));
+      // release = await mutex.acquire();
+      // dispatch(acquire(release));
       // await mutex.waitForUnlock();
       return recurcive(selector, paramsCallback)(args, _api);
     }
@@ -56,7 +56,7 @@ const recurcive =
       if (error.message === 'Необходимо авторизоваться') {
         if (!mutex.isLocked()) {
           const release = await mutex.acquire();
-          dispatch(acquire(release));
+          // dispatch(acquire(release));
           try {
             if (lk) {
               const { AccessToken } = await api.auth.refreshToken({ refreshToken: token, type: 'lk' });

@@ -252,6 +252,8 @@ export const OldPage = () => {
     [data, emaBBPeriod, bbMiltiplier],
   );
 
+  const buyEmaLineDataSmall2 = useMemo(() => truthPriceSeriesDivsData.map((s) => s * (1 - 0.0025)), [truthPriceSeriesDivsData]);
+
   const buyEmaLineDataSmall = useMemo(() => truthPriceSeriesDivsData.map((s) => s * (1 - 0.005)), [truthPriceSeriesDivsData]);
 
   const buyEmaLineData = useMemo(() => truthPriceSeriesDivsData.map((s) => s * (1 - 0.01)), [truthPriceSeriesDivsData]);
@@ -274,6 +276,7 @@ export const OldPage = () => {
       if (!currentPosition) {
         // И появился сигнал на покупку
         if (
+          (checkboxValues.has('tradePercent0.25') && candle.low <= buyEmaLineDataSmall2[i]) ||
           (checkboxValues.has('tradePercent0.5') && candle.low <= buyEmaLineDataSmall[i]) ||
           (checkboxValues.has('tradePercent1') && candle.low <= buyEmaLineData[i]) ||
           (checkboxValues.has('tradePercent1.5') && candle.low <= buyEmaLineData1per5[i])
@@ -328,7 +331,17 @@ export const OldPage = () => {
     }
 
     return buyPositions.sort((a, b) => b.openTime - a.openTime);
-  }, [checkboxValues, data, fee, tickerStock, buyEmaLineData, buyEmaLineData1per5, buyEmaLineDataSmall, truthPriceSeriesDivsData]);
+  }, [
+    checkboxValues,
+    data,
+    fee,
+    tickerStock,
+    buyEmaLineData,
+    buyEmaLineData1per5,
+    buyEmaLineDataSmall,
+    buyEmaLineDataSmall2,
+    truthPriceSeriesDivsData,
+  ]);
 
   const { PnL, profits, losses, Fee } = useMemo(() => {
     const array = positions;
@@ -403,7 +416,14 @@ export const OldPage = () => {
       ],
     }));
 
-    if (!ema.length || !data.length || !buyEmaLineData.length || !buyEmaLineData1per5.length || !buyEmaLineDataSmall.length) {
+    if (
+      !ema.length ||
+      !data.length ||
+      !buyEmaLineData.length ||
+      !buyEmaLineData1per5.length ||
+      !buyEmaLineDataSmall.length ||
+      !buyEmaLineDataSmall2.length
+    ) {
       return [];
     }
 
@@ -437,6 +457,16 @@ export const OldPage = () => {
           lineStyle: LineStyle.SparseDotted,
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineDataSmall[i] })),
+      },
+      checkboxValues.has('buyEmaLineDataSmall2') && {
+        id: 'buyEmaLineDataSmall2',
+        options: {
+          color: 'rgb(20, 131, 92)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.SparseDotted,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: buyEmaLineDataSmall2[i] })),
       },
       checkboxValues.has('buyEmaLineData1per5') && {
         id: 'buyEmaLineData1per5',
@@ -533,7 +563,7 @@ export const OldPage = () => {
       //   data: buyLineData,
       //   lineStyle: LineStyle.Dashed,
     ].filter(Boolean);
-  }, [colors, buyEmaLineData1per5, buyEmaLineDataSmall, buyEmaLineData, positions, checkboxValues]);
+  }, [colors, buyEmaLineData1per5, buyEmaLineDataSmall, buyEmaLineData, positions, checkboxValues, buyEmaLineDataSmall2]);
 
   const primitives = useMemo(() => {
     if (!BB.upper.length || !checkboxValues.has('enableBB')) {
@@ -796,6 +826,9 @@ export const OldPage = () => {
                 onChange={(val) => setColors((prevState) => ({ ...prevState, zeroLevel: val.toRgbString() }))}
               />
             </div>
+            <Checkbox key="buyEmaLineDataSmall2" value="buyEmaLineDataSmall2">
+              -0.25% от справедливой
+            </Checkbox>
             <Checkbox key="buyEmaLineDataSmall" value="buyEmaLineDataSmall">
               -0.5% от справедливой
             </Checkbox>
@@ -806,6 +839,9 @@ export const OldPage = () => {
               -1.5% от справедливой
             </Checkbox>
             <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
+            <Checkbox key="tradePercent0.25" value="tradePercent0.25">
+              Заходим на 0.25%
+            </Checkbox>
             <Checkbox key="tradePercent0.5" value="tradePercent0.5">
               Заходим на 0.5%
             </Checkbox>

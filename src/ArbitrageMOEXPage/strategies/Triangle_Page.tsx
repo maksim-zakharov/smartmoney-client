@@ -13,7 +13,7 @@ import { Chart } from '../../SoloTestPage/UpdatedChart';
 
 const { RangePicker } = DatePicker;
 
-export const Triangle_Page = ({ first, second, third, multiple }) => {
+export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) => {
   const [token, setToken] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
   const tf = searchParams.get('tf') || '900';
@@ -106,12 +106,21 @@ export const Triangle_Page = ({ first, second, third, multiple }) => {
   ];
 
   useEffect(() => {
-    token &&
-      Promise.all([
-        fetchCandlesFromAlor(`${first}-${expirationMonth}`, tf, fromDate, toDate, null, token),
-        fetchCandlesFromAlor(`${second}-${expirationMonth}`, tf, fromDate, toDate, null, token),
-        fetchCandlesFromAlor(`${third}-${expirationMonth}`, tf, fromDate, toDate, null, token),
-      ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
+    if (noExp) {
+      token &&
+        Promise.all([
+          fetchCandlesFromAlor(first, tf, fromDate, toDate, null, token),
+          fetchCandlesFromAlor(second, tf, fromDate, toDate, null, token),
+          fetchCandlesFromAlor(third, tf, fromDate, toDate, null, token),
+        ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
+    } else {
+      token &&
+        Promise.all([
+          fetchCandlesFromAlor(`${first}-${expirationMonth}`, tf, fromDate, toDate, null, token),
+          fetchCandlesFromAlor(`${second}-${expirationMonth}`, tf, fromDate, toDate, null, token),
+          fetchCandlesFromAlor(`${third}-${expirationMonth}`, tf, fromDate, toDate, null, token),
+        ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
+    }
   }, [tf, fromDate, toDate, token, expirationMonth, first, second, third]);
 
   const positions = useMemo(() => {
