@@ -6,10 +6,36 @@ export const symbolFuturePairs = [
     futuresShortName: 'SZZ4',
     stockSymbol: 'SGZH',
   },
+  // 4 валюты - 3 ставки учитывать
+  {
+    futuresSymbol: 'GL',
+    futuresShortName: 'GL',
+    stockSymbol: 'GLDRUBF',
+  },
+  {
+    futuresSymbol: 'SI',
+    futuresShortName: 'SI',
+    stockSymbol: 'USDRUBF',
+  },
+  {
+    futuresSymbol: 'CNY',
+    futuresShortName: 'CNY',
+    stockSymbol: 'CNYRUBF',
+  },
+  {
+    futuresSymbol: 'EU',
+    futuresShortName: 'EU',
+    stockSymbol: 'EURRUBF',
+  },
   {
     futuresSymbol: 'SBRF',
     futuresShortName: 'SRZ4',
     stockSymbol: 'SBER',
+  },
+  {
+    futuresSymbol: 'EU',
+    futuresShortName: 'EU',
+    stockSymbol: 'EURRUBF',
   },
   {
     futuresSymbol: 'CNY',

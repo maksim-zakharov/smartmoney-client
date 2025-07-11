@@ -469,8 +469,11 @@ export const defaultSeriesOptions = {
     //     wickDownColor: '#E31C1C',
     //     borderVisible: false,
     // },
-    lastValueVisible: false,
-    priceLineVisible: false,
+    // lastValueVisible: false,
+    // priceLineVisible: false,
+    // priceScaleId: 'right', // Привязываем к правой оси
+    lastValueVisible: true, // Показывать последнее значение
+    priceLineVisible: true, // Опционально: показать линию текущей цены
   } as CandlestickSeriesPartialOptions,
   Histogram: {} as HistogramSeriesPartialOptions,
   Line: {

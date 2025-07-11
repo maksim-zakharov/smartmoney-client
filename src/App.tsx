@@ -16,6 +16,7 @@ import { CNYFundingPage } from './CNYFundingPage';
 import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
 import { initApi } from './api/alor.slice';
+import { TestPage } from './TestPage.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ export default function App() {
     { key: '/new-testing', label: 'Новые тесты', element: <NewTestingPage /> },
     { key: '/screener', label: 'Скринер плотностей', element: <ScreenerPage /> },
     { key: '/cny-funding', label: 'CNY Funding', element: <CNYFundingPage /> },
+    { key: '/test123', label: 'Test', element: <TestPage /> },
   ];
 
   function onClick(params) {

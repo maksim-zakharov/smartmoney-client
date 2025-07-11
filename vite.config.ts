@@ -1,5 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -10,8 +11,13 @@ export default defineConfig({
   worker: {
     format: 'es', // Важно для Worker'ов в Vite
   },
+  resolve: {
+    alias: {
+      ws: resolve(__dirname, 'src/alias/ws.js'),
+    },
+  },
   plugins: [react()],
   define: {
     'process.env': JSON.stringify(process.env.NODE_ENV),
   },
-})
+});

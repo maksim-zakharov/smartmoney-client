@@ -74,7 +74,7 @@ export const OldPage = () => {
     searchParams.set('expirationMonth', value);
     setSearchParams(searchParams);
   };
-  const multi = Number(searchParams.get('multi'));
+  const multi = Number(searchParams.get('multi')) || 1;
 
   const setmulti = (value) => {
     searchParams.set('multi', value.toString());

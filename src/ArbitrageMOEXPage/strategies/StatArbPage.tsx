@@ -4,7 +4,7 @@ import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { calculateMultiple, createRectangle2, getCommonCandles } from '../../utils';
 import { calculateBollingerBands, calculateCandle, symbolFuturePairs } from '../../../symbolFuturePairs';
@@ -14,6 +14,7 @@ import { Content } from 'antd/es/layout/layout';
 import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery } from '../../api/alor.api';
 import { DatesPicker } from '../../DatesPicker';
 import { useAppSelector } from '../../store.ts';
+import { HistoryObject } from 'alor-api';
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',
@@ -30,6 +31,60 @@ const defaultState = Object.assign(
   storageState,
 );
 
+class MyDatafeed {
+  data = [];
+
+  constructor(data) {
+    this.data = data; // Ваши данные в формате OHLCV
+  }
+
+  onReady(callback) {
+    callback({
+      supports_search: true,
+      supports_group_request: false,
+      supports_marks: false,
+      supports_timescale_marks: false,
+      supported_resolutions: ['1', '5', '15', '30', '60', '1D', '1W', '1M'],
+    });
+  }
+
+  resolveSymbol(symbolName, onSymbolResolvedCallback) {
+    onSymbolResolvedCallback({
+      name: symbolName,
+      type: 'stock',
+      session: '24x7',
+      timezone: 'Etc/UTC',
+      minmov: 1,
+      pricescale: 100,
+      has_intraday: true,
+      supported_resolutions: ['1', '5', '15', '30', '60', '1D'],
+    });
+  }
+
+  getBars(symbolInfo, resolution, from, to, onHistoryCallback) {
+    const bars = this.data.filter((bar) => bar.time >= from && bar.time <= to);
+    onHistoryCallback(bars, { noData: !bars.length });
+  }
+}
+
+const TWChart = ({ data }) => {
+  const container = useRef<HTMLDivElement>();
+
+  useEffect(() => {
+    if (container.current && !container.current.querySelector('iframe')) {
+      // @ts-ignore
+      const widget = new window.TradingView.widget({
+        datafeed: new MyDatafeed(data),
+        symbol: 'CUSTOM:YOUR_SYMBOL',
+        interval: '1D',
+        container: container.current.id,
+      });
+    }
+  }, [data]);
+
+  return <div id="tradingview-widget" ref={container} />;
+};
+
 export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', righExchange = 'MOEX' }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const multi = 100;
@@ -38,6 +93,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
   const toDate = searchParams.get('toDate') || dayjs().add(1, 'day').unix();
 
   const apiAuth = useAppSelector((state) => state.alorSlice.apiAuth);
+  const api = useAppSelector((state) => state.alorSlice.api);
 
   const [colors, setColors] = useState(defaultState);
 
@@ -87,6 +143,30 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
 
   const futureData = _futureData?.history || [];
 
+  const [futureDataRef, setfutureDataRef] = useState<HistoryObject[]>([]);
+
+  useEffect(() => {
+    setfutureDataRef(futureData);
+  }, [futureData]);
+
+  // useOrderbook({
+  //   tf,
+  //   from: futureData[futureData.length - 1]?.time,
+  //   code: tickerFuture,
+  //   handler: (candle) => {
+  //     setfutureDataRef((prevState) => {
+  //       const existIndex = prevState.findIndex((c) => c.time === candle.time);
+  //       if (existIndex === -1) {
+  //         return [...prevState, candle];
+  //       } else {
+  //         const newData = prevState.slice(); // Клонируем массив
+  //         newData[existIndex] = candle;
+  //         return newData;
+  //       }
+  //     });
+  //   },
+  // });
+
   const { data: _stockData } = useGetHistoryQuery(
     {
       tf,
@@ -102,31 +182,55 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
 
   const stockData = _stockData?.history || [];
 
+  const [stockDataRef, setstockDataRef] = useState<HistoryObject[]>([]);
+
+  useEffect(() => {
+    setstockDataRef(stockData);
+  }, [stockData]);
+
+  // useOrderbook({
+  //   tf,
+  //   from: stockData[stockData.length - 1]?.time,
+  //   code: tickerStock,
+  //   handler: (candle) => {
+  //     setstockDataRef((prevState) => {
+  //       const existIndex = prevState.findIndex((c) => c.time === candle.time);
+  //       if (existIndex === -1) {
+  //         return [...prevState, candle];
+  //       } else {
+  //         const newData = prevState.slice(); // Клонируем массив
+  //         newData[existIndex] = candle;
+  //         return newData;
+  //       }
+  //     });
+  //   },
+  // });
+
   const lotsize = security?.lotsize || 1;
   const fee = 0.04 / 100;
 
   const multiple = useMemo(
     () =>
       multi ||
-      (stockData?.length && futureData?.length
-        ? calculateMultiple(stockData[stockData.length - 1].close, futureData[futureData.length - 1].close)
+      (stockDataRef?.length && futureDataRef?.length
+        ? calculateMultiple(stockDataRef[stockDataRef.length - 1].close, futureDataRef[futureDataRef.length - 1].close)
         : 0),
-    [stockData, futureData, multi],
+    [stockDataRef, futureDataRef, multi],
   );
 
   const stockTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.stockSymbol), []);
   const futureTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.futuresSymbol), []);
 
   const data = useMemo(() => {
-    if (stockData?.length && futureData?.length) {
-      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(stockData, futureData);
+    if (stockDataRef?.length && futureDataRef?.length) {
+      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(stockDataRef, futureDataRef);
 
       return filteredFuturesCandles
         .map((item, index) => calculateCandle(filteredStockCandles[index], item, Number(multiple)))
         .filter(Boolean);
     }
-    return stockData;
-  }, [stockData, futureData, multiple]);
+    return stockDataRef;
+  }, [futureDataRef, multiple, stockDataRef]);
 
   const BB = useMemo(
     () =>
@@ -369,6 +473,16 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: BB.lower[i] })),
       },
+      checkboxValues.has('enableBB') && {
+        id: 'BB.lower+1',
+        options: {
+          color: 'rgb(20, 131, 92)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          // lineStyle: LineStyle.SparseDotted,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: BB2.lower[i] })),
+      },
     ].filter(Boolean);
   }, [colors, positions, checkboxValues]);
 
@@ -489,6 +603,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
 
             <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
           </Space>
+          {/*<TWChart data={data} />*/}
           <Chart
             hideCross
             lineSerieses={ls}
@@ -569,28 +684,28 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
             }}
           />
         </div>
-        <Chart
-          hideCross
-          lineSerieses={[]}
-          primitives={[]}
-          markers={[]}
-          toolTipTop="40px"
-          toolTipLeft="4px"
-          data={stockData}
-          ema={[]}
-          maximumFractionDigits={2}
-        />
-        <Chart
-          hideCross
-          lineSerieses={[]}
-          primitives={[]}
-          markers={[]}
-          toolTipTop="40px"
-          toolTipLeft="4px"
-          data={futureData}
-          ema={[]}
-          maximumFractionDigits={2}
-        />
+        {/*<Chart*/}
+        {/*  hideCross*/}
+        {/*  lineSerieses={[]}*/}
+        {/*  primitives={[]}*/}
+        {/*  markers={[]}*/}
+        {/*  toolTipTop="40px"*/}
+        {/*  toolTipLeft="4px"*/}
+        {/*  data={stockDataRef}*/}
+        {/*  ema={[]}*/}
+        {/*  maximumFractionDigits={2}*/}
+        {/*/>*/}
+        {/*<Chart*/}
+        {/*  hideCross*/}
+        {/*  lineSerieses={[]}*/}
+        {/*  primitives={[]}*/}
+        {/*  markers={[]}*/}
+        {/*  toolTipTop="40px"*/}
+        {/*  toolTipLeft="4px"*/}
+        {/*  data={futureDataRef}*/}
+        {/*  ema={[]}*/}
+        {/*  maximumFractionDigits={2}*/}
+        {/*/>*/}
       </Content>
       <Sider width="300px" style={{ marginRight: '-20px', padding: 20 }}>
         <Checkbox.Group
