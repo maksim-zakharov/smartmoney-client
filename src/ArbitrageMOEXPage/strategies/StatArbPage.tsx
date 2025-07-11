@@ -107,7 +107,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
     setSearchParams(searchParams);
   };
 
-  const emaBBPeriod = Number(searchParams.get('emaBBPeriod') || 20);
+  const emaBBPeriod = Number(searchParams.get('emaBBPeriod') || 200);
   const setEmaBBPeriod = (value) => {
     searchParams.set('emaBBPeriod', value);
     setSearchParams(searchParams);

@@ -69,7 +69,17 @@ export const ArbitrageMOEXPage = () => {
     { key: 'cny_tom', label: 'CNY!1 / CNYRUB_TOM', element: <CNY_TOM_Page /> },
     { key: 'cnyrubf', label: 'CNY!1 / CNYRUBF', element: <CNYRUBF_Page /> },
     { key: 'ed', label: 'EU/SI/ED', element: <Triangle_Page first="EU" second="SI" third="ED" multiple={1} /> },
-    { key: 'SI_CNY', label: 'SI/CR/UC', element: <Triangle_Page first="SI" second="CNY" third="UCNY" multiple={0.001} /> },
+    { key: 'SI_CNY', label: 'SI/CNY/UC', element: <Triangle_Page first="SI" second="CNY" third="UCNY" multiple={0.001} /> },
+    {
+      key: 'USDRUBF/CNY-9.25/UCNY-9.25',
+      label: 'USDRUBF/CNY-9.25/UCNY-9.25',
+      element: <Triangle_Page first="USDRUBF" second="CNY-9.25" third="UCNY-9.25" multiple={1} noExp />,
+    },
+    {
+      key: 'SI-9.25/CNYRUBF/UCNY-9.25',
+      label: 'SI-9.25/CNYRUBF/UCNY-9.25',
+      element: <Triangle_Page first="SI-9.25" second="CNYRUBF" third="UCNY-9.25" multiple={0.001} noExp />,
+    },
     {
       key: 'USDRUBF/CNYRUBF/UCNY-9.25',
       label: 'USDRUBF/CNYRUBF/UCNY-9.25',
@@ -84,6 +94,11 @@ export const ArbitrageMOEXPage = () => {
       key: 'EURRUBF/USDRUBF/ED-9.25',
       label: 'EURRUBF/USDRUBF/ED-9.25',
       element: <Triangle_Page first="EURRUBF" second="USDRUBF" third="ED-9.25" multiple={1} noExp />,
+    },
+    {
+      key: 'GLDRUBF/SI-9.25/GD-9.25',
+      label: 'GLDRUBF/SI-9.25/GD-9.25',
+      element: <Triangle_Page first="GLDRUBF" second="SI-9.25" third="GL-9.25" multiple={100000} noExp />,
     },
     { key: 'MOEXCN', label: 'MOEX/CR/MOEXCN', element: <MOEX_CNY_Page /> },
     { key: 'SI_GOLD', label: 'SI_GOLD', element: <SI_GOLD_Page /> },
