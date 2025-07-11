@@ -138,6 +138,16 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
     [data, emaBBPeriod, bbMiltiplier],
   );
 
+  const BB2 = useMemo(
+    () =>
+      calculateBollingerBands(
+        data.map((h) => h.close),
+        emaBBPeriod,
+        bbMiltiplier + 1,
+      ),
+    [data, emaBBPeriod, bbMiltiplier],
+  );
+
   const positions = useMemo(() => {
     if (!data.length) {
       return [];
@@ -301,15 +311,6 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
 
     return [
       // ...lineSerieses,
-      checkboxValues.has('enableBB') && {
-        id: 'ema',
-        options: {
-          color: colors.ema,
-          lineWidth: 1,
-          priceLineVisible: false,
-        },
-        data: data.map((extremum, i) => ({ time: extremum.time, value: BB.middle[i] })),
-      },
       // {
       //   color: 'rgb(20, 131, 92)',
       //   lineWidth: 1,
@@ -338,6 +339,25 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
           lineStyle: LineStyle.Dashed,
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: BB.upper[i] })),
+      },
+      checkboxValues.has('enableBB') && {
+        id: 'BB.upper+1',
+        options: {
+          color: 'rgb(157, 43, 56)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          // lineStyle: LineStyle.SparseDotted,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: BB2.upper[i] })),
+      },
+      checkboxValues.has('enableBB') && {
+        id: 'ema',
+        options: {
+          color: colors.ema,
+          lineWidth: 1,
+          priceLineVisible: false,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: BB.middle[i] })),
       },
       checkboxValues.has('enableBB') && {
         id: 'BB.lower',
@@ -384,7 +404,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
     }
 
     return _primitives;
-  }, [BB, data, checkboxValues]);
+  }, [BB, data, checkboxValues, BB2]);
 
   const historyColumns = [
     {

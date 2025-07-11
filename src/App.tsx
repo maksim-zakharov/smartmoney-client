@@ -29,7 +29,8 @@ export default function App() {
   } = theme.useToken();
 
   useEffect(() => {
-    if (localStorage.getItem('token')) dispatch(initApi({ token: localStorage.getItem('token') }));
+    if (localStorage.getItem('token'))
+      dispatch(initApi({ token: localStorage.getItem('token'), accessToken: localStorage.getItem('accessToken') }));
   }, []);
 
   const menuItems = [

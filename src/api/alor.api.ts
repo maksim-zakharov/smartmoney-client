@@ -61,6 +61,7 @@ const recurcive =
             if (lk) {
               const { AccessToken } = await api.auth.refreshToken({ refreshToken: token, type: 'lk' });
               api.accessToken = AccessToken;
+              localStorage.setItem('accessToken', api.accessToken);
               api.http.defaults.headers.common['Authorization'] = 'Bearer ' + AccessToken;
             } else {
               await api.refresh();
