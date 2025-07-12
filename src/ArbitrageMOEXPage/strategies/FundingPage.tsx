@@ -23,7 +23,7 @@ import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
-import { calculateTruthFuturePrice, createRectangle2, getCommonCandles } from '../../utils.ts';
+import { calculateTruthFuturePrice, createRectangle2, getCommonCandles, getOvernightDays } from '../../utils.ts';
 import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { LineStyle, Time } from 'lightweight-charts';
 import Sider from 'antd/es/layout/Sider';
@@ -54,7 +54,7 @@ const defaultState = Object.assign(
   storageState,
 );
 
-export const OldPage = () => {
+export const FundingPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tickerStock = searchParams.get('ticker-stock') || 'SBER';
   const _tickerFuture = searchParams.get('ticker-future');
@@ -285,6 +285,7 @@ export const OldPage = () => {
       if (!currentPosition) {
         // И появился сигнал на покупку
         if (
+          (checkboxValues.has('tradePercent0.25') && candle.low <= truthPriceSeriesData[i]) ||
           (checkboxValues.has('tradePercent0.25') && candle.low <= buyEmaLineDataSmall2[i]) ||
           (checkboxValues.has('tradePercent0.5') && candle.low <= buyEmaLineDataSmall[i]) ||
           (checkboxValues.has('tradePercent1') && candle.low <= buyEmaLineData[i]) ||
@@ -296,25 +297,28 @@ export const OldPage = () => {
             openPrice: candle.low,
             stopLoss: candle.low,
             openTime: candle.time,
+            qty: 1,
           };
         }
       } else {
         // Если поза есть и сигнал на покупку усилился - усредняемся
         if (
-          (checkboxValues.has('avg1') && candle.low <= buyEmaLineData[i]) ||
-          (checkboxValues.has('avg1.5') && candle.low <= buyEmaLineData1per5[i])
+          (currentPosition.qty === 1 && checkboxValues.has('avg0.25') && candle.low <= buyEmaLineDataSmall2[i]) ||
+          (currentPosition.qty === 2 && checkboxValues.has('avg0.5') && candle.low <= buyEmaLineDataSmall[i])
         ) {
           currentPosition = {
             side: 'long',
             openPrice: candle.low,
             stopLoss: candle.low,
             openTime: candle.time,
+            qty: currentPosition.qty + 1,
           };
           continue;
         }
 
         // Если цель не достигнута - мимо
-        if (candle.high <= truthPriceSeriesDivsData[i]) {
+        if (candle.high <= sellEmaLineDataSmall[i]) {
+          // if (candle.high <= sellEmaLineDataSmall3[i]) {
           continue;
         }
 
@@ -326,13 +330,23 @@ export const OldPage = () => {
           closePrice: candle.open,
         };
 
-        currentPosition.fee = fee * 200;
+        // Посчитать овернайт
+
+        const overnightFee = 0.08;
+        const startTime = dayjs(currentPosition.openTime * 1000);
+        const endTime = dayjs(currentPosition.closeTime * 1000);
+
+        const totalOvernightFee = getOvernightDays(startTime, endTime) * overnightFee;
+        currentPosition.totalOvernightFee = totalOvernightFee;
+
+        currentPosition.fee = totalOvernightFee + fee * 200;
 
         const percent =
           currentPosition.openPrice > currentPosition?.takeProfit
             ? currentPosition.openPrice / currentPosition?.takeProfit
             : currentPosition?.takeProfit / currentPosition.openPrice;
-        currentPosition.newPnl = (percent - 1) * 100 - currentPosition.fee;
+
+        currentPosition.newPnl = ((percent - 1) * 100 - currentPosition.fee) * currentPosition.qty;
         buyPositions.push(currentPosition);
 
         currentPosition = null;
@@ -341,15 +355,15 @@ export const OldPage = () => {
 
     return buyPositions.sort((a, b) => b.openTime - a.openTime);
   }, [
-    checkboxValues,
     data,
-    fee,
-    tickerStock,
+    checkboxValues,
+    truthPriceSeriesData,
+    buyEmaLineDataSmall2,
+    buyEmaLineDataSmall,
     buyEmaLineData,
     buyEmaLineData1per5,
-    buyEmaLineDataSmall,
-    buyEmaLineDataSmall2,
-    truthPriceSeriesDivsData,
+    sellEmaLineDataSmall,
+    fee,
   ]);
 
   const { PnL, profits, losses, Fee } = useMemo(() => {
@@ -691,6 +705,20 @@ export const OldPage = () => {
       render: (value, row) => moment(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm'),
     },
     {
+      title: 'Овернайт',
+      dataIndex: 'newPnl',
+      key: 'totalOvernightFee',
+      align: 'right',
+      render: (value, row) => (row.totalOvernightFee ? `${row.totalOvernightFee.toFixed(2)}%` : '-'),
+    },
+    {
+      title: 'Общ. комиссия',
+      dataIndex: 'newPnl',
+      key: 'fee',
+      align: 'right',
+      render: (value, row) => (row.fee ? `${row.fee.toFixed(2)}%` : '-'),
+    },
+    {
       title: 'Финрез',
       dataIndex: 'newPnl',
       key: 'newPnl',
@@ -908,11 +936,11 @@ export const OldPage = () => {
               Заходим на 1.5%
             </Checkbox>
             <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
-            <Checkbox key="avg1" value="avg1">
-              Усредняемся на 1%
+            <Checkbox key="avg0.25" value="avg0.25">
+              Усредняемся на 0.25%
             </Checkbox>
-            <Checkbox key="avg1.5" value="avg1.5">
-              Усредняемся на 1.5%
+            <Checkbox key="avg0.5" value="avg0.5">
+              Усредняемся на 0.5%
             </Checkbox>
           </Checkbox.Group>
         </Sider>

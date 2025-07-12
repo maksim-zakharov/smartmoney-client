@@ -709,6 +709,8 @@ export const formatDateTime = (value) => moment(value).format('YYYY-MM-DD HH:mm'
 export const calculateTruthFuturePrice = (S: number, stockTime: number, expirationDate: Dayjs, dividends = []) => {
   // Ставка ЦБ РФ (безрисковая ставка)
   const r = 0.2;
+  // const r = 0.2 - 0.01;
+  // const r = 0.2 - 0.0215;
 
   const dayjsStockTime = dayjs(stockTime * 1000);
 

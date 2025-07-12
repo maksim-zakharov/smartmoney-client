@@ -13,6 +13,7 @@ import { useAppSelector } from '../store.ts';
 import { Format } from 'alor-api';
 import { MOEX_CNY_Page } from './strategies/MOEX_CNY_Page.tsx';
 import { SPBXPage } from './strategies/SPBXPage.tsx';
+import { FundingPage } from './strategies/FundingPage.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -57,6 +58,7 @@ export const ArbitrageMOEXPage = () => {
   }, [api]);
 
   const items: MenuItem[] = [
+    { key: 'Funding', label: 'Funding', element: <FundingPage /> },
     { key: 'old', label: 'Future/Stock', element: <OldPage /> },
     { key: 'BANE', label: 'BANE/BANEP', element: <StatArbPage tickerStock="BANE" _tickerFuture="BANEP" /> },
     { key: 'tatn', label: 'TATN/TATNP', element: <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" /> },
