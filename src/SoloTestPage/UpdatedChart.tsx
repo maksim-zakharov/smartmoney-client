@@ -120,7 +120,7 @@ const ChartFC: FC<Props> = ({
         // rightOffset: 10, // это создаст отступ на 10 временных единиц вправо
         rightOffset: 12, // Отступ справа (в пикселях)
         fixLeftEdge: true, // Фиксирует левую границу
-        fixRightEdge: true, // Фиксирует правую границу
+        // fixRightEdge: true, // Фиксирует правую границу
         tickMarkFormatter: (time, tickMarkType, locale) => {
           const date = new Date(time * 1000); // Переводим время в миллисекунды
 

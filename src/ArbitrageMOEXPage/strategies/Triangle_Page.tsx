@@ -10,10 +10,12 @@ import { HistoryObject } from '../../sm-lib/models.ts';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
 import { LineStyle } from 'lightweight-charts';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
+import { useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
 
 const { RangePicker } = DatePicker;
 
 export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) => {
+  // 3.21 6.20 9.19 12.18
   const [token, setToken] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
   const tf = searchParams.get('tf') || '900';
@@ -26,6 +28,20 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
   const [minimumTradeDiff, setMinimumTradeDiff] = useState(0.001);
 
   const overnightFee = 0.08;
+
+  const startDateMap = {
+    '3.25': '2024-12-20',
+    '6.25': '2025-03-20',
+    '9.25': '2025-06-20',
+    '12.25': '2025-09-20',
+  };
+
+  const rate = 0.2;
+  const ratePerQuartal = rate / 4;
+
+  const { data: details } = useGetSecurityDetailsQuery({ ticker: third });
+
+  const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
 
   const expirationMonth = searchParams.get('expirationMonth') || '9.25';
   const setexpirationMonth = (value) => {
@@ -243,7 +259,26 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
     const buyLineData = data.map((s) => avg - 0.002);
     const buyLineDatax2 = data.map((s) => avg - 0.003);
 
+    const t = startDateMap[expirationMonth];
+    const from = dayjs(`${t}`);
+    const to = dayjs(expirationDate);
+
+    console.log(t, from.format(), to.format());
+
     return [
+      {
+        id: 'rate',
+        options: {
+          color: 'rgb(157, 43, 56)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        data: [
+          { time: from.unix(), value: 1 - ratePerQuartal },
+          { time: to.unix(), value: 1 },
+        ],
+      },
       {
         id: 'sellLineDataSm',
         options: {
@@ -315,7 +350,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
         data: data.map((extremum, i) => ({ time: extremum.time, value: buyLineDatax2[i] })),
       },
     ].filter(Boolean);
-  }, [data]);
+  }, [data, expirationDate, expirationMonth, ratePerQuartal, startDateMap]);
 
   const historyColumns = [
     {

@@ -23,6 +23,11 @@ export const symbolFuturePairs = [
     stockSymbol: 'USDRUBF',
   },
   {
+    futuresSymbol: 'SBRF',
+    futuresShortName: 'SRZ4',
+    stockSymbol: 'SBERF',
+  },
+  {
     futuresSymbol: 'CNY',
     futuresShortName: 'CNY',
     stockSymbol: 'CNYRUBF',
