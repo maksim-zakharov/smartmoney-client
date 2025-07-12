@@ -1,10 +1,10 @@
-import { Card, Col, DatePicker, Row, Select, Space, Statistic, Table, TimeRangePickerProps, Typography } from 'antd';
+import { Card, Col, DatePicker, Radio, Row, Select, Space, Statistic, Table, TimeRangePickerProps, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
+import { fetchCandlesFromAlor, getCommonCandles, getOvernightDays, refreshToken } from '../../utils.ts';
 import moment from 'moment';
 import { HistoryObject } from '../../sm-lib/models.ts';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
@@ -21,6 +21,11 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
   const [_data, setData] = useState({ cnyData: [], ucnyData: [], siData: [] });
   const { siData, ucnyData, cnyData } = _data;
+
+  const [feePerTrade, setFeePerTrade] = useState(0.04);
+  const [minimumTradeDiff, setMinimumTradeDiff] = useState(0.001);
+
+  const overnightFee = 0.08;
 
   const expirationMonth = searchParams.get('expirationMonth') || '9.25';
   const setexpirationMonth = (value) => {
@@ -135,48 +140,46 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
     for (let i = 0; i < data.length; i++) {
       const candle = data[i];
 
-      const goal = 0.001;
-      const goal2 = 0.002;
-      const goal3 = 0.003;
+      const minStepGoal = 0.001;
 
       // Если позы еще нет
       if (!currentPosition) {
         // И появился сигнал на покупку
-        if (candle.low <= 1 - goal) {
+        if (candle.low <= 1 - minimumTradeDiff) {
           // Покупаем
           currentPosition = {
             side: 'long',
-            openPrice: 1 - goal,
-            stopLoss: 1 - goal,
+            openPrice: 1 - minimumTradeDiff,
+            stopLoss: 1 - minimumTradeDiff,
             openTime: candle.time,
             qty: 1,
           };
-        } else if (candle.high >= 1 + goal) {
+        } else if (candle.high >= 1 + minimumTradeDiff) {
           // Покупаем
           currentPosition = {
             side: 'short',
-            openPrice: 1 + goal,
-            stopLoss: 1 + goal,
+            openPrice: 1 + minimumTradeDiff,
+            stopLoss: 1 + minimumTradeDiff,
             openTime: candle.time,
             qty: 1,
           };
         }
       } else {
         // Если поза есть и сигнал на покупку усилился - усредняемся
-        if (currentPosition.qty === 1 && currentPosition.side === 'short' && candle.high >= 1 + goal2) {
+        if (currentPosition.qty === 1 && currentPosition.side === 'short' && candle.high >= 1 + minimumTradeDiff + minStepGoal) {
           currentPosition.qty = 2;
           // continue;
         }
-        if (currentPosition.qty === 2 && currentPosition.side === 'short' && candle.high >= 1 + goal3) {
+        if (currentPosition.qty === 2 && currentPosition.side === 'short' && candle.high >= 1 + minimumTradeDiff + minStepGoal * 2) {
           currentPosition.qty = 3;
           // continue;
         }
 
-        if (currentPosition.qty === 1 && currentPosition.side === 'long' && candle.low <= 1 - goal2) {
+        if (currentPosition.qty === 1 && currentPosition.side === 'long' && candle.low <= 1 - minimumTradeDiff + minStepGoal) {
           currentPosition.qty = 2;
           // continue;
         }
-        if (currentPosition.qty === 2 && currentPosition.side === 'long' && candle.low <= 1 - goal3) {
+        if (currentPosition.qty === 2 && currentPosition.side === 'long' && candle.low <= 1 - minimumTradeDiff + minStepGoal * 2) {
           currentPosition.qty = 3;
           // continue;
         }
@@ -197,13 +200,24 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
           closePrice: 1,
         };
 
-        currentPosition.fee = 0;
-
         const percent =
           currentPosition.openPrice > currentPosition?.takeProfit
             ? currentPosition.openPrice / currentPosition?.takeProfit
             : currentPosition?.takeProfit / currentPosition.openPrice;
-        currentPosition.newPnl = (percent - 1) * 100 * currentPosition.qty - currentPosition.fee;
+
+        const profit = (percent - 1) * 100 * currentPosition.qty;
+
+        // Посчитать овернайт
+
+        const startTime = dayjs(currentPosition.openTime * 1000);
+        const endTime = dayjs(currentPosition.closeTime * 1000);
+
+        const totalOvernightFee = getOvernightDays(startTime, endTime) * overnightFee;
+        currentPosition.totalOvernightFee = totalOvernightFee;
+
+        currentPosition.fee = totalOvernightFee + feePerTrade * 2;
+
+        currentPosition.newPnl = profit - currentPosition.fee;
         buyPositions.push(currentPosition);
 
         currentPosition = null;
@@ -211,7 +225,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
     }
 
     return buyPositions.sort((a, b) => b.openTime - a.openTime);
-  }, [data]);
+  }, [data, feePerTrade, minimumTradeDiff]);
 
   const primitives = [];
 
@@ -221,13 +235,25 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
     }
 
     const avg = 1;
+    const sellLineDataSm = data.map((s) => avg + 0.001);
     const sellLineData = data.map((s) => avg + 0.002);
     const sellLineDatax2 = data.map((s) => avg + 0.003);
     const zeroLineData = data.map((s) => avg);
+    const buyLineDataSm = data.map((s) => avg - 0.001);
     const buyLineData = data.map((s) => avg - 0.002);
     const buyLineDatax2 = data.map((s) => avg - 0.003);
 
     return [
+      {
+        id: 'sellLineDataSm',
+        options: {
+          color: 'rgb(157, 43, 56)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: sellLineDataSm[i] })),
+      },
       {
         id: 'sellLineData',
         options: {
@@ -257,6 +283,16 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
           lineStyle: LineStyle.Dashed,
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: zeroLineData[i] })),
+      },
+      {
+        id: 'buyLineDataSm',
+        options: {
+          color: 'rgb(20, 131, 92)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: buyLineDataSm[i] })),
       },
       {
         id: 'buyLineData',
@@ -318,6 +354,20 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
       render: (value, row) => moment(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm'),
     },
     {
+      title: 'Овернайт',
+      dataIndex: 'newPnl',
+      key: 'totalOvernightFee',
+      align: 'right',
+      render: (value, row) => (row.totalOvernightFee ? `${row.totalOvernightFee.toFixed(2)}%` : '-'),
+    },
+    {
+      title: 'Общ. комиссия',
+      dataIndex: 'newPnl',
+      key: 'fee',
+      align: 'right',
+      render: (value, row) => (row.fee ? `${row.fee.toFixed(2)}%` : '-'),
+    },
+    {
       title: 'Финрез',
       dataIndex: 'newPnl',
       key: 'newPnl',
@@ -353,6 +403,17 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
           style={{ width: 160 }}
           options={expirationMonths.map((v) => ({ label: v, value: v }))}
         />
+        <Radio.Group value={feePerTrade} onChange={(e) => setFeePerTrade(Number(e.target.value))}>
+          <Radio.Button value={0.1}>0.1%</Radio.Button>
+          <Radio.Button value={0.04}>0.04%</Radio.Button>
+          <Radio.Button value={0.025}>0.025%</Radio.Button>
+          <Radio.Button value={0.015}>0.015%</Radio.Button>
+        </Radio.Group>
+        <Radio.Group value={minimumTradeDiff} onChange={(e) => setMinimumTradeDiff(Number(e.target.value))}>
+          <Radio.Button value={0.001}>0.1%</Radio.Button>
+          <Radio.Button value={0.002}>0.2%</Radio.Button>
+          <Radio.Button value={0.003}>0.3%</Radio.Button>
+        </Radio.Group>
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
       </Space>
       <Chart

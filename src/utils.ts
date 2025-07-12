@@ -799,3 +799,29 @@ const calculateArbitrageThreshold = (
 
   return thresholdPrice / stockPrice;
 };
+
+export function getOvernightDays(startDate: dayjs.Dayjs, endDate: dayjs.Dayjs): number {
+  // Проверяем, что даты валидны
+  if (!startDate.isValid() || !endDate.isValid()) {
+    return 0;
+  }
+
+  // Если endDate <= startDate, овернайта нет
+  if (endDate <= startDate) {
+    return 0;
+  }
+
+  // Находим начало следующего дня после startDate (00:00:00)
+  const nextDayStart = startDate.add(1, 'day').startOf('day');
+
+  // Если endDate раньше начала следующего дня, овернайта нет
+  if (endDate < nextDayStart) {
+    return 0;
+  }
+
+  // Считаем разницу в днях между nextDayStart и endDate
+  const fullDays = endDate.diff(nextDayStart, 'day');
+
+  // Если endDate >= nextDayStart, то хотя бы 1 день овернайта
+  return fullDays + 1;
+}

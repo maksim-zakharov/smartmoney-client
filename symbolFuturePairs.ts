@@ -13,6 +13,11 @@ export const symbolFuturePairs = [
     stockSymbol: 'GLDRUBF',
   },
   {
+    futuresSymbol: 'MIX',
+    futuresShortName: 'MIX',
+    stockSymbol: 'IMOEXF',
+  },
+  {
     futuresSymbol: 'SI',
     futuresShortName: 'SI',
     stockSymbol: 'USDRUBF',
