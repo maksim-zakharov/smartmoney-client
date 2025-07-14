@@ -70,7 +70,7 @@ const ChartFC: FC<Props> = ({
   data,
   ema,
   width,
-  height = 610,
+  height,
   toolTipLeft,
   toolTipTop,
   hideCross,
@@ -154,7 +154,7 @@ const ChartFC: FC<Props> = ({
         textColor: color,
       },
       width: width || chartContainerRef.current?.clientWidth,
-      height: chartContainerRef.current?.clientHeight || height,
+      height: height || chartContainerRef.current?.clientHeight,
     };
 
     const chartApi = createChart(chartContainerRef.current, options);
@@ -167,7 +167,7 @@ const ChartFC: FC<Props> = ({
 
     // Обработчик изменения размера
     const handleResize = () => {
-      chartApi.applyOptions({ width: chartContainerRef.current?.clientWidth });
+      chartApi.applyOptions({ width: chartContainerRef.current?.clientWidth, height: chartContainerRef.current?.clientHeight });
     };
     window.addEventListener('resize', handleResize);
 
@@ -426,7 +426,7 @@ const ChartFC: FC<Props> = ({
     prevPrimitivesRef.current = [...primitives];
   }, [primitives]); // Зависимость от массива примитивов
 
-  return <div ref={chartContainerRef} style={{ position: 'relative', height, width: width || '100%' }} />;
+  return <div ref={chartContainerRef} style={{ position: 'relative', height: height || '100%', width: width || '100%', minHeight: 610 }} />;
 };
 
 export const Chart = withErrorBoundary(ChartFC);

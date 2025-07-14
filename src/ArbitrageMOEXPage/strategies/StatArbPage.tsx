@@ -1,10 +1,10 @@
-import { Card, Checkbox, Col, ColorPicker, Layout, Row, Slider, Space, Statistic, Table, Typography } from 'antd';
+import { Button, Card, Checkbox, Col, ColorPicker, Layout, Row, Slider, Statistic, Table, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { calculateMultiple, createRectangle2, getCommonCandles } from '../../utils';
 import { calculateBollingerBands, calculateCandle, symbolFuturePairs } from '../../../symbolFuturePairs';
@@ -15,6 +15,7 @@ import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery } from '../.
 import { DatesPicker } from '../../DatesPicker';
 import { useAppSelector } from '../../store.ts';
 import { HistoryObject } from 'alor-api';
+import { FullscreenOutlined } from '@ant-design/icons';
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',
@@ -93,7 +94,6 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
   const toDate = searchParams.get('toDate') || dayjs().add(1, 'day').unix();
 
   const apiAuth = useAppSelector((state) => state.alorSlice.apiAuth);
-  const api = useAppSelector((state) => state.alorSlice.api);
 
   const [colors, setColors] = useState(defaultState);
 
@@ -137,6 +137,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
       exchange: leftExchange,
     },
     {
+      pollingInterval: 5000,
       skip: !tickerFuture || !apiAuth,
     },
   );
@@ -176,6 +177,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
       exchange: righExchange,
     },
     {
+      pollingInterval: 5000,
       skip: !tickerStock || !apiAuth,
     },
   );
@@ -356,6 +358,12 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
       losses: array.filter((p) => p.newPnl < 0).length,
     };
   }, [positions]);
+
+  const [isFullscreen, setIsFullscreen] = useState(localStorage.getItem('isFullscreen') === 'true');
+
+  useEffect(() => {
+    localStorage.setItem('isFullscreen', isFullscreen ? 'true' : 'false');
+  }, [isFullscreen]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
@@ -584,8 +592,10 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
   return (
     <Layout>
       <Content style={{ padding: 0, paddingRight: 20 }}>
-        <div style={{ position: 'relative' }}>
-          <Space style={{ top: 8, position: 'absolute', zIndex: 3, left: 8 }}>
+        <div className={`relative${isFullscreen ? ' fullscreen' : ''}`}>
+          <div
+            style={{ top: 8, position: 'absolute', zIndex: 3, left: 8, gap: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}
+          >
             <TimeframeSelect value={tf} onChange={setSize} />
             <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
             <TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />
@@ -602,7 +612,10 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
             {/*/>*/}
 
             <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
-          </Space>
+
+            <Button icon={<FullscreenOutlined />} onClick={() => setIsFullscreen((prevState) => !prevState)} />
+            <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
+          </div>
           {/*<TWChart data={data} />*/}
           <Chart
             hideCross
@@ -615,75 +628,75 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
             ema={[]}
             maximumFractionDigits={3}
           />
-          <Row style={{ paddingBottom: '8px', paddingTop: 8 }} gutter={8}>
-            <Col span={6}>
-              <Card bordered={false}>
-                <Statistic
-                  title="Общий финрез"
-                  value={`${PnL.toFixed(2)}%`}
-                  precision={2}
-                  valueStyle={{
-                    color: PnL > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
-                  }}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card bordered={false}>
-                <Statistic title="Комиссия" value={`${Fee.toFixed(2)}%`} precision={2} valueStyle={{ color: 'rgb(255, 117, 132)' }} />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card bordered={false}>
-                <Statistic
-                  title="Тейки"
-                  value={new Intl.NumberFormat('en-US', {
-                    notation: 'compact',
-                  }).format(profits)}
-                  valueStyle={{ color: 'rgb(44, 232, 156)' }}
-                  suffix={`(${!profits ? 0 : ((profits * 100) / (profits + losses)).toFixed(2)})%`}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card bordered={false}>
-                <Statistic
-                  title="Лоси"
-                  value={new Intl.NumberFormat('en-US', {
-                    notation: 'compact',
-                  }).format(losses)}
-                  valueStyle={{ color: 'rgb(255, 117, 132)' }}
-                  suffix={`(${!losses ? 0 : ((losses * 100) / (profits + losses)).toFixed(2)})%`}
-                />
-              </Card>
-            </Col>
-          </Row>
-          <Table
-            size="small"
-            dataSource={positions}
-            columns={historyColumns as any}
-            pagination={{
-              pageSize: 30,
-            }}
-            onRow={(record) => {
-              return {
-                style:
-                  record.newPnl < 0
-                    ? {
-                        backgroundColor: '#d1261b66',
-                        color: 'rgb(255, 117, 132)',
-                      }
-                    : record.newPnl > 0
-                      ? {
-                          backgroundColor: '#15785566',
-                          color: 'rgb(44, 232, 156)',
-                        }
-                      : undefined,
-                className: 'hoverable',
-              };
-            }}
-          />
         </div>
+        <Row style={{ paddingBottom: '8px', paddingTop: 8 }} gutter={8}>
+          <Col span={6}>
+            <Card bordered={false}>
+              <Statistic
+                title="Общий финрез"
+                value={`${PnL.toFixed(2)}%`}
+                precision={2}
+                valueStyle={{
+                  color: PnL > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
+                }}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card bordered={false}>
+              <Statistic title="Комиссия" value={`${Fee.toFixed(2)}%`} precision={2} valueStyle={{ color: 'rgb(255, 117, 132)' }} />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card bordered={false}>
+              <Statistic
+                title="Тейки"
+                value={new Intl.NumberFormat('en-US', {
+                  notation: 'compact',
+                }).format(profits)}
+                valueStyle={{ color: 'rgb(44, 232, 156)' }}
+                suffix={`(${!profits ? 0 : ((profits * 100) / (profits + losses)).toFixed(2)})%`}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card bordered={false}>
+              <Statistic
+                title="Лоси"
+                value={new Intl.NumberFormat('en-US', {
+                  notation: 'compact',
+                }).format(losses)}
+                valueStyle={{ color: 'rgb(255, 117, 132)' }}
+                suffix={`(${!losses ? 0 : ((losses * 100) / (profits + losses)).toFixed(2)})%`}
+              />
+            </Card>
+          </Col>
+        </Row>
+        <Table
+          size="small"
+          dataSource={positions}
+          columns={historyColumns as any}
+          pagination={{
+            pageSize: 30,
+          }}
+          onRow={(record) => {
+            return {
+              style:
+                record.newPnl < 0
+                  ? {
+                      backgroundColor: '#d1261b66',
+                      color: 'rgb(255, 117, 132)',
+                    }
+                  : record.newPnl > 0
+                    ? {
+                        backgroundColor: '#15785566',
+                        color: 'rgb(44, 232, 156)',
+                      }
+                    : undefined,
+              className: 'hoverable',
+            };
+          }}
+        />
         {/*<Chart*/}
         {/*  hideCross*/}
         {/*  lineSerieses={[]}*/}

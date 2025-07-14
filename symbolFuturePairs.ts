@@ -8,11 +8,6 @@ export const symbolFuturePairs = [
   },
   // 4 валюты - 3 ставки учитывать
   {
-    futuresSymbol: 'GL',
-    futuresShortName: 'GL',
-    stockSymbol: 'GLDRUBF',
-  },
-  {
     futuresSymbol: 'MIX',
     futuresShortName: 'MIX',
     stockSymbol: 'IMOEXF',
@@ -21,6 +16,11 @@ export const symbolFuturePairs = [
     futuresSymbol: 'SI',
     futuresShortName: 'SI',
     stockSymbol: 'USDRUBF',
+  },
+  {
+    futuresSymbol: 'GOLD',
+    futuresShortName: 'GOLD',
+    stockSymbol: 'GLDRUBF',
   },
   {
     futuresSymbol: 'SBRF',

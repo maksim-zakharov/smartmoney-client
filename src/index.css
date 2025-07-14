@@ -64,23 +64,38 @@ body {
     margin: 8px 0;
 }
 
-.ant-row > .ant-form-item{
+.ant-row > .ant-form-item {
     margin-bottom: 0;
 }
 
-.ant-layout-sider, .ant-menu-dark{
+.ant-layout-sider, .ant-menu-dark {
     background: rgb(30, 44, 57);
 }
 
-.ant-menu-inline .ant-menu-item{
+.ant-menu-inline .ant-menu-item {
     margin-inline: 0px;
     margin-block: 0px;
     width: calc(100%);
 }
 
-.ant-layout-sider .ant-layout-sider-trigger{
+.ant-layout-sider .ant-layout-sider-trigger {
     background: rgb(23, 35, 46);
     max-width: 300px;
     bottom: 20px;
     left: 8px;
+}
+
+.relative {
+    position: relative;
+}
+
+.fullscreen {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    width: 100%;
+    height: 100vh;
 }
