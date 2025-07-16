@@ -14,6 +14,7 @@ import { Format } from 'alor-api';
 import { MOEX_CNY_Page } from './strategies/MOEX_CNY_Page.tsx';
 import { SPBXPage } from './strategies/SPBXPage.tsx';
 import { FundingPage } from './strategies/FundingPage.tsx';
+import { useTdCandlesQuery } from '../twelveApi.ts';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -42,6 +43,15 @@ export async function fetchSecurityDetails(symbol, token) {
 }
 
 export const ArbitrageMOEXPage = () => {
+  const { data: tdData } = useTdCandlesQuery({
+    start_date: '2020-07-14',
+    outputsize: 5000,
+    symbol: 'GOLD/USD',
+    interval: '5min',
+    apikey: '20dc749373754927b09d95723d963e88',
+  });
+  console.log(tdData);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const api = useAppSelector((state) => state.alorSlice.api);
 
@@ -67,11 +77,19 @@ export const ArbitrageMOEXPage = () => {
     { key: 'SBER', label: 'SBER/SBERP', element: <StatArbPage tickerStock="SBER" _tickerFuture="SBERP" /> },
     { key: 'rosn-tatn', label: 'ROSN/TATN', element: <StatArbPage tickerStock="ROSN" _tickerFuture="TATN" /> },
     { key: 'rosn-LKOH', label: 'ROSN/LKOH', element: <StatArbPage tickerStock="ROSN" _tickerFuture="LKOH" /> },
-    { key: 'SPBX-arbs', label: 'SPBX-arbs', element: <SPBXPage tickerStock="BANE" _tickerFuture="BANE" righExchange="SPBX" /> },
+    {
+      key: 'SPBX-arbs',
+      label: 'SPBX-arbs',
+      element: <SPBXPage tickerStock="BANE" _tickerFuture="BANE" righExchange="SPBX" />,
+    },
     { key: 'cny_tom', label: 'CNY!1 / CNYRUB_TOM', element: <CNY_TOM_Page /> },
     { key: 'cnyrubf', label: 'CNY!1 / CNYRUBF', element: <CNYRUBF_Page /> },
     { key: 'ed', label: 'EU/SI/ED', element: <Triangle_Page first="EU" second="SI" third="ED" multiple={1} /> },
-    { key: 'SI_CNY', label: 'SI/CNY/UC', element: <Triangle_Page first="SI" second="CNY" third="UCNY" multiple={0.001} /> },
+    {
+      key: 'SI_CNY',
+      label: 'SI/CNY/UC',
+      element: <Triangle_Page first="SI" second="CNY" third="UCNY" multiple={0.001} />,
+    },
     {
       key: 'USDRUBF/CNY-9.25/UCNY-9.25',
       label: 'USDRUBF/CNY-9.25/UCNY-9.25',
@@ -100,7 +118,7 @@ export const ArbitrageMOEXPage = () => {
     {
       key: 'GLDRUBF/SI-9.25/GOLD-9.25',
       label: 'GLDRUBF/SI-9.25/GOLD-9.25',
-      element: <Triangle_Page first="GLDRUBF" second="SI-6.25" third="GOLD-6.25" multiple={31100} noExp />,
+      element: <Triangle_Page first="GLDRUBF" second="SI-9.25" third="GOLD-9.25" multiple={31100} noExp />,
     },
     { key: 'MOEXCN', label: 'MOEX/CR/MOEXCN', element: <MOEX_CNY_Page /> },
     { key: 'SI_GOLD', label: 'SI_GOLD', element: <SI_GOLD_Page /> },
