@@ -19,6 +19,7 @@ import {
 } from 'alor-api/dist/models/models';
 import { Mutex, MutexInterface } from 'async-mutex';
 import { acquire, logout } from './alor.slice';
+import dayjs from 'dayjs';
 
 export const mutex = new Mutex();
 
@@ -40,6 +41,12 @@ const recurcive =
       return recurcive(selector, paramsCallback)(args, _api);
     }
 
+    // api.accessToken
+    if (api.accessToken && isTokenExpiringSoon(api.accessToken)) {
+      console.log('Обновляем accessToken');
+      await refreshToken({ lk, api, dispatch, token, selector, paramsCallback, args, _api });
+    }
+
     try {
       const params = paramsCallback ? paramsCallback(args) : args;
       if (Array.isArray(params)) {
@@ -54,26 +61,7 @@ const recurcive =
         .then((data) => ({ data }));
     } catch (error: any) {
       if (error.message === 'Необходимо авторизоваться') {
-        if (!mutex.isLocked()) {
-          const release = await mutex.acquire();
-          // dispatch(acquire(release));
-          try {
-            if (lk) {
-              const { AccessToken } = await api.auth.refreshToken({ refreshToken: token, type: 'lk' });
-              api.accessToken = AccessToken;
-              localStorage.setItem('accessToken', api.accessToken);
-              api.http.defaults.headers.common['Authorization'] = 'Bearer ' + AccessToken;
-            } else {
-              await api.refresh();
-            }
-            dispatch(acquire(release));
-            return recurcive(selector, paramsCallback)(args, _api);
-          } catch (err: any) {
-            if (err.status === 403) {
-              dispatch(logout());
-            }
-          }
-        }
+        await refreshToken({ lk, api, dispatch, token, selector, paramsCallback, args, _api });
       } else {
         await mutex.waitForUnlock();
         return recurcive(selector, paramsCallback)(args, _api);
@@ -81,6 +69,59 @@ const recurcive =
       return { error } as any;
     }
   };
+
+const refreshToken = async ({ lk, api, dispatch, token, selector, paramsCallback, args, _api }) => {
+  if (!mutex.isLocked()) {
+    const release = await mutex.acquire();
+    // dispatch(acquire(release));
+    try {
+      if (lk) {
+        const { AccessToken } = await api.auth.refreshToken({ refreshToken: token, type: 'lk' });
+        api.accessToken = AccessToken;
+        localStorage.setItem('accessToken', api.accessToken);
+        api.http.defaults.headers.common['Authorization'] = 'Bearer ' + AccessToken;
+      } else {
+        await api.refresh();
+      }
+      dispatch(acquire(release));
+      return recurcive(selector, paramsCallback)(args, _api);
+    } catch (err: any) {
+      if (err.status === 403) {
+        dispatch(logout());
+      }
+    }
+  }
+};
+
+function isTokenExpiringSoon(token: string) {
+  if (!token) return false;
+
+  try {
+    // Разбиваем токен на части
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid JWT token');
+    }
+
+    // Декодируем payload (вторая часть токена)
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+
+    // Проверяем наличие exp в payload
+    if (!payload.exp) {
+      throw new Error('Token does not have expiration time');
+    }
+
+    // Получаем текущее время и время экспирации токена
+    const now = dayjs();
+    const exp = dayjs.unix(payload.exp);
+
+    // Проверяем, осталось ли меньше минуты
+    return exp.diff(now, 'second') < 60;
+  } catch (error) {
+    console.error('Failed to parse JWT token:', error);
+    return false;
+  }
+}
 
 export interface NewsRequest {
   limit: number;

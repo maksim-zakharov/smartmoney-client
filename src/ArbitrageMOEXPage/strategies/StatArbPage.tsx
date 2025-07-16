@@ -86,7 +86,7 @@ const TWChart = ({ data }) => {
   return <div id="tradingview-widget" ref={container} />;
 };
 
-export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', righExchange = 'MOEX' }) => {
+export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', righExchange = 'MOEX', onlyChart, height }: any) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const multi = 100;
   const tf = searchParams.get('tf') || '900';
@@ -589,12 +589,71 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
     },
   ].filter(Boolean);
 
+  if (onlyChart) {
+    return (
+      <div className="relative" style={{ height }}>
+        <div
+          style={{
+            top: 8,
+            position: 'absolute',
+            zIndex: 3,
+            left: 8,
+            gap: 8,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
+          <TimeframeSelect value={tf} onChange={setSize} />
+          <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
+          <TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />
+          {/*<Select*/}
+          {/*    value={tickerFuture}*/}
+          {/*    showSearch*/}
+          {/*    placeholder="Введи тикер"*/}
+          {/*    onSelect={onSelectTicker('future')}*/}
+          {/*    filterOption={(input, option) =>*/}
+          {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
+          {/*    }*/}
+          {/*    style={{width: 160}}*/}
+          {/*    options={options}*/}
+          {/*/>*/}
+
+          <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+          <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
+        </div>
+        {/*<TWChart data={data} />*/}
+        <Chart
+          hideCross
+          lineSerieses={ls}
+          primitives={primitives}
+          markers={[]}
+          toolTipTop="40px"
+          toolTipLeft="4px"
+          data={data}
+          ema={[]}
+          height={height}
+          maximumFractionDigits={3}
+        />
+      </div>
+    );
+  }
+
   return (
     <Layout>
       <Content style={{ padding: 0, paddingRight: 20 }}>
         <div className={`relative${isFullscreen ? ' fullscreen' : ''}`}>
           <div
-            style={{ top: 8, position: 'absolute', zIndex: 3, left: 8, gap: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}
+            style={{
+              top: 8,
+              position: 'absolute',
+              zIndex: 3,
+              left: 8,
+              gap: 8,
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+            }}
           >
             <TimeframeSelect value={tf} onChange={setSize} />
             <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />

@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useMemo } from 'react';
+import React, { ReactNode, useMemo } from 'react';
 import { Layout, Menu, MenuProps, Typography } from 'antd';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
@@ -9,12 +9,10 @@ import { CNY_TOM_Page } from './strategies/CNY_TOM_Page';
 import { CNYRUBF_Page } from './strategies/CNYRUBF_Page.tsx';
 import { useSearchParams } from 'react-router-dom';
 import { StatArbPage } from './strategies/StatArbPage.tsx';
-import { useAppSelector } from '../store.ts';
-import { Format } from 'alor-api';
 import { MOEX_CNY_Page } from './strategies/MOEX_CNY_Page.tsx';
 import { SPBXPage } from './strategies/SPBXPage.tsx';
 import { FundingPage } from './strategies/FundingPage.tsx';
-import { useTdCandlesQuery } from '../twelveApi.ts';
+import { SmartPage } from './strategies/SmartPage.tsx';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -43,33 +41,20 @@ export async function fetchSecurityDetails(symbol, token) {
 }
 
 export const ArbitrageMOEXPage = () => {
-  const { data: tdData } = useTdCandlesQuery({
-    start_date: '2020-07-14',
-    outputsize: 5000,
-    symbol: 'GOLD/USD',
-    interval: '5min',
-    apikey: '20dc749373754927b09d95723d963e88',
-  });
-  console.log(tdData);
+  // const { data: tdData } = useTdCandlesQuery({
+  //   start_date: '2020-07-14',
+  //   outputsize: 5000,
+  //   symbol: 'GOLD/USD',
+  //   interval: '5min',
+  //   apikey: '20dc749373754927b09d95723d963e88',
+  // });
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const api = useAppSelector((state) => state.alorSlice.api);
-
-  useEffect(() => {
-    if (api) {
-      api.instruments
-        .getSecuritiesByExchange({
-          format: Format.Simple,
-          exchange: 'SPBX',
-          sector: 'FOND',
-        })
-        .then((r) => console.log(r.filter((r) => r.currency === 'RUB')));
-    }
-  }, [api]);
 
   const items: MenuItem[] = [
     { key: 'Funding', label: 'Funding', element: <FundingPage /> },
     { key: 'old', label: 'Future/Stock', element: <OldPage /> },
+    { key: 'smart', label: 'Smart', element: <SmartPage /> },
     { key: 'BANE', label: 'BANE/BANEP', element: <StatArbPage tickerStock="BANE" _tickerFuture="BANEP" /> },
     { key: 'tatn', label: 'TATN/TATNP', element: <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" /> },
     { key: 'rtkm', label: 'RTKM/RTKMP', element: <StatArbPage tickerStock="RTKM" _tickerFuture="RTKMP" /> },
