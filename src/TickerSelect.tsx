@@ -1,8 +1,7 @@
-import React, { FC, useEffect, useMemo, useState } from 'react';
+import React, { FC, useMemo } from 'react';
 import { Select } from 'antd';
 import { symbolFuturePairs } from '../symbolFuturePairs';
-
-const fetchSecurities = () => fetch('https://api.alor.ru/md/v2/Securities?exchange=MOEX&limit=10000').then((r) => r.json());
+import { useGetSecuritiesQQuery } from './api/alor.api.ts';
 
 interface Props {
   value: string;
@@ -12,21 +11,21 @@ interface Props {
 }
 const set = new Set(symbolFuturePairs.map((curr) => curr.stockSymbol));
 export const TickerSelect: FC<Props> = ({ filterSymbols, disabled, value, onSelect }) => {
-  const [securities, setSecurities] = useState([]);
+  const { data: securities = [] } = useGetSecuritiesQQuery({
+    exchange: 'MOEX',
+    limit: 1000,
+  } as any);
 
-  useEffect(() => {
-    fetchSecurities()
-      .then((r) => (filterSymbols ? r.filter((s) => filterSymbols?.includes(s.symbol)) : r))
-      .then(setSecurities);
-  }, []);
+  const filteredSecurities = filterSymbols ? securities.filter((s) => filterSymbols?.includes(s.symbol)) : securities;
 
   const options = useMemo(
     () =>
-      securities
+      filteredSecurities
         .filter((s) => set.has(s.symbol))
         .filter(
           (s) =>
             !['Unknown'].includes(s.complexProductCategory) &&
+            // @ts-ignore
             !['MTQR', 'TQIF', 'ROPD', 'TQIR', 'TQRD', 'TQPI', 'CETS', 'TQTF', 'TQCB', 'TQOB', 'FQBR', 'RFUD'].includes(s.board) &&
             s.currency === 'RUB',
         )
@@ -35,7 +34,7 @@ export const TickerSelect: FC<Props> = ({ filterSymbols, disabled, value, onSele
           label: s.symbol, //`${s.shortname} (${s.symbol})`,
           value: s.symbol,
         })),
-    [securities],
+    [filteredSecurities],
   );
 
   return (

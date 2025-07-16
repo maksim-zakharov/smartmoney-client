@@ -4,7 +4,7 @@ import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { calculateMultiple, createRectangle2, getCommonCandles } from '../../utils';
 import { calculateBollingerBands, calculateCandle, symbolFuturePairs } from '../../../symbolFuturePairs';
@@ -31,60 +31,6 @@ const defaultState = Object.assign(
   },
   storageState,
 );
-
-class MyDatafeed {
-  data = [];
-
-  constructor(data) {
-    this.data = data; // Ваши данные в формате OHLCV
-  }
-
-  onReady(callback) {
-    callback({
-      supports_search: true,
-      supports_group_request: false,
-      supports_marks: false,
-      supports_timescale_marks: false,
-      supported_resolutions: ['1', '5', '15', '30', '60', '1D', '1W', '1M'],
-    });
-  }
-
-  resolveSymbol(symbolName, onSymbolResolvedCallback) {
-    onSymbolResolvedCallback({
-      name: symbolName,
-      type: 'stock',
-      session: '24x7',
-      timezone: 'Etc/UTC',
-      minmov: 1,
-      pricescale: 100,
-      has_intraday: true,
-      supported_resolutions: ['1', '5', '15', '30', '60', '1D'],
-    });
-  }
-
-  getBars(symbolInfo, resolution, from, to, onHistoryCallback) {
-    const bars = this.data.filter((bar) => bar.time >= from && bar.time <= to);
-    onHistoryCallback(bars, { noData: !bars.length });
-  }
-}
-
-const TWChart = ({ data }) => {
-  const container = useRef<HTMLDivElement>();
-
-  useEffect(() => {
-    if (container.current && !container.current.querySelector('iframe')) {
-      // @ts-ignore
-      const widget = new window.TradingView.widget({
-        datafeed: new MyDatafeed(data),
-        symbol: 'CUSTOM:YOUR_SYMBOL',
-        interval: '1D',
-        container: container.current.id,
-      });
-    }
-  }, [data]);
-
-  return <div id="tradingview-widget" ref={container} />;
-};
 
 export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', righExchange = 'MOEX', onlyChart, height }: any) => {
   const [searchParams, setSearchParams] = useSearchParams();

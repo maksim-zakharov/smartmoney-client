@@ -321,6 +321,9 @@ export const alorApi = createApi({
     getSecurities: builder.mutation<Securities, DevSecuritiesSearchParams>({
       queryFn: recurcive((api) => api.instruments.getSecurities),
     } as any),
+    getSecuritiesQ: builder.query<Securities, DevSecuritiesSearchParams>({
+      queryFn: recurcive((api) => api.instruments.getSecurities),
+    } as any),
     getUserInfo: builder.query<UserInfoResponse, unknown>({
       queryFn: recurcive((api) => api.clientInfo.getUserInfo),
     }),
@@ -416,4 +419,5 @@ export const {
   useGetOperationsQuery,
   useGetPositionsQuery,
   useGetSummaryQuery,
+  useGetSecuritiesQQuery,
 } = alorApi;
