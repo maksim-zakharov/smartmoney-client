@@ -63,6 +63,10 @@ export const ArbitrageMOEXPage = () => {
     { key: 'SNGS', label: 'SNGS/SNGSP', element: <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" /> },
     { key: 'rosn-tatn', label: 'ROSN/TATN', element: <StatArbPage tickerStock="ROSN" _tickerFuture="TATN" /> },
     { key: 'rosn-LKOH', label: 'ROSN/LKOH', element: <StatArbPage tickerStock="ROSN" _tickerFuture="LKOH" /> },
+    { key: 'SBER/VTBR', label: 'SBER/VTBR', element: <StatArbPage tickerStock="SBER" _tickerFuture="VTBR" /> },
+    { key: 'SBER/CBOM', label: 'SBER/CBOM', element: <StatArbPage tickerStock="SBER" _tickerFuture="CBOM" /> },
+    { key: 'VTBR/CBOM', label: 'VTBR/CBOM', element: <StatArbPage tickerStock="VTBR" _tickerFuture="CBOM" /> },
+    { key: 'PIKK/SMLT', label: 'PIKK/SMLT', element: <StatArbPage tickerStock="PIKK" _tickerFuture="SMLT" /> },
     {
       key: 'SPBX-arbs',
       label: 'SPBX-arbs',

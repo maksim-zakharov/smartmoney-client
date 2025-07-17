@@ -67,7 +67,7 @@ export const CNYRUBF_Page = () => {
     const brokerCommission = exchangeCommission.mul(0.5); // 0.0000231
     const totalCommissionRate = exchangeCommission.plus(brokerCommission).toNumber(); // 0.0000693 (0.00693%)
 
-    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate, []); // , ratesMap.get(stockTime));
+    const truthPrice = calculateTruthFuturePrice(stockPrice, stockTime, expirationDate, [], 0.2, 0.045); // , ratesMap.get(stockTime));
 
     // Дни до экспирации (дробные)
     const t = expirationDate.diff(dayjs(stockTime * 1000), 'day', true);

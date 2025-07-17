@@ -706,9 +706,16 @@ export const formatDateTime = (value) => moment(value).format('YYYY-MM-DD HH:mm'
  * @param stockTime Время цены акции
  * @param expirationDate Дата экспироции фьюча
  */
-export const calculateTruthFuturePrice = (S: number, stockTime: number, expirationDate: Dayjs, dividends = []) => {
+export const calculateTruthFuturePrice = (
+  S: number,
+  stockTime: number,
+  expirationDate: Dayjs,
+  dividends = [],
+  rusRate: number = 0.2,
+  otherRate: number = 0,
+) => {
   // Ставка ЦБ РФ (безрисковая ставка)
-  const r = 0.2;
+  const r = rusRate - otherRate;
   // const r = 0.2 - 0.01;
   // const r = 0.2 - 0.0215;
 
