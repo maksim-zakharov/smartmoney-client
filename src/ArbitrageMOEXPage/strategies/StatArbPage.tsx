@@ -226,8 +226,14 @@ export const StatArbPage = ({
     for (let i = 0; i < data.length; i++) {
       const candle = data[i];
 
+      const now = dayjs(candle.time * 1000).format('HH:mm');
+      const isDaySession = now >= '09:00' && now <= '18:39';
+
+      const isMix = tickerStock !== 'IMOEXF' || isDaySession;
+      const isMixEnd = tickerStock === 'IMOEXF' && !isDaySession;
+
       // Если не коснулись верха - продаем фьюч, покупаем акцию
-      if (candle.high >= BB.upper[i]) {
+      if (candle.high >= BB.upper[i] && isMix) {
         let currentPosition: any = {
           side: 'short',
           openPrice: candle.high,
@@ -238,6 +244,7 @@ export const StatArbPage = ({
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
           if (candle.low > BB.middle[j]) {
+            // if (candle.low > BB.lower[j] && !isMixEnd) {
             continue;
           }
 
@@ -248,7 +255,7 @@ export const StatArbPage = ({
             closePrice: candle.open,
           };
 
-          currentPosition.fee = fee * 200;
+          currentPosition.fee = isMix ? 0 : fee * 200;
 
           const spread = 0.01;
 
@@ -265,7 +272,7 @@ export const StatArbPage = ({
           continue;
         }
       }
-      if (candle.low <= BB.lower[i]) {
+      if (candle.low <= BB.lower[i] && tickerStock !== 'IMOEXF') {
         let currentPosition: any = {
           side: 'long',
           openPrice: candle.low,
