@@ -1,6 +1,7 @@
 import { StatArbPage } from './StatArbPage.tsx';
 import React from 'react';
 import { Col, Row, Typography } from 'antd';
+import { Triangle_Page } from './Triangle_Page.tsx';
 
 export const SmartPage = () => {
   return (
@@ -25,6 +26,12 @@ export const SmartPage = () => {
         </Col>
         <Col span={8}>
           <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" onlyChart height={400} seriesType="Line" />
+        </Col>
+        <Col span={8}>
+          <Triangle_Page first="EURRUBF" second="USDRUBF" third="ED-9.25" multiple={1} noExp onlyChart height={400} seriesType="Line" />
+        </Col>
+        <Col span={8}>
+          <Triangle_Page first="USDRUBF" second="CNYRUBF" third="UCNY-9.25" multiple={1} noExp onlyChart height={400} seriesType="Line" />
         </Col>
       </Row>
       <Typography.Title>Эксперимент</Typography.Title>

@@ -1,29 +1,31 @@
-import { Card, Col, DatePicker, Radio, Row, Select, Space, Statistic, Table, TimeRangePickerProps, Typography } from 'antd';
+import { Card, Col, DatePicker, Radio, Row, Select, Statistic, Table, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { fetchCandlesFromAlor, getCommonCandles, getOvernightDays, refreshToken } from '../../utils.ts';
+import { getCommonCandles, getOvernightDays } from '../../utils.ts';
 import moment from 'moment';
 import { HistoryObject } from '../../sm-lib/models.ts';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
 import { LineStyle } from 'lightweight-charts';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
-import { useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
+import { useGetHistoryQuery, useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
 import { useTdCandlesQuery } from '../../twelveApi.ts';
+import { Exchange } from 'alor-api';
+import { useAppSelector } from '../../store.ts';
+import { DatesPicker } from '../../DatesPicker.tsx';
 
 const { RangePicker } = DatePicker;
 
-export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) => {
+export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart, height, seriesType = 'Candlestick' }: any) => {
   // 3.21 6.20 9.19 12.18
-  const [token, setToken] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
-  const [_data, setData] = useState({ cnyData: [], ucnyData: [], siData: [] });
-  const { siData, ucnyData, cnyData } = _data;
+
+  const apiAuth = useAppSelector((state) => state.alorSlice.apiAuth);
 
   const [feePerTrade, setFeePerTrade] = useState(0.04);
   const [minimumTradeDiff, setMinimumTradeDiff] = useState(0.001);
@@ -32,7 +34,62 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
 
   const isThirdForex = third.includes(':');
 
+  const expirationMonth = searchParams.get('expirationMonth') || '9.25';
+  const setexpirationMonth = (value) => {
+    searchParams.set('expirationMonth', value);
+    setSearchParams(searchParams);
+  };
+
+  const { data: _siData } = useGetHistoryQuery(
+    {
+      tf,
+      from: fromDate,
+      to: toDate,
+      symbol: noExp ? first : `${first}-${expirationMonth}`,
+      exchange: Exchange.MOEX,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !first || !apiAuth,
+    },
+  );
+
+  const siData = _siData?.history || [];
+
+  const { data: _cnyData } = useGetHistoryQuery(
+    {
+      tf,
+      from: fromDate,
+      to: toDate,
+      symbol: noExp ? second : `${second}-${expirationMonth}`,
+      exchange: Exchange.MOEX,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !second || !apiAuth,
+    },
+  );
+
+  const cnyData = _cnyData?.history || [];
+
+  const { data: _ucnyData } = useGetHistoryQuery(
+    {
+      tf,
+      from: fromDate,
+      to: toDate,
+      symbol: noExp ? third : `${third}-${expirationMonth}`,
+      exchange: Exchange.MOEX,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !third || !apiAuth,
+    },
+  );
+
+  const ucnyData = _ucnyData?.history || [];
+
   const fxTfMap = {
+    '60': '1min',
     '300': '5min',
     '900': '15min',
     '1800': '30min',
@@ -68,7 +125,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
 
   useEffect(() => {
     if (isThirdForex) {
-      setData((prevState) => ({ ...prevState, ucnyData: fxThirdCandles }));
+      // setData((prevState) => ({ ...prevState, ucnyData: fxThirdCandles }));
     }
   }, [isThirdForex, fxThirdCandles]);
 
@@ -85,12 +142,6 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
   const { data: details } = useGetSecurityDetailsQuery({ ticker: third });
 
   const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
-
-  const expirationMonth = searchParams.get('expirationMonth') || '9.25';
-  const setexpirationMonth = (value) => {
-    searchParams.set('expirationMonth', value);
-    setSearchParams(searchParams);
-  };
 
   const expirationMonths = useMemo(() => {
     const startYear = 24;
@@ -136,19 +187,21 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
   const data = useMemo(() => {
     if (_data2?.length && ucnyData?.length) {
       const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(_data2, ucnyData);
-      return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, multiple)).filter(Boolean);
+
+      const res = filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, multiple)).filter(Boolean);
+
+      if (seriesType === 'Line') {
+        return res.map((r) => ({ ...r, value: r.close }));
+      }
+      return res;
     }
     return _data2;
-  }, [_data, _data2, ucnyData]);
+  }, [seriesType, _data2, ucnyData]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
     setSearchParams(searchParams);
   };
-
-  useEffect(() => {
-    localStorage.getItem('token') && refreshToken().then(setToken);
-  }, []);
 
   const onChangeRangeDates = (value: Dayjs[], dateString) => {
     console.log('Selected Time: ', value);
@@ -158,34 +211,6 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
     searchParams.set('toDate', value[1].unix());
     setSearchParams(searchParams);
   };
-
-  const rangePresets: TimeRangePickerProps['presets'] = [
-    { label: 'Сегодня', value: [dayjs().startOf('day'), dayjs()] },
-    { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
-    { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
-    { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
-    { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
-    { label: 'Последние 182 дня', value: [dayjs().add(-182, 'd'), dayjs()] },
-    { label: 'Последние 365 дней', value: [dayjs().add(-365, 'd'), dayjs()] },
-  ];
-
-  useEffect(() => {
-    if (noExp) {
-      token &&
-        Promise.all([
-          fetchCandlesFromAlor(first, tf, fromDate, toDate, null, token),
-          fetchCandlesFromAlor(second, tf, fromDate, toDate, null, token),
-          isThirdForex ? Promise.resolve([]) : fetchCandlesFromAlor(third, tf, fromDate, toDate, null, token),
-        ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
-    } else {
-      token &&
-        Promise.all([
-          fetchCandlesFromAlor(`${first}-${expirationMonth}`, tf, fromDate, toDate, null, token),
-          fetchCandlesFromAlor(`${second}-${expirationMonth}`, tf, fromDate, toDate, null, token),
-          isThirdForex ? Promise.resolve([]) : fetchCandlesFromAlor(`${third}-${expirationMonth}`, tf, fromDate, toDate, null, token),
-        ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
-    }
-  }, [tf, fromDate, toDate, token, expirationMonth, first, second, third, noExp, isThirdForex]);
 
   const positions = useMemo(() => {
     if (!data.length) {
@@ -294,13 +319,13 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
     }
 
     const avg = 1;
-    const sellLineDataSm = data.map((s) => avg + 0.001);
-    const sellLineData = data.map((s) => avg + 0.002);
-    const sellLineDatax2 = data.map((s) => avg + 0.003);
+    const sellLineDataSm = data.map((s) => avg + 0.005);
+    const sellLineData = data.map((s) => avg + 0.01);
+    const sellLineDatax2 = data.map((s) => avg + 0.015);
     const zeroLineData = data.map((s) => avg);
-    const buyLineDataSm = data.map((s) => avg - 0.001);
-    const buyLineData = data.map((s) => avg - 0.002);
-    const buyLineDatax2 = data.map((s) => avg - 0.003);
+    const buyLineDataSm = data.map((s) => avg - 0.005);
+    const buyLineData = data.map((s) => avg - 0.01);
+    const buyLineDatax2 = data.map((s) => avg - 0.015);
 
     const t = startDateMap[expirationMonth];
     const from = dayjs(`${t}`);
@@ -463,16 +488,81 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
     };
   }, [positions]);
 
+  if (onlyChart) {
+    return (
+      <div className="relative" style={{ height }}>
+        <div
+          style={{
+            top: 8,
+            position: 'absolute',
+            zIndex: 3,
+            left: 8,
+            gap: 8,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
+          <Typography.Text>
+            {first}/{second}/{third}
+          </Typography.Text>
+          <TimeframeSelect value={tf} onChange={setSize} />
+          <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+
+          {!noExp && (
+            <Select
+              value={expirationMonth}
+              onSelect={setexpirationMonth}
+              style={{ width: 160 }}
+              options={expirationMonths.map((v) => ({ label: v, value: v }))}
+            />
+          )}
+          {/*<Radio.Group value={feePerTrade} onChange={(e) => setFeePerTrade(Number(e.target.value))}>*/}
+          {/*  <Radio.Button value={0.1}>0.1%</Radio.Button>*/}
+          {/*  <Radio.Button value={0.04}>0.04%</Radio.Button>*/}
+          {/*  <Radio.Button value={0.025}>0.025%</Radio.Button>*/}
+          {/*  <Radio.Button value={0.015}>0.015%</Radio.Button>*/}
+          {/*</Radio.Group>*/}
+          {/*<Radio.Group value={minimumTradeDiff} onChange={(e) => setMinimumTradeDiff(Number(e.target.value))}>*/}
+          {/*  <Radio.Button value={0.001}>0.1%</Radio.Button>*/}
+          {/*  <Radio.Button value={0.002}>0.2%</Radio.Button>*/}
+          {/*  <Radio.Button value={0.003}>0.3%</Radio.Button>*/}
+          {/*</Radio.Group>*/}
+          {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
+        </div>
+        <Chart
+          hideCross
+          lineSerieses={ls}
+          primitives={primitives}
+          seriesType={seriesType}
+          markers={[]}
+          toolTipTop="40px"
+          toolTipLeft="4px"
+          data={data}
+          ema={[]}
+          maximumFractionDigits={4}
+        />
+      </div>
+    );
+  }
+
   return (
     <>
-      <Space>
+      <div
+        style={{
+          top: 8,
+          position: 'absolute',
+          zIndex: 3,
+          left: 8,
+          gap: 8,
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
+      >
         <TimeframeSelect value={tf} onChange={setSize} />
-        <RangePicker
-          presets={rangePresets}
-          value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-          format="YYYY-MM-DD"
-          onChange={onChangeRangeDates}
-        />
+        <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+
         <Select
           value={expirationMonth}
           onSelect={setexpirationMonth}
@@ -491,7 +581,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
           <Radio.Button value={0.003}>0.3%</Radio.Button>
         </Radio.Group>
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
-      </Space>
+      </div>
       <Chart
         hideCross
         lineSerieses={ls}
