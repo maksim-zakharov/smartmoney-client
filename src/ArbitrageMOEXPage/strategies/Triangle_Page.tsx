@@ -532,6 +532,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
         </div>
         <Chart
           hideCross
+          height={height}
           lineSerieses={ls}
           primitives={primitives}
           seriesType={seriesType}

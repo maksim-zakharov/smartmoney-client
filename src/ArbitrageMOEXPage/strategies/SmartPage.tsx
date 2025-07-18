@@ -37,7 +37,7 @@ export const SmartPage = () => {
         </Col>
       </Row>
       <Typography.Title>Эксперимент</Typography.Title>
-      <Row gutter={[8, 8]}>
+      <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
         <Col span={8}>
           <StatArbPage tickerStock="ROSN" _tickerFuture="LKOH" onlyChart height={400} />
         </Col>
