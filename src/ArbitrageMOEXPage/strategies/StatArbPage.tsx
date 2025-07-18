@@ -40,9 +40,9 @@ export const StatArbPage = ({
   onlyChart,
   height,
   seriesType = 'Candlestick',
+  multi = 100,
 }: any) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const multi = 100;
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || dayjs().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || dayjs().add(1, 'day').unix();

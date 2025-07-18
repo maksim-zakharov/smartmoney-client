@@ -25,7 +25,7 @@ export const SmartPage = () => {
           <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={400} />
         </Col>
         <Col span={8}>
-          <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" onlyChart height={400} seriesType="Line" />
+          <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" onlyChart height={400} multi={10000} seriesType="Line" />
         </Col>
       </Row>
       <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
