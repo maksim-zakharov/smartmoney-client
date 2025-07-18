@@ -1,4 +1,4 @@
-import { Button, Card, Checkbox, Col, ColorPicker, Layout, Row, Slider, Statistic, Table, Typography } from 'antd';
+import { Button, Card, Checkbox, Col, ColorPicker, Form, Input, Layout, Row, Slider, Statistic, Table, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -46,6 +46,7 @@ export const StatArbPage = ({
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || dayjs().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || dayjs().add(1, 'day').unix();
+  const [minProfit, setMinProfit] = useState(0.005);
 
   const apiAuth = useAppSelector((state) => state.alorSlice.apiAuth);
 
@@ -229,11 +230,11 @@ export const StatArbPage = ({
       const now = dayjs(candle.time * 1000).format('HH:mm');
       const isDaySession = now >= '09:00' && now <= '18:39';
 
-      const isMix = tickerStock !== 'IMOEXF' || isDaySession;
-      const isMixEnd = tickerStock === 'IMOEXF' && !isDaySession;
+      // Либо не микс - либо если микс - дейсессия - можем открыть сделку
+      const canMixTrade = tickerStock !== 'IMOEXF' || isDaySession;
 
       // Если не коснулись верха - продаем фьюч, покупаем акцию
-      if (candle.high >= BB.upper[i] && isMix) {
+      if (candle.high >= BB.upper[i] && canMixTrade && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
         let currentPosition: any = {
           side: 'short',
           openPrice: candle.high,
@@ -243,8 +244,11 @@ export const StatArbPage = ({
 
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
+
+          const cantClose = tickerStock === 'IMOEXF' ? candle.low > BB.lower[j] && isDaySession : candle.low > BB.middle[j];
+
           if (candle.low > BB.middle[j]) {
-            // if (candle.low > BB.lower[j] && !isMixEnd) {
+            // if (cantClose) {
             continue;
           }
 
@@ -255,7 +259,7 @@ export const StatArbPage = ({
             closePrice: candle.open,
           };
 
-          currentPosition.fee = isMix ? 0 : fee * 200;
+          currentPosition.fee = canMixTrade ? 0 : fee * 200;
 
           const spread = 0.01;
 
@@ -272,7 +276,7 @@ export const StatArbPage = ({
           continue;
         }
       }
-      if (candle.low <= BB.lower[i] && tickerStock !== 'IMOEXF') {
+      if (candle.low <= BB.lower[i] && tickerStock !== 'IMOEXF' && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
         let currentPosition: any = {
           side: 'long',
           openPrice: candle.low,
@@ -314,7 +318,7 @@ export const StatArbPage = ({
     }
 
     return [...buyPositions, ...sellPositions].sort((a, b) => b.openTime - a.openTime);
-  }, [data, fee, lotsize, tickerStock, BB]);
+  }, [data, tickerStock, BB.upper, BB.middle, BB.lower, minProfit, fee]);
 
   const { PnL, profits, losses, Fee } = useMemo(() => {
     const array = positions;
@@ -779,6 +783,9 @@ export const StatArbPage = ({
           </Typography>
           <Slider value={bbMiltiplier} min={1} max={10} step={1} onChange={setbbMiltiplier} />
         </Checkbox.Group>
+        <Form.Item label="Минимальный профит">
+          <Input style={{ width: 80 }} value={minProfit} onChange={(e) => setMinProfit(Number(e.target.value))} />
+        </Form.Item>
       </Sider>
     </Layout>
   );
