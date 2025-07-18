@@ -32,7 +32,15 @@ const defaultState = Object.assign(
   storageState,
 );
 
-export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX', righExchange = 'MOEX', onlyChart, height }: any) => {
+export const StatArbPage = ({
+  tickerStock,
+  _tickerFuture,
+  leftExchange = 'MOEX',
+  righExchange = 'MOEX',
+  onlyChart,
+  height,
+  seriesType = 'Candlestick',
+}: any) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const multi = 100;
   const tf = searchParams.get('tf') || '900';
@@ -173,12 +181,19 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
     if (stockDataRef?.length && futureDataRef?.length) {
       const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(stockDataRef, futureDataRef);
 
-      return filteredFuturesCandles
+      const res = filteredFuturesCandles
         .map((item, index) => calculateCandle(filteredStockCandles[index], item, Number(multiple)))
         .filter(Boolean);
+
+      if (seriesType === 'Line') {
+        return res.map((r) => ({ ...r, value: r.close }));
+      }
+
+      return res;
     }
+
     return stockDataRef;
-  }, [futureDataRef, multiple, stockDataRef]);
+  }, [futureDataRef, multiple, stockDataRef, seriesType]);
 
   const BB = useMemo(
     () =>
@@ -391,7 +406,8 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
       checkboxValues.has('enableBB') && {
         id: 'BB.upper',
         options: {
-          color: colors.bbEma,
+          // color: colors.bbEma,
+          color: 'rgb(157, 43, 56)',
           lineWidth: 1,
           priceLineVisible: false,
           lineStyle: LineStyle.Dashed,
@@ -420,7 +436,8 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
       checkboxValues.has('enableBB') && {
         id: 'BB.lower',
         options: {
-          color: colors.bbEma,
+          // color: colors.bbEma,
+          color: 'rgb(20, 131, 92)',
           lineWidth: 1,
           priceLineVisible: false,
           lineStyle: LineStyle.Dashed,
@@ -570,6 +587,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
         </div>
         {/*<TWChart data={data} />*/}
         <Chart
+          seriesType={seriesType}
           hideCross
           lineSerieses={ls}
           primitives={[]}
@@ -623,6 +641,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
           </div>
           {/*<TWChart data={data} />*/}
           <Chart
+            seriesType={seriesType}
             hideCross
             lineSerieses={ls}
             primitives={[]}

@@ -219,7 +219,7 @@ const ChartFC: FC<Props> = ({
         chartContainerRef.current?.removeChild(toolTipRef.current);
       }
     };
-  }, [maximumFractionDigits]);
+  }, [maximumFractionDigits, seriesType]);
 
   // Обновление данных основной серии
   useEffect(() => {

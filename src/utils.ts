@@ -477,9 +477,10 @@ export const defaultSeriesOptions = {
   } as CandlestickSeriesPartialOptions,
   Histogram: {} as HistogramSeriesPartialOptions,
   Line: {
-    color: 'rgb(255, 186, 102)',
-    lineColor: 'rgb(255, 186, 102)',
-    priceLineColor: 'rgb(255, 186, 102)',
+    color: 'rgb(166,189,213)', // 'rgb(255, 186, 102)',
+    lineColor: 'rgb(166,189,213)', // 'rgb(255, 186, 102)',
+    priceLineColor: 'rgb(166,189,213)', // 'rgb(255, 186, 102)',
+    lineWidth: 1,
   } as LineSeriesPartialOptions,
 } as const;
 
