@@ -11,6 +11,7 @@ import { calculateCandle } from '../../../symbolFuturePairs.js';
 import { LineStyle } from 'lightweight-charts';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
 import { useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
+import { useTdCandlesQuery } from '../../twelveApi.ts';
 
 const { RangePicker } = DatePicker;
 
@@ -28,6 +29,48 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
   const [minimumTradeDiff, setMinimumTradeDiff] = useState(0.001);
 
   const overnightFee = 0.08;
+
+  const isThirdForex = third.includes(':');
+
+  const fxTfMap = {
+    '300': '5min',
+    '900': '15min',
+    '1800': '30min',
+    // '900': '45min',
+    '3600': '1h',
+    // '900': '2h',
+    '14400': '4h',
+    // '900': '8h',
+    D: '1day',
+    // '900': '1week',
+  };
+
+  const { data: fxThirdData } = useTdCandlesQuery(
+    {
+      start_date: dayjs(fromDate * 1000).format('YYYY-MM-DD'),
+      outputsize: 5000,
+      symbol: third.split(':')[1],
+      interval: fxTfMap[tf],
+      apikey: '20dc749373754927b09d95723d963e88',
+    },
+    {
+      skip: !isThirdForex,
+    },
+  );
+
+  const fxThirdCandles = (fxThirdData?.values || []).map((v) => ({
+    time: dayjs(v.datetime).unix(),
+    open: Number(v.open),
+    close: Number(v.close),
+    low: Number(v.low),
+    high: Number(v.high),
+  }));
+
+  useEffect(() => {
+    if (isThirdForex) {
+      setData((prevState) => ({ ...prevState, ucnyData: fxThirdCandles }));
+    }
+  }, [isThirdForex, fxThirdCandles]);
 
   const startDateMap = {
     '3.25': '2024-12-20',
@@ -132,17 +175,17 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
         Promise.all([
           fetchCandlesFromAlor(first, tf, fromDate, toDate, null, token),
           fetchCandlesFromAlor(second, tf, fromDate, toDate, null, token),
-          fetchCandlesFromAlor(third, tf, fromDate, toDate, null, token),
+          isThirdForex ? Promise.resolve([]) : fetchCandlesFromAlor(third, tf, fromDate, toDate, null, token),
         ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
     } else {
       token &&
         Promise.all([
           fetchCandlesFromAlor(`${first}-${expirationMonth}`, tf, fromDate, toDate, null, token),
           fetchCandlesFromAlor(`${second}-${expirationMonth}`, tf, fromDate, toDate, null, token),
-          fetchCandlesFromAlor(`${third}-${expirationMonth}`, tf, fromDate, toDate, null, token),
+          isThirdForex ? Promise.resolve([]) : fetchCandlesFromAlor(`${third}-${expirationMonth}`, tf, fromDate, toDate, null, token),
         ]).then(([siData, cnyData, ucnyData]) => setData({ siData, ucnyData, cnyData }));
     }
-  }, [tf, fromDate, toDate, token, expirationMonth, first, second, third]);
+  }, [tf, fromDate, toDate, token, expirationMonth, first, second, third, noExp, isThirdForex]);
 
   const positions = useMemo(() => {
     if (!data.length) {
@@ -263,22 +306,20 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp }: any) =>
     const from = dayjs(`${t}`);
     const to = dayjs(expirationDate);
 
-    console.log(t, from.format(), to.format());
-
     return [
-      {
-        id: 'rate',
-        options: {
-          color: 'rgb(157, 43, 56)',
-          lineWidth: 1,
-          priceLineVisible: false,
-          lineStyle: LineStyle.Dashed,
-        },
-        data: [
-          { time: from.unix(), value: 1 - ratePerQuartal },
-          { time: to.unix(), value: 1 },
-        ],
-      },
+      // {
+      //   id: 'rate',
+      //   options: {
+      //     color: 'rgb(157, 43, 56)',
+      //     lineWidth: 1,
+      //     priceLineVisible: false,
+      //     lineStyle: LineStyle.Dashed,
+      //   },
+      //   data: [
+      //     { time: from.unix(), value: 1 - ratePerQuartal },
+      //     { time: to.unix(), value: 1 },
+      //   ],
+      // },
       {
         id: 'sellLineDataSm',
         options: {

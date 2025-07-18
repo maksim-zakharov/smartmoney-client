@@ -76,6 +76,11 @@ export const ArbitrageMOEXPage = () => {
     { key: 'cnyrubf', label: 'CNY!1 / CNYRUBF', element: <CNYRUBF_Page /> },
     { key: 'ed', label: 'EU/SI/ED', element: <Triangle_Page first="EU" second="SI" third="ED" multiple={1} /> },
     {
+      key: 'CNY FOREX',
+      label: 'SI/CNY vs FX:USD/CNY',
+      element: <Triangle_Page first="SI" second="CNY" third="FX:USD/CNY" multiple={0.001} />,
+    },
+    {
       key: 'SI_CNY',
       label: 'SI/CNY/UC',
       element: <Triangle_Page first="SI" second="CNY" third="UCNY" multiple={0.001} />,
