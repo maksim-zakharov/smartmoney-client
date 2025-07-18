@@ -572,7 +572,7 @@ export const StatArbPage = ({ tickerStock, _tickerFuture, leftExchange = 'MOEX',
         <Chart
           hideCross
           lineSerieses={ls}
-          primitives={primitives}
+          primitives={[]}
           markers={[]}
           toolTipTop="40px"
           toolTipLeft="4px"
