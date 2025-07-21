@@ -7,37 +7,41 @@ export const SmartPage = () => {
   return (
     <>
       <Row gutter={[8, 8]}>
-        <Col span={8}>
+        <Col span={6}>
           <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" onlyChart height={400} />
         </Col>
-        <Col span={8}>
+        <Col span={6}>
           <StatArbPage tickerStock="RTKM" _tickerFuture="RTKMP" onlyChart height={400} />
         </Col>
-        <Col span={8}>
+        <Col span={6}>
           <StatArbPage tickerStock="MTLR" _tickerFuture="MTLRP" onlyChart height={400} />
         </Col>
-      </Row>
-      <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
-        <Col span={8}>
+        <Col span={6}>
           <StatArbPage tickerStock="BANE" _tickerFuture="BANEP" onlyChart height={400} />
         </Col>
-        <Col span={8}>
-          <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={400} />
-        </Col>
-        <Col span={8}>
-          <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" onlyChart height={400} multi={10000} seriesType="Line" />
-        </Col>
       </Row>
       <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
-        <Col span={8}>
+        <Col span={6}>
+          <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={400} />
+        </Col>
+        <Col span={6}>
+          <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" onlyChart height={400} multi={10000} seriesType="Line" />
+        </Col>
+        <Col span={6}>
           <Triangle_Page first="EURRUBF" second="USDRUBF" third="ED-9.25" multiple={1} noExp onlyChart height={400} seriesType="Line" />
         </Col>
-        <Col span={8}>
+        <Col span={6}>
           <Triangle_Page first="USDRUBF" second="CNYRUBF" third="UCNY-9.25" multiple={1} noExp onlyChart height={400} seriesType="Line" />
         </Col>
       </Row>
       <Typography.Title>Эксперимент</Typography.Title>
       <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
+        <Col span={8}>
+          <StatArbPage tickerStock="GMKN" _tickerFuture="SVCB" onlyChart height={400} />
+        </Col>
+        <Col span={8}>
+          <StatArbPage tickerStock="PIKK" _tickerFuture="SMLT" onlyChart height={400} />
+        </Col>
         <Col span={8}>
           <StatArbPage tickerStock="MTSS" _tickerFuture="YDEX" onlyChart height={400} />
         </Col>

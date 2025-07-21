@@ -43,7 +43,7 @@ export const StatArbPage = ({
   multi = 100,
 }: any) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tf = searchParams.get('tf') || '900';
+  const tf = searchParams.get('tf') || '300';
   const fromDate = searchParams.get('fromDate') || dayjs().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || dayjs().add(1, 'day').unix();
   const [minProfit, setMinProfit] = useState(0.005);
@@ -276,7 +276,8 @@ export const StatArbPage = ({
           continue;
         }
       }
-      if (candle.low <= BB.lower[i] && tickerStock !== 'IMOEXF' && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
+      // if (candle.low <= BB.lower[i] && tickerStock !== 'IMOEXF' && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
+      if (candle.low <= BB.lower[i]) {
         let currentPosition: any = {
           side: 'long',
           openPrice: candle.low,
@@ -578,9 +579,9 @@ export const StatArbPage = ({
             alignItems: 'center',
           }}
         >
-          <TimeframeSelect value={tf} onChange={setSize} />
-          <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
-          <TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />
+          {/*<TimeframeSelect value={tf} onChange={setSize} />*/}
+          {/*<TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />*/}
+          {/*<TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />*/}
           {/*<Select*/}
           {/*    value={tickerFuture}*/}
           {/*    showSearch*/}
@@ -594,6 +595,9 @@ export const StatArbPage = ({
           {/*/>*/}
 
           <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+          <Typography.Text>
+            {tickerStock}/{_tickerFuture}
+          </Typography.Text>
           <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
         </div>
         {/*<TWChart data={data} />*/}

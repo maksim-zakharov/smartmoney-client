@@ -15,5 +15,5 @@ export const DatesPicker = ({ value, onChange }) => {
     { label: 'Последние 182 дня', value: [dayjs().add(-182, 'd'), dayjs()] },
     { label: 'Последние 365 дней', value: [dayjs().add(-365, 'd'), dayjs()] },
   ];
-  return <RangePicker presets={rangePresets} value={value} format="YYYY-MM-DD" style={{ width: 250 }} onChange={onChange} />;
+  return <RangePicker presets={rangePresets} value={value} format="YYYY-MM-DD" style={{ width: 220 }} onChange={onChange} />;
 };
