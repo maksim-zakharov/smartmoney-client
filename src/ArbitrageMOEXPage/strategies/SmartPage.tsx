@@ -1,6 +1,6 @@
 import { StatArbPage } from './StatArbPage';
-import React from 'react';
-import { Col, Row, Segmented, Space } from 'antd';
+import React, { useMemo } from 'react';
+import { Col, Row, Segmented, Select, Space } from 'antd';
 import { Triangle_Page } from './Triangle_Page';
 import { SI_GOLD_Page } from './SI_GOLD_Page';
 import { SegmentedLabeledOption } from 'rc-segmented';
@@ -17,6 +17,7 @@ export const SmartPage = () => {
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
+  const expirationMonth = searchParams.get('expirationMonth') || '9.25';
 
   const setTab = (tab: string) => {
     searchParams.set('segment', tab);
@@ -33,6 +34,23 @@ export const SmartPage = () => {
     searchParams.set('toDate', value[1].unix());
     setSearchParams(searchParams);
   };
+
+  const setexpirationMonth = (value) => {
+    searchParams.set('expirationMonth', value);
+    setSearchParams(searchParams);
+  };
+
+  const expirationMonths = useMemo(() => {
+    const startYear = 24;
+    const months = [];
+    for (let i = 0; i < 3; i++) {
+      for (let j = 1; j <= 4; j++) {
+        months.push(`${3 * j}.${startYear + i}`);
+      }
+    }
+
+    return months;
+  }, []);
 
   const options: SegmentedLabeledOption[] = [
     {
@@ -53,6 +71,12 @@ export const SmartPage = () => {
       <Space>
         <TimeframeSelect value={tf} onChange={setSize} />
         <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+        <Select
+          value={expirationMonth}
+          onSelect={setexpirationMonth}
+          style={{ width: 100 }}
+          options={expirationMonths.map((v) => ({ label: v, value: v }))}
+        />
       </Space>
       <Segmented value={tab} style={{ margin: '8px auto' }} onChange={setTab} options={options} />
       {tab === 'stocks' && (
@@ -131,25 +155,74 @@ export const SmartPage = () => {
         <>
           <Row gutter={[8, 8]}>
             <Col span={6}>
-              <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" onlyChart height={height} multi={10000} seriesType="Line" />
+              <StatArbPage
+                tickerStock="IMOEXF"
+                _tickerFuture={`MIX-${expirationMonth}`}
+                onlyChart
+                height={height}
+                multi={10000}
+                seriesType="Line"
+              />
             </Col>
             <Col span={6}>
-              <StatArbPage tickerStock="EURRUBF" _tickerFuture="EU-9.25" onlyChart height={height} multi={100000} seriesType="Line" />
+              <StatArbPage
+                tickerStock="EURRUBF"
+                _tickerFuture={`EU-${expirationMonth}`}
+                onlyChart
+                height={height}
+                multi={100000}
+                seriesType="Line"
+              />
             </Col>
             <Col span={6}>
-              <StatArbPage tickerStock="USDRUBF" _tickerFuture="SI-9.25" onlyChart height={height} multi={100000} seriesType="Line" />
+              <StatArbPage
+                tickerStock="USDRUBF"
+                _tickerFuture={`SI-${expirationMonth}`}
+                onlyChart
+                height={height}
+                multi={100000}
+                seriesType="Line"
+              />
             </Col>
             <Col span={6}>
-              <StatArbPage tickerStock="CNYRUBF" _tickerFuture="CNY-9.25" onlyChart height={height} multi={100} seriesType="Line" />
+              <StatArbPage
+                tickerStock="CNYRUBF"
+                _tickerFuture={`CNY-${expirationMonth}`}
+                onlyChart
+                height={height}
+                multi={100}
+                seriesType="Line"
+              />
             </Col>
             <Col span={6}>
-              <StatArbPage tickerStock="SBERF" _tickerFuture="SBRF-9.25" onlyChart height={height} multi={100} seriesType="Line" />
+              <StatArbPage
+                tickerStock="SBERF"
+                _tickerFuture={`SBRF-${expirationMonth}`}
+                onlyChart
+                height={height}
+                multi={100}
+                seriesType="Line"
+              />
             </Col>
             <Col span={6}>
-              <StatArbPage tickerStock="GAZPF" _tickerFuture="GAZR-9.25" onlyChart height={height} multi={100} seriesType="Line" />
+              <StatArbPage
+                tickerStock="GAZPF"
+                _tickerFuture={`GAZR-${expirationMonth}`}
+                onlyChart
+                height={height}
+                multi={100}
+                seriesType="Line"
+              />
             </Col>
             <Col span={6}>
-              <StatArbPage tickerStock="GLDRUBF" _tickerFuture="GL-9.25" onlyChart height={height} multi={100} seriesType="Line" />
+              <StatArbPage
+                tickerStock="GLDRUBF"
+                _tickerFuture={`GL-${expirationMonth}`}
+                onlyChart
+                height={height}
+                multi={100}
+                seriesType="Line"
+              />
             </Col>
           </Row>
         </>
@@ -162,7 +235,7 @@ export const SmartPage = () => {
               <Triangle_Page
                 first="EURRUBF"
                 second="USDRUBF"
-                third="ED-9.25"
+                third={`ED-${expirationMonth}`}
                 multiple={1}
                 noExp
                 onlyChart
@@ -174,7 +247,7 @@ export const SmartPage = () => {
               <Triangle_Page
                 first="USDRUBF"
                 second="CNYRUBF"
-                third="UCNY-9.25"
+                third={`UCNY-${expirationMonth}`}
                 multiple={1}
                 noExp
                 onlyChart
@@ -185,8 +258,8 @@ export const SmartPage = () => {
             <Col span={6}>
               <SI_GOLD_Page
                 first="EURRUBF"
-                second="SI-9.25"
-                third="ED-9.25"
+                second={`SI-${expirationMonth}`}
+                third={`ED-${expirationMonth}`}
                 onlyChart
                 multiple={1000}
                 rate={0.13}
@@ -198,8 +271,8 @@ export const SmartPage = () => {
             <Col span={6}>
               <SI_GOLD_Page
                 first="GLDRUBF"
-                second="SI-9.25"
-                third="GOLD-9.25"
+                second={`SI-${expirationMonth}`}
+                third={`GOLD-${expirationMonth}`}
                 onlyChart
                 multiple={31100}
                 rate={0.2}
@@ -211,8 +284,8 @@ export const SmartPage = () => {
             <Col span={6}>
               <SI_GOLD_Page
                 first="USDRUBF"
-                second="CNY-9.25"
-                third="UCNY-9.25"
+                second={`CNY-${expirationMonth}`}
+                third={`UCNY-${expirationMonth}`}
                 onlyChart
                 multiple={1}
                 rate={0.17}
@@ -223,9 +296,9 @@ export const SmartPage = () => {
             </Col>
             <Col span={6}>
               <Triangle_Page
-                first="SI-9.25"
-                second="CNY-9.25"
-                third="UCNY-9.25"
+                first={`SI-${expirationMonth}`}
+                second={`CNY-${expirationMonth}`}
+                third={`UCNY-${expirationMonth}`}
                 multiple={0.001}
                 noExp
                 onlyChart
@@ -235,9 +308,9 @@ export const SmartPage = () => {
             </Col>
             <Col span={6}>
               <Triangle_Page
-                first="EU-9.25"
-                second="SI-9.25"
-                third="ED-9.25"
+                first={`EU-${expirationMonth}`}
+                second={`SI-${expirationMonth}`}
+                third={`ED-${expirationMonth}`}
                 multiple={1}
                 noExp
                 onlyChart
