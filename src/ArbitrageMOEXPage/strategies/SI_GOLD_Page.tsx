@@ -2,17 +2,27 @@ import { Slider, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { calculateTruthFuturePrice, getCommonCandles } from '../../utils.ts';
 import moment from 'moment';
 import { HistoryObject } from '../../sm-lib/models.ts';
-import { calculateCandle } from '../../../symbolFuturePairs.js';
+import { calculateBollingerBands, calculateCandle } from '../../../symbolFuturePairs.js';
 import { useGetHistoryQuery, useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
 import { Exchange } from 'alor-api';
 import { useAppSelector } from '../../store.ts';
 import { DatesPicker } from '../../DatesPicker.tsx';
 import { LineStyle } from 'lightweight-charts';
+
+const storageState = localStorage.getItem('colors') ? JSON.parse(localStorage.getItem('colors')) : {};
+const defaultState = Object.assign(
+  {
+    ema: 'rgb(255, 186, 102)',
+    bbEma: 'rgb(255, 186, 102)',
+    zeroLevel: 'rgb(255, 186, 102)',
+  },
+  storageState,
+);
 
 export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: any) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,6 +30,15 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
   const [diff, setDiff] = useState<number>(0.015);
+  const checkboxValues = new Set(
+    (searchParams.get('checkboxes') || 'tradeOB,BOS,swings,showEndOB,showHiddenSwings,showPositions').split(','),
+  );
+
+  const [colors, setColors] = useState(defaultState);
+
+  useEffect(() => {
+    localStorage.setItem('colors', JSON.stringify(colors));
+  }, [colors]);
 
   const apiAuth = useAppSelector((state) => state.alorSlice.apiAuth);
   const expirationMonth = searchParams.get('expirationMonth') || '9.25';
@@ -137,6 +156,38 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
     setSearchParams(searchParams);
   };
 
+  const bbMiltiplier = Number(searchParams.get('bbMiltiplier') || 2);
+  const setbbMiltiplier = (value) => {
+    searchParams.set('bbMiltiplier', value);
+    setSearchParams(searchParams);
+  };
+
+  const emaBBPeriod = Number(searchParams.get('emaBBPeriod') || 200);
+  const setEmaBBPeriod = (value) => {
+    searchParams.set('emaBBPeriod', value);
+    setSearchParams(searchParams);
+  };
+
+  const BB = useMemo(
+    () =>
+      calculateBollingerBands(
+        data.map((h) => h.close),
+        emaBBPeriod,
+        bbMiltiplier,
+      ),
+    [data, emaBBPeriod, bbMiltiplier],
+  );
+
+  const BB2 = useMemo(
+    () =>
+      calculateBollingerBands(
+        data.map((h) => h.close),
+        emaBBPeriod,
+        bbMiltiplier + 1,
+      ),
+    [data, emaBBPeriod, bbMiltiplier],
+  );
+
   const ls = useMemo(() => {
     if (!data.length) {
       return [];
@@ -155,24 +206,61 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
     const rate = 0.2;
     const ratePerQuartal = rate / 4;
 
+    const sellLineDataSm = truthPriceSeriesDivsData.map((s) => s + 0.005);
+
     return [
       {
-        id: 'rate',
+        id: 'sellLineDataSm',
         options: {
           color: 'rgb(157, 43, 56)',
           lineWidth: 1,
           priceLineVisible: false,
           lineStyle: LineStyle.Dashed,
         },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: sellLineDataSm[i] })),
+      },
+      checkboxValues.has('enableBB') && {
+        id: 'BB.upper',
+        options: {
+          // color: colors.bbEma,
+          color: 'rgb(157, 43, 56)',
+          lineWidth: 1,
+          priceLineVisible: false,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: BB.upper[i] })),
+      },
+      checkboxValues.has('enableBB') && {
+        id: 'BB.upper+1',
+        options: {
+          color: 'rgb(157, 43, 56)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+          // lineStyle: LineStyle.SparseDotted,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: BB2.upper[i] })),
+      },
+      checkboxValues.has('enableBB') && {
+        id: 'ema',
+        options: {
+          color: colors.ema,
+          lineWidth: 1,
+          priceLineVisible: false,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: BB.middle[i] })),
+      },
+      {
+        id: 'rate',
+        options: {
+          color: 'rgb(255, 186, 102)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
         data: data.map((d, i) => ({ time: d.time, value: truthPriceSeriesDivsData[i] })),
-
-        //   [
-        //   { time: from.unix(), value: 100 - ratePerQuartal * 100 },
-        //   { time: to.unix(), value: 100 },
-        // ],
       },
     ].filter(Boolean);
-  }, [data, expirationDate, expirationMonth, truthPriceSeriesDivsData]);
+  }, [BB.upper, BB2.upper, checkboxValues, data, expirationDate, expirationMonth, truthPriceSeriesDivsData]);
 
   if (onlyChart) {
     return (
