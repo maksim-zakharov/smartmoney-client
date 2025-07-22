@@ -1,4 +1,4 @@
-import { Card, Col, DatePicker, Radio, Row, Select, Statistic, Table, Typography } from 'antd';
+import { Card, Col, Radio, Row, Select, Statistic, Table, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
@@ -15,8 +15,6 @@ import { useTdCandlesQuery } from '../../twelveApi.ts';
 import { Exchange } from 'alor-api';
 import { useAppSelector } from '../../store.ts';
 import { DatesPicker } from '../../DatesPicker.tsx';
-
-const { RangePicker } = DatePicker;
 
 export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart, height, seriesType = 'Candlestick' }: any) => {
   // 3.21 6.20 9.19 12.18

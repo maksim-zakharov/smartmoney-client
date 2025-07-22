@@ -2,6 +2,7 @@ import { StatArbPage } from './StatArbPage.tsx';
 import React from 'react';
 import { Col, Row } from 'antd';
 import { Triangle_Page } from './Triangle_Page.tsx';
+import { SI_GOLD_Page } from './SI_GOLD_Page.tsx';
 
 export const SmartPage = () => {
   const height = 350;
@@ -42,6 +43,9 @@ export const SmartPage = () => {
             height={height}
             seriesType="Line"
           />
+        </Col>
+        <Col span={6}>
+          <SI_GOLD_Page onlyChart height={height} seriesType="Line" />
         </Col>
       </Row>
       {/*<Typography.Title>Эксперимент</Typography.Title>*/}
