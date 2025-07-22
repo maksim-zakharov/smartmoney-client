@@ -70,6 +70,19 @@ export const SmartPage = () => {
             seriesType="Line"
           />
         </Col>
+        <Col span={6}>
+          <SI_GOLD_Page
+            first="USDRUBF"
+            second="CNY-9.25"
+            third="UCNY-9.25"
+            onlyChart
+            multiple={1}
+            rate={0.17}
+            noExp
+            height={height}
+            seriesType="Line"
+          />
+        </Col>
       </Row>
       {/*<Typography.Title>Эксперимент</Typography.Title>*/}
       <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
