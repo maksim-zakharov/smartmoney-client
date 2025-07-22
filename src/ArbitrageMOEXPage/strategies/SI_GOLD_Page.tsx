@@ -1,30 +1,78 @@
-import { DatePicker, Slider, Space, TimeRangePickerProps, Typography } from 'antd';
+import { Slider, Space, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../Chart';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
+import { getCommonCandles } from '../../utils.ts';
 import moment from 'moment';
 import { HistoryObject } from '../../sm-lib/models.ts';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
-
-const { RangePicker } = DatePicker;
+import { useGetHistoryQuery } from '../../api/alor.api.ts';
+import { Exchange } from 'alor-api';
+import { useAppSelector } from '../../store.ts';
+import { DatesPicker } from '../../DatesPicker.tsx';
 
 export const SI_GOLD_Page = () => {
-  const [token, setToken] = useState();
   const [searchParams, setSearchParams] = useSearchParams();
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
   const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
   const [diff, setDiff] = useState<number>(0.015);
-  const [_data, setData] = useState({ GD_Data: [], GLDRUBF_Data: [], siData: [] });
-  const { siData, GLDRUBF_Data, GD_Data } = _data;
 
-  const month = '9.25';
+  const apiAuth = useAppSelector((state) => state.alorSlice.apiAuth);
+  const expirationMonth = searchParams.get('expirationMonth') || '9.25';
+
+  const { data: _siData } = useGetHistoryQuery(
+    {
+      tf,
+      from: fromDate,
+      to: toDate,
+      symbol: `SI-${expirationMonth}`,
+      exchange: Exchange.MOEX,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !apiAuth,
+    },
+  );
+
+  const siData = _siData?.history || [];
+
+  const { data: _cnyData } = useGetHistoryQuery(
+    {
+      tf,
+      from: fromDate,
+      to: toDate,
+      symbol: `GLDRUBF`,
+      exchange: Exchange.MOEX,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !apiAuth,
+    },
+  );
+
+  const GLDRUBF_Data = _cnyData?.history || [];
+
+  const { data: _ucnyData } = useGetHistoryQuery(
+    {
+      tf,
+      from: fromDate,
+      to: toDate,
+      symbol: `GOLD-${expirationMonth}`,
+      exchange: Exchange.MOEX,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !apiAuth,
+    },
+  );
+
+  const GD_Data = _ucnyData?.history || [];
 
   const GOLD_data = useMemo(() => {
-    const { filteredStockCandles: ucnyCandles, filteredFuturesCandles: cnyCandles } = getCommonCandles(siData, GD_Data);
+    const { filteredStockCandles: ucnyCandles, filteredFuturesCandles: cnyCandles } = getCommonCandles(GLDRUBF_Data, siData);
 
     return ucnyCandles
       .map((ucnyCandle, index) => {
@@ -37,33 +85,29 @@ export const SI_GOLD_Page = () => {
         }
 
         return {
-          open: cnyCandle.open * ucnyCandle.open,
-          close: cnyCandle.close * ucnyCandle.close,
-          high: cnyCandle.high * ucnyCandle.high,
-          low: cnyCandle.low * ucnyCandle.low,
-          time: cnyCandle.time,
+          open: ucnyCandle.open / cnyCandle.open,
+          close: ucnyCandle.close / cnyCandle.close,
+          high: ucnyCandle.high / cnyCandle.high,
+          low: ucnyCandle.low / cnyCandle.low,
+          time: ucnyCandle.time,
         } as HistoryObject;
       })
       .filter(Boolean);
-  }, [siData, GD_Data]);
+  }, [GLDRUBF_Data, siData]);
 
   const data = useMemo(() => {
-    if (GOLD_data?.length && GLDRUBF_Data?.length) {
-      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(GOLD_data, GLDRUBF_Data);
+    if (GOLD_data?.length && GD_Data?.length) {
+      const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(GOLD_data, GD_Data);
 
-      return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 1)).filter(Boolean);
+      return filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 3110000)).filter(Boolean);
     }
     return GOLD_data;
-  }, [GOLD_data, GLDRUBF_Data]);
+  }, [GOLD_data, GD_Data]);
 
   const setSize = (tf: string) => {
     searchParams.set('tf', tf);
     setSearchParams(searchParams);
   };
-
-  useEffect(() => {
-    localStorage.getItem('token') && refreshToken().then(setToken);
-  }, []);
 
   const onChangeRangeDates = (value: Dayjs[], dateString) => {
     console.log('Selected Time: ', value);
@@ -73,25 +117,6 @@ export const SI_GOLD_Page = () => {
     searchParams.set('toDate', value[1].unix());
     setSearchParams(searchParams);
   };
-
-  const rangePresets: TimeRangePickerProps['presets'] = [
-    { label: 'Сегодня', value: [dayjs().startOf('day'), dayjs()] },
-    { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
-    { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
-    { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
-    { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
-    { label: 'Последние 182 дня', value: [dayjs().add(-182, 'd'), dayjs()] },
-    { label: 'Последние 365 дней', value: [dayjs().add(-365, 'd'), dayjs()] },
-  ];
-
-  useEffect(() => {
-    token &&
-      Promise.all([
-        fetchCandlesFromAlor(`SI-${month}`, tf, fromDate, toDate, null, token),
-        fetchCandlesFromAlor(`GOLD-${month}`, tf, fromDate, toDate, null, token),
-        fetchCandlesFromAlor(`GLDRUBF`, tf, fromDate, toDate, null, token),
-      ]).then(([siData, GD_Data, GLDRUBF_Data]) => setData({ siData, GLDRUBF_Data, GD_Data }));
-  }, [tf, fromDate, toDate, token]);
 
   const avg = 0.946;
   // const sellLineData = useMemo(() => stockData.map((s) => avg + diff), [stockData, diff]);
@@ -103,22 +128,17 @@ export const SI_GOLD_Page = () => {
       <Slider value={diff} min={0.01} max={0.05} step={0.001} onChange={setDiff} />
       <Space>
         <TimeframeSelect value={tf} onChange={setSize} />
-        <RangePicker
-          presets={rangePresets}
-          value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-          format="YYYY-MM-DD"
-          onChange={onChangeRangeDates}
-        />
+        <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
       </Space>
       <Chart data={data} tf={tf} maximumFractionDigits={3} />
       <Typography.Title>GOLD-sint</Typography.Title>
       <Chart data={GOLD_data} tf={tf} maximumFractionDigits={3} />
-      <Typography.Title>SI-{month}</Typography.Title>
+      <Typography.Title>SI-{expirationMonth}</Typography.Title>
       <Chart data={siData} tf={tf} maximumFractionDigits={3} />
       <Typography.Title>GLDRUBF</Typography.Title>
       <Chart data={GLDRUBF_Data} tf={tf} maximumFractionDigits={3} />
-      <Typography.Title>GD-{month}</Typography.Title>
+      <Typography.Title>GD-{expirationMonth}</Typography.Title>
       <Chart data={GD_Data} tf={tf} maximumFractionDigits={3} />
     </>
   );

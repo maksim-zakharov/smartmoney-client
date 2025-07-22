@@ -323,6 +323,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
     const sellLineData = data.map((s) => avg + 0.01);
     const sellLineDatax2 = data.map((s) => avg + 0.015);
     const zeroLineData = data.map((s) => avg);
+    const buyLineDataSmm = data.map((s) => avg - 0.001);
     const buyLineDataSm = data.map((s) => avg - 0.005);
     const buyLineData = data.map((s) => avg - 0.01);
     const buyLineDatax2 = data.map((s) => avg - 0.015);
@@ -394,6 +395,16 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
           lineStyle: LineStyle.Dashed,
         },
         data: data.map((extremum, i) => ({ time: extremum.time, value: buyLineDataSm[i] })),
+      },
+      {
+        id: 'buyLineDataSmm',
+        options: {
+          color: 'rgb(20, 131, 92)',
+          lineWidth: 1,
+          priceLineVisible: false,
+          lineStyle: LineStyle.Dashed,
+        },
+        data: data.map((extremum, i) => ({ time: extremum.time, value: buyLineDataSmm[i] })),
       },
       {
         id: 'buyLineData',
@@ -548,7 +559,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
   }
 
   return (
-    <>
+    <div className="relative">
       <div
         style={{
           top: 8,
@@ -710,6 +721,6 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
         ema={[]}
         maximumFractionDigits={3}
       />
-    </>
+    </div>
   );
 };

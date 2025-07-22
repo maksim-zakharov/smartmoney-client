@@ -102,7 +102,7 @@ export const ArbitrageMOEXPage = () => {
     {
       key: 'USDRUBF/CNY-9.25/UCNY-9.25',
       label: 'USDRUBF/CNY-9.25/UCNY-9.25',
-      element: <Triangle_Page first="USDRUBF" second="CNY-6.25" third="UCNY-6.25" multiple={1} noExp />,
+      element: <Triangle_Page first="USDRUBF" second="CNY-9.25" third="UCNY-9.25" multiple={1} noExp />,
     },
     {
       key: 'SI-9.25/CNYRUBF/UCNY-9.25',
@@ -114,11 +114,11 @@ export const ArbitrageMOEXPage = () => {
       label: 'USDRUBF/CNYRUBF/UCNY-9.25',
       element: <Triangle_Page first="USDRUBF" second="CNYRUBF" third="UCNY-9.25" multiple={1} noExp />,
     },
-    {
-      key: 'USDRUBF/GLDRUBF/GL-9.25',
-      label: 'USDRUBF/GLDRUBF/GL-9.25',
-      element: <Triangle_Page first="USDRUBF" second="GLDRUBF" third="GL-9.25" multiple={1000000} noExp />,
-    },
+    // {
+    //   key: 'USDRUBF/GLDRUBF/GL-9.25',
+    //   label: 'USDRUBF/GLDRUBF/GL-9.25',
+    //   element: <Triangle_Page first="USDRUBF" second="GLDRUBF" third="GL-9.25" multiple={1000000} noExp />,
+    // },
     {
       key: 'EURRUBF/USDRUBF/ED-9.25',
       label: 'EURRUBF/USDRUBF/ED-9.25',

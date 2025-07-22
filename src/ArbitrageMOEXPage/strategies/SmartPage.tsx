@@ -73,6 +73,9 @@ export const SmartPage = () => {
         <Col span={6}>
           <StatArbPage tickerStock="IRAO" _tickerFuture="MGNT" onlyChart height={height} />
         </Col>
+        <Col span={6}>
+          <StatArbPage tickerStock="LKOH" _tickerFuture="RUAL" onlyChart height={height} />
+        </Col>
         {/*<Col span={8}>*/}
         {/*  <StatArbPage tickerStock="LSNG" _tickerFuture="LSNGP" onlyChart height={height} />*/}
         {/*</Col>*/}
