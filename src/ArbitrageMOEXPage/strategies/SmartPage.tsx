@@ -1,13 +1,20 @@
 import { StatArbPage } from './StatArbPage';
-import React, { useState } from 'react';
+import React from 'react';
 import { Col, Row, Segmented } from 'antd';
 import { Triangle_Page } from './Triangle_Page';
 import { SI_GOLD_Page } from './SI_GOLD_Page';
 import { SegmentedLabeledOption } from 'rc-segmented';
+import { useSearchParams } from 'react-router-dom';
 
 export const SmartPage = () => {
   const height = 350;
-  const [tab, setTab] = useState<any>('stocks');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('segment') || 'stocks';
+  const setTab = (tab: string) => {
+    searchParams.set('segment', tab);
+    setSearchParams(searchParams);
+  };
+
   const options: SegmentedLabeledOption[] = [
     {
       label: 'Акции',
@@ -101,9 +108,6 @@ export const SmartPage = () => {
         <>
           <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
             <Col span={6}>
-              <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={height} />
-            </Col>
-            <Col span={6}>
               <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" onlyChart height={height} multi={10000} seriesType="Line" />
             </Col>
             <Col span={6}>
@@ -114,6 +118,12 @@ export const SmartPage = () => {
             </Col>
             <Col span={6}>
               <StatArbPage tickerStock="CNYRUBF" _tickerFuture="CNY-9.25" onlyChart height={height} multi={100} seriesType="Line" />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="SBERF" _tickerFuture="SBRF-9.25" onlyChart height={height} multi={100} seriesType="Line" />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="GAZPF" _tickerFuture="GAZR-9.25" onlyChart height={height} multi={100} seriesType="Line" />
             </Col>
           </Row>
         </>
@@ -181,6 +191,30 @@ export const SmartPage = () => {
                 multiple={1}
                 rate={0.17}
                 noExp
+                height={height}
+                seriesType="Line"
+              />
+            </Col>
+            <Col span={6}>
+              <Triangle_Page
+                first="SI-9.25"
+                second="CNY-9.25"
+                third="UCNY-9.25"
+                multiple={0.001}
+                noExp
+                onlyChart
+                height={height}
+                seriesType="Line"
+              />
+            </Col>
+            <Col span={6}>
+              <Triangle_Page
+                first="EU-9.25"
+                second="SI-9.25"
+                third="ED-9.25"
+                multiple={1}
+                noExp
+                onlyChart
                 height={height}
                 seriesType="Line"
               />
