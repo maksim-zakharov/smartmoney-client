@@ -129,7 +129,7 @@ export const SmartPage = () => {
       )}
       {tab === 'funding' && (
         <>
-          <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
+          <Row gutter={[8, 8]}>
             <Col span={6}>
               <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" onlyChart height={height} multi={10000} seriesType="Line" />
             </Col>
@@ -157,7 +157,7 @@ export const SmartPage = () => {
 
       {tab === 'triangle' && (
         <>
-          <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
+          <Row gutter={[8, 8]}>
             <Col span={6}>
               <Triangle_Page
                 first="EURRUBF"
