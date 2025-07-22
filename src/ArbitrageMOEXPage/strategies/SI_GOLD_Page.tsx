@@ -277,9 +277,10 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
             alignItems: 'center',
           }}
         >
-          <Typography.Text>GLDRUBF/SI/GD</Typography.Text>
           {/*<TimeframeSelect value={tf} onChange={setSize} />*/}
           <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+          <Typography.Text>GLDRUBF/SI/GD</Typography.Text>
+          <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
           {/*<Radio.Group value={feePerTrade} onChange={(e) => setFeePerTrade(Number(e.target.value))}>*/}
           {/*  <Radio.Button value={0.1}>0.1%</Radio.Button>*/}
           {/*  <Radio.Button value={0.04}>0.04%</Radio.Button>*/}
