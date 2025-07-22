@@ -3,16 +3,16 @@ import { Layout, Menu, MenuProps, Typography } from 'antd';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { OldPage } from './strategies/OldPage';
-import { Triangle_Page } from './strategies/Triangle_Page.tsx';
+import { Triangle_Page } from './strategies/Triangle_Page';
 import { SI_GOLD_Page } from './strategies/SI_GOLD_Page';
 import { CNY_TOM_Page } from './strategies/CNY_TOM_Page';
-import { CNYRUBF_Page } from './strategies/CNYRUBF_Page.tsx';
+import { CNYRUBF_Page } from './strategies/CNYRUBF_Page';
 import { useSearchParams } from 'react-router-dom';
-import { StatArbPage } from './strategies/StatArbPage.tsx';
-import { MOEX_CNY_Page } from './strategies/MOEX_CNY_Page.tsx';
-import { SPBXPage } from './strategies/SPBXPage.tsx';
-import { FundingPage } from './strategies/FundingPage.tsx';
-import { SmartPage } from './strategies/SmartPage.tsx';
+import { StatArbPage } from './strategies/StatArbPage';
+import { MOEX_CNY_Page } from './strategies/MOEX_CNY_Page';
+import { SPBXPage } from './strategies/SPBXPage';
+import { FundingPage } from './strategies/FundingPage';
+import { SmartPage } from './strategies/SmartPage';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -130,7 +130,11 @@ export const ArbitrageMOEXPage = () => {
       element: <Triangle_Page first="GLDRUBF" second="SI-9.25" third="GOLD-9.25" multiple={31100} noExp />,
     },
     { key: 'MOEXCN', label: 'MOEX/CR/MOEXCN', element: <MOEX_CNY_Page /> },
-    { key: 'SI_GOLD', label: 'SI_GOLD', element: <SI_GOLD_Page /> },
+    {
+      key: 'SI_GOLD',
+      label: 'SI_GOLD',
+      element: <SI_GOLD_Page first="GLDRUBF" second="SI-9.25" third="GOLD-9.25" multiple={31100} rate={0.2} noExp seriesType="Line" />,
+    },
   ];
   const selectedKey = searchParams.get('tab') || items[0]?.key;
   const setSelectedKey = (value) => {

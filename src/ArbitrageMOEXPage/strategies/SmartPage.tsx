@@ -1,8 +1,8 @@
-import { StatArbPage } from './StatArbPage.tsx';
+import { StatArbPage } from './StatArbPage';
 import React from 'react';
 import { Col, Row } from 'antd';
-import { Triangle_Page } from './Triangle_Page.tsx';
-import { SI_GOLD_Page } from './SI_GOLD_Page.tsx';
+import { Triangle_Page } from './Triangle_Page';
+import { SI_GOLD_Page } from './SI_GOLD_Page';
 
 export const SmartPage = () => {
   const height = 350;
@@ -45,7 +45,30 @@ export const SmartPage = () => {
           />
         </Col>
         <Col span={6}>
-          <SI_GOLD_Page onlyChart height={height} seriesType="Line" />
+          <SI_GOLD_Page
+            first="EURRUBF"
+            second="SI-9.25"
+            third="ED-9.25"
+            onlyChart
+            multiple={1000}
+            rate={0.13}
+            noExp
+            height={height}
+            seriesType="Line"
+          />
+        </Col>
+        <Col span={6}>
+          <SI_GOLD_Page
+            first="GLDRUBF"
+            second="SI-9.25"
+            third="GOLD-9.25"
+            onlyChart
+            multiple={31100}
+            rate={0.2}
+            noExp
+            height={height}
+            seriesType="Line"
+          />
         </Col>
       </Row>
       {/*<Typography.Title>Эксперимент</Typography.Title>*/}

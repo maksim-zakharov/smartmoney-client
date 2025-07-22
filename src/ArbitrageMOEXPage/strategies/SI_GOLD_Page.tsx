@@ -24,7 +24,7 @@ const defaultState = Object.assign(
   storageState,
 );
 
-export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: any) => {
+export const SI_GOLD_Page = ({ rate, first, second, third, noExp, onlyChart, height, seriesType = 'Candlestick', multiple }: any) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tf = searchParams.get('tf') || '900';
   const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
@@ -43,7 +43,7 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
   const apiAuth = useAppSelector((state) => state.alorSlice.apiAuth);
   const expirationMonth = searchParams.get('expirationMonth') || '9.25';
 
-  const { data: details } = useGetSecurityDetailsQuery({ ticker: `SI-${expirationMonth}` });
+  const { data: details } = useGetSecurityDetailsQuery({ ticker: third });
 
   const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
 
@@ -52,7 +52,7 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
       tf,
       from: fromDate,
       to: toDate,
-      symbol: `SI-${expirationMonth}`,
+      symbol: noExp ? second : `${second}-${expirationMonth}`,
       exchange: Exchange.MOEX,
     },
     {
@@ -68,7 +68,7 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
       tf,
       from: fromDate,
       to: toDate,
-      symbol: `GLDRUBF`,
+      symbol: noExp ? first : `${first}-${expirationMonth}`,
       exchange: Exchange.MOEX,
     },
     {
@@ -84,7 +84,7 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
       tf,
       from: fromDate,
       to: toDate,
-      symbol: `GOLD-${expirationMonth}`,
+      symbol: noExp ? third : `${third}-${expirationMonth}`,
       exchange: Exchange.MOEX,
     },
     {
@@ -97,7 +97,7 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
   const truthPriceSeriesDivsData = useMemo(
     () =>
       commonCandles.filteredStockCandles.map(
-        ({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate), []) / close,
+        ({ close, time }) => calculateTruthFuturePrice(close, time, dayjs(expirationDate), [], rate) / close,
       ),
     [commonCandles.filteredStockCandles, expirationDate],
   );
@@ -132,7 +132,7 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
     if (GOLD_data?.length && GD_Data?.length) {
       const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(GOLD_data, GD_Data);
 
-      const res = filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, 31100)).filter(Boolean);
+      const res = filteredFuturesCandles.map((item, index) => calculateCandle(filteredStockCandles[index], item, multiple)).filter(Boolean);
       if (seriesType === 'Line') {
         return res.map((r) => ({ ...r, value: r.close }));
       }
@@ -279,20 +279,10 @@ export const SI_GOLD_Page = ({ onlyChart, height, seriesType = 'Candlestick' }: 
         >
           {/*<TimeframeSelect value={tf} onChange={setSize} />*/}
           <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
-          <Typography.Text>GLDRUBF/SI/GD</Typography.Text>
+          <Typography.Text>
+            {first}/{second}/{third}
+          </Typography.Text>
           <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
-          {/*<Radio.Group value={feePerTrade} onChange={(e) => setFeePerTrade(Number(e.target.value))}>*/}
-          {/*  <Radio.Button value={0.1}>0.1%</Radio.Button>*/}
-          {/*  <Radio.Button value={0.04}>0.04%</Radio.Button>*/}
-          {/*  <Radio.Button value={0.025}>0.025%</Radio.Button>*/}
-          {/*  <Radio.Button value={0.015}>0.015%</Radio.Button>*/}
-          {/*</Radio.Group>*/}
-          {/*<Radio.Group value={minimumTradeDiff} onChange={(e) => setMinimumTradeDiff(Number(e.target.value))}>*/}
-          {/*  <Radio.Button value={0.001}>0.1%</Radio.Button>*/}
-          {/*  <Radio.Button value={0.002}>0.2%</Radio.Button>*/}
-          {/*  <Radio.Button value={0.003}>0.3%</Radio.Button>*/}
-          {/*</Radio.Group>*/}
-          {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
         </div>
         <Chart
           hideCross
