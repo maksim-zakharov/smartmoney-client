@@ -515,8 +515,8 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
           <Typography.Text>
             {first}/{second}/{third}
           </Typography.Text>
-          <TimeframeSelect value={tf} onChange={setSize} />
-          <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+          {/*<TimeframeSelect value={tf} onChange={setSize} />*/}
+          {/*<DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />*/}
 
           {!noExp && (
             <Select

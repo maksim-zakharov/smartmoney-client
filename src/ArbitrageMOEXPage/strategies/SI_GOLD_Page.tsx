@@ -278,7 +278,7 @@ export const SI_GOLD_Page = ({ rate, first, second, third, noExp, onlyChart, hei
           }}
         >
           {/*<TimeframeSelect value={tf} onChange={setSize} />*/}
-          <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+          {/*<DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />*/}
           <Typography.Text>
             {first}/{second}/{third}
           </Typography.Text>

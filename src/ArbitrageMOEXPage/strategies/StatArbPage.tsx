@@ -594,7 +594,7 @@ export const StatArbPage = ({
           {/*    options={options}*/}
           {/*/>*/}
 
-          <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+          {/*<DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />*/}
           <Typography.Text>
             {tickerStock}/{_tickerFuture}
           </Typography.Text>

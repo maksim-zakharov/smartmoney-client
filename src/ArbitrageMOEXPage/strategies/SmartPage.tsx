@@ -1,17 +1,36 @@
 import { StatArbPage } from './StatArbPage';
 import React from 'react';
-import { Col, Row, Segmented } from 'antd';
+import { Col, Row, Segmented, Space } from 'antd';
 import { Triangle_Page } from './Triangle_Page';
 import { SI_GOLD_Page } from './SI_GOLD_Page';
 import { SegmentedLabeledOption } from 'rc-segmented';
 import { useSearchParams } from 'react-router-dom';
+import { TimeframeSelect } from '../../TimeframeSelect.tsx';
+import { DatesPicker } from '../../DatesPicker.tsx';
+import dayjs, { type Dayjs } from 'dayjs';
+import moment from 'moment';
 
 export const SmartPage = () => {
   const height = 350;
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('segment') || 'stocks';
+  const tf = searchParams.get('tf') || '900';
+  const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
+  const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
+
   const setTab = (tab: string) => {
     searchParams.set('segment', tab);
+    setSearchParams(searchParams);
+  };
+
+  const setSize = (tf: string) => {
+    searchParams.set('tf', tf);
+    setSearchParams(searchParams);
+  };
+
+  const onChangeRangeDates = (value: Dayjs[], dateString) => {
+    searchParams.set('fromDate', value[0].unix());
+    searchParams.set('toDate', value[1].unix());
     setSearchParams(searchParams);
   };
 
@@ -30,8 +49,12 @@ export const SmartPage = () => {
     },
   ];
   return (
-    <>
-      <Segmented value={tab} style={{ marginBottom: 8 }} onChange={setTab} options={options} />
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <Space>
+        <TimeframeSelect value={tf} onChange={setSize} />
+        <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+      </Space>
+      <Segmented value={tab} style={{ margin: '8px auto' }} onChange={setTab} options={options} />
       {tab === 'stocks' && (
         <>
           <Row gutter={[8, 8]}>
@@ -225,6 +248,6 @@ export const SmartPage = () => {
           </Row>
         </>
       )}
-    </>
+    </div>
   );
 };
