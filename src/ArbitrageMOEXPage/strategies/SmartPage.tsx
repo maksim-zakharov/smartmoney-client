@@ -99,80 +99,80 @@ export const SmartPage = () => {
             </Col>
           </Row>
           {/*<Typography.Title>Эксперимент</Typography.Title>*/}
-          {/*<Row gutter={[8, 8]} style={{ paddingTop: 8 }}>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="GMKN" _tickerFuture="SVCB" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="PIKK" _tickerFuture="SMLT" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="MTSS" _tickerFuture="YDEX" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="ROSN" _tickerFuture="LKOH" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="ROSN" _tickerFuture="TATN" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="SBER" _tickerFuture="SBERP" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="EUTR" _tickerFuture="TRNFP" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="ALRS" _tickerFuture="PLZL" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="IRAO" _tickerFuture="MGNT" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="LKOH" _tickerFuture="RUAL" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="MAGN" _tickerFuture="X5" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="HEAD" _tickerFuture="MDMG" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="T" _tickerFuture="LENT" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="APTK" _tickerFuture="SFIN" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="CHMF" _tickerFuture="NLMK" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="GAZP" _tickerFuture="SIBN" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="AFKS" _tickerFuture="POSI" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={6}>*/}
-          {/*  <StatArbPage tickerStock="UPRO" _tickerFuture="PHOR" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={8}>*/}
-          {/*  <StatArbPage tickerStock="LSNG" _tickerFuture="LSNGP" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={8}>*/}
-          {/*  <StatArbPage tickerStock="NKNC" _tickerFuture="NKNCP" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={8}>*/}
-          {/*  <StatArbPage tickerStock="LKOH" _tickerFuture="TATN" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={8}>*/}
-          {/*  <StatArbPage tickerStock="LKOH" _tickerFuture="SNGS" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={8}>*/}
-          {/*  <StatArbPage tickerStock="ROSN" _tickerFuture="SNGS" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*<Col span={8}>*/}
-          {/*  <StatArbPage tickerStock="TATN" _tickerFuture="SNGS" onlyChart height={height} />*/}
-          {/*</Col>*/}
-          {/*</Row>*/}
+          <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
+            <Col span={6}>
+              <StatArbPage tickerStock="GMKN" _tickerFuture="SVCB" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="PIKK" _tickerFuture="SMLT" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="MTSS" _tickerFuture="YDEX" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="ROSN" _tickerFuture="LKOH" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="ROSN" _tickerFuture="TATN" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="SBER" _tickerFuture="SBERP" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="EUTR" _tickerFuture="TRNFP" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="ALRS" _tickerFuture="PLZL" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="IRAO" _tickerFuture="MGNT" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="LKOH" _tickerFuture="RUAL" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="MAGN" _tickerFuture="X5" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="HEAD" _tickerFuture="MDMG" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="T" _tickerFuture="LENT" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="APTK" _tickerFuture="SFIN" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="CHMF" _tickerFuture="NLMK" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="GAZP" _tickerFuture="SIBN" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="AFKS" _tickerFuture="POSI" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="UPRO" _tickerFuture="PHOR" onlyChart height={height} />
+            </Col>
+            <Col span={8}>
+              <StatArbPage tickerStock="LSNG" _tickerFuture="LSNGP" onlyChart height={height} />
+            </Col>
+            <Col span={8}>
+              <StatArbPage tickerStock="NKNC" _tickerFuture="NKNCP" onlyChart height={height} />
+            </Col>
+            <Col span={8}>
+              <StatArbPage tickerStock="LKOH" _tickerFuture="TATN" onlyChart height={height} />
+            </Col>
+            <Col span={8}>
+              <StatArbPage tickerStock="LKOH" _tickerFuture="SNGS" onlyChart height={height} />
+            </Col>
+            <Col span={8}>
+              <StatArbPage tickerStock="ROSN" _tickerFuture="SNGS" onlyChart height={height} />
+            </Col>
+            <Col span={8}>
+              <StatArbPage tickerStock="TATN" _tickerFuture="SNGS" onlyChart height={height} />
+            </Col>
+          </Row>
         </>
       )}
       {tab === 'funding' && (
