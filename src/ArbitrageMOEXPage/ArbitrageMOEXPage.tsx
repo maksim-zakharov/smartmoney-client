@@ -66,6 +66,11 @@ export const ArbitrageMOEXPage = () => {
       label: 'IMOEXF/MIX-9.25',
       element: <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" seriesType="Line" multi={10000} />,
     },
+    {
+      key: 'GAZPF',
+      label: 'GAZPF/GAZR-9.25',
+      element: <StatArbPage tickerStock="GAZPF" _tickerFuture="GAZR-9.25" seriesType="Line" multi={10000} />,
+    },
     { key: 'rosn-tatn', label: 'ROSN/TATN', element: <StatArbPage tickerStock="ROSN" _tickerFuture="TATN" /> },
     { key: 'rosn-LKOH', label: 'ROSN/LKOH', element: <StatArbPage tickerStock="ROSN" _tickerFuture="LKOH" /> },
     { key: 'SBER/VTBR', label: 'SBER/VTBR', element: <StatArbPage tickerStock="SBER" _tickerFuture="VTBR" /> },
