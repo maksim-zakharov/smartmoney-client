@@ -90,7 +90,22 @@ export const ArbitrageMOEXPage = () => {
     { key: 'cnyrubf', label: 'CNY!1 / CNYRUBF', element: <CNYRUBF_Page /> },
     { key: 'ed', label: 'EU/SI/ED', element: <Triangle_Page first="EU" second="SI" third="ED" multiple={1} /> },
     {
+      key: 'SILV FOREX',
+      label: 'FX:SILVER/SV1!',
+      element: <StatArbPage tickerStock="FX:XAG/USD" _tickerFuture="SILV-9.25" multiple={1} />,
+    },
+    {
+      key: 'USD/CNH FOREX',
+      label: 'FX:USDCNH/UCNY1!',
+      element: <StatArbPage tickerStock="FX:USD/CNH" _tickerFuture="UCNY-9.25" multiple={0.01} />,
+    },
+    {
       key: 'ED FOREX',
+      label: 'FX:EURUSD/ED1!',
+      element: <StatArbPage tickerStock="FX:EUR/USD" _tickerFuture="ED-9.25" multiple={0.01} />,
+    },
+    {
+      key: 'ED_sint FOREX',
       label: 'EU/SI vs FX:EUR/USD',
       element: <Triangle_Page first="EU" second="SI" third="FX:EUR/USD" multiple={1} />,
     },

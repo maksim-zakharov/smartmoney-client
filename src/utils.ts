@@ -148,8 +148,8 @@ export function getCommonCandles(stockCandles: HistoryObject[], futuresCandles: 
   const commonTimes = new Set([...stockTimes].filter((time) => futuresTimes.has(time)));
 
   // Оставляем только те свечи, время которых есть в обоих массивах
-  const filteredStockCandles = stockCandles.filter((candle) => commonTimes.has(candle.time));
-  const filteredFuturesCandles = futuresCandles.filter((candle) => commonTimes.has(candle.time));
+  const filteredStockCandles = stockCandles.filter((candle) => commonTimes.has(candle.time)).sort((a, b) => a.time - b.time);
+  const filteredFuturesCandles = futuresCandles.filter((candle) => commonTimes.has(candle.time)).sort((a, b) => a.time - b.time);
 
   return { filteredStockCandles, filteredFuturesCandles };
 }

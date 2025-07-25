@@ -193,7 +193,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
       }
       return res;
     }
-    return _data2;
+    return [];
   }, [seriesType, _data2, ucnyData]);
 
   const setSize = (tf: string) => {

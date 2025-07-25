@@ -62,6 +62,10 @@ export const SmartPage = () => {
       value: 'funding',
     },
     {
+      label: 'Forex',
+      value: 'forex',
+    },
+    {
       label: 'Триноги',
       value: 'triangle',
     },
@@ -178,6 +182,18 @@ export const SmartPage = () => {
             </Col>
             <Col span={6}>
               <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={height} />
+            </Col>
+          </Row>
+        </>
+      )}
+      {tab === 'forex' && (
+        <>
+          <Row gutter={[8, 8]}>
+            <Col span={6}>
+              <StatArbPage tickerStock="FX:USD/CNH" _tickerFuture="UCNY-9.25" multiple={0.01} onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="FX:EUR/USD" _tickerFuture="ED-9.25" multiple={0.01} onlyChart height={height} />
             </Col>
           </Row>
         </>
