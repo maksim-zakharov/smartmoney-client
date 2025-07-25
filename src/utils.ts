@@ -772,7 +772,7 @@ const calculateArbitrageThreshold = (
   expirationDate: Dayjs,
   // commission = 0.004,
   // taxRate = 0.13,
-  riskFreeRate = 0.2,
+  riskFreeRate = 0.18,
   dividends = [],
 ) => {
   // Биржевой сбор - процент поделил на 100, 0.00462 - за валютный фьючерс (например Юань)

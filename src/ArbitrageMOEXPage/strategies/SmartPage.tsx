@@ -87,6 +87,12 @@ export const SmartPage = () => {
         <>
           <Row gutter={[8, 8]}>
             <Col span={6}>
+              <StatArbPage tickerStock="MAGN" _tickerFuture="X5" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
+              <StatArbPage tickerStock="MTSS" _tickerFuture="YDEX" onlyChart height={height} />
+            </Col>
+            <Col span={6}>
               <StatArbPage tickerStock="GMKN" _tickerFuture="SVCB" onlyChart height={height} />
             </Col>
             <Col span={6}>
@@ -172,15 +178,6 @@ export const SmartPage = () => {
             </Col>
             <Col span={6}>
               <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={height} />
-            </Col>
-          </Row>
-          {/*<Typography.Title>Эксперимент</Typography.Title>*/}
-          <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
-            <Col span={6}>
-              <StatArbPage tickerStock="MTSS" _tickerFuture="YDEX" onlyChart height={height} />
-            </Col>
-            <Col span={6}>
-              <StatArbPage tickerStock="MAGN" _tickerFuture="X5" onlyChart height={height} />
             </Col>
           </Row>
         </>
@@ -309,7 +306,7 @@ export const SmartPage = () => {
                 third={`GOLD-${expirationMonth}`}
                 onlyChart
                 multiple={31100}
-                rate={0.2}
+                rate={0.18}
                 noExp
                 height={height}
                 seriesType="Line"

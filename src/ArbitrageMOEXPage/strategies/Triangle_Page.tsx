@@ -134,7 +134,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
     '12.25': '2025-09-20',
   };
 
-  const rate = 0.2;
+  const rate = 0.18;
   const ratePerQuartal = rate / 4;
 
   const { data: details } = useGetSecurityDetailsQuery({ ticker: third });

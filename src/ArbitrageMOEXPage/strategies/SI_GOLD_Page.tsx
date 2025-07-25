@@ -203,7 +203,7 @@ export const SI_GOLD_Page = ({ rate, first, second, third, noExp, onlyChart, hei
     const from = dayjs(`${t}`);
     const to = dayjs(expirationDate);
 
-    const rate = 0.2;
+    const rate = 0.18;
     const ratePerQuartal = rate / 4;
 
     const sellLineDataSm = truthPriceSeriesDivsData.map((s) => s + 0.005);
