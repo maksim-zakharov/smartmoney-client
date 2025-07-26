@@ -57,6 +57,11 @@ export const ArbitrageMOEXPage = () => {
     { key: 'smart', label: 'Smart', element: <SmartPage /> },
     { key: 'BANE', label: 'BANE/BANEP', element: <StatArbPage tickerStock="BANE" _tickerFuture="BANEP" /> },
     { key: 'tatn', label: 'TATN/TATNP', element: <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" /> },
+    {
+      key: 'tatn-minus',
+      label: 'TATN-TATNP',
+      element: <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" multi={1} delimeter="minus" />,
+    },
     { key: 'rtkm', label: 'RTKM/RTKMP', element: <StatArbPage tickerStock="RTKM" _tickerFuture="RTKMP" /> },
     { key: 'mtlr', label: 'MTLR/MTLRP', element: <StatArbPage tickerStock="MTLR" _tickerFuture="MTLRP" /> },
     { key: 'SBER', label: 'SBER/SBERP', element: <StatArbPage tickerStock="SBER" _tickerFuture="SBERP" /> },
@@ -93,6 +98,26 @@ export const ArbitrageMOEXPage = () => {
       key: 'SILV FOREX',
       label: 'FX:SILVER/SV1!',
       element: <StatArbPage tickerStock="FX:XAG/USD" _tickerFuture="SILV-9.25" multiple={1} />,
+    },
+    {
+      key: 'EURRUBF/EU-9.25',
+      label: 'EURRUBF/EU-9.25',
+      element: <StatArbPage tickerStock="EURRUBF" _tickerFuture={`EU-9.25`} multi={100000} seriesType="Line" />,
+    },
+    {
+      key: 'USDRUBF/SI-9.25',
+      label: 'USDRUBF/SI-9.25',
+      element: <StatArbPage tickerStock="USDRUBF" _tickerFuture={`SI-9.25`} multi={100000} seriesType="Line" />,
+    },
+    {
+      key: 'CNYRUBF/CNY-9.25',
+      label: 'CNYRUBF/CNY-9.25',
+      element: <StatArbPage tickerStock="CNYRUBF" _tickerFuture={`CNY-9.25`} multi={100} seriesType="Line" />,
+    },
+    {
+      key: 'GLDRUBF/GL-9.25',
+      label: 'GLDRUBF/GL-9.25',
+      element: <StatArbPage tickerStock="GLDRUBF" _tickerFuture={`GL-9.25`} multi={100} seriesType="Line" />,
     },
     {
       key: 'USD/CNH FOREX',

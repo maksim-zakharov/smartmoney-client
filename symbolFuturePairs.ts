@@ -378,18 +378,29 @@ export function calculateBollingerBands(prices: number[], period: number = 20, m
   return { upper: upperBand, middle: middleBand, lower: lowerBand };
 }
 
-export const calculateCandle = (stockCandle: HistoryObject, futureCandle: HistoryObject, multiple: number = 100) => {
+export const calculateCandle = (stockCandle: HistoryObject, futureCandle: HistoryObject, multiple: number = 100, delimeter = 'div') => {
   if (!stockCandle) {
     return null;
   }
   if (!futureCandle) {
     return null;
   }
+  let open = (stockCandle.open / futureCandle.open) * multiple;
+  let close = (stockCandle.close / futureCandle.close) * multiple;
+  let high = (stockCandle.high / futureCandle.high) * multiple;
+  let low = (stockCandle.low / futureCandle.low) * multiple;
 
-  const open = (stockCandle.open / futureCandle.open) * multiple;
-  const close = (stockCandle.close / futureCandle.close) * multiple;
-  const high = (stockCandle.high / futureCandle.high) * multiple;
-  const low = (stockCandle.low / futureCandle.low) * multiple;
+  if (delimeter === 'div') {
+    open = (stockCandle.open / futureCandle.open) * multiple;
+    close = (stockCandle.close / futureCandle.close) * multiple;
+    high = (stockCandle.high / futureCandle.high) * multiple;
+    low = (stockCandle.low / futureCandle.low) * multiple;
+  } else if (delimeter === 'minus') {
+    open = (stockCandle.open - futureCandle.open) * multiple;
+    close = (stockCandle.close - futureCandle.close) * multiple;
+    high = (stockCandle.high - futureCandle.high) * multiple;
+    low = (stockCandle.low - futureCandle.low) * multiple;
+  }
 
   // const open = futureCandle.open / stockCandle.open / multiple;
   // const close = futureCandle.close / stockCandle.close / multiple;
