@@ -290,6 +290,20 @@ export const SmartPage = () => {
     { left: 'VTBR', right: 'RUAL' },
   ];
 
+  const favorites = [
+    ['SMLT', 'AFKS'],
+    // ['RUAL', 'MOEX'],
+    ['HEAD', 'MDMG'],
+    ['RNFT', 'MAGN'],
+    ['LKOH', 'SIBN'],
+    ['IVAT', 'ASTR'],
+    ['CNRU', 'PHOR'],
+    ['VTBR', 'MOEX'],
+    ['AQUA', 'SOFL'],
+    ['RAGR', 'RUAL'],
+    ['SFIN', 'MBNK'],
+  ];
+
   const limit = 72 / span;
   const offset = (page - 1) * limit;
 
@@ -347,6 +361,13 @@ export const SmartPage = () => {
             <Col span={span}>
               <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={height} />
             </Col>
+          </Row>
+          <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
+            {favorites.map((pair) => (
+              <Col span={span}>
+                <StatArbPage tickerStock={pair[0]} _tickerFuture={pair[1]} onlyChart height={height} />
+              </Col>
+            ))}
           </Row>
         </>
       )}

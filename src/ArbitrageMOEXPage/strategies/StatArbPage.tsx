@@ -633,14 +633,16 @@ export const StatArbPage = ({
     },
   ].filter(Boolean);
 
-  const [ref, isVisible] = useIntersectionObserver({
-    threshold: 0.01,
-    rootMargin: `800px`,
-  });
+  // const [ref, isVisible] = useIntersectionObserver({
+  //   threshold: 0.01,
+  //   rootMargin: `800px`,
+  // });
+
+  const isVisible = true;
 
   if (onlyChart) {
     return (
-      <div className="relative" style={{ height }} ref={ref}>
+      <div className="relative" style={{ height }}>
         {isVisible && (
           <>
             <div
