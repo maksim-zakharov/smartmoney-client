@@ -293,10 +293,10 @@ export const SmartPage = () => {
   const favorites = [
     ['SMLT', 'AFKS'],
     // ['RUAL', 'MOEX'],
-    ['HEAD', 'MDMG'],
-    ['RNFT', 'MAGN'],
+    // ['HEAD', 'MDMG'],
+    // ['RNFT', 'MAGN'],
     ['LKOH', 'SIBN'],
-    ['IVAT', 'ASTR'],
+    // ['IVAT', 'ASTR'],
     ['CNRU', 'PHOR'],
     ['VTBR', 'MOEX'],
     ['AQUA', 'SOFL'],
