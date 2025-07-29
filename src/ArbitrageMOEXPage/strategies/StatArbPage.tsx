@@ -373,7 +373,8 @@ export const StatArbPage = ({
 
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
-          if (candle.high <= BB.middle[j]) {
+          const canClose = !tickerFuture.includes('_xp') ? candle.high <= BB.middle[j] : candle.high <= BB.upper[j];
+          if (canClose) {
             continue;
           }
 
