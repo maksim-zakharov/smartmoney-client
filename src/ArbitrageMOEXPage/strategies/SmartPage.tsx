@@ -406,7 +406,7 @@ export const SmartPage = () => {
               <StatArbPage tickerStock="SILV-9.25" _tickerFuture="XAGUSD_xp" multi={10000} onlyChart height={height} />
             </Col>
             <Col span={span}>
-              <StatArbPage tickerStock="BR-9.25" _tickerFuture="BRNUSD_xp" multi={10000} onlyChart height={height} />
+              <StatArbPage tickerStock="BR-8.25" _tickerFuture="BRNUSD_xp" multi={10000} onlyChart height={height} />
             </Col>
           </Row>
         </>
