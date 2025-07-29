@@ -16,6 +16,7 @@ import { DatesPicker } from '../../DatesPicker';
 import { useAppSelector } from '../../store.ts';
 import { FullscreenOutlined } from '@ant-design/icons';
 import { useTdCandlesQuery } from '../../twelveApi.ts';
+import { useCandlesQuery } from '../../api.ts';
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',
@@ -112,6 +113,7 @@ export const StatArbPage = ({
     symbol: tickerStock,
     exchange: 'MOEX',
   });
+  const isSecondForex = tickerFuture.includes('_xp');
 
   const { data: _futureData } = useGetHistoryQuery(
     {
@@ -123,11 +125,23 @@ export const StatArbPage = ({
     },
     {
       pollingInterval: 5000,
-      skip: !tickerFuture || !apiAuth,
+      skip: !tickerFuture || !apiAuth || isSecondForex,
     },
   );
 
-  const futureData = _futureData?.history || [];
+  const { data: xpCandles = [] } = useCandlesQuery(
+    {
+      symbol: tickerFuture,
+      from: fromDate,
+      to: toDate,
+    },
+    {
+      skip: !isSecondForex,
+    },
+  );
+
+  const futureData = xpCandles?.length ? xpCandles : _futureData?.history || [];
+
   const futureDataRef = futureData;
 
   // const [futureDataRef, setfutureDataRef] = useState<HistoryObject[]>([]);
@@ -303,6 +317,7 @@ export const StatArbPage = ({
       const canMixTrade = tickerStock !== 'IMOEXF' || isDaySession;
 
       // Если не коснулись верха - продаем фьюч, покупаем акцию
+
       if (candle.high >= BB.upper[i] && canMixTrade && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
         let currentPosition: any = {
           side: 'short',
@@ -315,6 +330,8 @@ export const StatArbPage = ({
           const candle = data[j];
 
           const cantClose = tickerStock === 'IMOEXF' ? candle.low > BB.lower[j] && isDaySession : candle.low > BB.middle[j];
+
+          const cantClose2 = !tickerFuture.includes('_xp') ? candle.low > BB.middle[j] : candle.low > BB.lower[j];
 
           if (candle.low > BB.middle[j]) {
             // if (cantClose) {
@@ -346,7 +363,7 @@ export const StatArbPage = ({
         }
       }
       // if (candle.low <= BB.lower[i] && tickerStock !== 'IMOEXF' && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
-      if (candle.low <= BB.lower[i]) {
+      if (candle.low <= BB.lower[i] && !tickerFuture.includes('_xp')) {
         let currentPosition: any = {
           side: 'long',
           openPrice: candle.low,

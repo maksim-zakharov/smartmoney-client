@@ -76,6 +76,36 @@ export const ArbitrageMOEXPage = () => {
       label: 'GAZPF/GAZR-9.25',
       element: <StatArbPage tickerStock="GAZPF" _tickerFuture="GAZR-9.25" seriesType="Line" multi={10000} />,
     },
+    {
+      key: 'XAGUSD_xp',
+      label: 'SILV-9.25/XAGUSD_xp',
+      element: <StatArbPage tickerStock="SILV-9.25" _tickerFuture="XAGUSD_xp" multi={10000} />,
+    },
+    {
+      key: 'USDCNH_xp',
+      label: 'UCNY-9.25/USDCNH_xp',
+      element: <StatArbPage tickerStock="UCNY-9.25" _tickerFuture="USDCNH_xp" multi={1000} />,
+    },
+    {
+      key: 'XAUUSD_xp',
+      label: 'GOLD-9.25/XAUUSD_xp',
+      element: <StatArbPage tickerStock="GOLD-9.25" _tickerFuture="XAUUSD_xp" multi={100000} />,
+    },
+    {
+      key: 'XPDUSD_xp',
+      label: 'PLD-9.25/XPDUSD_xp',
+      element: <StatArbPage tickerStock="PLD-9.25" _tickerFuture="XPDUSD_xp" multi={100000} />,
+    },
+    {
+      key: 'XPTUSD_xp',
+      label: 'PLT-9.25/XPDUSD_xp',
+      element: <StatArbPage tickerStock="PLT-9.25" _tickerFuture="XPTUSD_xp" multi={100000} />,
+    },
+    {
+      key: 'EURUSD_xp',
+      label: 'ED-9.25/EURUSD_xp',
+      element: <StatArbPage tickerStock="ED-9.25" _tickerFuture="EURUSD_xp" multi={100} />,
+    },
     { key: 'rosn-tatn', label: 'ROSN/TATN', element: <StatArbPage tickerStock="ROSN" _tickerFuture="TATN" /> },
     { key: 'rosn-LKOH', label: 'ROSN/LKOH', element: <StatArbPage tickerStock="ROSN" _tickerFuture="LKOH" /> },
     { key: 'SBER/VTBR', label: 'SBER/VTBR', element: <StatArbPage tickerStock="SBER" _tickerFuture="VTBR" /> },
