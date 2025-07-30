@@ -301,7 +301,7 @@ export const SmartPage = () => {
     // ['RNFT', 'MAGN'],
     ['LKOH', 'SIBN'],
     // ['IVAT', 'ASTR'],
-    ['CNRU', 'PHOR'],
+    // ['CNRU', 'PHOR'],
     ['VTBR', 'MOEX'],
     ['AQUA', 'SOFL'],
     ['RAGR', 'RUAL'],
