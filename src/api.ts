@@ -40,7 +40,8 @@ export const api = createApi({
   reducerPath: 'api',
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NODE_ENV !== 'production' ? 'http://176.114.69.4:3000' : undefined, //  'http://localhost:3000' : undefined,
+    baseUrl: process.env.NODE_ENV !== 'production' ? 'http://176.114.69.4:3000' : undefined,
+    // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://localhost:3000' : undefined,
   }),
   endpoints: (builder) => ({
     candles: builder.query<HistoryObject[], any>({

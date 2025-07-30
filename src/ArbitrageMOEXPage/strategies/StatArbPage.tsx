@@ -136,6 +136,7 @@ export const StatArbPage = ({
       to: toDate,
     },
     {
+      pollingInterval: 5000,
       skip: !isSecondForex,
     },
   );
@@ -207,6 +208,7 @@ export const StatArbPage = ({
       apikey: '20dc749373754927b09d95723d963e88',
     },
     {
+      pollingInterval: 5000,
       skip: !isFirstForex,
     },
   );
