@@ -2,7 +2,6 @@ import { Content, Header } from 'antd/es/layout/layout';
 import { Layout, Menu, theme } from 'antd';
 import React, { useEffect } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import MainPage from './MainPage/MainPage';
 import SoloTestPage from './SoloTestPage/SoloTestPage';
 import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
 import { ArbitrageBYBITPage } from './ArbitrageBYBITPage/ArbitrageBYBITPage';
@@ -35,7 +34,8 @@ export default function App() {
   }, []);
 
   const menuItems = [
-    { key: '/', label: 'Главная', element: <MainPage /> },
+    // { key: '/', label: 'Главная', element: <MainPage /> },
+    { key: '/', label: 'Главная', element: <ArbitrageMOEXPage /> },
     { key: '/test', label: 'BOS/IDM', element: <SoloTestPage /> },
     { key: '/arbitrage-moex', label: 'Арбитраж MOEX', element: <ArbitrageMOEXPage /> },
     { key: '/arbitrage-bybit', label: 'Арбитраж BYBIT', element: <ArbitrageBYBITPage /> },
