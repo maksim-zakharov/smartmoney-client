@@ -41,7 +41,7 @@ export const api = createApi({
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
     // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://176.114.69.4:3000' : undefined,
-    baseUrl: process.env.NODE_ENV !== 'production' ? 'https://176.114.69.4' : undefined,
+    baseUrl: 'https://176.114.69.4',
     // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://localhost:3000' : undefined,
   }),
   endpoints: (builder) => ({
