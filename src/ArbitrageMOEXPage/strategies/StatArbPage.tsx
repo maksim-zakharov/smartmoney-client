@@ -131,6 +131,7 @@ export const StatArbPage = ({
 
   const { data: xpCandles = [] } = useCandlesQuery(
     {
+      tf,
       symbol: tickerFuture,
       from: fromDate,
       to: toDate,
