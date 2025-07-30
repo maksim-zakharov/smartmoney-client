@@ -411,7 +411,7 @@ export const StatArbPage = ({
     return [...buyPositions, ...sellPositions].sort((a, b) => b.openTime - a.openTime);
   }, [data, tickerStock, BB.upper, BB.middle, BB.lower, minProfit, fee]);
 
-  const { PnL, profits, losses, Fee } = useMemo(() => {
+  const { PnL, profits, losses, longs, shorts, Fee } = useMemo(() => {
     const array = positions;
 
     return {
@@ -419,6 +419,8 @@ export const StatArbPage = ({
       Fee: array.reduce((acc, curr) => acc + (curr.fee || 0), 0),
       profits: array.filter((p) => p.newPnl > 0).length,
       losses: array.filter((p) => p.newPnl < 0).length,
+      shorts: array.filter((p) => p.side === 'short').length,
+      longs: array.filter((p) => p.side === 'long').length,
     };
   }, [positions]);
 
@@ -694,7 +696,7 @@ export const StatArbPage = ({
               {/*/>*/}
 
               {/*<DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />*/}
-              <div style={{ display: 'flex', gap: 8, flexDirection: 'column', background: 'rgba(23,35,46,0.6)', padding: '4px 8px' }}>
+              <div style={{ display: 'flex', gap: 8, flexDirection: 'column', background: 'rgba(23,35,46,0.7)', padding: '4px 8px' }}>
                 <Typography.Text>
                   {tickerStock}/{_tickerFuture}
                 </Typography.Text>
@@ -726,6 +728,24 @@ export const StatArbPage = ({
                   }).format(losses)}
                   valueStyle={{ color: 'rgb(255, 117, 132)', fontSize: 14 }}
                   suffix={`(${!losses ? 0 : ((losses * 100) / (profits + losses)).toFixed(2)})%`}
+                />
+                <Statistic
+                  title="Лонги"
+                  style={{ display: 'flex', gap: 8 }}
+                  value={new Intl.NumberFormat('en-US', {
+                    notation: 'compact',
+                  }).format(longs)}
+                  valueStyle={{ color: 'rgb(44, 232, 156)', fontSize: 14 }}
+                  suffix={`(${!longs ? 0 : ((longs * 100) / (shorts + longs)).toFixed(2)})%`}
+                />
+                <Statistic
+                  title="Шорты"
+                  style={{ display: 'flex', gap: 8 }}
+                  value={new Intl.NumberFormat('en-US', {
+                    notation: 'compact',
+                  }).format(shorts)}
+                  valueStyle={{ color: 'rgb(255, 117, 132)', fontSize: 14 }}
+                  suffix={`(${!shorts ? 0 : ((shorts * 100) / (shorts + longs)).toFixed(2)})%`}
                 />
               </div>
             </div>

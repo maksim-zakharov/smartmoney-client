@@ -111,6 +111,11 @@ export const ArbitrageMOEXPage = () => {
       label: 'BR-8.25/BRNUSD_xp',
       element: <StatArbPage tickerStock="BR-8.25" _tickerFuture="BRNUSD_xp" multi={10000} />,
     },
+    {
+      key: 'NGCUSD_xp',
+      label: 'NG-8.25/NGCUSD_xp',
+      element: <StatArbPage tickerStock="NG-8.25" _tickerFuture="NGCUSD_xp" multi={1000} />,
+    },
     { key: 'rosn-tatn', label: 'ROSN/TATN', element: <StatArbPage tickerStock="ROSN" _tickerFuture="TATN" /> },
     { key: 'rosn-LKOH', label: 'ROSN/LKOH', element: <StatArbPage tickerStock="ROSN" _tickerFuture="LKOH" /> },
     { key: 'SBER/VTBR', label: 'SBER/VTBR', element: <StatArbPage tickerStock="SBER" _tickerFuture="VTBR" /> },
