@@ -8,6 +8,7 @@ export const DatesPicker = ({ value, onChange }) => {
   const rangePresets: TimeRangePickerProps['presets'] = [
     { label: 'Сегодня', value: [dayjs().startOf('day'), dayjs()] },
     { label: 'Последние 5 дней + 1', value: [dayjs().add(-5, 'd'), dayjs().add(1, 'd')] },
+    { label: 'Последние 10 дней + 1', value: [dayjs().add(-10, 'd'), dayjs().add(1, 'd')] },
     { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
     { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
     { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
