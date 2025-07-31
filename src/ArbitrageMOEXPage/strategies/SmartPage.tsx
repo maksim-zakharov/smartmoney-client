@@ -414,10 +414,10 @@ export const SmartPage = () => {
               <StatArbPage tickerStock="NG-9.25" _tickerFuture="NGCUSD_xp" multi={1000} onlyChart height={height} />
             </Col>
             <Col span={span}>
-              <StatArbPage tickerStock="SPYF-9.25" _tickerFuture="SPXUSD_xp" multi={100000000} onlyChart height={height} />
+              <StatArbPage tickerStock="SPYF-9.25" _tickerFuture="SPXUSD_xp" multi={1000000} onlyChart height={height} />
             </Col>
             <Col span={span}>
-              <StatArbPage tickerStock="HANG-9.25" _tickerFuture="HSIHKD_xp" multi={100000000} onlyChart height={height} />
+              <StatArbPage tickerStock="HANG-9.25" _tickerFuture="HSIHKD_xp" multi={1000000} onlyChart height={height} />
             </Col>
             <Col span={span}>
               <StatArbPage tickerStock="COPPER-9.25" _tickerFuture="CUCUSD_xp" multi={0.0453592} onlyChart height={height} />
