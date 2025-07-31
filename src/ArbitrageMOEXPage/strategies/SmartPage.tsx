@@ -303,7 +303,6 @@ export const SmartPage = () => {
     // ['IVAT', 'ASTR'],
     // ['CNRU', 'PHOR'],
     ['VTBR', 'MOEX'],
-    ['AQUA', 'SOFL'],
     ['RAGR', 'RUAL'],
     ['SFIN', 'MBNK'],
   ];
