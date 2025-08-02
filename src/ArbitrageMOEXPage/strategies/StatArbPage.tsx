@@ -1,4 +1,4 @@
-import { Button, Card, Checkbox, Col, ColorPicker, Form, Input, Layout, Row, Slider, Statistic, Table, Typography } from 'antd';
+import { Button, Card, Checkbox, Col, ColorPicker, Form, Input, Layout, Row, Slider, Statistic, Switch, Table, Typography } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -76,6 +76,24 @@ export const StatArbPage = ({
   const minProfit = Number(searchParams.get('minProfit') || 0.005);
   const setMinProfit = (value) => {
     searchParams.set('minProfit', value);
+    setSearchParams(searchParams);
+  };
+
+  const canSell = searchParams.get('canSell') === 'true';
+  const setcanSell = (value) => {
+    searchParams.set('canSell', value);
+    setSearchParams(searchParams);
+  };
+
+  const closeBB = searchParams.get('closeBB') === 'true';
+  const setCloseBB = (value) => {
+    searchParams.set('closeBB', value);
+    setSearchParams(searchParams);
+  };
+
+  const canBuy = searchParams.get('canBuy') === 'true';
+  const setcanBuy = (value) => {
+    searchParams.set('canBuy', value);
     setSearchParams(searchParams);
   };
 
@@ -321,7 +339,7 @@ export const StatArbPage = ({
 
       // Если не коснулись верха - продаем фьюч, покупаем акцию
 
-      if (candle.high >= BB.upper[i] && canMixTrade && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
+      if (canSell && candle.high >= BB.upper[i] && canMixTrade && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
         let currentPosition: any = {
           side: 'short',
           openPrice: candle.high,
@@ -332,11 +350,7 @@ export const StatArbPage = ({
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
 
-          const cantClose = tickerStock === 'IMOEXF' ? candle.low > BB.lower[j] && isDaySession : candle.low > BB.middle[j];
-
-          const cantClose2 = !tickerFuture.includes('_xp') ? candle.low > BB.middle[j] : candle.low > BB.lower[j];
-
-          if (candle.low > BB.middle[j]) {
+          if (closeBB ? candle.low > BB.lower[j] : candle.low > BB.middle[j]) {
             // if (cantClose) {
             continue;
           }
@@ -366,7 +380,7 @@ export const StatArbPage = ({
         }
       }
       // if (candle.low <= BB.lower[i] && tickerStock !== 'IMOEXF' && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
-      if (candle.low <= BB.lower[i] && !tickerFuture.includes('_xp')) {
+      if (candle.low <= BB.lower[i] && canBuy) {
         let currentPosition: any = {
           side: 'long',
           openPrice: candle.low,
@@ -376,8 +390,7 @@ export const StatArbPage = ({
 
         for (let j = i + 1; j < data.length; j++) {
           const candle = data[j];
-          const canClose = !tickerFuture.includes('_xp') ? candle.high <= BB.middle[j] : candle.high <= BB.upper[j];
-          if (canClose) {
+          if (closeBB ? candle.high <= BB.upper[j] : candle.high <= BB.middle[j]) {
             continue;
           }
 
@@ -409,7 +422,7 @@ export const StatArbPage = ({
     }
 
     return [...buyPositions, ...sellPositions].sort((a, b) => b.openTime - a.openTime);
-  }, [data, tickerStock, BB.upper, BB.middle, BB.lower, minProfit, fee]);
+  }, [data, tickerStock, canSell, BB.upper, BB.middle, BB.lower, minProfit, canBuy, tickerFuture, fee, closeBB]);
 
   const { PnL, profits, losses, longs, shorts, Fee } = useMemo(() => {
     const array = positions;
@@ -941,6 +954,18 @@ export const StatArbPage = ({
         <Form.Item label="Минимальный профит">
           <Input style={{ width: 80 }} value={minProfit} onChange={(e) => setMinProfit(Number(e.target.value))} />
         </Form.Item>
+        <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%', paddingBottom: 12 }}>
+          <div>Покупки</div>
+          <Switch value={canBuy} onChange={setcanBuy} />
+        </Typography>
+        <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%', paddingBottom: 12 }}>
+          <div>Продажи</div>
+          <Switch value={canSell} onChange={setcanSell} />
+        </Typography>
+        <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+          <div>Закрываться об BB</div>
+          <Switch value={closeBB} onChange={setCloseBB} />
+        </Typography>
       </Sider>
     </Layout>
   );

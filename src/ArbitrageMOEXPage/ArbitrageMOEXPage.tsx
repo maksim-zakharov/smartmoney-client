@@ -92,6 +92,11 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="GOLD-9.25" _tickerFuture="XAUUSD_xp" multi={100000} />,
     },
     {
+      key: 'XAUUSD_xp12',
+      label: 'GOLD-12.25/XAUUSD_xp',
+      element: <StatArbPage tickerStock="GOLD-12.25" _tickerFuture="XAUUSD_xp" multi={100000} />,
+    },
+    {
       key: 'XPDUSD_xp',
       label: 'PLD-9.25/XPDUSD_xp',
       element: <StatArbPage tickerStock="PLD-9.25" _tickerFuture="XPDUSD_xp" multi={100000} />,
@@ -117,9 +122,9 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="NG-9.25" _tickerFuture="NGCUSD_xp" multi={1000} />,
     },
     {
-      key: 'SI/BR',
-      label: 'SI-9.25/BR-9.25',
-      element: <StatArbPage tickerStock="SI-9.25" _tickerFuture="BR-9.25" multi={1} />,
+      key: 'SPXUSD_xp',
+      label: 'SPYF-9.25/SPXUSD_xp',
+      element: <StatArbPage tickerStock="SPYF-9.25" _tickerFuture="SPXUSD_xp" multi={1000000} />,
     },
     {
       key: 'CUCUSD_xp',
