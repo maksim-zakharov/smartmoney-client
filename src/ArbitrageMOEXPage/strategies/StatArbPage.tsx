@@ -79,6 +79,12 @@ export const StatArbPage = ({
     setSearchParams(searchParams);
   };
 
+  const fee = Number(searchParams.get('fee') || 0.04);
+  const setfee = (value) => {
+    searchParams.set('fee', value);
+    setSearchParams(searchParams);
+  };
+
   const canSell = searchParams.get('canSell') === 'true';
   const setcanSell = (value) => {
     searchParams.set('canSell', value);
@@ -267,8 +273,7 @@ export const StatArbPage = ({
   //   },
   // });
 
-  const lotsize = security?.lotsize || 1;
-  const fee = 0.04 / 100;
+  const _fee = fee / 100;
 
   const multiple = useMemo(
     () =>
@@ -339,7 +344,7 @@ export const StatArbPage = ({
 
       // Если не коснулись верха - продаем фьюч, покупаем акцию
 
-      if (canSell && candle.high >= BB.upper[i] && canMixTrade && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
+      if (canSell && candle.high >= BB.upper[i] && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
         let currentPosition: any = {
           side: 'short',
           openPrice: candle.high,
@@ -362,7 +367,7 @@ export const StatArbPage = ({
             closePrice: candle.open,
           };
 
-          currentPosition.fee = canMixTrade ? 0 : fee * 200;
+          currentPosition.fee = _fee * 200;
 
           const spread = 0.01;
 
@@ -401,7 +406,7 @@ export const StatArbPage = ({
             closePrice: candle.open,
           };
 
-          currentPosition.fee = fee * 200;
+          currentPosition.fee = _fee * 200;
 
           const spread = 0.1;
 
@@ -422,7 +427,7 @@ export const StatArbPage = ({
     }
 
     return [...buyPositions, ...sellPositions].sort((a, b) => b.openTime - a.openTime);
-  }, [data, tickerStock, canSell, BB.upper, BB.middle, BB.lower, minProfit, canBuy, tickerFuture, fee, closeBB]);
+  }, [data, tickerStock, canSell, BB.upper, BB.middle, BB.lower, minProfit, canBuy, closeBB, _fee]);
 
   const { PnL, profits, losses, longs, shorts, Fee } = useMemo(() => {
     const array = positions;
@@ -953,6 +958,9 @@ export const StatArbPage = ({
         </Checkbox.Group>
         <Form.Item label="Минимальный профит">
           <Input style={{ width: 80 }} value={minProfit} onChange={(e) => setMinProfit(Number(e.target.value))} />
+        </Form.Item>
+        <Form.Item label="Комиссия">
+          <Input style={{ width: 80 }} value={fee} onChange={(e) => setfee(Number(e.target.value))} />
         </Form.Item>
         <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%', paddingBottom: 12 }}>
           <div>Покупки</div>
