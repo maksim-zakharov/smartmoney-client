@@ -85,6 +85,12 @@ export const StatArbPage = ({
     setSearchParams(searchParams);
   };
 
+  const openEma = searchParams.get('openEma') === 'true';
+  const setopenEma = (value) => {
+    searchParams.set('openEma', value);
+    setSearchParams(searchParams);
+  };
+
   const canSell = searchParams.get('canSell') === 'true';
   const setcanSell = (value) => {
     searchParams.set('canSell', value);
@@ -344,7 +350,11 @@ export const StatArbPage = ({
 
       // Если не коснулись верха - продаем фьюч, покупаем акцию
 
-      if (canSell && candle.high >= BB.upper[i] && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
+      if (
+        canSell &&
+        (openEma ? candle.high >= BB.middle[i] : candle.high >= BB.upper[i]) &&
+        (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)
+      ) {
         let currentPosition: any = {
           side: 'short',
           openPrice: candle.high,
@@ -385,7 +395,7 @@ export const StatArbPage = ({
         }
       }
       // if (candle.low <= BB.lower[i] && tickerStock !== 'IMOEXF' && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
-      if (candle.low <= BB.lower[i] && canBuy) {
+      if ((openEma ? candle.low <= BB.middle[i] : candle.low <= BB.lower[i]) && canBuy) {
         let currentPosition: any = {
           side: 'long',
           openPrice: candle.low,
@@ -427,7 +437,7 @@ export const StatArbPage = ({
     }
 
     return [...buyPositions, ...sellPositions].sort((a, b) => b.openTime - a.openTime);
-  }, [data, tickerStock, canSell, BB.upper, BB.middle, BB.lower, minProfit, canBuy, closeBB, _fee]);
+  }, [data, tickerStock, canSell, openEma, BB.middle, BB.upper, BB.lower, minProfit, canBuy, closeBB, _fee]);
 
   const { PnL, profits, losses, longs, shorts, Fee } = useMemo(() => {
     const array = positions;
@@ -970,9 +980,13 @@ export const StatArbPage = ({
           <div>Продажи</div>
           <Switch value={canSell} onChange={setcanSell} />
         </Typography>
-        <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+        <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%', paddingBottom: 12 }}>
           <div>Закрываться об BB</div>
           <Switch value={closeBB} onChange={setCloseBB} />
+        </Typography>
+        <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+          <div>Торговать от машки</div>
+          <Switch value={openEma} onChange={setopenEma} />
         </Typography>
       </Sider>
     </Layout>
