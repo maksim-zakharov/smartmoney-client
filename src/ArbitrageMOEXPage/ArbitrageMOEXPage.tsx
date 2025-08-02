@@ -134,7 +134,7 @@ export const ArbitrageMOEXPage = () => {
     {
       key: 'NDXUSD_xp',
       label: 'NASD-9.25/NDXUSD_xp',
-      element: <StatArbPage tickerStock="NASD-12.25" _tickerFuture="NDXUSD_xp" multi={100000} />,
+      element: <StatArbPage tickerStock="NASD-9.25" _tickerFuture="NDXUSD_xp" multi={100000} />,
     },
     {
       key: 'CUCUSD_xp',

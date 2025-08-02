@@ -423,7 +423,7 @@ export const SmartPage = () => {
               <StatArbPage tickerStock="COPPER-9.25" _tickerFuture="CUCUSD_xp" multi={0.0453592} onlyChart height={height} />
             </Col>
             <Col span={span}>
-              <StatArbPage tickerStock="NASD-12.25" _tickerFuture="NDXUSD_xp" multi={100000} onlyChart height={height} />
+              <StatArbPage tickerStock="NASD-9.25" _tickerFuture="NDXUSD_xp" multi={100000} onlyChart height={height} />
             </Col>
           </Row>
         </>
