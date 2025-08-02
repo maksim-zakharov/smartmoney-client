@@ -11,7 +11,7 @@ import { calculateBollingerBands, calculateCandle, symbolFuturePairs } from '../
 import { LineStyle, Time } from 'lightweight-charts';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
-import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery } from '../../api/alor.api';
+import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery, useGetSecurityDetailsQuery } from '../../api/alor.api';
 import { DatesPicker } from '../../DatesPicker';
 import { useAppSelector } from '../../store.ts';
 import { FullscreenOutlined } from '@ant-design/icons';
@@ -91,6 +91,12 @@ export const StatArbPage = ({
     setSearchParams(searchParams);
   };
 
+  const toZero = searchParams.get('toZero') === 'true';
+  const settoZero = (value) => {
+    searchParams.set('toZero', value);
+    setSearchParams(searchParams);
+  };
+
   const canSell = searchParams.get('canSell') === 'true';
   const setcanSell = (value) => {
     searchParams.set('canSell', value);
@@ -144,6 +150,8 @@ export const StatArbPage = ({
     exchange: 'MOEX',
   });
   const isSecondForex = tickerFuture.includes('_xp');
+  const { data: details } = useGetSecurityDetailsQuery({ ticker: tickerStock });
+  const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
 
   const { data: _futureData } = useGetHistoryQuery(
     {
@@ -293,6 +301,8 @@ export const StatArbPage = ({
   const stockTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.stockSymbol), []);
   const futureTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.futuresSymbol), []);
 
+  const commonCandles = getCommonCandles(stockDataRef, futureDataRef);
+
   const data = useMemo(() => {
     if (stockDataRef?.length && futureDataRef?.length) {
       const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(stockDataRef, futureDataRef);
@@ -352,6 +362,7 @@ export const StatArbPage = ({
 
       if (
         canSell &&
+        (!toZero || candle.high > 100) &&
         (openEma ? candle.high >= BB.middle[i] : candle.high >= BB.upper[i]) &&
         (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)
       ) {
@@ -395,7 +406,7 @@ export const StatArbPage = ({
         }
       }
       // if (candle.low <= BB.lower[i] && tickerStock !== 'IMOEXF' && (!minProfit || candle.high / BB.middle[i] > 1 + minProfit)) {
-      if ((openEma ? candle.low <= BB.middle[i] : candle.low <= BB.lower[i]) && canBuy) {
+      if ((openEma ? candle.low <= BB.middle[i] : candle.low <= BB.lower[i]) && canBuy && (!toZero || candle.low < 100)) {
         let currentPosition: any = {
           side: 'long',
           openPrice: candle.low,
@@ -437,7 +448,7 @@ export const StatArbPage = ({
     }
 
     return [...buyPositions, ...sellPositions].sort((a, b) => b.openTime - a.openTime);
-  }, [data, tickerStock, canSell, openEma, BB.middle, BB.upper, BB.lower, minProfit, canBuy, closeBB, _fee]);
+  }, [data, tickerStock, canSell, toZero, openEma, BB.middle, BB.upper, BB.lower, minProfit, canBuy, closeBB, _fee]);
 
   const { PnL, profits, losses, longs, shorts, Fee } = useMemo(() => {
     const array = positions;
@@ -944,6 +955,9 @@ export const StatArbPage = ({
           value={Array.from(checkboxValues)}
           style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
         >
+          <Checkbox key="enableCalculateFuturePrice" value="enableCalculateFuturePrice">
+            Справедливая цена
+          </Checkbox>
           <Checkbox key="enableBB" value="enableBB">
             Индикатор Бойленджера
           </Checkbox>
@@ -984,9 +998,13 @@ export const StatArbPage = ({
           <div>Закрываться об BB</div>
           <Switch value={closeBB} onChange={setCloseBB} />
         </Typography>
-        <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+        <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%', paddingBottom: 12 }}>
           <div>Торговать от машки</div>
           <Switch value={openEma} onChange={setopenEma} />
+        </Typography>
+        <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
+          <div>Торговать от к 100</div>
+          <Switch value={toZero} onChange={settoZero} />
         </Typography>
       </Sider>
     </Layout>

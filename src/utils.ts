@@ -757,6 +757,56 @@ export const calculateTruthFuturePrice = (
 
   return futurePriceWithoutDividends + pvDividends;
 };
+export const calculateTruthFuturePrice2 = (
+  S: number,
+  stockTime: number,
+  expirationDate: Dayjs,
+  dividends = [],
+  rusRate: number = 0.2,
+  otherRate: number = 0,
+) => {
+  // Ставка ЦБ РФ (безрисковая ставка)
+  const r = rusRate - otherRate;
+  // const r = 0.2 - 0.01;
+  // const r = 0.2 - 0.0215;
+
+  const dayjsStockTime = dayjs(stockTime * 1000);
+
+  const daysToExpiry = expirationDate.diff(dayjsStockTime, 'day', true);
+  const t = daysToExpiry / 365;
+  // Стремится к единице сверху вниз
+  // return S * (1 + r * t);
+  // Правильный банковский вариант
+  // return S * Math.exp(r * t);
+  // Банк. вариант стремится к единице снизу вверх.
+  const futurePriceWithoutDividends = S * Math.exp(r * t);
+  // return futurePriceWithoutDividends;
+
+  // 2. Вычитаем приведённую стоимость дивидендов
+  let pvDividends = 0;
+  dividends.forEach((div) => {
+    const { dividendPerShare, exDividendDate } = div;
+    // Компания не выплатила дивиденды
+    if (!dividendPerShare) {
+      return;
+    }
+    const dayjsExDividendDate = dayjs(exDividendDate, 'YYYY-MM-DDT00:00:00');
+
+    const daysToDiv = dayjsExDividendDate.diff(dayjsStockTime, 'day', true);
+    const tDiv = daysToDiv / 365;
+    // Дивы уже прошли
+    if (tDiv < 0) {
+      return;
+    }
+
+    // Дивиденды, которые будут выплачены до экспирации
+    if (tDiv <= t) {
+      pvDividends += dividendPerShare * Math.exp(-r * (t - tDiv));
+    }
+  });
+
+  return futurePriceWithoutDividends + pvDividends;
+};
 
 /**
  * Рассчитывает порог арбитража (справедливая премия + издержки)
