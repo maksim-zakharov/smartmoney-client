@@ -13,10 +13,13 @@ import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery, useGetSecurityDetailsQuery } from '../../api/alor.api';
 import { DatesPicker } from '../../DatesPicker';
-import { useAppSelector } from '../../store.ts';
+import { useAppSelector } from '../../store';
 import { FullscreenOutlined } from '@ant-design/icons';
-import { useTdCandlesQuery } from '../../twelveApi.ts';
-import { useCandlesQuery } from '../../api.ts';
+import { useTdCandlesQuery } from '../../twelveApi';
+import { useCandlesQuery } from '../../api';
+import { ChartingLibraryWidgetOptions, ResolutionString, widget } from '../../assets/charting_library';
+import { DataFeed } from '../../api/datafeed';
+import { AlorApi } from 'alor-api';
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',
@@ -33,28 +36,100 @@ const defaultState = Object.assign(
   storageState,
 );
 
-// useIntersectionObserver.js
-export const useIntersectionObserver = (options) => {
-  const [isIntersecting, setIsIntersecting] = useState(false);
-  const ref = useRef();
+const TWChart = ({ height = 400, data, lineSerieses }: any) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const api = useAppSelector((state) => state.alorSlice.api);
+
+  const datafeed = useMemo(() => (api ? new DataFeed(api as AlorApi, data) : null), [api, data]);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      setIsIntersecting(entry.isIntersecting);
-    }, options);
+    if (!ref.current || !datafeed) return;
 
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
-      }
+    const config: ChartingLibraryWidgetOptions = {
+      // debug
+      debug: false,
+      // base options
+      container: ref.current,
+      symbol: 'SBER',
+      // width: width || ref.current?.clientWidth,
+      height: height || ref.current?.clientHeight,
+      interval: '15' as ResolutionString,
+      locale: 'ru',
+      library_path: '/assets/charting_library/',
+      datafeed: datafeed, // this.techChartDatafeedService,
+      // additional options
+      fullscreen: false,
+      autosize: true,
+      // timezone: currentTimezone.name as Timezone,
+      // custom_timezones: [
+      //   {
+      //     id: currentTimezone.name as CustomTimezoneId,
+      //     alias: `Etc/GMT${currentTimezone.utcOffset > 0 ? '+' : '-'}${currentTimezone.formattedOffset}` as GmtTimezoneId,
+      //     title: currentTimezone.name
+      //   }
+      // ],
+      theme: 'dark',
+      // saved_data: chartLayout as object,
+      auto_save_delay: 1,
+      // time_frames: [
+      //   { text: '1000y', resolution: '1M' as ResolutionString, description: this.translateFn(['timeframes', 'all', 'desc']), title: this.translateFn(['timeframes', 'all', 'title']) },
+      //   { text: '3y', resolution: '1M' as ResolutionString, description: this.translateFn(['timeframes', '3y', 'desc']), title: this.translateFn(['timeframes', '3y', 'title']) },
+      //   { text: '1y', resolution: '1D' as ResolutionString, description: this.translateFn(['timeframes', '1y', 'desc']), title: this.translateFn(['timeframes', '1y', 'title']) },
+      //   { text: '6m', resolution: '1D' as ResolutionString, description: this.translateFn(['timeframes', '6m', 'desc']), title: this.translateFn(['timeframes', '6m', 'title']) },
+      //   { text: '3m', resolution: '4H' as ResolutionString, description: this.translateFn(['timeframes', '3m', 'desc']), title: this.translateFn(['timeframes', '3m', 'title']) },
+      //   { text: '1m', resolution: '1H' as ResolutionString, description: this.translateFn(['timeframes', '1m', 'desc']), title: this.translateFn(['timeframes', '1m', 'title']) },
+      //   { text: '14d', resolution: '1H' as ResolutionString, description: this.translateFn(['timeframes', '2w', 'desc']), title: this.translateFn(['timeframes', '2w', 'title']) },
+      //   { text: '7d', resolution: '15' as ResolutionString, description: this.translateFn(['timeframes', '1w', 'desc']), title: this.translateFn(['timeframes', '1w', 'title']) },
+      //   { text: '1d', resolution: '5' as ResolutionString, description: this.translateFn(['timeframes', '1d', 'desc']), title: this.translateFn(['timeframes', '1d', 'title']) },
+      // ],
+      symbol_search_request_delay: 2000,
+      // for some reasons TV stringifies this field. So service cannot be passed directly
+      // save_load_adapter: this.createSaveLoadAdapter(),
+      // features
+      // disabled_features: features.disabled,
+      // enabled_features: features.enabled
     };
-  }, [options]);
 
-  return [ref, isIntersecting];
+    const chartWidget = new widget(config);
+    chartWidget.onChartReady(() => {
+      const chart = chartWidget.chart();
+
+      // Создаём кривую Безье
+      // lineSerieses.filter(Boolean).forEach((line) => {
+      //   chart.createMultipointShape(
+      //     line.data.map((p) => ({ time: p.time, price: p.value }) as ShapePoint),
+      //     {
+      //       shape: 'polyline',
+      //       // overrides: {
+      //       //   color: '#FF6D00',
+      //       //   linewidth: 2,
+      //       // },
+      //     },
+      //   );
+      // });
+
+      //   .createShape(
+      //   { price: 150, time: Date.now() / 1000 }, // Начальная точка
+      //   {
+      //     shape: 'bezier_curve', // Тип: 'bezier_curve', 'polyline', 'freehand'
+      //     points: [
+      //       { price: 155, time: Date.now() / 1000 + 86400 }, // Контрольные точки
+      //       { price: 145, time: Date.now() / 1000 + 172800 },
+      //       { price: 160, time: Date.now() / 1000 + 259200 },
+      //     ],
+      //     disableUndo: false,
+      //     lock: false,
+      //     overrides: {
+      //       color: '#00FF00',
+      //       linewidth: 2,
+      //       linestyle: 0, // 0 = solid, 1 = dotted, 2 = dashed
+      //     },
+      //   },
+      // );
+    });
+  }, [datafeed, height, lineSerieses]);
+
+  return <div ref={ref} style={{ position: 'relative', height: height || '100%', minHeight: 610 }}></div>;
 };
 
 export const StatArbPage = ({
@@ -845,18 +920,19 @@ export const StatArbPage = ({
             <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
           </div>
           {/*<TWChart data={data} />*/}
-          <Chart
-            seriesType={seriesType}
-            hideCross
-            lineSerieses={ls}
-            primitives={[]}
-            markers={[]}
-            toolTipTop="40px"
-            toolTipLeft="4px"
-            data={data}
-            ema={[]}
-            maximumFractionDigits={3}
-          />
+          <TWChart data={data} lineSerieses={ls} />
+          {/*<Chart*/}
+          {/*  seriesType={seriesType}*/}
+          {/*  hideCross*/}
+          {/*  lineSerieses={ls}*/}
+          {/*  primitives={[]}*/}
+          {/*  markers={[]}*/}
+          {/*  toolTipTop="40px"*/}
+          {/*  toolTipLeft="4px"*/}
+          {/*  data={data}*/}
+          {/*  ema={[]}*/}
+          {/*  maximumFractionDigits={3}*/}
+          {/*/>*/}
         </div>
         <Row style={{ paddingBottom: '8px', paddingTop: 8 }} gutter={8}>
           <Col span={6}>
@@ -926,28 +1002,6 @@ export const StatArbPage = ({
             };
           }}
         />
-        {/*<Chart*/}
-        {/*  hideCross*/}
-        {/*  lineSerieses={[]}*/}
-        {/*  primitives={[]}*/}
-        {/*  markers={[]}*/}
-        {/*  toolTipTop="40px"*/}
-        {/*  toolTipLeft="4px"*/}
-        {/*  data={stockDataRef}*/}
-        {/*  ema={[]}*/}
-        {/*  maximumFractionDigits={2}*/}
-        {/*/>*/}
-        {/*<Chart*/}
-        {/*  hideCross*/}
-        {/*  lineSerieses={[]}*/}
-        {/*  primitives={[]}*/}
-        {/*  markers={[]}*/}
-        {/*  toolTipTop="40px"*/}
-        {/*  toolTipLeft="4px"*/}
-        {/*  data={futureDataRef}*/}
-        {/*  ema={[]}*/}
-        {/*  maximumFractionDigits={2}*/}
-        {/*/>*/}
       </Content>
       <Sider width="300px" style={{ marginRight: '-20px', padding: 20 }}>
         <Checkbox.Group

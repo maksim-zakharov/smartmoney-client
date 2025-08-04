@@ -885,3 +885,21 @@ export function getOvernightDays(startDate: dayjs.Dayjs, endDate: dayjs.Dayjs): 
   // Если endDate >= nextDayStart, то хотя бы 1 день овернайта
   return fullDays + 1;
 }
+
+/**
+ * Returns the number of decimal places
+ * @param a Target number
+ * @returns The number of decimal places
+ */
+export function getPrecision(a: number): number {
+  if (!isFinite(a)) return 0;
+  let e = 1;
+  let p = 0;
+
+  while (Math.round(a * e) / e !== a) {
+    e *= 10;
+    p++;
+  }
+
+  return p;
+}
