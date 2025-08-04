@@ -920,19 +920,19 @@ export const StatArbPage = ({
             <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
           </div>
           {/*<TWChart data={data} />*/}
-          <TWChart data={data} lineSerieses={ls} />
-          {/*<Chart*/}
-          {/*  seriesType={seriesType}*/}
-          {/*  hideCross*/}
-          {/*  lineSerieses={ls}*/}
-          {/*  primitives={[]}*/}
-          {/*  markers={[]}*/}
-          {/*  toolTipTop="40px"*/}
-          {/*  toolTipLeft="4px"*/}
-          {/*  data={data}*/}
-          {/*  ema={[]}*/}
-          {/*  maximumFractionDigits={3}*/}
-          {/*/>*/}
+          {/*<TWChart data={data} lineSerieses={ls} />*/}
+          <Chart
+            seriesType={seriesType}
+            hideCross
+            lineSerieses={ls}
+            primitives={[]}
+            markers={[]}
+            toolTipTop="40px"
+            toolTipLeft="4px"
+            data={data}
+            ema={[]}
+            maximumFractionDigits={3}
+          />
         </div>
         <Row style={{ paddingBottom: '8px', paddingTop: 8 }} gutter={8}>
           <Col span={6}>
