@@ -288,7 +288,8 @@ export const OldPage = () => {
           (checkboxValues.has('tradePercent0.25') && candle.low <= buyEmaLineDataSmall2[i]) ||
           (checkboxValues.has('tradePercent0.5') && candle.low <= buyEmaLineDataSmall[i]) ||
           (checkboxValues.has('tradePercent1') && candle.low <= buyEmaLineData[i]) ||
-          (checkboxValues.has('tradePercent1.5') && candle.low <= buyEmaLineData1per5[i])
+          (checkboxValues.has('tradePercent1.5') && candle.low <= buyEmaLineData1per5[i]) ||
+          (checkboxValues.has('buyBBtoBB') && candle.low <= BB.lower[i])
         ) {
           // Покупаем
           currentPosition = {
@@ -314,7 +315,7 @@ export const OldPage = () => {
         }
 
         // Если цель не достигнута - мимо
-        if (candle.high <= truthPriceSeriesDivsData[i]) {
+        if (checkboxValues.has('buyBBtoBB') ? candle.high <= BB.upper[i] : candle.high <= truthPriceSeriesDivsData[i]) {
           continue;
         }
 
@@ -895,6 +896,9 @@ export const OldPage = () => {
               -1.5% от справедливой
             </Checkbox>
             <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
+            <Checkbox key="buyBBtoBB" value="buyBBtoBB">
+              Покупка от BB до BB
+            </Checkbox>
             <Checkbox key="tradePercent0.25" value="tradePercent0.25">
               Заходим на 0.25%
             </Checkbox>
