@@ -15,6 +15,7 @@ import { useTdCandlesQuery } from '../../twelveApi.ts';
 import { Exchange } from 'alor-api';
 import { useAppSelector } from '../../store.ts';
 import { DatesPicker } from '../../DatesPicker.tsx';
+import { useCandlesQuery } from '../../api.ts';
 
 export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart, height, seriesType = 'Candlestick' }: any) => {
   // 3.21 6.20 9.19 12.18
@@ -69,6 +70,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
   );
 
   const cnyData = _cnyData?.history || [];
+  const isSecondForex = third.includes('_xp');
 
   const { data: _ucnyData } = useGetHistoryQuery(
     {
@@ -80,11 +82,24 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
     },
     {
       pollingInterval: 5000,
-      skip: !third || !apiAuth,
+      skip: !third || !apiAuth || isSecondForex,
     },
   );
 
-  const ucnyData = _ucnyData?.history || [];
+  const { data: xpCandles = [] } = useCandlesQuery(
+    {
+      tf,
+      symbol: third,
+      from: fromDate,
+      to: toDate,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !isSecondForex,
+    },
+  );
+
+  const ucnyData = xpCandles?.length ? xpCandles : _ucnyData?.history || [];
 
   const fxTfMap = {
     '60': '1min',

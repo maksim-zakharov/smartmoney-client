@@ -239,6 +239,11 @@ export const ArbitrageMOEXPage = () => {
       label: 'GLDRUBF/SI-9.25/GOLD-9.25',
       element: <Triangle_Page first="GLDRUBF" second="SI-9.25" third="GOLD-9.25" multiple={31100} noExp />,
     },
+    {
+      key: 'GLDRUBF/SI-9.25/XAUUSD_xp',
+      label: 'GLDRUBF/SI-9.25/XAUUSD_xp',
+      element: <Triangle_Page first="GLDRUBF" second="SI-9.25" third="XAUUSD_xp" multiple={31100000} noExp />,
+    },
     { key: 'MOEXCN', label: 'MOEX/CR/MOEXCN', element: <MOEX_CNY_Page /> },
     {
       key: 'SI_GOLD',

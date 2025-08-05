@@ -15,35 +15,18 @@ import {
   SubscribeBarsCallback,
   SymbolResolveExtension,
 } from '../assets/charting_library';
-import { AlorApi, Exchange, HistoryObject } from 'alor-api';
-import { getPrecision } from '../utils.ts';
+import { AlorApi, Exchange, Format, HistoryObject } from 'alor-api';
+import { getCommonCandles, getPrecision } from '../utils';
+import { calculateCandle } from '../../symbolFuturePairs';
+import { BehaviorSubject, combineLatest, filter, pairwise, startWith } from 'rxjs';
 
 export class DataFeed implements IBasicDataFeed {
+  private readonly subscriptions = new Map<string, any[]>();
+
   constructor(
     private readonly api: AlorApi,
     private readonly data?: HistoryObject[],
   ) {}
-
-  // getMarks?(
-  //   symbolInfo: LibrarySymbolInfo,
-  //   from: number,
-  //   to: number,
-  //   onDataCallback: GetMarksCallback<Mark>,
-  //   resolution: ResolutionString,
-  // ): void {
-  //   debugger;
-  //   throw new Error('Method not implemented.');
-  // }
-  // getTimescaleMarks?(
-  //   symbolInfo: LibrarySymbolInfo,
-  //   from: number,
-  //   to: number,
-  //   onDataCallback: GetMarksCallback<TimescaleMark>,
-  //   resolution: ResolutionString,
-  // ): void {
-  //   debugger;
-  //   throw new Error('Method not implemented.');
-  // }
 
   getServerTime?(callback: ServerTimeCallback): void {
     this.api.http.get(`https://api.alor.ru/md/v2/time`).then((r) => callback(r.data));
@@ -68,28 +51,85 @@ export class DataFeed implements IBasicDataFeed {
       });
   }
   resolveSymbol(symbolName: string, onResolve: ResolveCallback, onError: DatafeedErrorCallback, extension?: SymbolResolveExtension): void {
-    this.api.instruments
-      .getSecurityByExchangeAndSymbol({
-        symbol: symbolName,
-        exchange: Exchange.MOEX,
-        format: 'Simple',
-      })
-      .then((r) => {
-        const precision = getPrecision(r.minstep);
+    const isSentetic = symbolName.includes('/');
+    if (!isSentetic) {
+      this.api.instruments
+        .getSecurityByExchangeAndSymbol({
+          symbol: symbolName,
+          exchange: Exchange.MOEX,
+          format: 'Simple',
+        })
+        .then((r) => {
+          const precision = getPrecision(r.minstep);
+          const priceScale = Number((10 ** precision).toFixed(precision));
+
+          const resolve: LibrarySymbolInfo = {
+            // @ts-ignore
+            name: r.shortName,
+            ticker: r.symbol,
+            description: r.description,
+            exchange: r.exchange,
+            listed_exchange: r.exchange,
+            currency_code: r.currency,
+            minmov: Math.round(r.minstep * priceScale),
+            pricescale: priceScale,
+            format: 'price',
+            type: r.type ?? '',
+            has_empty_bars: false,
+            has_intraday: true,
+            has_seconds: true,
+            has_weekly_and_monthly: true,
+            weekly_multipliers: ['1', '2'],
+            monthly_multipliers: ['1', '3', '6', '12'],
+            timezone: 'Europe/Moscow',
+            session: '0700-0000,0000-0200:1234567',
+          };
+
+          onResolve(resolve);
+        });
+    } else {
+      const parts = symbolName.split('/');
+      Promise.all(
+        parts.map((part) =>
+          this.api.instruments.getSecurityByExchangeAndSymbol({
+            symbol: part,
+            exchange: Exchange.MOEX,
+            format: 'Simple',
+          }),
+        ),
+      ).then((instruments) => {
+        const obj = instruments.reduce(
+          (acc, curr) =>
+            ({
+              name: acc.name ? `${acc.name}/${curr.shortname}` : curr.shortname,
+              ticker: acc.ticker ? `${acc.ticker}/${curr.symbol}` : curr.symbol,
+              description: acc.description ? `${acc.description}/${curr.description}` : curr.description,
+              exchange: acc.exchange || curr.exchange,
+              listed_exchange: acc.exchange || curr.exchange,
+              currency_code: acc.currency_code || curr.currency,
+              minstep: Math.min(acc.minstep, curr.minstep),
+              type: acc.type || curr.type,
+            }) as Partial<LibrarySymbolInfo>,
+          {
+            name: '',
+            ticker: '',
+            description: '',
+            exchange: '',
+            listed_exchange: '',
+            currency_code: '',
+            minstep: Infinity,
+            type: '',
+          } as any,
+        );
+
+        const precision = getPrecision(obj.minstep);
         const priceScale = Number((10 ** precision).toFixed(precision));
 
         const resolve: LibrarySymbolInfo = {
-          // @ts-ignore
-          name: r.shortName,
-          ticker: r.symbol,
-          description: r.description,
-          exchange: r.exchange,
-          listed_exchange: r.exchange,
-          currency_code: r.currency,
-          minmov: Math.round(r.minstep * priceScale),
+          ...obj,
+          minmov: Math.round(obj.minstep * priceScale),
           pricescale: priceScale,
           format: 'price',
-          type: r.type ?? '',
           has_empty_bars: false,
           has_intraday: true,
           has_seconds: true,
@@ -102,6 +142,7 @@ export class DataFeed implements IBasicDataFeed {
 
         onResolve(resolve);
       });
+    }
   }
   getBars(
     symbolInfo: LibrarySymbolInfo,
@@ -122,21 +163,61 @@ export class DataFeed implements IBasicDataFeed {
       );
       return;
     }
-    this.api.instruments
-      .getHistory({
-        symbol: symbolInfo.ticker,
-        exchange: symbolInfo.exchange as any,
-        from: Math.max(periodParams.from, 0),
-        to: Math.max(periodParams.to, 1),
-        tf: this.parseTimeframe(resolution),
-        countBack: periodParams.countBack,
-      })
-      .then((res) => {
-        const dataIsEmpty = res.history.length === 0;
+    const isSentetic = symbolInfo.ticker.includes('/');
+    if (!isSentetic) {
+      this.api.instruments
+        .getHistory({
+          symbol: symbolInfo.ticker,
+          exchange: symbolInfo.exchange as any,
+          from: Math.max(periodParams.from, 0),
+          to: Math.max(periodParams.to, 1),
+          tf: this.parseTimeframe(resolution),
+          countBack: periodParams.countBack,
+        })
+        .then((res) => {
+          const dataIsEmpty = res.history.length === 0;
 
-        const nextTime = periodParams.firstDataRequest ? res.next : res.prev;
+          const nextTime = periodParams.firstDataRequest ? res.next : res.prev;
+          onResult(
+            res.history.map(
+              (x) =>
+                ({
+                  ...x,
+                  time: x.time * 1000,
+                }) as Bar,
+            ),
+            {
+              noData: dataIsEmpty,
+              nextTime: dataIsEmpty ? nextTime : undefined,
+            },
+          );
+        });
+    } else {
+      const parts = symbolInfo.ticker.split('/');
+      Promise.all(
+        parts.map((symbol) =>
+          this.api.instruments.getHistory({
+            symbol: symbol,
+            exchange: symbolInfo.exchange as any,
+            from: Math.max(periodParams.from, 0),
+            to: Math.max(periodParams.to, 1),
+            tf: this.parseTimeframe(resolution),
+            countBack: periodParams.countBack,
+          }),
+        ),
+      ).then((res) => {
+        const dataIsEmpty = res[0].history.length === 0 || res[1].history.length === 0;
+
+        const nextTime = periodParams.firstDataRequest ? res[0].next || res[1].next : res[0].prev || res[1].prev;
+
+        const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(res[0].history, res[1].history);
+
+        const newCandles = filteredFuturesCandles
+          .map((item, index) => calculateCandle(filteredStockCandles[index], item, 100))
+          .filter(Boolean);
+
         onResult(
-          res.history.map(
+          newCandles.map(
             (x) =>
               ({
                 ...x,
@@ -149,6 +230,7 @@ export class DataFeed implements IBasicDataFeed {
           },
         );
       });
+    }
   }
   subscribeBars(
     symbolInfo: LibrarySymbolInfo,
@@ -157,12 +239,61 @@ export class DataFeed implements IBasicDataFeed {
     listenerGuid: string,
     onResetCacheNeededCallback: () => void,
   ): void {
-    debugger;
-    throw new Error('Method not implemented.');
+    const parts = symbolInfo.ticker.split('/');
+    if (parts.length === 0) {
+      this.api.subscriptions
+        .candles(
+          {
+            code: parts[0],
+            exchange: symbolInfo.exchange,
+            format: Format.Simple,
+            tf: this.parseTimeframe(resolution),
+          },
+          (data) => onTick({ ...data, time: data.time * 1000 } as Bar),
+        )
+        .then((unsub) => this.subscriptions.set(listenerGuid, [unsub]));
+    } else {
+      const lastCandles = {
+        [parts[0]]: new BehaviorSubject<HistoryObject>(null),
+        [parts[1]]: new BehaviorSubject<HistoryObject>(null),
+      };
+
+      combineLatest({
+        left: lastCandles[parts[0]].pipe(
+          startWith(null),
+          pairwise(),
+          filter((val) => !!val && !!val[1]),
+        ),
+        right: lastCandles[parts[1]].pipe(
+          startWith(null),
+          pairwise(),
+          filter((val) => !!val && !!val[1]),
+        ),
+      })
+        .pipe(filter((val) => val.left[1].time === val.right[1].time))
+        .subscribe((resp) => {
+          // @ts-ignore
+          const data = calculateCandle(resp.left[1], resp.right[1], 100);
+          onTick({ ...data, time: data.time * 1000 } as Bar);
+        });
+      Promise.all(
+        parts.map((part) =>
+          this.api.subscriptions.candles(
+            {
+              code: part,
+              exchange: symbolInfo.exchange,
+              format: Format.Simple,
+              tf: this.parseTimeframe(resolution),
+            },
+            (data) => lastCandles[part].next(data),
+          ),
+        ),
+      ).then((unsubs) => this.subscriptions.set(listenerGuid, unsubs));
+    }
   }
   unsubscribeBars(listenerGuid: string): void {
-    debugger;
-    throw new Error('Method not implemented.');
+    this.subscriptions.get(listenerGuid)?.forEach((c) => c());
+    this.subscriptions.delete(listenerGuid);
   }
   subscribeDepth?(symbol: string, callback: DOMCallback): string {
     debugger;

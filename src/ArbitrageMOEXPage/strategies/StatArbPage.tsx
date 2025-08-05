@@ -36,7 +36,7 @@ const defaultState = Object.assign(
   storageState,
 );
 
-const TWChart = ({ height = 400, data, lineSerieses }: any) => {
+const TWChart = ({ ticker, height = 400, data, lineSerieses }: any) => {
   const ref = useRef<HTMLDivElement>(null);
   const api = useAppSelector((state) => state.alorSlice.api);
 
@@ -50,7 +50,7 @@ const TWChart = ({ height = 400, data, lineSerieses }: any) => {
       debug: false,
       // base options
       container: ref.current,
-      symbol: 'SBER',
+      symbol: ticker,
       // width: width || ref.current?.clientWidth,
       height: height || ref.current?.clientHeight,
       interval: '15' as ResolutionString,
@@ -127,7 +127,7 @@ const TWChart = ({ height = 400, data, lineSerieses }: any) => {
       //   },
       // );
     });
-  }, [datafeed, height, lineSerieses]);
+  }, [datafeed, height, lineSerieses, ticker]);
 
   return <div ref={ref} style={{ position: 'relative', height: height || '100%', minHeight: 610 }}></div>;
 };
@@ -375,8 +375,6 @@ export const StatArbPage = ({
 
   const stockTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.stockSymbol), []);
   const futureTickers = useMemo(() => symbolFuturePairs.map((pair) => pair.futuresSymbol), []);
-
-  const commonCandles = getCommonCandles(stockDataRef, futureDataRef);
 
   const data = useMemo(() => {
     if (stockDataRef?.length && futureDataRef?.length) {
@@ -887,52 +885,54 @@ export const StatArbPage = ({
     <Layout>
       <Content style={{ padding: 0, paddingRight: 20 }}>
         <div className={`relative${isFullscreen ? ' fullscreen' : ''}`}>
-          <div
-            style={{
-              top: 8,
-              position: 'absolute',
-              zIndex: 3,
-              left: 8,
-              gap: 8,
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}
-          >
-            <TimeframeSelect value={tf} onChange={setSize} />
-            <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
-            <TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />
-            {/*<Select*/}
-            {/*    value={tickerFuture}*/}
-            {/*    showSearch*/}
-            {/*    placeholder="Введи тикер"*/}
-            {/*    onSelect={onSelectTicker('future')}*/}
-            {/*    filterOption={(input, option) =>*/}
-            {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
-            {/*    }*/}
-            {/*    style={{width: 160}}*/}
-            {/*    options={options}*/}
-            {/*/>*/}
+          {isSecondForex && (
+            <div
+              style={{
+                top: 8,
+                position: 'absolute',
+                zIndex: 3,
+                left: 8,
+                gap: 8,
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+              }}
+            >
+              <TimeframeSelect value={tf} onChange={setSize} />
+              <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
+              <TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />
+              {/*<Select*/}
+              {/*    value={tickerFuture}*/}
+              {/*    showSearch*/}
+              {/*    placeholder="Введи тикер"*/}
+              {/*    onSelect={onSelectTicker('future')}*/}
+              {/*    filterOption={(input, option) =>*/}
+              {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
+              {/*    }*/}
+              {/*    style={{width: 160}}*/}
+              {/*    options={options}*/}
+              {/*/>*/}
 
-            <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+              <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
 
-            <Button icon={<FullscreenOutlined />} onClick={() => setIsFullscreen((prevState) => !prevState)} />
-            <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
-          </div>
-          {/*<TWChart data={data} />*/}
+              <Button icon={<FullscreenOutlined />} onClick={() => setIsFullscreen((prevState) => !prevState)} />
+              <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
+            </div>
+          )}
+          <TWChart ticker={`${tickerStock}/${tickerFuture}`} />
           {/*<TWChart data={data} lineSerieses={ls} />*/}
-          <Chart
-            seriesType={seriesType}
-            hideCross
-            lineSerieses={ls}
-            primitives={[]}
-            markers={[]}
-            toolTipTop="40px"
-            toolTipLeft="4px"
-            data={data}
-            ema={[]}
-            maximumFractionDigits={3}
-          />
+          {/*<Chart*/}
+          {/*  seriesType={seriesType}*/}
+          {/*  hideCross*/}
+          {/*  lineSerieses={ls}*/}
+          {/*  primitives={[]}*/}
+          {/*  markers={[]}*/}
+          {/*  toolTipTop="40px"*/}
+          {/*  toolTipLeft="4px"*/}
+          {/*  data={data}*/}
+          {/*  ema={[]}*/}
+          {/*  maximumFractionDigits={3}*/}
+          {/*/>*/}
         </div>
         <Row style={{ paddingBottom: '8px', paddingTop: 8 }} gutter={8}>
           <Col span={6}>
