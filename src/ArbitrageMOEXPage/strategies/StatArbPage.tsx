@@ -59,7 +59,7 @@ const TWChart = ({ ticker, height = 400, data, lineSerieses }: any) => {
     if (!ref.current || !datafeed) return;
 
     let chartLayout;
-    const data = localStorage.getItem(`settings`);
+    const data = localStorage.getItem(`settings-${ticker}`);
     if (data) {
       chartLayout = JSON.parse(data) as object;
       if (chartLayout?.charts?.[0]?.panes?.[0]?.sources?.[0]?.state) {
@@ -130,7 +130,7 @@ const TWChart = ({ ticker, height = 400, data, lineSerieses }: any) => {
 
   const saveChartLayout = (widget: IChartingLibraryWidget): void => {
     widget.save((state) => {
-      localStorage.setItem(`settings`, JSON.stringify(state));
+      localStorage.setItem(`settings-${ticker}`, JSON.stringify(state));
     });
   };
 
