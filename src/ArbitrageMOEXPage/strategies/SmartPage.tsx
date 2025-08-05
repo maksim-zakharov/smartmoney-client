@@ -348,7 +348,7 @@ export const SmartPage = () => {
       )}
       {tab === 'stocks' && (
         <>
-          <Row gutter={[8, 8]}>
+          <Row>
             <Col span={span}>
               <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" onlyChart height={height} />
             </Col>
@@ -365,7 +365,7 @@ export const SmartPage = () => {
               <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={height} />
             </Col>
           </Row>
-          <Row gutter={[8, 8]} style={{ paddingTop: 8 }}>
+          <Row>
             {favorites.map((pair) => (
               <Col span={span}>
                 <StatArbPage tickerStock={pair[0]} _tickerFuture={pair[1]} onlyChart height={height} />
@@ -468,7 +468,7 @@ export const SmartPage = () => {
       )}
       {tab === 'funding' && (
         <>
-          <Row gutter={[8, 8]}>
+          <Row>
             <Col span={span}>
               <StatArbPage
                 tickerStock="IMOEXF"

@@ -26,6 +26,7 @@ export class DataFeed implements IBasicDataFeed {
   constructor(
     private readonly api: AlorApi,
     private readonly data?: HistoryObject[],
+    private readonly multiple: number,
   ) {}
 
   getServerTime?(callback: ServerTimeCallback): void {
@@ -114,7 +115,7 @@ export class DataFeed implements IBasicDataFeed {
             ({
               name: acc.name ? `${acc.name}/${curr.symbol}` : curr.symbol,
               ticker: acc.ticker ? `${acc.ticker}/${curr.symbol}` : curr.symbol,
-              description: acc.description ? `${acc.description}/${curr.description}` : curr.description,
+              description: acc.description ? `${acc.description}/${curr.symbol}` : curr.symbol,
               exchange: acc.exchange || curr.exchange,
               listed_exchange: acc.exchange || curr.exchange,
               currency_code: acc.currency_code || curr.currency,
@@ -134,7 +135,7 @@ export class DataFeed implements IBasicDataFeed {
         );
 
         const precision = getPrecision(obj.minstep);
-        const priceScale = Number((10 ** precision).toFixed(precision));
+        const priceScale = Number((10 ** 3).toFixed(3));
 
         const resolve: LibrarySymbolInfo = {
           ...obj,
@@ -224,7 +225,7 @@ export class DataFeed implements IBasicDataFeed {
         const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(res[0].history, res[1].history);
 
         const newCandles = filteredFuturesCandles
-          .map((item, index) => calculateCandle(filteredStockCandles[index], item, 100))
+          .map((item, index) => calculateCandle(filteredStockCandles[index], item, this.multiple))
           .filter(Boolean);
 
         onResult(
@@ -276,7 +277,7 @@ export class DataFeed implements IBasicDataFeed {
         .pipe(filter((val) => val.left?.time === val.right?.time))
         .subscribe((resp) => {
           // @ts-ignore
-          const data = calculateCandle(resp.left, resp.right, 100);
+          const data = calculateCandle(resp.left, resp.right, this.multiple);
           onTick({ ...data, time: data.time * 1000 } as Bar);
         });
       Promise.all(
