@@ -34,20 +34,32 @@ export class DataFeed implements IBasicDataFeed {
   searchSymbols(userInput: string, exchange: string, symbolType: string, onResult: SearchSymbolsCallback): void {
     this.api.instruments
       .getSecurities({
-        query: userInput,
+        query: userInput.split('/')[0],
         format: 'Simple',
         exchange: exchange as any,
       })
       .then((results) => {
-        return onResult(
-          results.map((x) => ({
-            symbol: x.symbol,
-            exchange: x.exchange,
-            ticker: `[${x.exchange}:${x.symbol}]`,
-            description: x.description,
+        const mapped = results.map((x) => ({
+          symbol: x.symbol,
+          exchange: x.exchange,
+          ticker: `[${x.exchange}:${x.symbol}]`,
+          description: x.description,
+          type: '',
+        }));
+
+        const pref = results.find((r) => r.symbol.includes(`${userInput.split('/')[0]}P`));
+
+        if (results.length && pref) {
+          mapped.unshift({
+            symbol: `${userInput.split('/')[0]}/${userInput.split('/')[0]}P`,
+            exchange: results[0].exchange,
+            ticker: `[${userInput.split('/')[0]}/${userInput.split('/')[0]}P]`,
+            description: `${results[0].description}/${pref.description}`,
             type: '',
-          })),
-        );
+          });
+        }
+
+        return onResult(mapped);
       });
   }
   resolveSymbol(symbolName: string, onResolve: ResolveCallback, onError: DatafeedErrorCallback, extension?: SymbolResolveExtension): void {
@@ -64,8 +76,7 @@ export class DataFeed implements IBasicDataFeed {
           const priceScale = Number((10 ** precision).toFixed(precision));
 
           const resolve: LibrarySymbolInfo = {
-            // @ts-ignore
-            name: r.shortName,
+            name: r.shortname,
             ticker: r.symbol,
             description: r.description,
             exchange: r.exchange,
@@ -101,7 +112,7 @@ export class DataFeed implements IBasicDataFeed {
         const obj = instruments.reduce(
           (acc, curr) =>
             ({
-              name: acc.name ? `${acc.name}/${curr.shortname}` : curr.shortname,
+              name: acc.name ? `${acc.name}/${curr.symbol}` : curr.symbol,
               ticker: acc.ticker ? `${acc.ticker}/${curr.symbol}` : curr.symbol,
               description: acc.description ? `${acc.description}/${curr.description}` : curr.description,
               exchange: acc.exchange || curr.exchange,
