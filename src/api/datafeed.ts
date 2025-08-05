@@ -18,7 +18,7 @@ import {
 import { AlorApi, Exchange, Format, HistoryObject } from 'alor-api';
 import { getCommonCandles, getPrecision } from '../utils';
 import { calculateCandle } from '../../symbolFuturePairs';
-import { BehaviorSubject, combineLatest, filter, pairwise, startWith } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter, startWith } from 'rxjs';
 
 export class DataFeed implements IBasicDataFeed {
   private readonly subscriptions = new Map<string, any[]>();
@@ -270,21 +270,13 @@ export class DataFeed implements IBasicDataFeed {
       };
 
       combineLatest({
-        left: lastCandles[parts[0]].pipe(
-          startWith(null),
-          pairwise(),
-          filter((val) => !!val && !!val[1]),
-        ),
-        right: lastCandles[parts[1]].pipe(
-          startWith(null),
-          pairwise(),
-          filter((val) => !!val && !!val[1]),
-        ),
+        left: lastCandles[parts[0]].pipe(startWith(null)),
+        right: lastCandles[parts[1]].pipe(startWith(null)),
       })
-        .pipe(filter((val) => val.left[1].time === val.right[1].time))
+        .pipe(filter((val) => val.left?.time === val.right?.time))
         .subscribe((resp) => {
           // @ts-ignore
-          const data = calculateCandle(resp.left[1], resp.right[1], 100);
+          const data = calculateCandle(resp.left, resp.right, 100);
           onTick({ ...data, time: data.time * 1000 } as Bar);
         });
       Promise.all(
