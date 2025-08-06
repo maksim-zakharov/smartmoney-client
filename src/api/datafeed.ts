@@ -22,12 +22,24 @@ import { BehaviorSubject, combineLatest, filter, startWith } from 'rxjs';
 
 export class DataFeed implements IBasicDataFeed {
   private readonly subscriptions = new Map<string, any[]>();
+  private readonly api: AlorApi,
+  private readonly data?: HistoryObject[],
+  private readonly multiple: number,
+  private readonly ctidTraderAccountId?: number;
 
-  constructor(
-    private readonly api: AlorApi,
-    private readonly data?: HistoryObject[],
-    private readonly multiple: number,
-  ) {}
+  constructor(options: {
+    ctidTraderAccountId?: number,
+    data?: HistoryObject[],
+    multiple: number,
+    api: AlorApi,
+  }
+  ) {
+
+    this.api = options.api
+    this.data = options.data;
+    this.multiple = options.multiple
+    this.ctidTraderAccountId = options.ctidTraderAccountId
+  }
 
   getServerTime?(callback: ServerTimeCallback): void {
     this.api.http.get(`https://api.alor.ru/md/v2/time`).then((r) => callback(r.data));
@@ -218,7 +230,7 @@ export class DataFeed implements IBasicDataFeed {
         parts.map((symbol) =>
           symbol.includes('_xp')
             ? fetch(
-                `https://176.114.69.4/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbol}&to=${Math.max(periodParams.to, 1)}`,
+                `https://176.114.69.4/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbol}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
               )
                 .then((res) => res.json())
                 .then((d) => ({ history: d, next: null, prev: null }))
@@ -241,8 +253,6 @@ export class DataFeed implements IBasicDataFeed {
         const newCandles = filteredFuturesCandles
           .map((item, index) => calculateCandle(filteredStockCandles[index], item, this.multiple))
           .filter(Boolean);
-
-        debugger;
 
         onResult(
           newCandles.map(

@@ -1,5 +1,5 @@
 import { Content, Header } from 'antd/es/layout/layout';
-import { Button, Layout, Menu, theme } from 'antd';
+import { Button, Layout, Menu, Space, theme } from 'antd';
 import React, { useEffect } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import SoloTestPage from './SoloTestPage/SoloTestPage';
@@ -24,12 +24,14 @@ export default function App() {
   const dispatch = useAppDispatch();
   const api = useAppSelector((state) => state.alorSlice.api);
   const { accessToken } = useAppSelector((state) => state.alorSlice.cTraderAuth || ({} as AppsTokenResponse));
+  const cTraderAccount = useAppSelector((state) => state.alorSlice.cTraderAccount);
 
   const { refetch } = useGetUserInfoQuery({}, { skip: !localStorage.getItem('token') || !api });
 
   const code = new URLSearchParams(window.location.href.split('?')[1]).get('code');
 
-  const redirect_uri = `https://maksim-zakharov.github.io/smartmoney-client/`;
+  const redirect_uri =
+    process.env.NODE_ENV !== 'production' ? 'http://localhost:5173/' : `https://maksim-zakharov.github.io/smartmoney-client/`;
 
   useEffect(() => {}, []);
 
@@ -96,9 +98,12 @@ export default function App() {
           items={menuItems}
           style={{ flex: 1, minWidth: 0 }}
         />
-        <Button size="small" onClick={handleCTraderLogin}>
-          Войти в cTrader
-        </Button>
+        <Space>
+          {cTraderAccount?.ctidTraderAccountId && <>Аккаунт CTrader: {cTraderAccount?.traderLogin}</>}
+          <Button size="small" onClick={handleCTraderLogin}>
+            Войти в cTrader
+          </Button>
+        </Space>
       </Header>
       <Content
         style={{

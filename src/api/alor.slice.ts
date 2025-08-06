@@ -34,7 +34,10 @@ const initialState = {
     borderColor: 'rgba(44,60,75, 0.6)',
   },
   userInfo: localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')) : undefined,
+
   cTraderAuth: localStorage.getItem('cTraderAuth') ? JSON.parse(localStorage.getItem('cTraderAuth')) : undefined,
+  ctidTraderAccountId: undefined,
+
   settings: JSON.parse(localStorage.getItem('settings') || '{}'),
 } as {
   darkColors: {
@@ -49,7 +52,9 @@ const initialState = {
   agreementsMap: any;
   activeOperations: GetOperationsResponse[];
   lastWithdrawals: number[];
+
   cTraderAuth?: AppsTokenResponse;
+  cTraderAccount?: any;
 };
 
 export const alorSlice = createSlice({
@@ -101,6 +106,9 @@ export const alorSlice = createSlice({
       if (state.cTraderAuth.accessToken) {
         localStorage.setItem('cTraderAuth', JSON.stringify(state.cTraderAuth));
       }
+    });
+    builder.addMatcher(api.endpoints.selectAccount.matchFulfilled, (state, { payload }) => {
+      state.cTraderAccount = payload[0];
     });
     // builder.addMatcher(goApi.endpoints.getAdGroup.matchPending, _resetAdGroupError);
     builder.addMatcher(alorApi.endpoints.getOperations.matchFulfilled, (state, { payload }) => {
