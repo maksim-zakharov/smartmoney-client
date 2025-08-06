@@ -16,6 +16,7 @@ import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
 import { initApi } from './api/alor.slice';
 import { TestPage } from './TestPage.tsx';
+import { useAuthCodeQuery } from './api.ts';
 
 export default function App() {
   const navigate = useNavigate();
@@ -23,6 +24,18 @@ export default function App() {
   const dispatch = useAppDispatch();
   const api = useAppSelector((state) => state.alorSlice.api);
   const { refetch } = useGetUserInfoQuery({}, { skip: !localStorage.getItem('token') || !api });
+
+  const code = new URLSearchParams(window.location.search).get('code');
+
+  useAuthCodeQuery(
+    {
+      code,
+      redirect_uri: window.location.origin,
+    },
+    {
+      skip: !code,
+    },
+  );
 
   const {
     token: { colorBgContainer, borderRadiusLG },
