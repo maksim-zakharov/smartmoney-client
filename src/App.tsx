@@ -14,20 +14,24 @@ import { ScreenerPage } from './ScreenerPage';
 import { CNYFundingPage } from './CNYFundingPage';
 import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
-import { initApi } from './api/alor.slice';
+import { AppsTokenResponse, initApi } from './api/alor.slice';
 import { TestPage } from './TestPage.tsx';
-import { useAuthCodeQuery } from './api.ts';
+import { useAuthCodeQuery, useSelectAccountQuery } from './api.ts';
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const api = useAppSelector((state) => state.alorSlice.api);
+  const { accessToken } = useAppSelector((state) => state.alorSlice.cTraderAuth || ({} as AppsTokenResponse));
+
   const { refetch } = useGetUserInfoQuery({}, { skip: !localStorage.getItem('token') || !api });
 
   const code = new URLSearchParams(window.location.href.split('?')[1]).get('code');
 
   const redirect_uri = `https://maksim-zakharov.github.io/smartmoney-client/`;
+
+  useEffect(() => {}, []);
 
   useAuthCodeQuery(
     {
@@ -35,7 +39,16 @@ export default function App() {
       redirect_uri: redirect_uri,
     },
     {
-      skip: !code,
+      skip: Boolean(!code || accessToken),
+    },
+  );
+
+  useSelectAccountQuery(
+    {
+      accessToken,
+    },
+    {
+      skip: !accessToken,
     },
   );
 

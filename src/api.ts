@@ -57,6 +57,12 @@ export const api = createApi({
         params,
       }),
     }),
+    selectAccount: builder.query<any, any>({
+      query: (params) => ({
+        url: '/auth/selectAccount',
+        params,
+      }),
+    }),
     // candles: builder.query<{ candles: HistoryObject[] }, any>({
     //   query: (params) => ({
     //     url: '/api/candles',
@@ -84,4 +90,4 @@ export const api = createApi({
   }),
 });
 
-export const { useCandlesQuery, useSecurityQuery, useAuthCodeQuery, usePortfolioQuery, useOrderblocksQuery } = api;
+export const { useCandlesQuery, useSelectAccountQuery, useSecurityQuery, useAuthCodeQuery, usePortfolioQuery, useOrderblocksQuery } = api;

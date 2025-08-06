@@ -12,7 +12,7 @@ type Settings = {
   lk?: boolean;
 };
 
-interface AppsTokenResponse {
+export interface AppsTokenResponse {
   accessToken: string;
   tokenType: 'bearer';
   expiresIn: number;
@@ -98,7 +98,6 @@ export const alorSlice = createSlice({
   extraReducers: (builder) => {
     builder.addMatcher(api.endpoints.authCode.matchFulfilled, (state, { payload }) => {
       state.cTraderAuth = payload;
-      debugger;
       if (state.cTraderAuth.accessToken) {
         localStorage.setItem('cTraderAuth', JSON.stringify(state.cTraderAuth));
       }
