@@ -27,7 +27,7 @@ export default function App() {
 
   const code = new URLSearchParams(window.location.href.split('?')[1]).get('code');
 
-  const redirect_uri = `${window.location.origin + (window.location.origin.includes('github') ? window.location.pathname : '/')}#/code`;
+  const redirect_uri = `https://maksim-zakharov.github.io/smartmoney-client/`;
 
   useAuthCodeQuery(
     {

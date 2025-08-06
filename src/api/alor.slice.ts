@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AlorApi, Endpoint, WssEndpoint, WssEndpointBeta } from 'alor-api';
 import { alorApi } from './alor.api';
 import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/services/ClientInfoService/ClientInfoService';
+import { api } from '../api.ts';
 
 type Settings = {
   token: string;
@@ -10,6 +11,15 @@ type Settings = {
   agreement: string;
   lk?: boolean;
 };
+
+interface AppsTokenResponse {
+  accessToken: string;
+  tokenType: 'bearer';
+  expiresIn: number;
+  refreshToken: string;
+  errorCode: null;
+  description: null;
+}
 
 const initialState = {
   api: undefined,
@@ -24,6 +34,7 @@ const initialState = {
     borderColor: 'rgba(44,60,75, 0.6)',
   },
   userInfo: localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')) : undefined,
+  cTraderAuth: localStorage.getItem('cTraderAuth') ? JSON.parse(localStorage.getItem('cTraderAuth')) : undefined,
   settings: JSON.parse(localStorage.getItem('settings') || '{}'),
 } as {
   darkColors: {
@@ -38,6 +49,7 @@ const initialState = {
   agreementsMap: any;
   activeOperations: GetOperationsResponse[];
   lastWithdrawals: number[];
+  cTraderAuth?: AppsTokenResponse;
 };
 
 export const alorSlice = createSlice({
@@ -84,6 +96,13 @@ export const alorSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    builder.addMatcher(api.endpoints.authCode.matchFulfilled, (state, { payload }) => {
+      state.cTraderAuth = payload;
+      debugger;
+      if (state.cTraderAuth.accessToken) {
+        localStorage.setItem('cTraderAuth', JSON.stringify(state.cTraderAuth));
+      }
+    });
     // builder.addMatcher(goApi.endpoints.getAdGroup.matchPending, _resetAdGroupError);
     builder.addMatcher(alorApi.endpoints.getOperations.matchFulfilled, (state, { payload }) => {
       state.activeOperations = payload ? payload.filter((o) => ![Status.Overdue, Status.Refused].includes(o.status)) : [];
