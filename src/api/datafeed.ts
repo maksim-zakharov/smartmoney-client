@@ -22,23 +22,16 @@ import { BehaviorSubject, combineLatest, filter, startWith } from 'rxjs';
 
 export class DataFeed implements IBasicDataFeed {
   private readonly subscriptions = new Map<string, any[]>();
-  private readonly api: AlorApi,
-  private readonly data?: HistoryObject[],
-  private readonly multiple: number,
+  private readonly api: AlorApi;
+  private readonly data?: HistoryObject[];
+  private readonly multiple: number;
   private readonly ctidTraderAccountId?: number;
 
-  constructor(options: {
-    ctidTraderAccountId?: number,
-    data?: HistoryObject[],
-    multiple: number,
-    api: AlorApi,
-  }
-  ) {
-
-    this.api = options.api
+  constructor(options: { ctidTraderAccountId?: number; data?: HistoryObject[]; multiple: number; api: AlorApi }) {
+    this.api = options.api;
     this.data = options.data;
-    this.multiple = options.multiple
-    this.ctidTraderAccountId = options.ctidTraderAccountId
+    this.multiple = options.multiple;
+    this.ctidTraderAccountId = options.ctidTraderAccountId;
   }
 
   getServerTime?(callback: ServerTimeCallback): void {
