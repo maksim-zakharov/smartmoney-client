@@ -25,7 +25,7 @@ export default function App() {
   const api = useAppSelector((state) => state.alorSlice.api);
   const { refetch } = useGetUserInfoQuery({}, { skip: !localStorage.getItem('token') || !api });
 
-  const code = new URLSearchParams(window.location.search).get('code');
+  const code = new URLSearchParams(window.location.href.split('?')[1]).get('code');
 
   useAuthCodeQuery(
     {
