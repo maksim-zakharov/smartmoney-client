@@ -27,10 +27,14 @@ export default function App() {
 
   const code = new URLSearchParams(window.location.href.split('?')[1]).get('code');
 
+  const redirect_uri = encodeURIComponent(
+    `${window.location.origin + (window.location.origin.includes('github') ? window.location.pathname : '/')}#/code`,
+  );
+
   useAuthCodeQuery(
     {
       code,
-      redirect_uri: window.location.origin,
+      redirect_uri: redirect_uri,
     },
     {
       skip: !code,
@@ -67,8 +71,7 @@ export default function App() {
     navigate(params.key);
   }
 
-  const handleCTraderLogin = () =>
-    (window.location.href = `https://176.114.69.4/auth?redirect_uri=${encodeURIComponent(`${window.location.origin + (window.location.origin.includes('github') ? window.location.pathname : '/')}#/code`)}`);
+  const handleCTraderLogin = () => (window.location.href = `https://176.114.69.4/auth?redirect_uri=${redirect_uri}`);
 
   return (
     <Layout>
