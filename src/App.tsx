@@ -68,7 +68,7 @@ export default function App() {
   }
 
   const handleCTraderLogin = () =>
-    (window.location.href = `https://176.114.69.4/auth?redirect_uri=${window.location.origin + (window.location.origin.includes('github') ? window.location.pathname : '')}/code`);
+    (window.location.href = `https://176.114.69.4/auth?redirect_uri=${window.location.origin + (window.location.origin.includes('github') ? window.location.pathname : '/')}code`);
 
   return (
     <Layout>
