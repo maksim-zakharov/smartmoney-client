@@ -67,7 +67,10 @@ export default function App() {
     navigate(params.key);
   }
 
-  const handleCTraderLogin = () => fetch(`https://176.114.69.4/auth?redirect_uri=${window.location.origin}/code`);
+  const handleCTraderLogin = () =>
+    fetch(
+      `https://176.114.69.4/auth?redirect_uri=${window.location.origin + window.location.origin.includes('github') ? window.location.pathname : ''}/code`,
+    );
 
   return (
     <Layout>
