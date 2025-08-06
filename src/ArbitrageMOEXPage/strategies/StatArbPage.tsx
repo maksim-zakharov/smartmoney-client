@@ -85,7 +85,7 @@ const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, sma
       height: height || ref.current?.clientHeight,
       interval: '15' as ResolutionString,
       locale: 'ru',
-      library_path: '/assets/charting_library/',
+      library_path: process.env.NODE_ENV !== 'production' ? '/assets/charting_library/' : '/smartmoney-client/assets/charting_library/',
       datafeed: datafeed, // this.techChartDatafeedService,
       // additional options
       fullscreen: false,
