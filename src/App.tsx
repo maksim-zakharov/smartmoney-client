@@ -1,5 +1,5 @@
 import { Content, Header } from 'antd/es/layout/layout';
-import { Layout, Menu, theme } from 'antd';
+import { Button, Layout, Menu, theme } from 'antd';
 import React, { useEffect } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import SoloTestPage from './SoloTestPage/SoloTestPage';
@@ -67,6 +67,8 @@ export default function App() {
     navigate(params.key);
   }
 
+  const handleCTraderLogin = () => fetch(`https://176.114.69.4/auth?redirect_uri=${window.location.origin}/code`);
+
   return (
     <Layout>
       <Header style={{ display: 'flex', alignItems: 'center' }}>
@@ -79,6 +81,9 @@ export default function App() {
           items={menuItems}
           style={{ flex: 1, minWidth: 0 }}
         />
+        <Button size="small" onClick={handleCTraderLogin}>
+          Войти в cTrader
+        </Button>
       </Header>
       <Content
         style={{
