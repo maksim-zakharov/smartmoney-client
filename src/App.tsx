@@ -2,21 +2,19 @@ import { Content, Header } from 'antd/es/layout/layout';
 import { Button, Layout, Menu, Space, theme } from 'antd';
 import React, { useEffect } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import SoloTestPage from './SoloTestPage/SoloTestPage';
 import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
 import { ArbitrageBYBITPage } from './ArbitrageBYBITPage/ArbitrageBYBITPage';
-import { DiscrepancyRatingPage } from './DiscrepancyRatingPage';
-import { MultiTestPage } from './MultiTestPage';
-import DemoPage from './DemoPage/DemoPage';
-import UnitTestPage from './UnitTestPage';
-import NewTestingPage from './NewTestingPage';
-import { ScreenerPage } from './ScreenerPage';
-import { CNYFundingPage } from './CNYFundingPage';
 import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
 import { AppsTokenResponse, initApi } from './api/alor.slice';
 import { TestPage } from './TestPage.tsx';
-import { useAuthCodeQuery, useSelectAccountQuery } from './api.ts';
+import {
+  useAuthCodeQuery,
+  useGetTinkoffAccountsQuery,
+  useGetTinkoffOrdersQuery,
+  useGetTinkoffPortfolioQuery,
+  useSelectAccountQuery,
+} from './api.ts';
 
 export default function App() {
   const navigate = useNavigate();
@@ -33,7 +31,42 @@ export default function App() {
   const redirect_uri =
     process.env.NODE_ENV !== 'production' ? 'http://localhost:5173/' : `https://maksim-zakharov.github.io/smartmoney-client/`;
 
+  const tiToken = localStorage.getItem('tiToken');
+  const tiBrokerAccountId = localStorage.getItem('tiBrokerAccountId');
+
   useEffect(() => {}, []);
+
+  useGetTinkoffAccountsQuery(
+    {
+      token: tiToken,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !tiToken,
+    },
+  );
+
+  useGetTinkoffPortfolioQuery(
+    {
+      token: tiToken,
+      brokerAccountId: tiBrokerAccountId,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !tiToken || !tiBrokerAccountId,
+    },
+  );
+
+  useGetTinkoffOrdersQuery(
+    {
+      token: tiToken,
+      brokerAccountId: tiBrokerAccountId,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !tiToken || !tiBrokerAccountId,
+    },
+  );
 
   useAuthCodeQuery(
     {
@@ -66,16 +99,16 @@ export default function App() {
   const menuItems = [
     // { key: '/', label: 'Главная', element: <MainPage /> },
     { key: '/', label: 'Главная', element: <ArbitrageMOEXPage /> },
-    { key: '/test', label: 'BOS/IDM', element: <SoloTestPage /> },
+    // { key: '/test', label: 'BOS/IDM', element: <SoloTestPage /> },
     { key: '/arbitrage-moex', label: 'Арбитраж MOEX', element: <ArbitrageMOEXPage /> },
     { key: '/arbitrage-bybit', label: 'Арбитраж BYBIT', element: <ArbitrageBYBITPage /> },
-    { key: '/discrepancy-rating', label: 'Расдвижки', element: <DiscrepancyRatingPage /> },
-    { key: '/testing', label: 'Тестирование', element: <MultiTestPage /> },
-    { key: '/demo', label: 'Обучение', element: <DemoPage /> },
-    { key: '/unit-testing', label: 'Мок-тестирование', element: <UnitTestPage /> },
-    { key: '/new-testing', label: 'Новые тесты', element: <NewTestingPage /> },
-    { key: '/screener', label: 'Скринер плотностей', element: <ScreenerPage /> },
-    { key: '/cny-funding', label: 'CNY Funding', element: <CNYFundingPage /> },
+    // { key: '/discrepancy-rating', label: 'Расдвижки', element: <DiscrepancyRatingPage /> },
+    // { key: '/testing', label: 'Тестирование', element: <MultiTestPage /> },
+    // { key: '/demo', label: 'Обучение', element: <DemoPage /> },
+    // { key: '/unit-testing', label: 'Мок-тестирование', element: <UnitTestPage /> },
+    // { key: '/new-testing', label: 'Новые тесты', element: <NewTestingPage /> },
+    // { key: '/screener', label: 'Скринер плотностей', element: <ScreenerPage /> },
+    // { key: '/cny-funding', label: 'CNY Funding', element: <CNYFundingPage /> },
     { key: '/test123', label: 'Test', element: <TestPage /> },
   ];
 

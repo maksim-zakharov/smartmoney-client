@@ -55,6 +55,10 @@ const initialState = {
 
   cTraderAuth?: AppsTokenResponse;
   cTraderAccount?: any;
+
+  tinkoffAccounts?: any;
+  tinkoffPortfolio?: any;
+  tinkoffOrders?: any;
 };
 
 export const alorSlice = createSlice({
@@ -101,6 +105,15 @@ export const alorSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    builder.addMatcher(api.endpoints.getTinkoffAccounts.matchFulfilled, (state, { payload }) => {
+      state.tinkoffAccounts = payload;
+    });
+    builder.addMatcher(api.endpoints.getTinkoffPortfolio.matchFulfilled, (state, { payload }) => {
+      state.tinkoffPortfolio = payload;
+    });
+    builder.addMatcher(api.endpoints.getTinkoffOrders.matchFulfilled, (state, { payload }) => {
+      state.tinkoffOrders = payload;
+    });
     builder.addMatcher(api.endpoints.authCode.matchFulfilled, (state, { payload }) => {
       state.cTraderAuth = payload;
       if (state.cTraderAuth.accessToken) {

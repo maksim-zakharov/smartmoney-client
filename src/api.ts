@@ -63,6 +63,30 @@ export const api = createApi({
         params,
       }),
     }),
+    getTinkoffAccounts: builder.query<any, any>({
+      query: (params) => ({
+        url: '/auth/tinkoff/accounts',
+        params,
+      }),
+    }),
+    getTinkoffPortfolio: builder.query<any, any>({
+      query: (params) => ({
+        url: '/auth/tinkoff/portfolio',
+        params,
+      }),
+    }),
+    getTinkoffOrders: builder.query<any, any>({
+      query: (params) => ({
+        url: '/auth/tinkoff/orders',
+        params,
+      }),
+    }),
+    getInstrumentById: builder.query<any, any>({
+      query: (params) => ({
+        url: '/auth/tinkoff/instrumentById',
+        params,
+      }),
+    }),
     // candles: builder.query<{ candles: HistoryObject[] }, any>({
     //   query: (params) => ({
     //     url: '/api/candles',
@@ -90,4 +114,15 @@ export const api = createApi({
   }),
 });
 
-export const { useCandlesQuery, useSelectAccountQuery, useSecurityQuery, useAuthCodeQuery, usePortfolioQuery, useOrderblocksQuery } = api;
+export const {
+  useCandlesQuery,
+  useGetInstrumentByIdQuery,
+  useGetTinkoffPortfolioQuery,
+  useGetTinkoffOrdersQuery,
+  useGetTinkoffAccountsQuery,
+  useSelectAccountQuery,
+  useSecurityQuery,
+  useAuthCodeQuery,
+  usePortfolioQuery,
+  useOrderblocksQuery,
+} = api;
