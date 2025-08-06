@@ -145,7 +145,7 @@ export const ArbitrageMOEXPage = () => {
     { key: 'rosn-LKOH', label: 'ROSN/LKOH', element: <StatArbPage tickerStock="ROSN" _tickerFuture="LKOH" /> },
     { key: 'SBER/VTBR', label: 'SBER/VTBR', element: <StatArbPage tickerStock="SBER" _tickerFuture="VTBR" /> },
     { key: 'SBER/CBOM', label: 'SBER/CBOM', element: <StatArbPage tickerStock="SBER" _tickerFuture="CBOM" /> },
-    { key: 'VTBR/CBOM', label: 'VTBR/CBOM', element: <StatArbPage tickerStock="VTBR" _tickerFuture="CBOM" /> },
+    { key: 'VTBR/MOEX', label: 'VTBR/MOEX', element: <StatArbPage tickerStock="VTBR" _tickerFuture="MOEX" /> },
     { key: 'PIKK/SMLT', label: 'PIKK/SMLT', element: <StatArbPage tickerStock="PIKK" _tickerFuture="SMLT" /> },
     { key: 'MTSS/YDEX', label: 'MTSS/YDEX', element: <StatArbPage tickerStock="MTSS" _tickerFuture="YDEX" /> },
     { key: 'GAZP/RUAL', label: 'GAZP/RUAL', element: <StatArbPage tickerStock="GAZP" _tickerFuture="RUAL" /> },

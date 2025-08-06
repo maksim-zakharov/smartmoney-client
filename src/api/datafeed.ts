@@ -103,11 +103,19 @@ export class DataFeed implements IBasicDataFeed {
       const parts = symbolName.split('/');
       Promise.all(
         parts.map((part) =>
-          this.api.instruments.getSecurityByExchangeAndSymbol({
-            symbol: part,
-            exchange: Exchange.MOEX,
-            format: 'Simple',
-          }),
+          part.includes('_xp')
+            ? Promise.resolve({
+                symbol: part,
+                exchange: 'XPBEE',
+                currency: 'USDT',
+                minstep: 0.01,
+                type: '',
+              })
+            : this.api.instruments.getSecurityByExchangeAndSymbol({
+                symbol: part,
+                exchange: Exchange.MOEX,
+                format: 'Simple',
+              }),
         ),
       ).then((instruments) => {
         const obj = instruments.reduce(
@@ -208,14 +216,20 @@ export class DataFeed implements IBasicDataFeed {
       const parts = symbolInfo.ticker.split('/');
       Promise.all(
         parts.map((symbol) =>
-          this.api.instruments.getHistory({
-            symbol: symbol,
-            exchange: symbolInfo.exchange as any,
-            from: Math.max(periodParams.from, 0),
-            to: Math.max(periodParams.to, 1),
-            tf: this.parseTimeframe(resolution),
-            countBack: periodParams.countBack,
-          }),
+          symbol.includes('_xp')
+            ? fetch(
+                `https://176.114.69.4/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbol}&to=${Math.max(periodParams.to, 1)}`,
+              )
+                .then((res) => res.json())
+                .then((d) => ({ history: d, next: null, prev: null }))
+            : this.api.instruments.getHistory({
+                symbol: symbol,
+                exchange: symbolInfo.exchange as any,
+                from: Math.max(periodParams.from, 0),
+                to: Math.max(periodParams.to, 1),
+                tf: this.parseTimeframe(resolution),
+                countBack: periodParams.countBack,
+              }),
         ),
       ).then((res) => {
         const dataIsEmpty = res[0].history.length === 0 || res[1].history.length === 0;
@@ -227,6 +241,8 @@ export class DataFeed implements IBasicDataFeed {
         const newCandles = filteredFuturesCandles
           .map((item, index) => calculateCandle(filteredStockCandles[index], item, this.multiple))
           .filter(Boolean);
+
+        debugger;
 
         onResult(
           newCandles.map(
@@ -278,7 +294,7 @@ export class DataFeed implements IBasicDataFeed {
         .subscribe((resp) => {
           // @ts-ignore
           const data = calculateCandle(resp.left, resp.right, this.multiple);
-          onTick({ ...data, time: data.time * 1000 } as Bar);
+          if (data) onTick({ ...data, time: data.time * 1000 } as Bar);
         });
       Promise.all(
         parts.map((part) =>

@@ -1,6 +1,4 @@
-import { Button, Card, Checkbox, Col, ColorPicker, Form, Input, Layout, Row, Slider, Statistic, Switch, Table, Typography } from 'antd';
-import { TimeframeSelect } from '../../TimeframeSelect';
-import { TickerSelect } from '../../TickerSelect';
+import { Card, Checkbox, Col, ColorPicker, Form, Input, Layout, Row, Slider, Statistic, Switch, Table, Typography } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
@@ -12,9 +10,7 @@ import { LineStyle, Time } from 'lightweight-charts';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
 import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery, useGetSecurityDetailsQuery } from '../../api/alor.api';
-import { DatesPicker } from '../../DatesPicker';
 import { useAppSelector } from '../../store';
-import { FullscreenOutlined } from '@ant-design/icons';
 import { useTdCandlesQuery } from '../../twelveApi';
 import { useCandlesQuery } from '../../api';
 import {
@@ -56,7 +52,7 @@ const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, sma
   const ref = useRef<HTMLDivElement>(null);
   const api = useAppSelector((state) => state.alorSlice.api);
 
-  const datafeed = useMemo(() => (api ? new DataFeed(api as AlorApi, data, multiple) : null), [api, data]);
+  const datafeed = useMemo(() => (api ? new DataFeed(api as AlorApi, data, multiple) : null), [api, data, multiple]);
 
   useEffect(() => {
     if (!ref.current || !datafeed) return;
@@ -83,7 +79,7 @@ const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, sma
       symbol: ticker,
       // width: width || ref.current?.clientWidth,
       height: height || ref.current?.clientHeight,
-      interval: '15' as ResolutionString,
+      interval: '5' as ResolutionString,
       locale: 'ru',
       library_path: process.env.NODE_ENV !== 'production' ? '/assets/charting_library/' : '/smartmoney-client/assets/charting_library/',
       datafeed: datafeed, // this.techChartDatafeedService,
@@ -1117,41 +1113,40 @@ export const StatArbPage = ({
     <Layout>
       <Content style={{ padding: 0, paddingRight: 20 }}>
         <div className={`relative${isFullscreen ? ' fullscreen' : ''}`}>
-          {isSecondForex && (
-            <div
-              style={{
-                top: 8,
-                position: 'absolute',
-                zIndex: 3,
-                left: 8,
-                gap: 8,
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-              }}
-            >
-              <TimeframeSelect value={tf} onChange={setSize} />
-              <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
-              <TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />
-              {/*<Select*/}
-              {/*    value={tickerFuture}*/}
-              {/*    showSearch*/}
-              {/*    placeholder="Введи тикер"*/}
-              {/*    onSelect={onSelectTicker('future')}*/}
-              {/*    filterOption={(input, option) =>*/}
-              {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
-              {/*    }*/}
-              {/*    style={{width: 160}}*/}
-              {/*    options={options}*/}
-              {/*/>*/}
+          {/*<div*/}
+          {/*  style={{*/}
+          {/*    top: 8,*/}
+          {/*    position: 'absolute',*/}
+          {/*    zIndex: 3,*/}
+          {/*    left: 8,*/}
+          {/*    gap: 8,*/}
+          {/*    display: 'flex',*/}
+          {/*    flexWrap: 'wrap',*/}
+          {/*    alignItems: 'center',*/}
+          {/*  }}*/}
+          {/*>*/}
+          {/*  <TimeframeSelect value={tf} onChange={setSize} />*/}
+          {/*  <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />*/}
+          {/*  <TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />*/}
+          {/*  /!*<Select*!/*/}
+          {/*  /!*    value={tickerFuture}*!/*/}
+          {/*  /!*    showSearch*!/*/}
+          {/*  /!*    placeholder="Введи тикер"*!/*/}
+          {/*  /!*    onSelect={onSelectTicker('future')}*!/*/}
+          {/*  /!*    filterOption={(input, option) =>*!/*/}
+          {/*  /!*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*!/*/}
+          {/*  /!*    }*!/*/}
+          {/*  /!*    style={{width: 160}}*!/*/}
+          {/*  /!*    options={options}*!/*/}
+          {/*  /!*/
+          /*/}
 
-              <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
+          {/*  <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />*/}
 
-              <Button icon={<FullscreenOutlined />} onClick={() => setIsFullscreen((prevState) => !prevState)} />
-              <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
-            </div>
-          )}
-          <TWChart ticker={`${tickerStock}/${tickerFuture}`} />
+          {/*  <Button icon={<FullscreenOutlined />} onClick={() => setIsFullscreen((prevState) => !prevState)} />*/}
+          {/*  <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>*/}
+          {/*</div>*/}
+          <TWChart ticker={`${tickerStock}/${tickerFuture}`} multiple={multiple} />
           {/*<TWChart data={data} lineSerieses={ls} />*/}
           {/*<Chart*/}
           {/*  seriesType={seriesType}*/}

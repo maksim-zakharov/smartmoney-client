@@ -364,8 +364,6 @@ export const SmartPage = () => {
             <Col span={span}>
               <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={height} />
             </Col>
-          </Row>
-          <Row>
             {favorites.map((pair) => (
               <Col span={span}>
                 <StatArbPage tickerStock={pair[0]} _tickerFuture={pair[1]} onlyChart height={height} />
