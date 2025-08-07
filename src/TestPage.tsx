@@ -112,7 +112,10 @@ export const TestPage = () => {
   ];
 
   const totalPnL = useMemo(
-    () => (tinkoffPortfolio?.positions || []).filter((p) => p.instrumentType === 'share').reduce((acc, cur) => acc + cur.expectedYield, 0),
+    () =>
+      (tinkoffPortfolio?.positions || [])
+        .filter((p) => ['share', 'futures'].includes(p.instrumentType))
+        .reduce((acc, cur) => acc + cur.expectedYield, 0),
     [tinkoffPortfolio?.positions],
   );
 
