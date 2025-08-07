@@ -68,7 +68,19 @@ export const TestPage = () => {
 
   return (
     <>
-      <Row>
+      <Row gutter={[8, 8]}>
+        <Col span={4}>
+          <Card bordered={false}>
+            <Statistic
+              title={`Портфель ${tinkoffPortfolio?.accountId}`}
+              value={moneyFormat(tinkoffPortfolio?.totalAmountPortfolio || 0)}
+              precision={2}
+              valueStyle={{
+                color: tinkoffPortfolio?.totalAmountPortfolio > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
+              }}
+            />
+          </Card>
+        </Col>
         <Col span={4}>
           <Card bordered={false}>
             <Statistic
