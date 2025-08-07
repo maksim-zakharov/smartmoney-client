@@ -173,6 +173,18 @@ export const TestPage = () => {
             />
           </Card>
         </Col>
+        <Col span={4}>
+          <Card bordered={false}>
+            <Statistic
+              title="Текущий финрез (общий)"
+              value={moneyFormat(totalPnL + totalPnLForex * 80)}
+              precision={2}
+              valueStyle={{
+                color: totalPnL + totalPnLForex * 80 > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
+              }}
+            />
+          </Card>
+        </Col>
       </Row>
       <Table
         style={{ paddingTop: 8 }}
