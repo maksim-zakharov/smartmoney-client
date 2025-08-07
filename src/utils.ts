@@ -935,3 +935,7 @@ export function getTimezone(): { name: string; utcOffset: number; formattedOffse
 function toMskTime(utcDate: Date): Date {
   return new Date(utcDate.toLocaleString('en-US', { timeZone: 'Europe/Moscow' }));
 }
+
+export function normalizePrice(rawPrice: number, digits: number): number {
+  return rawPrice / Math.pow(10, digits);
+}

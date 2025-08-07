@@ -87,6 +87,18 @@ export const api = createApi({
         params,
       }),
     }),
+    getCTraderPositions: builder.query<any, any>({
+      query: (params) => ({
+        url: '/auth/ctrader/positions',
+        params,
+      }),
+    }),
+    getCTraderPositionPnL: builder.query<any, any>({
+      query: (params) => ({
+        url: '/auth/ctrader/positionPnL',
+        params,
+      }),
+    }),
     // candles: builder.query<{ candles: HistoryObject[] }, any>({
     //   query: (params) => ({
     //     url: '/api/candles',
@@ -115,7 +127,9 @@ export const api = createApi({
 });
 
 export const {
+  useGetCTraderPositionPnLQuery,
   useCandlesQuery,
+  useGetCTraderPositionsQuery,
   useGetInstrumentByIdQuery,
   useGetTinkoffPortfolioQuery,
   useGetTinkoffOrdersQuery,

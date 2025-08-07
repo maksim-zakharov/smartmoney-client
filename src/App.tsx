@@ -10,6 +10,8 @@ import { AppsTokenResponse, initApi } from './api/alor.slice';
 import { TestPage } from './TestPage.tsx';
 import {
   useAuthCodeQuery,
+  useGetCTraderPositionPnLQuery,
+  useGetCTraderPositionsQuery,
   useGetTinkoffAccountsQuery,
   useGetTinkoffOrdersQuery,
   useGetTinkoffPortfolioQuery,
@@ -84,6 +86,26 @@ export default function App() {
     },
     {
       skip: !accessToken,
+    },
+  );
+
+  useGetCTraderPositionsQuery(
+    {
+      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !cTraderAccount?.ctidTraderAccountId,
+    },
+  );
+
+  useGetCTraderPositionPnLQuery(
+    {
+      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !cTraderAccount?.ctidTraderAccountId,
     },
   );
 

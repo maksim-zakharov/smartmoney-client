@@ -55,6 +55,8 @@ const initialState = {
 
   cTraderAuth?: AppsTokenResponse;
   cTraderAccount?: any;
+  cTraderPositions?: any;
+  cTraderPositionPnL?: any;
 
   tinkoffAccounts?: any;
   tinkoffPortfolio?: any;
@@ -113,6 +115,12 @@ export const alorSlice = createSlice({
     });
     builder.addMatcher(api.endpoints.getTinkoffOrders.matchFulfilled, (state, { payload }) => {
       state.tinkoffOrders = payload;
+    });
+    builder.addMatcher(api.endpoints.getCTraderPositions.matchFulfilled, (state, { payload }) => {
+      state.cTraderPositions = payload;
+    });
+    builder.addMatcher(api.endpoints.getCTraderPositionPnL.matchFulfilled, (state, { payload }) => {
+      state.cTraderPositionPnL = payload;
     });
     builder.addMatcher(api.endpoints.authCode.matchFulfilled, (state, { payload }) => {
       state.cTraderAuth = payload;

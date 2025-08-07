@@ -3,6 +3,7 @@ import { Card, Col, Row, Statistic, Table } from 'antd';
 import { useAppSelector } from './store';
 import { useGetInstrumentByIdQuery } from './api';
 import { moneyFormat } from './MainPage/MainPage.tsx';
+import { normalizePrice } from './utils.ts';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -11,7 +12,16 @@ const FigiLabel = ({ uid }) => {
 };
 
 export const TestPage = () => {
-  const { tinkoffAccounts, tinkoffPortfolio, tinkoffOrders } = useAppSelector((state) => state.alorSlice);
+  const { tinkoffAccounts, tinkoffPortfolio, tinkoffOrders, cTraderPositions, cTraderPositionPnL } = useAppSelector(
+    (state) => state.alorSlice,
+  );
+
+  const pnl = new Map<number, number>(
+    (cTraderPositionPnL?.positionUnrealizedPnL || []).map((p) => [
+      p.positionId,
+      normalizePrice(parseInt(p.netUnrealizedPnL, 10), cTraderPositionPnL.moneyDigits),
+    ]),
+  );
 
   const portfolioColumns = [
     {
@@ -58,6 +68,33 @@ export const TestPage = () => {
       title: 'expectedYield',
       dataIndex: 'expectedYield',
       key: 'expectedYield',
+    },
+  ];
+
+  const ctraderPositionsColumns = [
+    {
+      title: 'Ticker',
+      dataIndex: 'positionId',
+      key: 'positionId',
+      render: (value, row) => row.tradeData.symbolId,
+    },
+    {
+      title: 'usedMargin',
+      dataIndex: 'usedMargin',
+      key: 'usedMargin',
+      render: (value, row) => normalizePrice(parseInt(row.usedMargin, 10), row.moneyDigits),
+    },
+    {
+      title: 'swap',
+      dataIndex: 'swap',
+      key: 'swap',
+      render: (value, row) => normalizePrice(parseInt(row.swap, 10), row.moneyDigits),
+    },
+    {
+      title: 'expectedYield',
+      dataIndex: 'expectedYield',
+      key: 'expectedYield',
+      render: (value, row) => pnl.get(row.positionId),
     },
   ];
 
@@ -109,6 +146,29 @@ export const TestPage = () => {
                     color: 'rgb(255, 117, 132)',
                   }
                 : record.expectedYield > 0
+                  ? {
+                      backgroundColor: '#15785566',
+                      color: 'rgb(44, 232, 156)',
+                    }
+                  : undefined,
+          };
+        }}
+      />
+      <Table
+        style={{ paddingTop: 8 }}
+        size="small"
+        dataSource={cTraderPositions?.position || []}
+        columns={ctraderPositionsColumns as any}
+        pagination={false}
+        onRow={(record) => {
+          return {
+            style:
+              pnl.get(record.positionId) < 0
+                ? {
+                    backgroundColor: '#d1261b66',
+                    color: 'rgb(255, 117, 132)',
+                  }
+                : pnl.get(record.positionId) > 0
                   ? {
                       backgroundColor: '#15785566',
                       color: 'rgb(44, 232, 156)',

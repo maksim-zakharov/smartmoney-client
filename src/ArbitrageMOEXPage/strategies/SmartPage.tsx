@@ -84,10 +84,6 @@ export const SmartPage = () => {
     },
     {
       label: 'Forex',
-      value: 'forex',
-    },
-    {
-      label: 'Forex Local',
       value: 'forex-local',
     },
     {
@@ -369,18 +365,6 @@ export const SmartPage = () => {
                 <StatArbPage tickerStock={pair[0]} _tickerFuture={pair[1]} onlyChart height={height} />
               </Col>
             ))}
-          </Row>
-        </>
-      )}
-      {tab === 'forex' && (
-        <>
-          <Row gutter={[8, 8]}>
-            <Col span={span}>
-              <StatArbPage tickerStock="FX:USD/CNH" _tickerFuture="UCNY-9.25" multiple={0.01} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="FX:EUR/USD" _tickerFuture="ED-9.25" multiple={0.01} onlyChart height={height} />
-            </Col>
           </Row>
         </>
       )}
