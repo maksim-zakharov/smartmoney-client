@@ -114,6 +114,11 @@ export const TestPage = () => {
     [tinkoffPortfolio?.positions],
   );
 
+  const totalPnLForex = useMemo(
+    () => (cTraderPositions?.position || []).reduce((acc, cur) => acc + pnl.get(cur.positionId), 0),
+    [cTraderPositions?.position, pnl],
+  );
+
   return (
     <>
       <Row gutter={[8, 8]}>
@@ -137,6 +142,18 @@ export const TestPage = () => {
               precision={2}
               valueStyle={{
                 color: totalPnL > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
+              }}
+            />
+          </Card>
+        </Col>
+        <Col span={4}>
+          <Card bordered={false}>
+            <Statistic
+              title="Текущий финрез (forex)"
+              value={moneyFormat(totalPnLForex, 'USD')}
+              precision={2}
+              valueStyle={{
+                color: totalPnLForex > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
               }}
             />
           </Card>
