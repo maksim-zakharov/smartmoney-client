@@ -49,7 +49,9 @@ export const TestPage = () => {
         const map = {
           etf: 'Фонды',
           share: 'Акции',
+          futures: 'Фьючерсы',
           currency: 'Валюты',
+          bond: 'Облигации',
         };
 
         return map[value];
