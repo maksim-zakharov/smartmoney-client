@@ -57,6 +57,7 @@ const initialState = {
   cTraderAccount?: any;
   cTraderPositions?: any;
   cTraderPositionPnL?: any;
+  cTraderSymbols?: any;
 
   tinkoffAccounts?: any;
   tinkoffPortfolio?: any;
@@ -121,6 +122,9 @@ export const alorSlice = createSlice({
     });
     builder.addMatcher(api.endpoints.getCTraderPositionPnL.matchFulfilled, (state, { payload }) => {
       state.cTraderPositionPnL = payload;
+    });
+    builder.addMatcher(api.endpoints.getCTraderSymbols.matchFulfilled, (state, { payload }) => {
+      state.cTraderSymbols = payload;
     });
     builder.addMatcher(api.endpoints.authCode.matchFulfilled, (state, { payload }) => {
       state.cTraderAuth = payload;

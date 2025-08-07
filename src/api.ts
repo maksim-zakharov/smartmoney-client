@@ -43,6 +43,13 @@ export const api = createApi({
     // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://176.114.69.4:3000' : undefined,
     baseUrl: 'https://176.114.69.4',
     // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://localhost:3000' : undefined,
+    paramsSerializer: (params) => {
+      return new URLSearchParams(
+        Object.entries(params).flatMap(([key, value]) =>
+          Array.isArray(value) ? value.map((v) => [key + '[]', String(v)]) : [[key, String(value)]],
+        ),
+      ).toString();
+    },
   }),
   endpoints: (builder) => ({
     candles: builder.query<HistoryObject[], any>({
@@ -99,6 +106,18 @@ export const api = createApi({
         params,
       }),
     }),
+    getCTraderSymbolsById: builder.query<any, any>({
+      query: (params) => ({
+        url: '/auth/ctrader/symbolsById',
+        params,
+      }),
+    }),
+    getCTraderSymbols: builder.query<any, any>({
+      query: (params) => ({
+        url: '/auth/ctrader/symbols',
+        params,
+      }),
+    }),
     // candles: builder.query<{ candles: HistoryObject[] }, any>({
     //   query: (params) => ({
     //     url: '/api/candles',
@@ -127,6 +146,8 @@ export const api = createApi({
 });
 
 export const {
+  useGetCTraderSymbolsQuery,
+  useGetCTraderSymbolsByIdQuery,
   useGetCTraderPositionPnLQuery,
   useCandlesQuery,
   useGetCTraderPositionsQuery,

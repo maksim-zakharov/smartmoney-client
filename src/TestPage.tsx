@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, Col, Row, Statistic, Table } from 'antd';
 import { useAppSelector } from './store';
-import { useGetInstrumentByIdQuery } from './api';
+import { useGetCTraderSymbolsQuery, useGetInstrumentByIdQuery } from './api';
 import { moneyFormat } from './MainPage/MainPage.tsx';
 import { normalizePrice } from './utils.ts';
 
@@ -12,8 +12,19 @@ const FigiLabel = ({ uid }) => {
 };
 
 export const TestPage = () => {
-  const { tinkoffAccounts, tinkoffPortfolio, tinkoffOrders, cTraderPositions, cTraderPositionPnL } = useAppSelector(
-    (state) => state.alorSlice,
+  const { tinkoffAccounts, tinkoffPortfolio, tinkoffOrders, cTraderPositions, cTraderPositionPnL, cTraderAccount, cTraderSymbols } =
+    useAppSelector((state) => state.alorSlice);
+
+  const map = useMemo(() => new Map<number, any>(cTraderSymbols?.map((s) => [s.symbolId, s])), [cTraderSymbols]);
+
+  useGetCTraderSymbolsQuery(
+    {
+      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !cTraderAccount?.ctidTraderAccountId,
+    },
   );
 
   const pnl = new Map<number, number>(
@@ -76,7 +87,7 @@ export const TestPage = () => {
       title: 'Ticker',
       dataIndex: 'positionId',
       key: 'positionId',
-      render: (value, row) => row.tradeData.symbolId,
+      render: (value, row) => map.get(row.tradeData.symbolId)?.symbolName,
     },
     {
       title: 'usedMargin',
