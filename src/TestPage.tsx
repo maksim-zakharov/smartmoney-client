@@ -4,12 +4,20 @@ import { useAppSelector } from './store';
 import { useGetCTraderSymbolsQuery, useGetInstrumentByIdQuery } from './api';
 import { moneyFormat } from './MainPage/MainPage';
 import { normalizePrice } from './utils';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
 
-  return data?.ticker;
+  return (
+    <div className="flex gap-2">
+      <div
+        className="img"
+        style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/${data?.brand.logoName.replace('.png', '')}x160.png")` }}
+      ></div>
+      {data?.ticker}
+    </div>
+  );
 };
 
 export const TestPage = () => {

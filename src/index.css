@@ -255,3 +255,10 @@ body {
 .rowEven{
     background-color: rgba(33, 49, 63, 0.4)
 }
+
+.img{
+    width: 18px;
+    height: 18px;
+    background-size: 100%;
+    border-radius: 50%;
+}
