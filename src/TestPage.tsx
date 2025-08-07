@@ -73,6 +73,23 @@ export const TestPage = () => {
 
   const amount = (tinkoffPortfolio?.totalAmountPortfolio || 0) - bondsMargin;
 
+  const cTraderPositionsMapped = useMemo(() => {
+    const positionMap = (cTraderPositions?.position || []).reduce((acc, curr) => {
+      if (!acc[curr.tradeData.symbolId]) {
+        acc[curr.tradeData.symbolId] = { ...curr, PnL: pnl.get(curr.positionId) };
+      } else {
+        acc[curr.tradeData.symbolId].PnL += pnl.get(curr.positionId);
+        acc[curr.tradeData.symbolId].swap += curr.swap;
+      }
+
+      return acc;
+    }, {});
+
+    return Object.entries(positionMap)
+      .map(([key, value]) => value)
+      .sort((a, b) => b.PnL - a.PnL);
+  }, [cTraderPositions?.position, pnl]);
+
   return (
     <>
       <Row gutter={[8, 8]}>
@@ -167,26 +184,22 @@ export const TestPage = () => {
               <TableHead>Использованная маржа</TableHead>
               <TableHead className="text-right">Своп</TableHead>
               <TableHead className="text-right">Чистая прибыль USDT</TableHead>
+              <TableHead className="text-right">Чистая прибыль RUB</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(cTraderPositions?.position || []).map((invoice, index) => (
+            {cTraderPositionsMapped.map((invoice, index) => (
               <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
                 <TableCell>{map.get(invoice.tradeData.symbolId)?.symbolName}</TableCell>
                 <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
                 <TableCell className={invoice.swap > 0 ? 'text-right profitCell' : invoice.swap < 0 ? 'text-right lossCell' : 'text-right'}>
                   {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}
                 </TableCell>
-                <TableCell
-                  className={
-                    pnl.get(invoice.positionId) > 0
-                      ? 'text-right profitCell'
-                      : pnl.get(invoice.positionId) < 0
-                        ? 'text-right lossCell'
-                        : 'text-right'
-                  }
-                >
-                  {moneyFormat(pnl.get(invoice.positionId), 'USD', 0, 2)}
+                <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>
+                  {moneyFormat(invoice.PnL, 'USD', 0, 2)}
+                </TableCell>
+                <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>
+                  {moneyFormat(invoice.PnL * 80, 'RUB', 0, 2)}
                 </TableCell>
               </TableRow>
             ))}
