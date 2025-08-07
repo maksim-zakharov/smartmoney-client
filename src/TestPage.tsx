@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
-import { Card, Col, Row, Statistic, Table } from 'antd';
+import { Card, Col, Row, Statistic } from 'antd';
 import { useAppSelector } from './store';
 import { useGetCTraderSymbolsQuery, useGetInstrumentByIdQuery } from './api';
-import { moneyFormat } from './MainPage/MainPage.tsx';
-import { normalizePrice } from './utils.ts';
+import { moneyFormat } from './MainPage/MainPage';
+import { normalizePrice } from './utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -33,82 +34,13 @@ export const TestPage = () => {
     ]),
   );
 
-  const portfolioColumns = [
-    {
-      title: 'Ticker',
-      dataIndex: 'instrumentUid',
-      key: 'instrumentUid',
-      render: (value, row) => <FigiLabel uid={value} />,
-    },
-    {
-      title: 'instrumentType',
-      dataIndex: 'instrumentType',
-      key: 'instrumentType',
-      render: (value, row) => {
-        const map = {
-          etf: 'Фонды',
-          share: 'Акции',
-          futures: 'Фьючерсы',
-          currency: 'Валюты',
-          bond: 'Облигации',
-        };
-
-        return map[value];
-      },
-    },
-    {
-      title: 'quantityLots',
-      dataIndex: 'quantityLots',
-      key: 'quantityLots',
-    },
-    {
-      title: 'quantity',
-      dataIndex: 'quantity',
-      key: 'quantity',
-    },
-    {
-      title: 'averagePositionPrice',
-      dataIndex: 'averagePositionPrice',
-      key: 'averagePositionPrice',
-    },
-    {
-      title: 'currentPrice',
-      dataIndex: 'currentPrice',
-      key: 'currentPrice',
-    },
-    {
-      title: 'expectedYield',
-      dataIndex: 'expectedYield',
-      key: 'expectedYield',
-    },
-  ];
-
-  const ctraderPositionsColumns = [
-    {
-      title: 'Ticker',
-      dataIndex: 'positionId',
-      key: 'positionId',
-      render: (value, row) => map.get(row.tradeData.symbolId)?.symbolName,
-    },
-    {
-      title: 'usedMargin',
-      dataIndex: 'usedMargin',
-      key: 'usedMargin',
-      render: (value, row) => normalizePrice(parseInt(row.usedMargin, 10), row.moneyDigits),
-    },
-    {
-      title: 'swap',
-      dataIndex: 'swap',
-      key: 'swap',
-      render: (value, row) => normalizePrice(parseInt(row.swap, 10), row.moneyDigits),
-    },
-    {
-      title: 'expectedYield',
-      dataIndex: 'expectedYield',
-      key: 'expectedYield',
-      render: (value, row) => pnl.get(row.positionId),
-    },
-  ];
+  const instrumentTypeMap = {
+    etf: 'Фонды',
+    share: 'Акции',
+    futures: 'Фьючерсы',
+    currency: 'Валюты',
+    bond: 'Облигации',
+  };
 
   const bondsMargin = useMemo(
     () =>
@@ -185,52 +117,62 @@ export const TestPage = () => {
           </Card>
         </Col>
       </Row>
-      <Table
-        style={{ paddingTop: 8 }}
-        size="small"
-        dataSource={tinkoffPortfolio?.positions || []}
-        columns={portfolioColumns as any}
-        pagination={false}
-        onRow={(record) => {
-          return {
-            style:
-              record.expectedYield < 0
-                ? {
-                    backgroundColor: '#d1261b66',
-                    color: 'rgb(255, 117, 132)',
-                  }
-                : record.expectedYield > 0
-                  ? {
-                      backgroundColor: '#15785566',
-                      color: 'rgb(44, 232, 156)',
-                    }
-                  : undefined,
-          };
-        }}
-      />
-      <Table
-        style={{ paddingTop: 8 }}
-        size="small"
-        dataSource={cTraderPositions?.position || []}
-        columns={ctraderPositionsColumns as any}
-        pagination={false}
-        onRow={(record) => {
-          return {
-            style:
-              pnl.get(record.positionId) < 0
-                ? {
-                    backgroundColor: '#d1261b66',
-                    color: 'rgb(255, 117, 132)',
-                  }
-                : pnl.get(record.positionId) > 0
-                  ? {
-                      backgroundColor: '#15785566',
-                      color: 'rgb(44, 232, 156)',
-                    }
-                  : undefined,
-          };
-        }}
-      />
+      <div className="flex gap-2">
+        <Table wrapperClassName="pt-2">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px]">Инструмент</TableHead>
+              <TableHead>Тип инструмента</TableHead>
+              <TableHead>Лотов</TableHead>
+              <TableHead>Количество</TableHead>
+              <TableHead>Средняя цена позиции</TableHead>
+              <TableHead>Текущая цена</TableHead>
+              <TableHead>Доход</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(tinkoffPortfolio?.positions || []).map((invoice, index) => (
+              <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
+                <TableCell>
+                  <FigiLabel uid={invoice.instrumentUid} />
+                </TableCell>
+                <TableCell>{instrumentTypeMap[invoice.instrumentType]}</TableCell>
+                <TableCell>{invoice.quantityLots}</TableCell>
+                <TableCell>{invoice.quantity}</TableCell>
+                <TableCell>{invoice.averagePositionPrice}</TableCell>
+                <TableCell>{invoice.currentPrice}</TableCell>
+                <TableCell className={invoice.expectedYield > 0 ? 'profitCell' : invoice.expectedYield < 0 ? 'lossCell' : ''}>
+                  {invoice.expectedYield}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Table wrapperClassName="pt-2">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px]">Инструмент</TableHead>
+              <TableHead>Использованная маржа</TableHead>
+              <TableHead>Своп</TableHead>
+              <TableHead>Чистая прибыль USDT</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(cTraderPositions?.position || []).map((invoice, index) => (
+              <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
+                <TableCell>{map.get(invoice.tradeData.symbolId)?.symbolName}</TableCell>
+                <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
+                <TableCell className={invoice.swap > 0 ? 'profitCell' : invoice.swap < 0 ? 'lossCell' : ''}>
+                  {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}
+                </TableCell>
+                <TableCell className={pnl.get(invoice.positionId) > 0 ? 'profitCell' : pnl.get(invoice.positionId) < 0 ? 'lossCell' : ''}>
+                  {moneyFormat(pnl.get(invoice.positionId), 'USD', 0, 2)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </>
   );
 };

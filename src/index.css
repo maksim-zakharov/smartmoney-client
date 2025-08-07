@@ -227,3 +227,31 @@ body {
     width: 100%;
     height: 100vh;
 }
+
+.profitRow{
+    background-color: #15785566;
+    color: rgb(44, 232, 156);
+}
+
+.lossRow{
+    background-color: #d1261b66;
+    color: rgb(255, 117, 132);
+}
+
+.profitCell{
+    /*background-color: #15785566;*/
+    color: rgb(44, 232, 156);
+}
+
+.lossCell{
+    /*background-color: #d1261b66;*/
+    color: rgb(255, 117, 132);
+}
+
+.rowOdd{
+    background: rgb(30, 44, 57)
+}
+
+.rowEven{
+    background-color: rgba(33, 49, 63, 0.4)
+}
