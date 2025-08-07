@@ -111,6 +111,14 @@ export const TestPage = () => {
     },
   ];
 
+  const bondsMargin = useMemo(
+    () =>
+      (tinkoffPortfolio?.positions || [])
+        .filter((p) => ['bond', 'etf'].includes(p.instrumentType))
+        .reduce((acc, cur) => acc + cur.quantity * cur.currentPrice, 0),
+    [tinkoffPortfolio?.positions],
+  );
+
   const totalPnL = useMemo(
     () =>
       (tinkoffPortfolio?.positions || [])
@@ -124,6 +132,8 @@ export const TestPage = () => {
     [cTraderPositions?.position, pnl],
   );
 
+  const amount = (tinkoffPortfolio?.totalAmountPortfolio || 0) - bondsMargin;
+
   return (
     <>
       <Row gutter={[8, 8]}>
@@ -131,10 +141,10 @@ export const TestPage = () => {
           <Card bordered={false}>
             <Statistic
               title={`Портфель ${tinkoffPortfolio?.accountId}`}
-              value={moneyFormat(tinkoffPortfolio?.totalAmountPortfolio || 0)}
+              value={moneyFormat(amount)}
               precision={2}
               valueStyle={{
-                color: tinkoffPortfolio?.totalAmountPortfolio > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
+                color: amount > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
               }}
             />
           </Card>
