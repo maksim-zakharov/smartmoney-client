@@ -22,7 +22,6 @@ export const TestPage = () => {
       ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
     },
     {
-      pollingInterval: 5000,
       skip: !cTraderAccount?.ctidTraderAccountId,
     },
   );
