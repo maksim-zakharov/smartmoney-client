@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from './store';
 import { AppsTokenResponse, initApi } from './api/alor.slice';
 import { TestPage } from './TestPage.tsx';
 import {
+  useAuthAuthQuery,
   useAuthCodeQuery,
   useGetCTraderPositionPnLQuery,
   useGetCTraderPositionsQuery,
@@ -90,6 +91,16 @@ export default function App() {
     },
     {
       skip: !accessToken,
+    },
+  );
+
+  useAuthAuthQuery(
+    {
+      accessToken,
+      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+    },
+    {
+      skip: !accessToken || !cTraderAccount?.ctidTraderAccountId,
     },
   );
 
