@@ -249,11 +249,25 @@ body {
 }
 
 .rowOdd{
-    background: rgb(30, 44, 57)
+    cursor: pointer;
+    background: rgb(30, 44, 57);
+    &:hover{
+
+    background-color: rgb(44,60,75);
+}
 }
 
 .rowEven{
-    background-color: rgba(33, 49, 63, 0.4)
+    cursor: pointer;
+    background-color: rgba(33, 49, 63, 0.4);
+    &:hover{
+
+    background-color: rgb(44,60,75);
+}
+}
+
+.rowHover{
+    background-color: rgb(44,60,75);
 }
 
 .img{

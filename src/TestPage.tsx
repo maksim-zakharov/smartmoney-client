@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, Col, Row, Statistic } from 'antd';
 import { useAppSelector } from './store';
 import { useGetCTraderSymbolsQuery, useGetInstrumentByIdQuery } from './api';
 import { moneyFormat } from './MainPage/MainPage';
 import { normalizePrice } from './utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
+import { cn } from './lib/utils.ts';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -52,6 +53,16 @@ export const TestPage = () => {
       skip: !cTraderAccount?.ctidTraderAccountId,
     },
   );
+
+  const [selected, setSelected] = useState();
+
+  const pairMap = {
+    EURUSD_xp: 'EDU5',
+  };
+
+  const handleSelectForex = (symbol: string) => () => {
+    setSelected(pairMap[symbol]);
+  };
 
   const pnl = new Map<number, number>(
     (cTraderPositionPnL?.positionUnrealizedPnL || []).map((p) => [
@@ -176,7 +187,10 @@ export const TestPage = () => {
           </TableHeader>
           <TableBody>
             {(tinkoffPortfolio?.positions || []).map((invoice, index) => (
-              <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
+              <TableRow
+                key={invoice.invoice}
+                className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === instrumentTypeMap[invoice.instrumentType] && 'rowHover')}
+              >
                 <TableCell>
                   <FigiLabel uid={invoice.instrumentUid} />
                 </TableCell>
@@ -209,7 +223,11 @@ export const TestPage = () => {
           </TableHeader>
           <TableBody>
             {cTraderPositionsMapped.map((invoice, index) => (
-              <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
+              <TableRow
+                key={invoice.invoice}
+                className={index % 2 ? 'rowOdd' : 'rowEven'}
+                onClick={handleSelectForex(map.get(invoice.tradeData.symbolId)?.symbolName)}
+              >
                 <TableCell>
                   <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />
                 </TableCell>
