@@ -20,6 +20,24 @@ const FigiLabel = ({ uid }) => {
   );
 };
 
+const ForexLabel = ({ ticker }) => {
+  const map = {
+    XAUUSD_xp: 'GoldFut2',
+    XAGUSD_xp: 'SilverFut',
+    XPDUSD_xp: 'Palladium',
+    XPTUSD_xp: 'Platinum',
+    USDCNH_xp: 'USDCNY',
+    EURUSD_xp: 'EURUSD3',
+  };
+
+  return (
+    <div className="flex gap-2">
+      <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/${map[ticker]}x160.png")` }}></div>
+      {ticker}
+    </div>
+  );
+};
+
 export const TestPage = () => {
   const { tinkoffAccounts, tinkoffPortfolio, tinkoffOrders, cTraderPositions, cTraderPositionPnL, cTraderAccount, cTraderSymbols } =
     useAppSelector((state) => state.alorSlice);
@@ -190,7 +208,9 @@ export const TestPage = () => {
           <TableBody>
             {cTraderPositionsMapped.map((invoice, index) => (
               <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
-                <TableCell>{map.get(invoice.tradeData.symbolId)?.symbolName}</TableCell>
+                <TableCell>
+                  <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />
+                </TableCell>
                 <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
                 <TableCell className={invoice.swap > 0 ? 'text-right profitCell' : invoice.swap < 0 ? 'text-right lossCell' : 'text-right'}>
                   {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}
