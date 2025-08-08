@@ -162,7 +162,7 @@ export const TestPage = () => {
                   totalPnLForex > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(totalPnLForex)}
+                {moneyFormat(totalPnLForex, 'USD')}
               </CardTitle>
             </CardHeader>
           </Card>
