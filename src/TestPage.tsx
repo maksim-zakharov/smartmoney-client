@@ -186,28 +186,30 @@ export const TestPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(tinkoffPortfolio?.positions || []).map((invoice, index) => (
-              <TableRow
-                key={invoice.invoice}
-                className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === instrumentTypeMap[invoice.instrumentType] && 'rowHover')}
-              >
-                <TableCell>
-                  <FigiLabel uid={invoice.instrumentUid} />
-                </TableCell>
-                <TableCell>{instrumentTypeMap[invoice.instrumentType]}</TableCell>
-                <TableCell>{invoice.quantityLots}</TableCell>
-                <TableCell>{invoice.quantity}</TableCell>
-                <TableCell>{invoice.averagePositionPrice}</TableCell>
-                <TableCell>{invoice.currentPrice}</TableCell>
-                <TableCell
-                  className={
-                    invoice.expectedYield > 0 ? 'text-right profitCell' : invoice.expectedYield < 0 ? 'text-right lossCell' : 'text-right'
-                  }
+            {(tinkoffPortfolio?.positions || [])
+              .filter((r) => ['share', 'futures'].includes(r.instrumentType))
+              .map((invoice, index) => (
+                <TableRow
+                  key={invoice.invoice}
+                  className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === instrumentTypeMap[invoice.instrumentType] && 'rowHover')}
                 >
-                  {moneyFormat(invoice.expectedYield)}
-                </TableCell>
-              </TableRow>
-            ))}
+                  <TableCell>
+                    <FigiLabel uid={invoice.instrumentUid} />
+                  </TableCell>
+                  <TableCell>{instrumentTypeMap[invoice.instrumentType]}</TableCell>
+                  <TableCell>{invoice.quantityLots}</TableCell>
+                  <TableCell>{invoice.quantity}</TableCell>
+                  <TableCell>{invoice.averagePositionPrice}</TableCell>
+                  <TableCell>{invoice.currentPrice}</TableCell>
+                  <TableCell
+                    className={
+                      invoice.expectedYield > 0 ? 'text-right profitCell' : invoice.expectedYield < 0 ? 'text-right lossCell' : 'text-right'
+                    }
+                  >
+                    {moneyFormat(invoice.expectedYield)}
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
         <Table wrapperClassName="pt-2">
