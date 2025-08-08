@@ -7,6 +7,7 @@ import { normalizePrice } from './utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { cn } from './lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
+import { TWChart } from './components/TWChart.tsx';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -57,12 +58,8 @@ export const TestPage = () => {
 
   const [selected, setSelected] = useState();
 
-  const pairMap = {
-    EURUSD_xp: 'EDU5',
-  };
-
   const handleSelectForex = (symbol: string) => () => {
-    setSelected(pairMap[symbol]);
+    setSelected(symbol);
   };
 
   const pnl = new Map<number, number>(
@@ -263,6 +260,7 @@ export const TestPage = () => {
           </TableBody>
         </Table>
       </div>
+      {selected && <TWChart ticker={selected} height={400} multiple={1} small />}
     </>
   );
 };

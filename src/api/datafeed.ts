@@ -71,39 +71,46 @@ export class DataFeed implements IBasicDataFeed {
   resolveSymbol(symbolName: string, onResolve: ResolveCallback, onError: DatafeedErrorCallback, extension?: SymbolResolveExtension): void {
     const isSentetic = symbolName.includes('/');
     if (!isSentetic) {
-      this.api.instruments
-        .getSecurityByExchangeAndSymbol({
-          symbol: symbolName,
-          exchange: Exchange.MOEX,
-          format: 'Simple',
-        })
-        .then((r) => {
-          const precision = getPrecision(r.minstep);
-          const priceScale = Number((10 ** precision).toFixed(precision));
+      (symbolName.includes('_xp')
+        ? Promise.resolve({
+            symbol: symbolName,
+            exchange: 'XPBEE',
+            currency: 'USDT',
+            minstep: 0.01,
+            type: '',
+          })
+        : this.api.instruments.getSecurityByExchangeAndSymbol({
+            symbol: symbolName,
+            exchange: Exchange.MOEX,
+            format: 'Simple',
+          })
+      ).then((r) => {
+        const precision = getPrecision(r.minstep);
+        const priceScale = Number((10 ** precision).toFixed(precision));
 
-          const resolve: LibrarySymbolInfo = {
-            name: r.shortname,
-            ticker: r.symbol,
-            description: r.description,
-            exchange: r.exchange,
-            listed_exchange: r.exchange,
-            currency_code: r.currency,
-            minmov: Math.round(r.minstep * priceScale),
-            pricescale: priceScale,
-            format: 'price',
-            type: r.type ?? '',
-            has_empty_bars: false,
-            has_intraday: true,
-            has_seconds: true,
-            has_weekly_and_monthly: true,
-            weekly_multipliers: ['1', '2'],
-            monthly_multipliers: ['1', '3', '6', '12'],
-            timezone: 'Europe/Moscow',
-            session: '0700-0000,0000-0200:1234567',
-          };
+        const resolve: LibrarySymbolInfo = {
+          name: r.shortname,
+          ticker: r.symbol,
+          description: r.description,
+          exchange: r.exchange,
+          listed_exchange: r.exchange,
+          currency_code: r.currency,
+          minmov: Math.round(r.minstep * priceScale),
+          pricescale: priceScale,
+          format: 'price',
+          type: r.type ?? '',
+          has_empty_bars: false,
+          has_intraday: true,
+          has_seconds: true,
+          has_weekly_and_monthly: true,
+          weekly_multipliers: ['1', '2'],
+          monthly_multipliers: ['1', '3', '6', '12'],
+          timezone: 'Europe/Moscow',
+          session: '0700-0000,0000-0200:1234567',
+        };
 
-          onResolve(resolve);
-        });
+        onResolve(resolve);
+      });
     } else {
       const parts = symbolName.split('/');
       Promise.all(
@@ -190,33 +197,38 @@ export class DataFeed implements IBasicDataFeed {
     }
     const isSentetic = symbolInfo.ticker.includes('/');
     if (!isSentetic) {
-      this.api.instruments
-        .getHistory({
-          symbol: symbolInfo.ticker,
-          exchange: symbolInfo.exchange as any,
-          from: Math.max(periodParams.from, 0),
-          to: Math.max(periodParams.to, 1),
-          tf: this.parseTimeframe(resolution),
-          countBack: periodParams.countBack,
-        })
-        .then((res) => {
-          const dataIsEmpty = res.history.length === 0;
+      (symbolInfo.ticker.includes('_xp')
+        ? fetch(
+            `https://176.114.69.4/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
+          )
+            .then((res) => res.json())
+            .then((d) => ({ history: d, next: null, prev: null }))
+        : this.api.instruments.getHistory({
+            symbol: symbolInfo.ticker,
+            exchange: symbolInfo.exchange as any,
+            from: Math.max(periodParams.from, 0),
+            to: Math.max(periodParams.to, 1),
+            tf: this.parseTimeframe(resolution),
+            countBack: periodParams.countBack,
+          })
+      ).then((res) => {
+        const dataIsEmpty = res.history.length === 0;
 
-          const nextTime = periodParams.firstDataRequest ? res.next : res.prev;
-          onResult(
-            res.history.map(
-              (x) =>
-                ({
-                  ...x,
-                  time: x.time * 1000,
-                }) as Bar,
-            ),
-            {
-              noData: dataIsEmpty,
-              nextTime: dataIsEmpty ? nextTime : undefined,
-            },
-          );
-        });
+        const nextTime = periodParams.firstDataRequest ? res.next : res.prev;
+        onResult(
+          res.history.map(
+            (x) =>
+              ({
+                ...x,
+                time: x.time * 1000,
+              }) as Bar,
+          ),
+          {
+            noData: dataIsEmpty,
+            nextTime: dataIsEmpty ? nextTime : undefined,
+          },
+        );
+      });
     } else {
       const parts = symbolInfo.ticker.split('/');
       Promise.all(
