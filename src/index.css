@@ -46,7 +46,7 @@
 .dark {
     --background: rgb(23, 35, 46);
     --foreground: rgb(166, 189, 213);
-    --card: oklch(0.145 0 0);
+    --card: rgb(30, 44, 57);
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.145 0 0);
     --popover-foreground: oklch(0.985 0 0);

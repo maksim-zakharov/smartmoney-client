@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Card, Col, Row, Statistic } from 'antd';
+import { Col, Row } from 'antd';
 import { useAppSelector } from './store';
 import { useGetCTraderSymbolsQuery, useGetInstrumentByIdQuery } from './api';
 import { moneyFormat } from './MainPage/MainPage';
 import { normalizePrice } from './utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
-import { cn } from './lib/utils.ts';
+import { cn } from './lib/utils';
+import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -125,51 +126,63 @@ export const TestPage = () => {
     <>
       <Row gutter={[8, 8]}>
         <Col span={4}>
-          <Card bordered={false}>
-            <Statistic
-              title={`Портфель ${tinkoffPortfolio?.accountId}`}
-              value={moneyFormat(amount)}
-              precision={2}
-              valueStyle={{
-                color: amount > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
-              }}
-            />
+          <Card>
+            <CardHeader>
+              <CardDescription>Портфель {tinkoffPortfolio?.accountId}</CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  amount > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(amount)}
+              </CardTitle>
+            </CardHeader>
           </Card>
         </Col>
         <Col span={4}>
-          <Card bordered={false}>
-            <Statistic
-              title="Текущий финрез (акции)"
-              value={moneyFormat(totalPnL)}
-              precision={2}
-              valueStyle={{
-                color: totalPnL > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
-              }}
-            />
+          <Card>
+            <CardHeader>
+              <CardDescription>Текущий финрез (акции)</CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  totalPnL > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(totalPnL)}
+              </CardTitle>
+            </CardHeader>
           </Card>
         </Col>
         <Col span={4}>
-          <Card bordered={false}>
-            <Statistic
-              title="Текущий финрез (forex)"
-              value={moneyFormat(totalPnLForex, 'USD')}
-              precision={2}
-              valueStyle={{
-                color: totalPnLForex > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
-              }}
-            />
+          <Card>
+            <CardHeader>
+              <CardDescription>Текущий финрез (forex)</CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  totalPnLForex > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(totalPnLForex)}
+              </CardTitle>
+            </CardHeader>
           </Card>
         </Col>
         <Col span={4}>
-          <Card bordered={false}>
-            <Statistic
-              title="Текущий финрез (общий)"
-              value={moneyFormat(totalPnL + totalPnLForex * 80)}
-              precision={2}
-              valueStyle={{
-                color: totalPnL + totalPnLForex * 80 > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
-              }}
-            />
+          <Card>
+            <CardHeader>
+              <CardDescription>Текущий финрез (общий)</CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  totalPnL + totalPnLForex > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(totalPnL + totalPnLForex * 80)}
+              </CardTitle>
+            </CardHeader>
           </Card>
         </Col>
       </Row>
