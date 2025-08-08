@@ -110,6 +110,7 @@ export const TestPage = () => {
         acc[curr.tradeData.symbolId].PnL += pnl.get(curr.positionId);
         acc[curr.tradeData.symbolId].swap += curr.swap;
         acc[curr.tradeData.symbolId].volume += curr.tradeData.volume;
+        acc[curr.tradeData.symbolId].usedMargin += curr.usedMargin;
       }
 
       return acc;
