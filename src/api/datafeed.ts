@@ -39,14 +39,14 @@ export class DataFeed implements IBasicDataFeed {
     this.ctidTraderAccountId = options.ctidTraderAccountId;
 
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
-    this.ctraderUrl = 'http://176.114.69.4';
+    this.ctraderUrl = 'https://176.114.69.4';
   }
 
   // In constructor or onReady, init ws if needed.
 
   private initWs() {
     if (!this.ws) {
-      this.ws = io(`${this.ctraderUrl}/ctrader-ws`, {
+      this.ws = io(`http://176.114.69.4:3000/ctrader-ws`, {
         transports: ['websocket'],
       });
       this.ws.on('connect', () => console.log('WS connected'));
@@ -219,7 +219,7 @@ export class DataFeed implements IBasicDataFeed {
     if (!isSentetic) {
       (symbolInfo.ticker.includes('_xp')
         ? fetch(
-            `${this.ctraderUrl}/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
+            `${this.ctraderUrl}/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}`,
           )
             .then((res) => res.json())
             .then((d) => ({ history: d, next: null, prev: null }))
