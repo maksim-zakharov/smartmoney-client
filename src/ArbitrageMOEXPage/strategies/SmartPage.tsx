@@ -298,7 +298,7 @@ export const SmartPage = () => {
     ['LKOH', 'SIBN'],
     // ['IVAT', 'ASTR'],
     // ['CNRU', 'PHOR'],
-    ['VTBR', 'MOEX'],
+    // ['VTBR', 'MOEX'],
     ['RAGR', 'RUAL'],
     ['SFIN', 'MBNK'],
   ];

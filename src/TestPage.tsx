@@ -7,13 +7,13 @@ import { normalizePrice } from './utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { cn } from './lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
-import { TWChart } from './components/TWChart.tsx';
+import { TWChart } from './components/TWChart';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1">
       <div
         className="img"
         style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/${data?.brand.logoName.replace('.png', '')}x160.png")` }}
@@ -34,7 +34,7 @@ const ForexLabel = ({ ticker }) => {
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1">
       <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/${map[ticker]}x160.png")` }}></div>
       {ticker}
     </div>
