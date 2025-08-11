@@ -1,7 +1,6 @@
 import { Card, Checkbox, Col, ColorPicker, Form, Input, Layout, Row, Slider, Statistic, Switch, Table, Typography } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
-import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { calculateMultiple, createRectangle2, getCommonCandles } from '../../utils';
@@ -680,27 +679,28 @@ export const StatArbPage = ({
           <>
             <div
               style={
-                isSecondForex
-                  ? {
-                      top: 8,
-                      position: 'absolute',
-                      zIndex: 3,
-                      left: 8,
-                      gap: 8,
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                    }
-                  : {
-                      bottom: 38,
-                      position: 'absolute',
-                      zIndex: 3,
-                      left: 8,
-                      gap: 8,
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                    }
+                // isSecondForex
+                //   ? {
+                //       top: 8,
+                //       position: 'absolute',
+                //       zIndex: 3,
+                //       left: 8,
+                //       gap: 8,
+                //       display: 'flex',
+                //       flexWrap: 'wrap',
+                //       alignItems: 'center',
+                //     }
+                //   :
+                {
+                  bottom: 38,
+                  position: 'absolute',
+                  zIndex: 3,
+                  left: 8,
+                  gap: 8,
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                }
               }
             >
               {/*<TimeframeSelect value={tf} onChange={setSize} />*/}
@@ -775,23 +775,23 @@ export const StatArbPage = ({
               </div>
             </div>
             {/*<TWChart data={data} />*/}
-            {!isSecondForex ? (
-              <TWChart ticker={`${tickerStock}/${tickerFuture}`} height={height} multiple={multiple} small={onlyChart} />
-            ) : (
-              <Chart
-                seriesType={seriesType}
-                hideCross
-                lineSerieses={ls}
-                primitives={[]}
-                markers={[]}
-                toolTipTop="40px"
-                toolTipLeft="4px"
-                data={data}
-                ema={[]}
-                height={height}
-                maximumFractionDigits={3}
-              />
-            )}
+            {/*{!isSecondForex ? (*/}
+            <TWChart ticker={`${tickerStock}/${tickerFuture}`} height={height} multiple={multiple} small={onlyChart} />
+            {/*) : (*/}
+            {/*  <Chart*/}
+            {/*    seriesType={seriesType}*/}
+            {/*    hideCross*/}
+            {/*    lineSerieses={ls}*/}
+            {/*    primitives={[]}*/}
+            {/*    markers={[]}*/}
+            {/*    toolTipTop="40px"*/}
+            {/*    toolTipLeft="4px"*/}
+            {/*    data={data}*/}
+            {/*    ema={[]}*/}
+            {/*    height={height}*/}
+            {/*    maximumFractionDigits={3}*/}
+            {/*  />*/}
+            {/*)}*/}
             {/*<Chart*/}
             {/*  seriesType={seriesType}*/}
             {/*  hideCross*/}

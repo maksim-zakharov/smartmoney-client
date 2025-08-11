@@ -3,6 +3,7 @@ import { AlorApi, Endpoint, WssEndpoint, WssEndpointBeta } from 'alor-api';
 import { alorApi } from './alor.api';
 import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/services/ClientInfoService/ClientInfoService';
 import { api } from '../api.ts';
+import { io, Socket } from 'socket.io-client';
 
 type Settings = {
   token: string;
@@ -21,6 +22,12 @@ export interface AppsTokenResponse {
   description: null;
 }
 
+const ws = io(`http://176.114.69.4:3000/ctrader-ws`, {
+  transports: ['websocket'],
+});
+ws.on('connect', () => console.log('WS connected'));
+ws.on('disconnect', () => console.log('WS disconnected'));
+
 const initialState = {
   api: undefined,
   agreementsMap: {},
@@ -28,6 +35,7 @@ const initialState = {
   lastWithdrawals: [],
   release: undefined,
   apiAuth: false,
+  ws,
   darkColors: {
     backgroundColor: 'rgb(30,44,57)',
     color: 'rgb(166,189,213)',
@@ -45,6 +53,7 @@ const initialState = {
     color: string;
     borderColor: string;
   };
+  ws: Socket;
   api: undefined | AlorApi;
   apiAuth: boolean;
   userInfo: UserInfoResponse;

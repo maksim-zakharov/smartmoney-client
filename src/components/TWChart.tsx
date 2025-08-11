@@ -24,11 +24,13 @@ import {
 export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, small }: any) => {
   const ref = useRef<HTMLDivElement>(null);
   const api = useAppSelector((state) => state.alorSlice.api);
+  const ws = useAppSelector((state) => state.alorSlice.ws);
   const cTraderAccount = useAppSelector((state) => state.alorSlice.cTraderAccount);
 
   const datafeed = useMemo(
-    () => (api ? new DataFeed({ api: api as AlorApi, data, multiple, ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId }) : null),
-    [api, data, multiple],
+    () =>
+      api ? new DataFeed({ ws, api: api as AlorApi, data, multiple, ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId }) : null,
+    [ws, api, cTraderAccount?.ctidTraderAccountId, data, multiple],
   );
 
   useEffect(() => {

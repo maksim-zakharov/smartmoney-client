@@ -32,11 +32,12 @@ export class DataFeed implements IBasicDataFeed {
 
   private ws: Socket | null = null; // Add to class
 
-  constructor(options: { ctidTraderAccountId?: number; data?: HistoryObject[]; multiple: number; api: AlorApi }) {
+  constructor(options: { ws: Socket; ctidTraderAccountId?: number; data?: HistoryObject[]; multiple: number; api: AlorApi }) {
     this.api = options.api;
     this.data = options.data;
     this.multiple = options.multiple;
     this.ctidTraderAccountId = options.ctidTraderAccountId;
+    this.ws = options.ws;
 
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
     this.ctraderUrl = 'https://176.114.69.4';
@@ -314,8 +315,8 @@ export class DataFeed implements IBasicDataFeed {
         this.ws.emit('subscribe_candle', { symbol, tf });
 
         // Listen for updates
-        const eventHandler = (data: HistoryObject) => {
-          onTick({ ...data, time: data.time * 1000 } as Bar);
+        const eventHandler = (data: { symbol: string; tf: string; candle: HistoryObject }) => {
+          if (data.tf === tf && data.symbol === symbol) onTick({ ...data.candle, time: data.candle.time * 1000 } as Bar);
         };
         this.ws.on('candle', eventHandler);
 
