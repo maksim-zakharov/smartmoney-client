@@ -15,10 +15,11 @@ import {
   SubscribeBarsCallback,
   SymbolResolveExtension,
 } from '../assets/charting_library';
-import { AlorApi, Exchange, Format, HistoryObject } from 'alor-api';
+import { AlorApi, Exchange, Format, HistoryObject, Timeframe } from 'alor-api';
 import { getCommonCandles, getPrecision } from '../utils';
 import { calculateCandle } from '../../symbolFuturePairs';
 import { BehaviorSubject, combineLatest, filter, startWith } from 'rxjs';
+import { io, Socket } from 'socket.io-client';
 
 export class DataFeed implements IBasicDataFeed {
   private readonly subscriptions = new Map<string, any[]>();
@@ -27,11 +28,29 @@ export class DataFeed implements IBasicDataFeed {
   private readonly multiple: number;
   private readonly ctidTraderAccountId?: number;
 
+  private readonly ctraderUrl: string;
+
+  private ws: Socket | null = null; // Add to class
+
   constructor(options: { ctidTraderAccountId?: number; data?: HistoryObject[]; multiple: number; api: AlorApi }) {
     this.api = options.api;
     this.data = options.data;
     this.multiple = options.multiple;
     this.ctidTraderAccountId = options.ctidTraderAccountId;
+
+    this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
+  }
+
+  // In constructor or onReady, init ws if needed.
+
+  private initWs() {
+    if (!this.ws) {
+      this.ws = io(`${this.ctraderUrl}/ctrader-ws`, {
+        transports: ['websocket'],
+      });
+      this.ws.on('connect', () => console.log('WS connected'));
+      this.ws.on('disconnect', () => console.log('WS disconnected'));
+    }
   }
 
   getServerTime?(callback: ServerTimeCallback): void {
@@ -199,7 +218,7 @@ export class DataFeed implements IBasicDataFeed {
     if (!isSentetic) {
       (symbolInfo.ticker.includes('_xp')
         ? fetch(
-            `https://176.114.69.4/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
+            `${this.ctraderUrl}/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
           )
             .then((res) => res.json())
             .then((d) => ({ history: d, next: null, prev: null }))
@@ -235,7 +254,7 @@ export class DataFeed implements IBasicDataFeed {
         parts.map((symbol) =>
           symbol.includes('_xp')
             ? fetch(
-                `https://176.114.69.4/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbol}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
+                `${this.ctraderUrl}/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbol}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
               )
                 .then((res) => res.json())
                 .then((d) => ({ history: d, next: null, prev: null }))
@@ -283,18 +302,46 @@ export class DataFeed implements IBasicDataFeed {
     onResetCacheNeededCallback: () => void,
   ): void {
     const parts = symbolInfo.ticker.split('/');
-    if (parts.length === 0) {
-      this.api.subscriptions
-        .candles(
-          {
-            code: parts[0],
-            exchange: symbolInfo.exchange,
-            format: Format.Simple,
-            tf: this.parseTimeframe(resolution),
+    const isForex = symbolInfo.ticker.includes('_xp');
+    if (parts.length === 1) {
+      if (isForex) {
+        this.initWs();
+        const symbol = symbolInfo.ticker.replace('_xp', ''); // Adjust if needed
+        const tf = this.parseTimeframe(resolution) as Timeframe; // Ensure it matches Timeframe enum
+
+        // Subscribe to WS
+        this.ws.emit('subscribe_candle', { symbol, tf });
+
+        // Listen for updates
+        const eventHandler = (data: HistoryObject) => {
+          onTick({ ...data, time: data.time * 1000 } as Bar);
+        };
+        this.ws.on('candle', eventHandler);
+
+        // Store for unsubscribe: e.g., this.subscriptions.set(listenerGuid, () => {
+        //   this.ws.emit('unsubscribe_candle', { symbol, tf });
+        //   this.ws.off('candle', eventHandler);
+        // });
+        this.subscriptions.set(listenerGuid, [
+          () => {
+            this.ws.emit('unsubscribe_candle', { symbol, tf });
+            this.ws.off('candle', eventHandler);
           },
-          (data) => onTick({ ...data, time: data.time * 1000 } as Bar),
-        )
-        .then((unsub) => this.subscriptions.set(listenerGuid, [unsub]));
+        ]);
+        return;
+      } else {
+        this.api.subscriptions
+          .candles(
+            {
+              code: parts[0],
+              exchange: symbolInfo.exchange,
+              format: Format.Simple,
+              tf: this.parseTimeframe(resolution),
+            },
+            (data) => onTick({ ...data, time: data.time * 1000 } as Bar),
+          )
+          .then((unsub) => this.subscriptions.set(listenerGuid, [unsub]));
+      }
     } else {
       const lastCandles = {
         [parts[0]]: new BehaviorSubject<HistoryObject>(null),
@@ -311,19 +358,52 @@ export class DataFeed implements IBasicDataFeed {
           const data = calculateCandle(resp.left, resp.right, this.multiple);
           if (data) onTick({ ...data, time: data.time * 1000 } as Bar);
         });
-      Promise.all(
-        parts.map((part) =>
-          this.api.subscriptions.candles(
+
+      const secondProm = () => {
+        const symbol = parts[1]; // Adjust if needed
+        if (isForex) {
+          this.initWs();
+          const tf = this.parseTimeframe(resolution) as Timeframe; // Ensure it matches Timeframe enum
+
+          // Subscribe to WS
+          this.ws.emit('subscribe_candle', { symbol, tf });
+
+          // Listen for updates
+          const eventHandler = (data: HistoryObject) => lastCandles[symbol].next(data);
+          this.ws.on('candle', eventHandler);
+
+          // Store for unsubscribe: e.g., this.subscriptions.set(listenerGuid, () => {
+          //   this.ws.emit('unsubscribe_candle', { symbol, tf });
+          //   this.ws.off('candle', eventHandler);
+          // });
+          return Promise.resolve(() => {
+            this.ws.emit('unsubscribe_candle', { symbol, tf });
+            this.ws.off('candle', eventHandler);
+          });
+        } else {
+          return this.api.subscriptions.candles(
             {
-              code: part,
+              code: symbol,
               exchange: symbolInfo.exchange,
               format: Format.Simple,
               tf: this.parseTimeframe(resolution),
             },
-            (data) => lastCandles[part].next(data),
-          ),
+            (data) => lastCandles[symbol].next(data),
+          );
+        }
+      };
+      Promise.all([
+        this.api.subscriptions.candles(
+          {
+            code: parts[0],
+            exchange: symbolInfo.exchange,
+            format: Format.Simple,
+            tf: this.parseTimeframe(resolution),
+          },
+          (data) => lastCandles[parts[0]].next(data),
         ),
-      ).then((unsubs) => this.subscriptions.set(listenerGuid, unsubs));
+        secondProm(),
+      ]).then((unsubs) => this.subscriptions.set(listenerGuid, unsubs));
     }
   }
   unsubscribeBars(listenerGuid: string): void {
