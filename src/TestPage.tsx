@@ -119,6 +119,8 @@ export const TestPage = () => {
       .sort((a, b) => b.PnL - a.PnL);
   }, [cTraderPositions?.position, pnl]);
 
+  const total = totalPnL + totalPnLForex * 80;
+
   return (
     <>
       <Row gutter={[8, 8]}>
@@ -174,10 +176,10 @@ export const TestPage = () => {
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  totalPnL + totalPnLForex > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                  total > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(totalPnL + totalPnLForex * 80)}
+                {moneyFormat(total)}
               </CardTitle>
             </CardHeader>
           </Card>
