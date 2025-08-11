@@ -148,7 +148,7 @@ export const StatArbPage = ({
     },
     {
       pollingInterval: 5000,
-      skip: !isSecondForex,
+      skip: true, // !isSecondForex,
     },
   );
 

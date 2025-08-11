@@ -316,7 +316,8 @@ export class DataFeed implements IBasicDataFeed {
 
         // Listen for updates
         const eventHandler = (data: { symbol: string; tf: string; candle: HistoryObject }) => {
-          if (data.tf === tf && data.symbol === symbol) onTick({ ...data.candle, time: data.candle.time * 1000 } as Bar);
+          if (data.tf.toString() === tf.toString() && data.symbol === symbol)
+            onTick({ ...data.candle, time: data.candle.time * 1000 } as Bar);
         };
         this.ws.on('candle', eventHandler);
 
@@ -371,7 +372,9 @@ export class DataFeed implements IBasicDataFeed {
           this.ws.emit('subscribe_candle', { symbol, tf });
 
           // Listen for updates
-          const eventHandler = (data: HistoryObject) => lastCandles[symbol].next(data);
+          const eventHandler = (data: { symbol: string; tf: string; candle: HistoryObject }) => {
+            if (data.tf.toString() === tf.toString() && data.symbol === symbol) lastCandles[symbol].next(data.candle);
+          };
           this.ws.on('candle', eventHandler);
 
           // Store for unsubscribe: e.g., this.subscriptions.set(listenerGuid, () => {
