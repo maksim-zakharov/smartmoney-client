@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AlorApi, Endpoint, WssEndpoint, WssEndpointBeta } from 'alor-api';
 import { alorApi } from './alor.api';
 import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/services/ClientInfoService/ClientInfoService';
-import { api } from '../api.ts';
+import { api } from '../api';
 import { io, Socket } from 'socket.io-client';
 
 type Settings = {
