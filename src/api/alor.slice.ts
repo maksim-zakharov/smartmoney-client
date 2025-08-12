@@ -22,7 +22,10 @@ export interface AppsTokenResponse {
   description: null;
 }
 
-const ws = io(`http://176.114.69.4:3000/ctrader-ws`, {
+const url = 'http://176.114.69.4:3000';
+// const url = 'http://localhost:3000';
+
+const ws = io(`${url}/ctrader-ws`, {
   transports: ['websocket'],
 });
 ws.on('connect', () => console.log('WS connected'));
