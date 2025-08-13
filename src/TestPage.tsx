@@ -32,6 +32,7 @@ const ForexLabel = ({ ticker }) => {
     XPTUSD_xp: 'Platinum',
     USDCNH_xp: 'USDCNY',
     EURUSD_xp: 'EURUSD3',
+    CUCUSD_xp: 'Co',
   };
 
   return (
