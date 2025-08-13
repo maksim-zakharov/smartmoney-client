@@ -123,6 +123,19 @@ export const TestPage = () => {
 
   const total = totalPnL + totalPnLForex * 80;
 
+  const tinkoffPositionsMap = useMemo(
+    () =>
+      (tinkoffPortfolio?.positions || []).reduce((acc, curr) => {
+        if (!acc[curr.instrumentType]) {
+          acc[curr.instrumentType] = [];
+        }
+        acc[curr.instrumentType].push(curr);
+
+        return acc;
+      }, {}),
+    [tinkoffPortfolio?.positions],
+  );
+
   return (
     <>
       <Row gutter={[8, 8]}>
@@ -187,23 +200,28 @@ export const TestPage = () => {
           </Card>
         </Col>
       </Row>
-      <div className="flex gap-2">
-        <Table wrapperClassName="pt-2">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Инструмент</TableHead>
-              <TableHead>Тип инструмента</TableHead>
-              <TableHead>Лотов</TableHead>
-              <TableHead>Количество</TableHead>
-              <TableHead>Средняя цена позиции</TableHead>
-              <TableHead>Текущая цена</TableHead>
-              <TableHead className="text-right">Доход</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(tinkoffPortfolio?.positions || [])
-              .filter((r) => ['share', 'futures'].includes(r.instrumentType))
-              .map((invoice, index) => (
+      <div className="grid grid-cols-3 gap-2">
+        {Object.entries(tinkoffPositionsMap).map(([key, value]) => (
+          <Table wrapperClassName="pt-2">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px] text-center" colSpan={7}>
+                  {instrumentTypeMap[key]}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Инструмент</TableHead>
+                <TableHead>Лотов</TableHead>
+                <TableHead>Количество</TableHead>
+                <TableHead>Средняя цена позиции</TableHead>
+                <TableHead>Текущая цена</TableHead>
+                <TableHead className="text-right">Доход</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {value.map((invoice, index) => (
                 <TableRow
                   key={invoice.invoice}
                   className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === instrumentTypeMap[invoice.instrumentType] && 'rowHover')}
@@ -211,7 +229,6 @@ export const TestPage = () => {
                   <TableCell>
                     <FigiLabel uid={invoice.instrumentUid} />
                   </TableCell>
-                  <TableCell>{instrumentTypeMap[invoice.instrumentType]}</TableCell>
                   <TableCell>{invoice.quantityLots}</TableCell>
                   <TableCell>{invoice.quantity}</TableCell>
                   <TableCell>{invoice.averagePositionPrice}</TableCell>
@@ -225,9 +242,17 @@ export const TestPage = () => {
                   </TableCell>
                 </TableRow>
               ))}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        ))}
         <Table wrapperClassName="pt-2">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px] text-center" colSpan={6}>
+                Forex
+              </TableHead>
+            </TableRow>
+          </TableHeader>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[200px]">Инструмент</TableHead>
