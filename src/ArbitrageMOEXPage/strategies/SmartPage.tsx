@@ -299,7 +299,7 @@ export const SmartPage = () => {
     // ['IVAT', 'ASTR'],
     // ['CNRU', 'PHOR'],
     // ['VTBR', 'MOEX'],
-    ['RAGR', 'RUAL'],
+    // ['RAGR', 'RUAL'],
     ['SFIN', 'MBNK'],
   ];
 
@@ -333,7 +333,7 @@ export const SmartPage = () => {
       <Segmented value={tab} style={{ margin: '8px auto' }} onChange={setTab} options={options} />
       {tab === 'others' && (
         <>
-          <Row gutter={[8, 8]}>
+          <Row>
             {filteredOthers.map((item) => (
               <Col span={span}>
                 <StatArbPage tickerStock={item.left} _tickerFuture={item.right} onlyChart height={height} />
@@ -370,7 +370,7 @@ export const SmartPage = () => {
       )}
       {tab === 'forex-local' && (
         <>
-          <Row gutter={[8, 8]}>
+          <Row>
             <Col span={span}>
               <StatArbPage tickerStock="UCNY-9.25" _tickerFuture="USDCNH_xp" multi={1000} onlyChart height={height} />
             </Col>
@@ -489,7 +489,7 @@ export const SmartPage = () => {
 
       {tab === 'triangle' && (
         <>
-          <Row gutter={[8, 8]}>
+          <Row>
             <Col span={span}>
               <Triangle_Page
                 first="EURRUBF"
