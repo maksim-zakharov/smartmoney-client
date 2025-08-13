@@ -2,9 +2,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AlorApi, Endpoint, WssEndpoint, WssEndpointBeta } from 'alor-api';
 import { alorApi } from './alor.api';
 import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/services/ClientInfoService/ClientInfoService';
-import { api } from './api.ts';
 import { io, Socket } from 'socket.io-client';
 import { tinkoffApi } from './tinkoff.api.ts';
+import { ctraderApi } from './ctrader.api.ts';
 
 type Settings = {
   token: string;
@@ -136,22 +136,22 @@ export const alorSlice = createSlice({
     builder.addMatcher(tinkoffApi.endpoints.getTinkoffOrders.matchFulfilled, (state, { payload }) => {
       state.tinkoffOrders = payload;
     });
-    builder.addMatcher(api.endpoints.getCTraderPositions.matchFulfilled, (state, { payload }) => {
+    builder.addMatcher(ctraderApi.endpoints.getCTraderPositions.matchFulfilled, (state, { payload }) => {
       state.cTraderPositions = payload;
     });
-    builder.addMatcher(api.endpoints.getCTraderPositionPnL.matchFulfilled, (state, { payload }) => {
+    builder.addMatcher(ctraderApi.endpoints.getCTraderPositionPnL.matchFulfilled, (state, { payload }) => {
       state.cTraderPositionPnL = payload;
     });
-    builder.addMatcher(api.endpoints.getCTraderSymbols.matchFulfilled, (state, { payload }) => {
+    builder.addMatcher(ctraderApi.endpoints.getCTraderSymbols.matchFulfilled, (state, { payload }) => {
       state.cTraderSymbols = payload;
     });
-    builder.addMatcher(api.endpoints.authCode.matchFulfilled, (state, { payload }) => {
+    builder.addMatcher(ctraderApi.endpoints.authCode.matchFulfilled, (state, { payload }) => {
       state.cTraderAuth = payload;
       if (state.cTraderAuth.accessToken) {
         localStorage.setItem('cTraderAuth', JSON.stringify(state.cTraderAuth));
       }
     });
-    builder.addMatcher(api.endpoints.selectAccount.matchFulfilled, (state, { payload }) => {
+    builder.addMatcher(ctraderApi.endpoints.selectAccount.matchFulfilled, (state, { payload }) => {
       state.cTraderAccount = payload[0];
     });
     // builder.addMatcher(goApi.endpoints.getAdGroup.matchPending, _resetAdGroupError);
