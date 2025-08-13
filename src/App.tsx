@@ -14,7 +14,7 @@ import {
   useGetCTraderPositionPnLQuery,
   useGetCTraderPositionsQuery,
   useSelectAccountQuery,
-} from './api/api';
+} from './api/ctrader.api';
 import { ThemeProvider } from './components/theme-provider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
 import { Label } from './components/ui/label';
@@ -78,9 +78,7 @@ export default function App() {
   );
 
   useSelectAccountQuery(
-    {
-      accessToken,
-    },
+    {},
     {
       skip: !accessToken,
     },
@@ -88,7 +86,6 @@ export default function App() {
 
   useAuthAuthQuery(
     {
-      accessToken,
       ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
     },
     {
@@ -163,7 +160,7 @@ export default function App() {
     navigate(params.key);
   }
 
-  const handleCTraderLogin = () => (window.location.href = `https://176.114.69.4/auth?redirect_uri=${encodeURIComponent(redirect_uri)}`);
+  const handleCTraderLogin = () => (window.location.href = `https://176.114.69.4/ctrader?redirect_uri=${encodeURIComponent(redirect_uri)}`);
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">

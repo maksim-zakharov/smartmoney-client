@@ -59,48 +59,6 @@ export const api = createApi({
         params,
       }),
     }),
-    authCode: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/code',
-        params,
-      }),
-    }),
-    authAuth: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/auth',
-        params,
-      }),
-    }),
-    selectAccount: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/selectAccount',
-        params,
-      }),
-    }),
-    getCTraderPositions: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/ctrader/positions',
-        params,
-      }),
-    }),
-    getCTraderPositionPnL: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/ctrader/positionPnL',
-        params,
-      }),
-    }),
-    getCTraderSymbolsById: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/ctrader/symbolsById',
-        params,
-      }),
-    }),
-    getCTraderSymbols: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/ctrader/symbols',
-        params,
-      }),
-    }),
     // candles: builder.query<{ candles: HistoryObject[] }, any>({
     //   query: (params) => ({
     //     url: '/api/candles',
@@ -128,16 +86,4 @@ export const api = createApi({
   }),
 });
 
-export const {
-  useGetCTraderSymbolsQuery,
-  useAuthAuthQuery,
-  useGetCTraderSymbolsByIdQuery,
-  useGetCTraderPositionPnLQuery,
-  useCandlesQuery,
-  useGetCTraderPositionsQuery,
-  useSelectAccountQuery,
-  useSecurityQuery,
-  useAuthCodeQuery,
-  usePortfolioQuery,
-  useOrderblocksQuery,
-} = api;
+export const { useCandlesQuery, useSecurityQuery, usePortfolioQuery, useOrderblocksQuery } = api;

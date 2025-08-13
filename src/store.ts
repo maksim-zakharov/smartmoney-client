@@ -5,6 +5,7 @@ import { alorSlice } from './api/alor.slice';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import { twelveApi } from './twelveApi.ts';
 import { tinkoffApi } from './api/tinkoff.api.ts';
+import { ctraderApi } from './api/ctrader.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -12,6 +13,7 @@ export const reducers = {
   [twelveApi.reducerPath]: twelveApi.reducer,
   [tinkoffApi.reducerPath]: tinkoffApi.reducer,
   [alorSlice.name]: alorSlice.reducer,
+  [ctraderApi.reducerPath]: ctraderApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -26,6 +28,7 @@ export const store = configureStore({
       .concat(alorApi.middleware)
       .concat(twelveApi.middleware)
       .concat(tinkoffApi.middleware)
+      .concat(ctraderApi.middleware)
       .concat(api.middleware) as any,
 });
 

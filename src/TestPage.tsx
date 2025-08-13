@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Col, Row } from 'antd';
 import { useAppSelector } from './store';
-import { useGetCTraderSymbolsQuery } from './api/api';
 import { moneyFormat } from './MainPage/MainPage';
 import { normalizePrice } from './utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
@@ -9,6 +8,7 @@ import { cn } from './lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 import { TWChart } from './components/TWChart';
 import { useGetInstrumentByIdQuery } from './api/tinkoff.api';
+import { useGetCTraderSymbolsQuery } from './api/ctrader.api';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
