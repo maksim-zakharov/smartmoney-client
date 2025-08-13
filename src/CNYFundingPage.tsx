@@ -4,7 +4,7 @@ import { fetchCandlesFromAlor, fetchRisk, fetchRiskRates, getSecurity, refreshTo
 import { notTradingTime } from './sm-lib/utils';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useSearchParams } from 'react-router-dom';
-import { Security } from './api';
+import { Security } from './api/api.ts';
 import { Card, Col, Input, Layout, Row, Statistic, Table } from 'antd';
 import { Content } from 'antd/es/layout/layout';
 import { TickerSelect } from './TickerSelect';

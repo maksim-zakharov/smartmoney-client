@@ -2,8 +2,9 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AlorApi, Endpoint, WssEndpoint, WssEndpointBeta } from 'alor-api';
 import { alorApi } from './alor.api';
 import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/services/ClientInfoService/ClientInfoService';
-import { api } from '../api';
+import { api } from './api.ts';
 import { io, Socket } from 'socket.io-client';
+import { tinkoffApi } from './tinkoff.api.ts';
 
 type Settings = {
   token: string;
@@ -50,6 +51,8 @@ const initialState = {
   ctidTraderAccountId: undefined,
 
   settings: JSON.parse(localStorage.getItem('settings') || '{}'),
+
+  tToken: localStorage.getItem('tiToken'),
 } as {
   darkColors: {
     backgroundColor: string;
@@ -74,6 +77,7 @@ const initialState = {
   tinkoffAccounts?: any;
   tinkoffPortfolio?: any;
   tinkoffOrders?: any;
+  tToken?: string;
 };
 
 export const alorSlice = createSlice({
@@ -95,6 +99,9 @@ export const alorSlice = createSlice({
       }
 
       state.release?.();
+    },
+    setTiToken(state, action: PayloadAction<string>) {
+      state.tToken = action.payload;
     },
     updateDarkColors(state, action: PayloadAction<typeof initialState.darkColors>) {
       state.darkColors = { ...state.darkColors, ...action.payload };
@@ -120,13 +127,13 @@ export const alorSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addMatcher(api.endpoints.getTinkoffAccounts.matchFulfilled, (state, { payload }) => {
+    builder.addMatcher(tinkoffApi.endpoints.getTinkoffAccounts.matchFulfilled, (state, { payload }) => {
       state.tinkoffAccounts = payload;
     });
-    builder.addMatcher(api.endpoints.getTinkoffPortfolio.matchFulfilled, (state, { payload }) => {
+    builder.addMatcher(tinkoffApi.endpoints.getTinkoffPortfolio.matchFulfilled, (state, { payload }) => {
       state.tinkoffPortfolio = payload;
     });
-    builder.addMatcher(api.endpoints.getTinkoffOrders.matchFulfilled, (state, { payload }) => {
+    builder.addMatcher(tinkoffApi.endpoints.getTinkoffOrders.matchFulfilled, (state, { payload }) => {
       state.tinkoffOrders = payload;
     });
     builder.addMatcher(api.endpoints.getCTraderPositions.matchFulfilled, (state, { payload }) => {
@@ -171,4 +178,4 @@ export const alorSlice = createSlice({
   },
 });
 
-export const { initApi, updateDarkColors, acquire, setSettings, logout } = alorSlice.actions;
+export const { initApi, setTiToken, updateDarkColors, acquire, setSettings, logout } = alorSlice.actions;

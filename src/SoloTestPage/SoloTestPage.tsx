@@ -22,7 +22,7 @@ import { isBusinessDay, isUTCTimestamp, LineStyle, Time } from 'lightweight-char
 import { DatesPicker } from '../DatesPicker';
 import { SessionHighlighting } from '../lwc-plugins/session-highlighting';
 import { calculateTesting } from '../sm-lib/th_ultimate';
-import { Security, useOrderblocksQuery } from '../api';
+import { Security, useOrderblocksQuery } from '../api/api.ts';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import { moneyFormat } from '../MainPage/MainPage';

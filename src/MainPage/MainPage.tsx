@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Col, Row, Select, Slider, SliderSingleProps, Space, Tabs, TabsProps, theme } from 'antd';
-import { useCandlesQuery, usePortfolioQuery, useSecurityQuery } from '../api';
+import { useCandlesQuery, usePortfolioQuery, useSecurityQuery } from '../api/api.ts';
 import moment, { Moment } from 'moment';
 import { useSearchParams } from 'react-router-dom';
 import useWindowDimensions from '../useWindowDimensions';

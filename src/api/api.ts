@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-import { HistoryObject } from './sm-lib/models';
+import { HistoryObject } from '../sm-lib/models.ts';
 
 export interface Security {
   symbol: string;
@@ -42,6 +42,7 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({
     // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://176.114.69.4:3000' : undefined,
     baseUrl: 'https://176.114.69.4',
+    // baseUrl: 'http://localhost:3000',
     // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://localhost:3000' : undefined,
     paramsSerializer: (params) => {
       return new URLSearchParams(
@@ -73,30 +74,6 @@ export const api = createApi({
     selectAccount: builder.query<any, any>({
       query: (params) => ({
         url: '/auth/selectAccount',
-        params,
-      }),
-    }),
-    getTinkoffAccounts: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/tinkoff/accounts',
-        params,
-      }),
-    }),
-    getTinkoffPortfolio: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/tinkoff/portfolio',
-        params,
-      }),
-    }),
-    getTinkoffOrders: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/tinkoff/orders',
-        params,
-      }),
-    }),
-    getInstrumentById: builder.query<any, any>({
-      query: (params) => ({
-        url: '/auth/tinkoff/instrumentById',
         params,
       }),
     }),
@@ -158,10 +135,6 @@ export const {
   useGetCTraderPositionPnLQuery,
   useCandlesQuery,
   useGetCTraderPositionsQuery,
-  useGetInstrumentByIdQuery,
-  useGetTinkoffPortfolioQuery,
-  useGetTinkoffOrdersQuery,
-  useGetTinkoffAccountsQuery,
   useSelectAccountQuery,
   useSecurityQuery,
   useAuthCodeQuery,

@@ -6,28 +6,27 @@ import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
 import { ArbitrageBYBITPage } from './ArbitrageBYBITPage/ArbitrageBYBITPage';
 import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
-import { AppsTokenResponse, initApi } from './api/alor.slice';
-import { TestPage } from './TestPage.tsx';
+import { AppsTokenResponse, initApi, setTiToken } from './api/alor.slice';
+import { TestPage } from './TestPage';
 import {
   useAuthAuthQuery,
   useAuthCodeQuery,
   useGetCTraderPositionPnLQuery,
   useGetCTraderPositionsQuery,
-  useGetTinkoffAccountsQuery,
-  useGetTinkoffOrdersQuery,
-  useGetTinkoffPortfolioQuery,
   useSelectAccountQuery,
-} from './api.ts';
-import { ThemeProvider } from './components/theme-provider.tsx';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
-import { Label } from './components/ui/label.tsx';
-import { Input } from './components/ui/input.tsx';
+} from './api/api';
+import { ThemeProvider } from './components/theme-provider';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
+import { Label } from './components/ui/label';
+import { Input } from './components/ui/input';
+import { useGetTinkoffAccountsQuery, useGetTinkoffOrdersQuery, useGetTinkoffPortfolioQuery } from './api/tinkoff.api';
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const api = useAppSelector((state) => state.alorSlice.api);
+  const tiToken = useAppSelector((state) => state.alorSlice.tToken);
   const { accessToken } = useAppSelector((state) => state.alorSlice.cTraderAuth || ({} as AppsTokenResponse));
   const cTraderAccount = useAppSelector((state) => state.alorSlice.cTraderAccount);
 
@@ -38,15 +37,10 @@ export default function App() {
   const redirect_uri =
     process.env.NODE_ENV !== 'production' ? 'http://localhost:5173/' : `https://maksim-zakharov.github.io/smartmoney-client/`;
 
-  const tiToken = localStorage.getItem('tiToken');
   const tiBrokerAccountId = localStorage.getItem('tiBrokerAccountId');
 
-  useEffect(() => {}, []);
-
   useGetTinkoffAccountsQuery(
-    {
-      token: tiToken,
-    },
+    {},
     {
       pollingInterval: 5000,
       skip: !tiToken,
@@ -55,7 +49,6 @@ export default function App() {
 
   useGetTinkoffPortfolioQuery(
     {
-      token: tiToken,
       brokerAccountId: tiBrokerAccountId,
     },
     {
@@ -66,7 +59,6 @@ export default function App() {
 
   useGetTinkoffOrdersQuery(
     {
-      token: tiToken,
       brokerAccountId: tiBrokerAccountId,
     },
     {
@@ -151,13 +143,12 @@ export default function App() {
 
   const [aToken, setAToken] = useState<string | null>(localStorage.getItem('token'));
   const handleEditAToken = (e) => {
-    setTiToken(e.target.value);
+    setAToken(e.target.value);
     localStorage.setItem('token', e.target.value);
   };
 
-  const [tToken, setTiToken] = useState<string | null>(localStorage.getItem('tiToken'));
   const handleEditToken = (e) => {
-    setTiToken(e.target.value);
+    dispatch(setTiToken(e.target.value));
     localStorage.setItem('tiToken', e.target.value);
   };
 
@@ -204,7 +195,7 @@ export default function App() {
                   <Label htmlFor="alorToken">Алор Токен</Label>
                   <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
                   <Label htmlFor="tToken">Тинькофф Токен</Label>
-                  <Input id="tToken" value={tToken} onChange={handleEditToken} />
+                  <Input id="tToken" value={tiToken} onChange={handleEditToken} />
                   <Label htmlFor="tBrokerAccountId">Тинькофф BrokerAccountId</Label>
                   <Input id="tBrokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
                 </div>

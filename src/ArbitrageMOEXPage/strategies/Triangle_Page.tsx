@@ -15,7 +15,7 @@ import { useTdCandlesQuery } from '../../twelveApi.ts';
 import { Exchange } from 'alor-api';
 import { useAppSelector } from '../../store.ts';
 import { DatesPicker } from '../../DatesPicker.tsx';
-import { useCandlesQuery } from '../../api.ts';
+import { useCandlesQuery } from '../../api/api.ts';
 
 export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart, height, seriesType = 'Candlestick' }: any) => {
   // 3.21 6.20 9.19 12.18
