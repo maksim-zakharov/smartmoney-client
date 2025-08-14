@@ -21,6 +21,49 @@ import { calculateCandle } from '../../symbolFuturePairs';
 import { BehaviorSubject, combineLatest, filter, startWith } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 
+const resolveOneSymbol = ({ api, symbolName }: { api: AlorApi; symbolName: string }) => {
+  return (
+    symbolName.includes('_xp')
+      ? Promise.resolve({
+          symbol: symbolName,
+          exchange: 'XPBEE',
+          currency: 'USDT',
+          minstep: 0.01,
+          type: '',
+        })
+      : api.instruments.getSecurityByExchangeAndSymbol({
+          symbol: symbolName,
+          exchange: Exchange.MOEX,
+          format: 'Simple',
+        })
+  ).then((r) => {
+    const precision = getPrecision(r.minstep);
+    const priceScale = Number((10 ** precision).toFixed(precision));
+
+    const resolve: LibrarySymbolInfo = {
+      name: r.shortname,
+      ticker: r.symbol,
+      description: r.description,
+      exchange: r.exchange,
+      listed_exchange: r.exchange,
+      currency_code: r.currency,
+      minmov: Math.round(r.minstep * priceScale),
+      pricescale: priceScale,
+      format: 'price',
+      type: r.type ?? '',
+      has_empty_bars: false,
+      has_intraday: true,
+      has_seconds: true,
+      has_weekly_and_monthly: true,
+      weekly_multipliers: ['1', '2'],
+      monthly_multipliers: ['1', '3', '6', '12'],
+      timezone: 'Europe/Moscow',
+      session: '0700-0000,0000-0200:1234567',
+    };
+    return resolve;
+  });
+};
+
 export class DataFeed implements IBasicDataFeed {
   private readonly subscriptions = new Map<string, any[]>();
   private readonly api: AlorApi;
@@ -92,46 +135,10 @@ export class DataFeed implements IBasicDataFeed {
   resolveSymbol(symbolName: string, onResolve: ResolveCallback, onError: DatafeedErrorCallback, extension?: SymbolResolveExtension): void {
     const isSentetic = symbolName.includes('/');
     if (!isSentetic) {
-      (symbolName.includes('_xp')
-        ? Promise.resolve({
-            symbol: symbolName,
-            exchange: 'XPBEE',
-            currency: 'USDT',
-            minstep: 0.01,
-            type: '',
-          })
-        : this.api.instruments.getSecurityByExchangeAndSymbol({
-            symbol: symbolName,
-            exchange: Exchange.MOEX,
-            format: 'Simple',
-          })
-      ).then((r) => {
-        const precision = getPrecision(r.minstep);
-        const priceScale = Number((10 ** precision).toFixed(precision));
-
-        const resolve: LibrarySymbolInfo = {
-          name: r.shortname,
-          ticker: r.symbol,
-          description: r.description,
-          exchange: r.exchange,
-          listed_exchange: r.exchange,
-          currency_code: r.currency,
-          minmov: Math.round(r.minstep * priceScale),
-          pricescale: priceScale,
-          format: 'price',
-          type: r.type ?? '',
-          has_empty_bars: false,
-          has_intraday: true,
-          has_seconds: true,
-          has_weekly_and_monthly: true,
-          weekly_multipliers: ['1', '2'],
-          monthly_multipliers: ['1', '3', '6', '12'],
-          timezone: 'Europe/Moscow',
-          session: '0700-0000,0000-0200:1234567',
-        };
-
-        onResolve(resolve);
-      });
+      resolveOneSymbol({
+        api: this.api,
+        symbolName,
+      }).then(onResolve);
     } else {
       const parts = symbolName.split('/');
       Promise.all(
@@ -270,15 +277,19 @@ export class DataFeed implements IBasicDataFeed {
               }),
         ),
       ).then((res) => {
-        const dataIsEmpty = res[0].history.length === 0 || res[1].history.length === 0;
+        const dataIsEmpty = res.some((r) => !r.history.length);
 
-        const nextTime = periodParams.firstDataRequest ? res[0].next || res[1].next : res[0].prev || res[1].prev;
+        const nextTime = periodParams.firstDataRequest ? res.find((r) => r.next)?.next : res.find((r) => r.prev)?.prev;
 
-        const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(res[0].history, res[1].history);
+        let newCandles = res[0].history;
 
-        const newCandles = filteredFuturesCandles
-          .map((item, index) => calculateCandle(filteredStockCandles[index], item, this.multiple))
-          .filter(Boolean);
+        for (let i = 1; i < res.length; i++) {
+          const { filteredStockCandles, filteredFuturesCandles } = getCommonCandles(newCandles, res[i].history);
+
+          newCandles = filteredFuturesCandles
+            .map((item, index) => calculateCandle(filteredStockCandles[index], item, i === res.length - 1 ? this.multiple : 1))
+            .filter(Boolean);
+        }
 
         onResult(
           newCandles.map(

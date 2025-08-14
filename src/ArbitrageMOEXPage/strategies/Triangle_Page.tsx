@@ -16,6 +16,7 @@ import { Exchange } from 'alor-api';
 import { useAppSelector } from '../../store.ts';
 import { DatesPicker } from '../../DatesPicker.tsx';
 import { useCandlesQuery } from '../../api/api.ts';
+import { TWChart } from '../../components/TWChart.tsx';
 
 export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart, height, seriesType = 'Candlestick' }: any) => {
   // 3.21 6.20 9.19 12.18
@@ -555,19 +556,21 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
           {/*</Radio.Group>*/}
           {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
         </div>
-        <Chart
-          hideCross
-          height={height}
-          lineSerieses={ls}
-          primitives={primitives}
-          seriesType={seriesType}
-          markers={[]}
-          toolTipTop="40px"
-          toolTipLeft="4px"
-          data={data}
-          ema={[]}
-          maximumFractionDigits={4}
-        />
+        {/*<Chart*/}
+        {/*  hideCross*/}
+        {/*  height={height}*/}
+        {/*  lineSerieses={ls}*/}
+        {/*  primitives={primitives}*/}
+        {/*  seriesType={seriesType}*/}
+        {/*  markers={[]}*/}
+        {/*  toolTipTop="40px"*/}
+        {/*  toolTipLeft="4px"*/}
+        {/*  data={data}*/}
+        {/*  ema={[]}*/}
+        {/*  maximumFractionDigits={4}*/}
+        {/*/>*/}
+
+        <TWChart ticker={`${first}/${second}/${third}`} height={height} multiple={multiple} small={onlyChart} />
       </div>
     );
   }
