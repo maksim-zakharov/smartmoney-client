@@ -94,8 +94,8 @@ export const SmartPage = () => {
       value: 'uc-triangle',
     },
     {
-      label: 'Триноги',
-      value: 'triangle',
+      label: 'GD-Триноги',
+      value: 'gd-triangle',
     },
     {
       label: 'Другие',
@@ -713,18 +713,6 @@ export const SmartPage = () => {
           <Row>
             <Col span={span}>
               <Triangle_Page
-                first="USDRUBF"
-                second="CNYRUBF"
-                third={`UCNY-${expirationMonth}`}
-                multiple={1}
-                noExp
-                onlyChart
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <Triangle_Page
                 first="GLDRUBF"
                 second={`USDRUBF`}
                 third={`GOLD-${expirationMonth}`}
@@ -738,30 +726,6 @@ export const SmartPage = () => {
             </Col>
             <Col span={span}>
               <Triangle_Page
-                first="USDRUBF"
-                second={`CNY-${expirationMonth}`}
-                third={`UCNY-${expirationMonth}`}
-                onlyChart
-                multiple={1}
-                rate={0.17}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-              {/*<SI_GOLD_Page*/}
-              {/*  first="USDRUBF"*/}
-              {/*  second={`CNY-${expirationMonth}`}*/}
-              {/*  third={`UCNY-${expirationMonth}`}*/}
-              {/*  onlyChart*/}
-              {/*  multiple={1}*/}
-              {/*  rate={0.17}*/}
-              {/*  noExp*/}
-              {/*  height={height}*/}
-              {/*  seriesType="Line"*/}
-              {/*/>*/}
-            </Col>
-            <Col span={span}>
-              <Triangle_Page
                 first="GLDRUBF"
                 second={`SI-${expirationMonth}`}
                 third={`GOLD-${expirationMonth}`}
@@ -772,26 +736,42 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-              {/*<SI_GOLD_Page*/}
-              {/*  first="GLDRUBF"*/}
-              {/*  second={`SI-${expirationMonth}`}*/}
-              {/*  third={`GOLD-${expirationMonth}`}*/}
-              {/*  onlyChart*/}
-              {/*  multiple={31100}*/}
-              {/*  rate={0.18}*/}
-              {/*  noExp*/}
-              {/*  height={height}*/}
-              {/*  seriesType="Line"*/}
-              {/*/>*/}
             </Col>
             <Col span={span}>
               <Triangle_Page
-                first={`EU-${expirationMonth}`}
-                second={`SI-${expirationMonth}`}
-                third={`EURUSD_xp`}
-                multiple={1}
-                noExp
+                first={`GL-${expirationMonth}`}
+                second={`USDRUBF`}
+                third={`GOLD-${expirationMonth}`}
                 onlyChart
+                multiple={31.1}
+                rate={0.18}
+                noExp
+                height={height}
+                seriesType="Line"
+              />
+            </Col>
+            <Col span={span}>
+              <Triangle_Page
+                first={`GL-${expirationMonth}`}
+                second={`SI-${expirationMonth}`}
+                third={`GOLD-${expirationMonth}`}
+                onlyChart
+                multiple={31100}
+                rate={0.18}
+                noExp
+                height={height}
+                seriesType="Line"
+              />
+            </Col>
+            <Col span={span}>
+              <Triangle_Page
+                first="GLDRUBF"
+                second={`USDRUBF`}
+                third={`XAUUSD_xp`}
+                onlyChart
+                multiple={31100}
+                rate={0.18}
+                noExp
                 height={height}
                 seriesType="Line"
               />
@@ -808,30 +788,85 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-              {/*<SI_GOLD_Page*/}
-              {/*  first="GLDRUBF"*/}
-              {/*  second={`SI-${expirationMonth}`}*/}
-              {/*  third={`GOLD-${expirationMonth}`}*/}
-              {/*  onlyChart*/}
-              {/*  multiple={31100}*/}
-              {/*  rate={0.18}*/}
-              {/*  noExp*/}
-              {/*  height={height}*/}
-              {/*  seriesType="Line"*/}
-              {/*/>*/}
             </Col>
             <Col span={span}>
               <Triangle_Page
-                first={`SI-${expirationMonth}`}
-                second={`CNY-${expirationMonth}`}
-                third={`UCNY-${expirationMonth}`}
-                multiple={0.001}
-                noExp
+                first={`GL-${expirationMonth}`}
+                second={`USDRUBF`}
+                third={`XAUUSD_xp`}
                 onlyChart
+                multiple={31100}
+                rate={0.18}
+                noExp
                 height={height}
                 seriesType="Line"
               />
             </Col>
+            <Col span={span}>
+              <Triangle_Page
+                first={`GL-${expirationMonth}`}
+                second={`SI-${expirationMonth}`}
+                third={`XAUUSD_xp`}
+                onlyChart
+                multiple={31100000}
+                rate={0.18}
+                noExp
+                height={height}
+                seriesType="Line"
+              />
+            </Col>
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first="GLDRUBF"*/}
+            {/*    second={`EURRUBF`}*/}
+            {/*    third={`XAUEUR_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={31100}*/}
+            {/*    rate={0.18}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first="GLDRUBF"*/}
+            {/*    second={`EU-${expirationMonth}`}*/}
+            {/*    third={`XAUEUR_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={31100000}*/}
+            {/*    rate={0.18}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first={`GL-${expirationMonth}`}*/}
+            {/*    second={`EURRUBF`}*/}
+            {/*    third={`XAUEUR_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={31100}*/}
+            {/*    rate={0.18}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first={`GL-${expirationMonth}`}*/}
+            {/*    second={`EU-${expirationMonth}`}*/}
+            {/*    third={`XAUEUR_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={31100000}*/}
+            {/*    rate={0.18}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
           </Row>
         </>
       )}
