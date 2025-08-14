@@ -270,6 +270,7 @@ export const ArbitrageMOEXPage = () => {
     <Layout style={{ margin: -8 }}>
       <Sider>
         <Menu
+          style={{ overflow: 'auto', height: 'calc(100vh - 36px)' }}
           theme="dark"
           defaultSelectedKeys={[selectedKey]}
           mode="inline"
