@@ -18,7 +18,7 @@ import {
 import { AlorApi, Exchange, Format, HistoryObject, Timeframe } from 'alor-api';
 import { getCommonCandles, getPrecision } from '../utils';
 import { calculateCandle } from '../../symbolFuturePairs';
-import { BehaviorSubject, combineLatest, filter, startWith } from 'rxjs';
+import { BehaviorSubject, combineLatest, filter } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 
 const resolveOneSymbol = ({ api, symbolName }: { api: AlorApi; symbolName: string }) => {
@@ -357,24 +357,36 @@ export class DataFeed implements IBasicDataFeed {
           .then((unsub) => this.subscriptions.set(listenerGuid, [unsub]));
       }
     } else {
-      const lastCandles = {
-        [parts[0]]: new BehaviorSubject<HistoryObject>(null),
-        [parts[1]]: new BehaviorSubject<HistoryObject>(null),
-      };
+      const lastCandles = parts.reduce((acc, curr) => {
+        acc[curr] = new BehaviorSubject<HistoryObject>(null);
+        return acc;
+      }, {});
 
-      combineLatest({
-        left: lastCandles[parts[0]].pipe(startWith(null)),
-        right: lastCandles[parts[1]].pipe(startWith(null)),
-      })
-        .pipe(filter((val) => val.left?.time === val.right?.time))
+      combineLatest(Object.values<HistoryObject>(lastCandles))
+        .pipe(
+          filter((val) => {
+            for (let i = 1; i < val.length; i++) {
+              if (val[i]?.time !== val[i - 1]?.time) {
+                return false;
+              }
+            }
+            if (val.some((v) => !v)) {
+              return false;
+            }
+
+            return true;
+          }),
+        )
         .subscribe((resp) => {
-          // @ts-ignore
-          const data = calculateCandle(resp.left, resp.right, this.multiple);
-          if (data) onTick({ ...data, time: data.time * 1000 } as Bar);
+          let newCandle = resp[0];
+
+          for (let i = 1; i < resp.length; i++) {
+            newCandle = calculateCandle(newCandle, resp[i], i === resp.length - 1 ? this.multiple : 1);
+          }
+          if (newCandle) onTick({ ...newCandle, time: newCandle.time * 1000 } as Bar);
         });
 
-      const secondProm = () => {
-        const symbol = parts[1]; // Adjust if needed
+      const secondProm = (symbol: string) => {
         if (isForex) {
           this.initWs();
           const tf = this.parseTimeframe(resolution) as Timeframe; // Ensure it matches Timeframe enum
@@ -408,18 +420,7 @@ export class DataFeed implements IBasicDataFeed {
           );
         }
       };
-      Promise.all([
-        this.api.subscriptions.candles(
-          {
-            code: parts[0],
-            exchange: symbolInfo.exchange,
-            format: Format.Simple,
-            tf: this.parseTimeframe(resolution),
-          },
-          (data) => lastCandles[parts[0]].next(data),
-        ),
-        secondProm(),
-      ]).then((unsubs) => this.subscriptions.set(listenerGuid, unsubs));
+      Promise.all([parts.map(secondProm)]).then((unsubs) => this.subscriptions.set(listenerGuid, unsubs));
     }
   }
   unsubscribeBars(listenerGuid: string): void {
