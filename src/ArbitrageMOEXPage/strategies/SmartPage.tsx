@@ -2,7 +2,6 @@ import { StatArbPage } from './StatArbPage';
 import React, { useMemo } from 'react';
 import { Col, Input, Pagination, Radio, Row, Segmented, Select, Space } from 'antd';
 import { Triangle_Page } from './Triangle_Page';
-import { SI_GOLD_Page } from './SI_GOLD_Page';
 import { SegmentedLabeledOption } from 'rc-segmented';
 import { useSearchParams } from 'react-router-dom';
 import { TimeframeSelect } from '../../TimeframeSelect.tsx';
@@ -85,6 +84,14 @@ export const SmartPage = () => {
     {
       label: 'Forex',
       value: 'forex-local',
+    },
+    {
+      label: 'ED-Триноги',
+      value: 'ed-triangle',
+    },
+    {
+      label: 'UC-Триноги',
+      value: 'uc-triangle',
     },
     {
       label: 'Триноги',
@@ -487,21 +494,223 @@ export const SmartPage = () => {
         </>
       )}
 
+      {tab === 'uc-triangle' && (
+        <Row>
+          <Col span={span}>
+            <Triangle_Page
+              first="USDRUBF"
+              second="CNYRUBF"
+              third={`UCNY-${expirationMonth}`}
+              multiple={1}
+              noExp
+              onlyChart
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              second="CNYRUBF"
+              first={`SI-${expirationMonth}`}
+              third={`UCNY-${expirationMonth}`}
+              onlyChart
+              multiple={0.001}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              second={`CNY-${expirationMonth}`}
+              first={`USDRUBF`}
+              third={`UCNY-${expirationMonth}`}
+              onlyChart
+              multiple={1}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              second={`CNY-${expirationMonth}`}
+              first={`SI-${expirationMonth}`}
+              third={`UCNY-${expirationMonth}`}
+              onlyChart
+              multiple={0.001}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              second="CNYRUBF"
+              first="USDRUBF"
+              third={`USDCNH_xp`}
+              multiple={10}
+              noExp
+              onlyChart
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              second="CNYRUBF"
+              first={`SI-${expirationMonth}`}
+              third={`USDCNH_xp`}
+              onlyChart
+              multiple={0.01}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              second={`CNY-${expirationMonth}`}
+              first={`USDRUBF`}
+              third={`USDCNH_xp`}
+              onlyChart
+              multiple={10}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              second={`CNY-${expirationMonth}`}
+              first={`SI-${expirationMonth}`}
+              third={`USDCNH_xp`}
+              onlyChart
+              multiple={0.01}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+        </Row>
+      )}
+
+      {tab === 'ed-triangle' && (
+        <Row>
+          <Col span={span}>
+            <Triangle_Page
+              first="EURRUBF"
+              second="USDRUBF"
+              third={`ED-${expirationMonth}`}
+              multiple={1}
+              noExp
+              onlyChart
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              first="EURRUBF"
+              second={`SI-${expirationMonth}`}
+              third={`ED-${expirationMonth}`}
+              onlyChart
+              multiple={1000}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              first={`EU-${expirationMonth}`}
+              second={`USDRUBF`}
+              third={`ED-${expirationMonth}`}
+              onlyChart
+              multiple={0.001}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              first={`EU-${expirationMonth}`}
+              second={`SI-${expirationMonth}`}
+              third={`ED-${expirationMonth}`}
+              onlyChart
+              multiple={1}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              first="EURRUBF"
+              second="USDRUBF"
+              third={`EURUSD_xp`}
+              multiple={1}
+              noExp
+              onlyChart
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              first="EURRUBF"
+              second={`SI-${expirationMonth}`}
+              third={`EURUSD_xp`}
+              onlyChart
+              multiple={1000}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              first={`EU-${expirationMonth}`}
+              second={`USDRUBF`}
+              third={`EURUSD_xp`}
+              onlyChart
+              multiple={0.001}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+          <Col span={span}>
+            <Triangle_Page
+              first={`EU-${expirationMonth}`}
+              second={`SI-${expirationMonth}`}
+              third={`EURUSD_xp`}
+              onlyChart
+              multiple={1}
+              rate={0.13}
+              noExp
+              height={height}
+              seriesType="Line"
+            />
+          </Col>
+        </Row>
+      )}
+
       {tab === 'triangle' && (
         <>
           <Row>
-            <Col span={span}>
-              <Triangle_Page
-                first="EURRUBF"
-                second="USDRUBF"
-                third={`ED-${expirationMonth}`}
-                multiple={1}
-                noExp
-                onlyChart
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
             <Col span={span}>
               <Triangle_Page
                 first="USDRUBF"
@@ -515,25 +724,12 @@ export const SmartPage = () => {
               />
             </Col>
             <Col span={span}>
-              <SI_GOLD_Page
-                first="EURRUBF"
-                second={`SI-${expirationMonth}`}
-                third={`ED-${expirationMonth}`}
-                onlyChart
-                multiple={1000}
-                rate={0.13}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <SI_GOLD_Page
+              <Triangle_Page
                 first="GLDRUBF"
-                second={`SI-${expirationMonth}`}
+                second={`USDRUBF`}
                 third={`GOLD-${expirationMonth}`}
                 onlyChart
-                multiple={31100}
+                multiple={31.1}
                 rate={0.18}
                 noExp
                 height={height}
@@ -541,7 +737,7 @@ export const SmartPage = () => {
               />
             </Col>
             <Col span={span}>
-              <SI_GOLD_Page
+              <Triangle_Page
                 first="USDRUBF"
                 second={`CNY-${expirationMonth}`}
                 third={`UCNY-${expirationMonth}`}
@@ -552,13 +748,48 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
+              {/*<SI_GOLD_Page*/}
+              {/*  first="USDRUBF"*/}
+              {/*  second={`CNY-${expirationMonth}`}*/}
+              {/*  third={`UCNY-${expirationMonth}`}*/}
+              {/*  onlyChart*/}
+              {/*  multiple={1}*/}
+              {/*  rate={0.17}*/}
+              {/*  noExp*/}
+              {/*  height={height}*/}
+              {/*  seriesType="Line"*/}
+              {/*/>*/}
             </Col>
             <Col span={span}>
               <Triangle_Page
-                first={`SI-${expirationMonth}`}
-                second={`CNY-${expirationMonth}`}
-                third={`UCNY-${expirationMonth}`}
-                multiple={0.001}
+                first="GLDRUBF"
+                second={`SI-${expirationMonth}`}
+                third={`GOLD-${expirationMonth}`}
+                onlyChart
+                multiple={31100}
+                rate={0.18}
+                noExp
+                height={height}
+                seriesType="Line"
+              />
+              {/*<SI_GOLD_Page*/}
+              {/*  first="GLDRUBF"*/}
+              {/*  second={`SI-${expirationMonth}`}*/}
+              {/*  third={`GOLD-${expirationMonth}`}*/}
+              {/*  onlyChart*/}
+              {/*  multiple={31100}*/}
+              {/*  rate={0.18}*/}
+              {/*  noExp*/}
+              {/*  height={height}*/}
+              {/*  seriesType="Line"*/}
+              {/*/>*/}
+            </Col>
+            <Col span={span}>
+              <Triangle_Page
+                first={`EU-${expirationMonth}`}
+                second={`SI-${expirationMonth}`}
+                third={`EURUSD_xp`}
+                multiple={1}
                 noExp
                 onlyChart
                 height={height}
@@ -567,10 +798,34 @@ export const SmartPage = () => {
             </Col>
             <Col span={span}>
               <Triangle_Page
-                first={`EU-${expirationMonth}`}
+                first="GLDRUBF"
                 second={`SI-${expirationMonth}`}
-                third={`ED-${expirationMonth}`}
-                multiple={1}
+                third={`XAUUSD_xp`}
+                onlyChart
+                multiple={31100000}
+                rate={0.18}
+                noExp
+                height={height}
+                seriesType="Line"
+              />
+              {/*<SI_GOLD_Page*/}
+              {/*  first="GLDRUBF"*/}
+              {/*  second={`SI-${expirationMonth}`}*/}
+              {/*  third={`GOLD-${expirationMonth}`}*/}
+              {/*  onlyChart*/}
+              {/*  multiple={31100}*/}
+              {/*  rate={0.18}*/}
+              {/*  noExp*/}
+              {/*  height={height}*/}
+              {/*  seriesType="Line"*/}
+              {/*/>*/}
+            </Col>
+            <Col span={span}>
+              <Triangle_Page
+                first={`SI-${expirationMonth}`}
+                second={`CNY-${expirationMonth}`}
+                third={`UCNY-${expirationMonth}`}
+                multiple={0.001}
                 noExp
                 onlyChart
                 height={height}
