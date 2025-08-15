@@ -11,8 +11,8 @@ import { Content } from 'antd/es/layout/layout';
 import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery, useGetSecurityDetailsQuery } from '../../api/alor.api';
 import { useAppSelector } from '../../store';
 import { useTdCandlesQuery } from '../../twelveApi';
-import { useCandlesQuery } from '../../api/api.ts';
-import { TWChart } from '../../components/TWChart.tsx';
+import { TWChart } from '../../components/TWChart';
+import { useCandlesQuery } from '../../api/ctrader.api.ts';
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',

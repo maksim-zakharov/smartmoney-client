@@ -1,7 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-import { HistoryObject } from '../sm-lib/models.ts';
-
 export interface Security {
   symbol: string;
   shortname: string;
@@ -53,12 +51,6 @@ export const api = createApi({
     },
   }),
   endpoints: (builder) => ({
-    candles: builder.query<HistoryObject[], any>({
-      query: (params) => ({
-        url: '/fx-candles',
-        params,
-      }),
-    }),
     // candles: builder.query<{ candles: HistoryObject[] }, any>({
     //   query: (params) => ({
     //     url: '/api/candles',
@@ -86,4 +78,4 @@ export const api = createApi({
   }),
 });
 
-export const { useCandlesQuery, useSecurityQuery, usePortfolioQuery, useOrderblocksQuery } = api;
+export const { useSecurityQuery, usePortfolioQuery, useOrderblocksQuery } = api;

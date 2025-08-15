@@ -7,7 +7,7 @@ export const AUTH_HEADER = 'x-tinkoff-token';
 
 const baseQuery = () =>
   fetchBaseQuery({
-    // baseUrl: 'http://localhost:3000/tinkoff',
+    // baseUrl: 'http://localhost:3000/ctrader',
     baseUrl: 'https://176.114.69.4/ctrader',
     prepareHeaders: (headers, { getState }: any) => {
       const token = getState().alorSlice.cTraderAuth?.accessToken;

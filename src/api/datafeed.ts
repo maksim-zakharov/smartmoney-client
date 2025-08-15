@@ -227,7 +227,7 @@ export class DataFeed implements IBasicDataFeed {
     if (!isSentetic) {
       (symbolInfo.ticker.includes('_xp')
         ? fetch(
-            `${this.ctraderUrl}/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}`,
+            `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}`,
           )
             .then((res) => res.json())
             .then((d) => ({ history: d, next: null, prev: null }))
@@ -263,7 +263,7 @@ export class DataFeed implements IBasicDataFeed {
         parts.map((symbol) =>
           symbol.includes('_xp')
             ? fetch(
-                `${this.ctraderUrl}/fx-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbol}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
+                `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbol}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
               )
                 .then((res) => res.json())
                 .then((d) => ({ history: d, next: null, prev: null }))

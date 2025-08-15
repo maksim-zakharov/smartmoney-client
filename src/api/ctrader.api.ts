@@ -1,5 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryCTraderWithReauth } from './baseQueryCTrader';
+import { HistoryObject } from '../sm-lib/models.ts';
 
 export const ctraderApi = createApi({
   reducerPath: 'ctraderApi',
@@ -15,6 +16,12 @@ export const ctraderApi = createApi({
     authAuth: builder.query<any, any>({
       query: (params) => ({
         url: '/auth',
+        params,
+      }),
+    }),
+    candles: builder.query<HistoryObject[], any>({
+      query: (params) => ({
+        url: '/candles',
         params,
       }),
     }),
@@ -52,6 +59,7 @@ export const ctraderApi = createApi({
 });
 
 export const {
+  useCandlesQuery,
   useGetCTraderSymbolsQuery,
   useAuthAuthQuery,
   useGetCTraderSymbolsByIdQuery,

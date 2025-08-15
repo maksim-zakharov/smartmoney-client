@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Col, Row, Select, Slider, SliderSingleProps, Space, Tabs, TabsProps, theme } from 'antd';
-import { useCandlesQuery, usePortfolioQuery, useSecurityQuery } from '../api/api.ts';
+import { usePortfolioQuery, useSecurityQuery } from '../api/api';
 import moment, { Moment } from 'moment';
 import { useSearchParams } from 'react-router-dom';
 import useWindowDimensions from '../useWindowDimensions';
@@ -12,6 +12,7 @@ import { StatisticWidgets } from './StatisticWidgets';
 import { MainPageChart } from './MainPageChart';
 import { calculateProdPositionFee } from '../samurai_patterns';
 import { notTradingTime } from '../sm-lib/utils';
+import { useCandlesQuery } from '../api/ctrader.api.ts';
 
 export const moneyFormat = (
   money: number,
