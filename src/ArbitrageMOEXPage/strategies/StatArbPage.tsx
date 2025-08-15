@@ -720,11 +720,6 @@ export const StatArbPage = ({
 
               {/*<DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />*/}
               <div style={{ display: 'flex', gap: 8, flexDirection: 'column', background: 'rgba(23,35,46,0.7)', padding: '4px 8px' }}>
-                {isSecondForex && (
-                  <Typography.Text>
-                    {tickerStock}/{_tickerFuture}
-                  </Typography.Text>
-                )}
                 <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
                 <Statistic
                   title="Финрез"
