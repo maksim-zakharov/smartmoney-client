@@ -472,11 +472,11 @@ export const SmartPage = () => {
                   <FormField
                     control={form.control}
                     name="third"
-                    render={({ field, formState }) => (
+                    render={({ field }) => (
                       <FormItem className="space-y-3">
                         <FormLabel>Тикер 3</FormLabel>
                         <FormControl>
-                          <Input onChange={field.onChange} value={field.value} disabled={formState.defaultValues.type !== 'triple'} />
+                          <Input onChange={field.onChange} value={field.value} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -511,6 +511,19 @@ export const SmartPage = () => {
               <Col span={span}>
                 {fp.type === 'double' && (
                   <StatArbPage tickerStock={fp.first} _tickerFuture={fp.second} multi={fp.multiple} onlyChart height={height} />
+                )}
+                {fp.type === 'triple' && (
+                  <Triangle_Page
+                    second={fp.second}
+                    first={fp.first}
+                    third={fp.third}
+                    onlyChart
+                    multiple={fp.multiple}
+                    rate={0.13}
+                    noExp
+                    height={height}
+                    seriesType="Line"
+                  />
                 )}
               </Col>
             ))}
@@ -600,19 +613,19 @@ export const SmartPage = () => {
             {/*    height={height}*/}
             {/*  />*/}
             {/*</Col>*/}
-            <Col span={span}>
-              <Triangle_Page
-                second={`CNY-${expirationMonth}`}
-                first={`SI-${expirationMonth}`}
-                third={`USDCNH_xp`}
-                onlyChart
-                multiple={0.01}
-                rate={0.13}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    second={`CNY-${expirationMonth}`}*/}
+            {/*    first={`SI-${expirationMonth}`}*/}
+            {/*    third={`USDCNH_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={0.01}*/}
+            {/*    rate={0.13}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
             <Col span={span}>
               <Triangle_Page
                 second={`CNY-${expirationMonth}`}
