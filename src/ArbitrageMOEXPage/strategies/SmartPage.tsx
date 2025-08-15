@@ -570,36 +570,36 @@ export const SmartPage = () => {
             {/*<Col span={span}>*/}
             {/*  <StatArbPage tickerStock="COPPER-9.25" _tickerFuture="CUCUSD_xp" multi={0.0453592} onlyChart height={height} />*/}
             {/*</Col>*/}
-            <Col span={span}>
-              <StatArbPage
-                tickerStock="IMOEXF"
-                _tickerFuture={`MIX-${expirationMonth}`}
-                onlyChart
-                height={height}
-                multi={10000}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <StatArbPage
-                tickerStock="CNYRUBF"
-                _tickerFuture={`CNY-${expirationMonth}`}
-                onlyChart
-                height={height}
-                multi={100}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <StatArbPage
-                tickerStock="GLDRUBF"
-                _tickerFuture={`GL-${expirationMonth}`}
-                multi={100}
-                seriesType="Line"
-                onlyChart
-                height={height}
-              />
-            </Col>
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage*/}
+            {/*    tickerStock="IMOEXF"*/}
+            {/*    _tickerFuture={`MIX-${expirationMonth}`}*/}
+            {/*    onlyChart*/}
+            {/*    height={height}*/}
+            {/*    multi={10000}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage*/}
+            {/*    tickerStock="CNYRUBF"*/}
+            {/*    _tickerFuture={`CNY-${expirationMonth}`}*/}
+            {/*    onlyChart*/}
+            {/*    height={height}*/}
+            {/*    multi={100}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage*/}
+            {/*    tickerStock="GLDRUBF"*/}
+            {/*    _tickerFuture={`GL-${expirationMonth}`}*/}
+            {/*    multi={100}*/}
+            {/*    seriesType="Line"*/}
+            {/*    onlyChart*/}
+            {/*    height={height}*/}
+            {/*  />*/}
+            {/*</Col>*/}
             <Col span={span}>
               <Triangle_Page
                 second={`CNY-${expirationMonth}`}
