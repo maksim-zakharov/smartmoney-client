@@ -857,6 +857,19 @@ export const SmartPage = () => {
                 seriesType="Line"
               />
             </Col>
+            <Col span={span}>
+              <Triangle_Page
+                first={`SILV-${expirationMonth}`}
+                second={`ED-${expirationMonth}`}
+                third={`XAGEUR_xp`}
+                onlyChart
+                multiple={100}
+                rate={0.18}
+                noExp
+                height={height}
+                seriesType="Line"
+              />
+            </Col>
             {/*<Col span={span}>*/}
             {/*  <Triangle_Page*/}
             {/*    first="GLDRUBF"*/}
