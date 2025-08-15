@@ -135,7 +135,7 @@ export const StatArbPage = ({
     },
     {
       pollingInterval: 5000,
-      skip: !tickerFuture || !apiAuth || isSecondForex,
+      skip: true, // !tickerFuture || !apiAuth || isSecondForex,
     },
   );
 

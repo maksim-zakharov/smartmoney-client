@@ -50,7 +50,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
     },
     {
       pollingInterval: 5000,
-      skip: !first || !apiAuth,
+      skip: true, // !first || !apiAuth,
     },
   );
 
@@ -66,7 +66,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
     },
     {
       pollingInterval: 5000,
-      skip: !second || !apiAuth,
+      skip: true, // !second || !apiAuth,
     },
   );
 
@@ -83,7 +83,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
     },
     {
       pollingInterval: 5000,
-      skip: !third || !apiAuth || isSecondForex,
+      skip: true, // !third || !apiAuth || isSecondForex,
     },
   );
 
@@ -96,7 +96,7 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
     },
     {
       pollingInterval: 5000,
-      skip: !isSecondForex,
+      skip: true, // !isSecondForex,
     },
   );
 
