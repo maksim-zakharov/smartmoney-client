@@ -338,9 +338,11 @@ export const SmartPage = () => {
   const filteredOthers = others.slice(offset, offset + limit);
 
   const FormSchema = z.object({
-    type: z.enum(['double', 'triple'], {
-      required_error: 'Нужно выбрать тип арбитража',
-    }),
+    type: z
+      .enum(['double', 'triple'], {
+        required_error: 'Нужно выбрать тип арбитража',
+      })
+      .default('double'),
     multiple: z
       .number({
         required_error: 'Нужно выбрать множитель',
@@ -532,27 +534,27 @@ export const SmartPage = () => {
             {/*    <StatArbPage tickerStock={pair[0]} _tickerFuture={pair[1]} onlyChart height={height} />*/}
             {/*  </Col>*/}
             {/*))}*/}
-            <Col span={span}>
-              <StatArbPage tickerStock="UCNY-9.25" _tickerFuture="USDCNH_xp" multi={1000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="ED-9.25" _tickerFuture="EURUSD_xp" multi={100} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="GOLD-9.25" _tickerFuture="XAUUSD_xp" multi={100000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="PLD-9.25" _tickerFuture="XPDUSD_xp" multi={100000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="PLT-9.25" _tickerFuture="XPTUSD_xp" multi={100000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="SILV-9.25" _tickerFuture="XAGUSD_xp" multi={10000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="BR-9.25" _tickerFuture="BRNUSD_xp" multi={10000} onlyChart height={height} />
-            </Col>
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="UCNY-9.25" _tickerFuture="USDCNH_xp" multi={1000} onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="ED-9.25" _tickerFuture="EURUSD_xp" multi={100} onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="GOLD-9.25" _tickerFuture="XAUUSD_xp" multi={100000} onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="PLD-9.25" _tickerFuture="XPDUSD_xp" multi={100000} onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="PLT-9.25" _tickerFuture="XPTUSD_xp" multi={100000} onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="SILV-9.25" _tickerFuture="XAGUSD_xp" multi={10000} onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="BR-9.25" _tickerFuture="BRNUSD_xp" multi={10000} onlyChart height={height} />*/}
+            {/*</Col>*/}
             <Col span={span}>
               <StatArbPage tickerStock="NG-9.25" _tickerFuture="NGCUSD_xp" multi={1000} onlyChart height={height} />
             </Col>
