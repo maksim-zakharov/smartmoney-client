@@ -387,6 +387,7 @@ export class DataFeed implements IBasicDataFeed {
         });
 
       const secondProm = (symbol: string) => {
+        const isForex = symbol.includes('_xp');
         if (isForex) {
           this.initWs();
           const tf = this.parseTimeframe(resolution) as Timeframe; // Ensure it matches Timeframe enum
@@ -428,11 +429,9 @@ export class DataFeed implements IBasicDataFeed {
     this.subscriptions.delete(listenerGuid);
   }
   subscribeDepth?(symbol: string, callback: DOMCallback): string {
-    debugger;
     throw new Error('Method not implemented.');
   }
   unsubscribeDepth?(subscriberUID: string): void {
-    debugger;
     throw new Error('Method not implemented.');
   }
   getVolumeProfileResolutionForPeriod?(

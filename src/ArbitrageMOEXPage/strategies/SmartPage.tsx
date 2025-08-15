@@ -8,6 +8,7 @@ import { TimeframeSelect } from '../../TimeframeSelect.tsx';
 import { DatesPicker } from '../../DatesPicker.tsx';
 import dayjs, { type Dayjs } from 'dayjs';
 import moment from 'moment';
+import { symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 
 export const SmartPage = () => {
   const height = 350;
@@ -76,6 +77,10 @@ export const SmartPage = () => {
     {
       label: 'Акции',
       value: 'stocks',
+    },
+    {
+      label: 'Стат-фьючи',
+      value: 'futures-stats',
     },
     {
       label: 'Фандинг',
@@ -344,6 +349,17 @@ export const SmartPage = () => {
             {filteredOthers.map((item) => (
               <Col span={span}>
                 <StatArbPage tickerStock={item.left} _tickerFuture={item.right} onlyChart height={height} />
+              </Col>
+            ))}
+          </Row>
+        </>
+      )}
+      {tab === 'futures-stats' && (
+        <>
+          <Row>
+            {symbolFuturePairs.map((item) => (
+              <Col span={span}>
+                <StatArbPage tickerStock={item.stockSymbol} _tickerFuture={`${item.futuresSymbol}-9.25`} onlyChart height={height} />
               </Col>
             ))}
           </Row>

@@ -48,12 +48,7 @@ export const symbolFuturePairs = [
     stockSymbol: 'EURRUBF',
   },
   {
-    futuresSymbol: 'CNY',
-    futuresShortName: 'CNY',
-    stockSymbol: 'CNYRUB_TOM',
-  },
-  {
-    futuresSymbol: 'MOEX',
+    futuresSymbol: 'MIX',
     futuresShortName: 'MOEX',
     stockSymbol: 'IMOEX',
   },
