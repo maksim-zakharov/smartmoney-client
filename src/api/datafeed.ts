@@ -22,6 +22,11 @@ import { BehaviorSubject, combineLatest, filter } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 
 const resolveOneSymbol = ({ api, symbolName }: { api: AlorApi; symbolName: string }) => {
+  const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);
+  if (exist) {
+    return Promise.resolve(JSON.parse(exist));
+  }
+
   return (
     symbolName.includes('_xp')
       ? Promise.resolve({
@@ -60,6 +65,9 @@ const resolveOneSymbol = ({ api, symbolName }: { api: AlorApi; symbolName: strin
       timezone: 'Europe/Moscow',
       session: '0700-0000,0000-0200:1234567',
     };
+
+    localStorage.setItem(`LibrarySymbolInfo-${symbolName}`, JSON.stringify(resolve));
+
     return resolve;
   });
 };
@@ -140,6 +148,11 @@ export class DataFeed implements IBasicDataFeed {
         symbolName,
       }).then(onResolve);
     } else {
+      const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);
+      if (exist) {
+        onResolve(JSON.parse(exist));
+        return;
+      }
       const parts = symbolName.split('/');
       Promise.all(
         parts.map((part) =>
@@ -201,6 +214,8 @@ export class DataFeed implements IBasicDataFeed {
         };
 
         onResolve(resolve);
+
+        localStorage.setItem(`LibrarySymbolInfo-${symbolName}`, JSON.stringify(resolve));
       });
     }
   }
