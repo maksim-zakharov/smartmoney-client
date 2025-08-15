@@ -33,7 +33,7 @@ const resolveOneSymbol = ({ api, symbolName }: { api: AlorApi; symbolName: strin
           symbol: symbolName,
           exchange: 'XPBEE',
           currency: 'USDT',
-          minstep: 0.01,
+          minstep: 0.001,
           type: '',
         })
       : api.instruments.getSecurityByExchangeAndSymbol({
@@ -161,7 +161,7 @@ export class DataFeed implements IBasicDataFeed {
                 symbol: part,
                 exchange: 'XPBEE',
                 currency: 'USDT',
-                minstep: 0.01,
+                minstep: 0.001,
                 type: '',
               })
             : this.api.instruments.getSecurityByExchangeAndSymbol({
@@ -196,7 +196,7 @@ export class DataFeed implements IBasicDataFeed {
         );
 
         const precision = getPrecision(obj.minstep);
-        const priceScale = Number((10 ** 3).toFixed(3));
+        const priceScale = Number((10 ** 5).toFixed(5));
 
         const resolve: LibrarySymbolInfo = {
           ...obj,
