@@ -243,6 +243,13 @@ export class DataFeed implements IBasicDataFeed {
       (symbolInfo.ticker.includes('_xp')
         ? fetch(
             `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}`,
+            {
+              headers: {
+                'x-ctrader-token': localStorage.getItem('cTraderAuth')
+                  ? JSON.parse(localStorage.getItem('cTraderAuth'))?.accessToken
+                  : undefined,
+              },
+            },
           )
             .then((res) => res.json())
             .then((d) => ({ history: d, next: null, prev: null }))
@@ -279,6 +286,13 @@ export class DataFeed implements IBasicDataFeed {
           symbol.includes('_xp')
             ? fetch(
                 `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbol}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
+                {
+                  headers: {
+                    'x-ctrader-token': localStorage.getItem('cTraderAuth')
+                      ? JSON.parse(localStorage.getItem('cTraderAuth'))?.accessToken
+                      : undefined,
+                  },
+                },
               )
                 .then((res) => res.json())
                 .then((d) => ({ history: d, next: null, prev: null }))
