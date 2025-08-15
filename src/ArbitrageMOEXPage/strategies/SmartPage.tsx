@@ -10,9 +10,19 @@ import dayjs, { type Dayjs } from 'dayjs';
 import moment from 'moment';
 import { symbolFuturePairs } from '../../../symbolFuturePairs.ts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs.tsx';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog.tsx';
+import { Button } from '../../components/ui/button.tsx';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form.tsx';
+import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group.tsx';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { updatePairs } from '../../api/alor.slice.ts';
+import { useAppDispatch, useAppSelector } from '../../store.ts';
 
 export const SmartPage = () => {
   const height = 350;
+  const dispatch = useAppDispatch();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('segment') || 'stocks';
   const tf = searchParams.get('tf') || '900';
@@ -25,6 +35,8 @@ export const SmartPage = () => {
   const page = Number(searchParams.get('page') || 1);
 
   const minProfit = Number(searchParams.get('minProfit') || 0.005);
+
+  const favoritePairs = useAppSelector((state) => state.alorSlice.favoritePairs || []);
 
   const setMinProfit = (value) => {
     searchParams.set('minProfit', value);
@@ -325,6 +337,39 @@ export const SmartPage = () => {
 
   const filteredOthers = others.slice(offset, offset + limit);
 
+  const FormSchema = z.object({
+    type: z.enum(['double', 'triple'], {
+      required_error: 'Нужно выбрать тип арбитража',
+    }),
+    multiple: z
+      .number({
+        required_error: 'Нужно выбрать множитель',
+      })
+      .default(1),
+    first: z.string({
+      required_error: 'Нужно выбрать тип арбитража',
+    }),
+    second: z.string({
+      required_error: 'Нужно выбрать тип арбитража',
+    }),
+    third: z.string().optional(),
+  });
+
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+  });
+  function onSubmit(data: z.infer<typeof FormSchema>) {
+    // toast("You submitted the following values", {
+    //   description: (
+    //     <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
+    //       <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+    //     </pre>
+    //   ),
+    // })
+    dispatch(updatePairs(data));
+    form.reset();
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <Space>
@@ -346,6 +391,101 @@ export const SmartPage = () => {
           buttonStyle="solid"
         />
         {tab === 'others' && <Pagination current={page} total={others.length} pageSize={24 / span} onChange={setPage} />}
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">Добавить арбитраж</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Добавление арбитража</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 p-3 pt-0">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Тип арбитража</FormLabel>
+                      <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col">
+                          <FormItem className="flex items-center gap-3">
+                            <FormControl>
+                              <RadioGroupItem value="double" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Двойной</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center gap-3">
+                            <FormControl>
+                              <RadioGroupItem value="tiple" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Тройной</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="multiple"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Множитель</FormLabel>
+                      <FormControl>
+                        <Input type="number" onChange={(e) => field.onChange(Number(e.target.value))} value={field.value} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="first"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Тикер 1</FormLabel>
+                        <FormControl>
+                          <Input onChange={field.onChange} value={field.value} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="second"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Тикер 2</FormLabel>
+                        <FormControl>
+                          <Input onChange={field.onChange} value={field.value} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="third"
+                    render={({ field, formState }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Тикер 3</FormLabel>
+                        <FormControl>
+                          <Input onChange={field.onChange} value={field.value} disabled={formState.defaultValues.type !== 'triple'} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <Button type="submit">Добавить</Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </Space>
       {/*<Segmented value={tab} style={{ margin: '8px auto' }} onChange={setTab} options={options} />*/}
       <Tabs value={tab} onValueChange={setTab}>
@@ -365,26 +505,33 @@ export const SmartPage = () => {
         </TabsContent>
         <TabsContent value="favorites">
           <Row>
-            <Col span={span}>
-              <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="RTKM" _tickerFuture="RTKMP" onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="MTLR" _tickerFuture="MTLRP" onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="BANE" _tickerFuture="BANEP" onlyChart height={height} />
-            </Col>
-            <Col span={span}>
-              <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={height} />
-            </Col>
-            {favorites.map((pair) => (
+            {favoritePairs.map((fp) => (
               <Col span={span}>
-                <StatArbPage tickerStock={pair[0]} _tickerFuture={pair[1]} onlyChart height={height} />
+                {fp.type === 'double' && (
+                  <StatArbPage tickerStock={fp.first} _tickerFuture={fp.second} multi={fp.multiple} onlyChart height={height} />
+                )}
               </Col>
             ))}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="RTKM" _tickerFuture="RTKMP" onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="MTLR" _tickerFuture="MTLRP" onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="BANE" _tickerFuture="BANEP" onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={height} />*/}
+            {/*</Col>*/}
+            {/*{favorites.map((pair) => (*/}
+            {/*  <Col span={span}>*/}
+            {/*    <StatArbPage tickerStock={pair[0]} _tickerFuture={pair[1]} onlyChart height={height} />*/}
+            {/*  </Col>*/}
+            {/*))}*/}
             <Col span={span}>
               <StatArbPage tickerStock="UCNY-9.25" _tickerFuture="USDCNH_xp" multi={1000} onlyChart height={height} />
             </Col>

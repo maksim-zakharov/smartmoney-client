@@ -45,6 +45,9 @@ const initialState = {
     color: 'rgb(166,189,213)',
     borderColor: 'rgba(44,60,75, 0.6)',
   },
+
+  favoritePairs: localStorage.getItem('favoritePairs') ? JSON.parse(localStorage.getItem('favoritePairs')) : undefined,
+
   userInfo: localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')) : undefined,
 
   cTraderAuth: localStorage.getItem('cTraderAuth') ? JSON.parse(localStorage.getItem('cTraderAuth')) : undefined,
@@ -78,6 +81,8 @@ const initialState = {
   tinkoffPortfolio?: any;
   tinkoffOrders?: any;
   tToken?: string;
+
+  favoritePairs?: any[];
 };
 
 export const alorSlice = createSlice({
@@ -99,6 +104,14 @@ export const alorSlice = createSlice({
       }
 
       state.release?.();
+    },
+    updatePairs(state, action: PayloadAction<any[]>) {
+      if (!state.favoritePairs) {
+        state.favoritePairs = [action.payload];
+      } else {
+        state.favoritePairs.push(action.payload);
+      }
+      localStorage.setItem('favoritePairs', JSON.stringify(state.favoritePairs));
     },
     setTiToken(state, action: PayloadAction<string>) {
       state.tToken = action.payload;
@@ -178,4 +191,4 @@ export const alorSlice = createSlice({
   },
 });
 
-export const { initApi, setTiToken, updateDarkColors, acquire, setSettings, logout } = alorSlice.actions;
+export const { updatePairs, initApi, setTiToken, updateDarkColors, acquire, setSettings, logout } = alorSlice.actions;
