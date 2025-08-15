@@ -727,7 +727,7 @@ export const SmartPage = () => {
               second={`CNY-${expirationMonth}`}
               third={`EURCNH_xp`}
               onlyChart
-              multiple={1}
+              multiple={0.01}
               rate={0.13}
               noExp
               height={height}
