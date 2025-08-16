@@ -98,6 +98,7 @@ export class DataFeed implements IBasicDataFeed {
 
   private initWs() {
     if (!this.ws) {
+      // this.ws = io(`http://localhost:3000/ctrader-ws`, {
       this.ws = io(`http://176.114.69.4:3000/ctrader-ws`, {
         transports: ['websocket'],
       });
@@ -180,7 +181,7 @@ export class DataFeed implements IBasicDataFeed {
               exchange: acc.exchange || curr.exchange,
               listed_exchange: acc.exchange || curr.exchange,
               currency_code: acc.currency_code || curr.currency,
-              minstep: Math.min(acc.minstep, curr.minstep),
+              minstep: 0.00001, // Math.min(acc.minstep, curr.minstep),
               type: acc.type || curr.type,
             }) as Partial<LibrarySymbolInfo>,
           {
@@ -200,7 +201,7 @@ export class DataFeed implements IBasicDataFeed {
 
         const resolve: LibrarySymbolInfo = {
           ...obj,
-          minmov: Math.round(obj.minstep * priceScale),
+          minmov: 100, // Math.round(obj.minstep * priceScale),
           pricescale: priceScale,
           format: 'price',
           has_empty_bars: false,
