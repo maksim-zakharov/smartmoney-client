@@ -3,8 +3,6 @@ import { BaseQueryApi, FetchArgs, fetchBaseQuery } from '@reduxjs/toolkit/query'
 
 const mutex = new Mutex();
 
-export const AUTH_HEADER = 'x-tinkoff-token';
-
 const baseQuery = () =>
   fetchBaseQuery({
     // baseUrl: 'http://localhost:3000/ctrader',
@@ -30,24 +28,23 @@ const baseQuery = () =>
 export const baseQueryCTraderWithReauth = async (args: string | FetchArgs, api: BaseQueryApi, extraOptions) => {
   let result = await baseQuery()(args, api, extraOptions);
 
-  if (result?.error?.status === 401) {
+  if ([500, 401].includes(Number(result?.error?.status))) {
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
-        const headers: { [key: string]: string } = {
-          [AUTH_HEADER]: Telegram.WebApp?.initData,
-        };
         const refreshResult = await baseQuery()(
           {
-            url: '/auth',
-            headers,
-            method: 'POST',
+            // @ts-ignore
+            url: `/auth?ctidTraderAccountId=${api.getState().alorSlice.ctidTraderAccountId}`,
+            headers: {
+              // @ts-ignore
+              'x-ctrader-token': api.getState().alorSlice.cTraderAuth?.accessToken,
+            },
+            method: 'GET',
           },
           api,
           extraOptions,
         );
-
-        // api.dispatch(saveToken({ token: refreshResult?.data?.access_token }));
 
         if (refreshResult?.meta?.response?.status && refreshResult?.meta?.response?.status < 400) {
           result = await baseQuery()(args, api, extraOptions);
