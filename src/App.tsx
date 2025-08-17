@@ -177,9 +177,11 @@ export default function App() {
           />
           <Space>
             {cTraderAccount?.ctidTraderAccountId && <>Аккаунт CTrader: {cTraderAccount?.traderLogin}</>}
-            <Button size="small" onClick={handleCTraderLogin}>
-              Войти в cTrader
-            </Button>
+            {!accessToken && (
+              <Button size="small" onClick={handleCTraderLogin}>
+                Войти в cTrader
+              </Button>
+            )}
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline">Настройки</Button>
