@@ -1,7 +1,5 @@
 import React, { ReactNode, useMemo } from 'react';
-import { Layout, Menu, MenuProps, Typography } from 'antd';
-import Sider from 'antd/es/layout/Sider';
-import { Content } from 'antd/es/layout/layout';
+import { MenuProps } from 'antd';
 import { OldPage } from './strategies/OldPage';
 import { Triangle_Page } from './strategies/Triangle_Page';
 import { SI_GOLD_Page } from './strategies/SI_GOLD_Page';
@@ -13,6 +11,19 @@ import { MOEX_CNY_Page } from './strategies/MOEX_CNY_Page';
 import { SPBXPage } from './strategies/SPBXPage';
 import { FundingPage } from './strategies/FundingPage';
 import { SmartPage } from './strategies/SmartPage';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '../components/ui/sidebar.tsx';
+import { Typography } from 'antd';
 
 type MenuItem = Required<MenuProps>['items'][number] & { element?: ReactNode };
 
@@ -267,21 +278,49 @@ export const ArbitrageMOEXPage = () => {
   );
 
   return (
-    <Layout style={{ margin: -8 }}>
-      <Sider>
-        <Menu
-          style={{ overflow: 'auto', height: 'calc(100vh - 36px)' }}
-          theme="dark"
-          defaultSelectedKeys={[selectedKey]}
-          mode="inline"
-          items={items}
-          onSelect={({ item, key }) => setSelectedKey(key)}
-        />
-      </Sider>
-      <Content style={{ padding: '0 24px 24px' }}>
+    // <Layout style={{ margin: -8 }}>
+    //   <Sider>
+    //     <Menu
+    //       style={{ overflow: 'auto', height: 'calc(100vh - 36px)' }}
+    //       theme="dark"
+    //       defaultSelectedKeys={[selectedKey]}
+    //       mode="inline"
+    //       items={items}
+    //       onSelect={({ item, key }) => setSelectedKey(key)}
+    //     />
+    //   </Sider>
+    //   <Content style={{ padding: '0 24px 24px' }}>
+    //     <Typography.Title>{menuMap[selectedKey].label}</Typography.Title>
+    //     {menuMap[selectedKey].element ?? 'not found'}
+    //   </Content>
+    // </Layout>
+
+    <SidebarProvider>
+      <Sidebar>
+        {/*<SidebarHeader />*/}
+        <SidebarContent>
+          {/*<SidebarGroup />*/}
+          {/*<SidebarGroupLabel>Application</SidebarGroupLabel>*/}
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.map((item) => (
+                <SidebarMenuItem key={item.key}>
+                  <SidebarMenuButton asChild isActive={selectedKey === item.key} onClick={() => setSelectedKey(item.key)}>
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+          <SidebarGroup />
+        </SidebarContent>
+        <SidebarFooter />
+      </Sidebar>
+      <div className="w-full">
+        <SidebarTrigger />
         <Typography.Title>{menuMap[selectedKey].label}</Typography.Title>
         {menuMap[selectedKey].element ?? 'not found'}
-      </Content>
-    </Layout>
+      </div>
+    </SidebarProvider>
   );
 };
