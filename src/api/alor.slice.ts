@@ -51,7 +51,7 @@ const initialState = {
   userInfo: localStorage.getItem('userInfo') ? JSON.parse(localStorage.getItem('userInfo')) : undefined,
 
   cTraderAuth: localStorage.getItem('cTraderAuth') ? JSON.parse(localStorage.getItem('cTraderAuth')) : undefined,
-  ctidTraderAccountId: undefined,
+  cTraderAccount: undefined,
 
   settings: JSON.parse(localStorage.getItem('settings') || '{}'),
 

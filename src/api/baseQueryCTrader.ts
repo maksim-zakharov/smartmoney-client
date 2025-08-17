@@ -35,7 +35,7 @@ export const baseQueryCTraderWithReauth = async (args: string | FetchArgs, api: 
         const refreshResult = await baseQuery()(
           {
             // @ts-ignore
-            url: `/auth?ctidTraderAccountId=${api.getState().alorSlice.ctidTraderAccountId}`,
+            url: `/auth?ctidTraderAccountId=${api.getState().alorSlice.cTraderAccount?.ctidTraderAccountId}`,
             headers: {
               // @ts-ignore
               'x-ctrader-token': api.getState().alorSlice.cTraderAuth?.accessToken,
