@@ -1,4 +1,4 @@
-import { Card, Col, Radio, Row, Select, Statistic, Table, Typography } from 'antd';
+import { Card, Col, Radio, Row, Select, Statistic, Table } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
@@ -9,7 +9,6 @@ import moment from 'moment';
 import { HistoryObject } from '../../sm-lib/models.ts';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
 import { LineStyle } from 'lightweight-charts';
-import { Chart } from '../../SoloTestPage/UpdatedChart';
 import { useGetHistoryQuery, useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
 import { useTdCandlesQuery } from '../../twelveApi.ts';
 import { Exchange } from 'alor-api';
@@ -604,17 +603,19 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
         </Radio.Group>
         {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
       </div>
-      <Chart
-        hideCross
-        lineSerieses={ls}
-        primitives={primitives}
-        markers={[]}
-        toolTipTop="40px"
-        toolTipLeft="4px"
-        data={data}
-        ema={[]}
-        maximumFractionDigits={4}
-      />
+      {/*<Chart*/}
+      {/*  hideCross*/}
+      {/*  lineSerieses={ls}*/}
+      {/*  primitives={primitives}*/}
+      {/*  markers={[]}*/}
+      {/*  toolTipTop="40px"*/}
+      {/*  toolTipLeft="4px"*/}
+      {/*  data={data}*/}
+      {/*  ema={[]}*/}
+      {/*  maximumFractionDigits={4}*/}
+      {/*/>*/}
+
+      <TWChart ticker={`${first}/${second}/${third}`} height={height} multiple={multiple} />
       <Row style={{ paddingBottom: '8px' }} gutter={8}>
         <Col span={6}>
           <Card bordered={false}>
@@ -683,54 +684,54 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
           };
         }}
       />
-      <Typography.Title>SI-sint</Typography.Title>
-      <Chart
-        data={_data2}
-        hideCross
-        lineSerieses={[]}
-        primitives={[]}
-        markers={[]}
-        toolTipTop="40px"
-        toolTipLeft="4px"
-        ema={[]}
-        maximumFractionDigits={3}
-      />
-      <Typography.Title>SI-{expirationMonth}</Typography.Title>
-      <Chart
-        data={siData}
-        hideCross
-        lineSerieses={[]}
-        primitives={[]}
-        markers={[]}
-        toolTipTop="40px"
-        toolTipLeft="4px"
-        ema={[]}
-        maximumFractionDigits={3}
-      />
-      <Typography.Title>UCNY-{expirationMonth}</Typography.Title>
-      <Chart
-        data={ucnyData}
-        hideCross
-        lineSerieses={[]}
-        primitives={[]}
-        markers={[]}
-        toolTipTop="40px"
-        toolTipLeft="4px"
-        ema={[]}
-        maximumFractionDigits={3}
-      />
-      <Typography.Title>CNY-{expirationMonth}</Typography.Title>
-      <Chart
-        data={cnyData}
-        hideCross
-        lineSerieses={[]}
-        primitives={[]}
-        markers={[]}
-        toolTipTop="40px"
-        toolTipLeft="4px"
-        ema={[]}
-        maximumFractionDigits={3}
-      />
+      {/*<Typography.Title>SI-sint</Typography.Title>*/}
+      {/*<Chart*/}
+      {/*  data={_data2}*/}
+      {/*  hideCross*/}
+      {/*  lineSerieses={[]}*/}
+      {/*  primitives={[]}*/}
+      {/*  markers={[]}*/}
+      {/*  toolTipTop="40px"*/}
+      {/*  toolTipLeft="4px"*/}
+      {/*  ema={[]}*/}
+      {/*  maximumFractionDigits={3}*/}
+      {/*/>*/}
+      {/*<Typography.Title>SI-{expirationMonth}</Typography.Title>*/}
+      {/*<Chart*/}
+      {/*  data={siData}*/}
+      {/*  hideCross*/}
+      {/*  lineSerieses={[]}*/}
+      {/*  primitives={[]}*/}
+      {/*  markers={[]}*/}
+      {/*  toolTipTop="40px"*/}
+      {/*  toolTipLeft="4px"*/}
+      {/*  ema={[]}*/}
+      {/*  maximumFractionDigits={3}*/}
+      {/*/>*/}
+      {/*<Typography.Title>UCNY-{expirationMonth}</Typography.Title>*/}
+      {/*<Chart*/}
+      {/*  data={ucnyData}*/}
+      {/*  hideCross*/}
+      {/*  lineSerieses={[]}*/}
+      {/*  primitives={[]}*/}
+      {/*  markers={[]}*/}
+      {/*  toolTipTop="40px"*/}
+      {/*  toolTipLeft="4px"*/}
+      {/*  ema={[]}*/}
+      {/*  maximumFractionDigits={3}*/}
+      {/*/>*/}
+      {/*<Typography.Title>CNY-{expirationMonth}</Typography.Title>*/}
+      {/*<Chart*/}
+      {/*  data={cnyData}*/}
+      {/*  hideCross*/}
+      {/*  lineSerieses={[]}*/}
+      {/*  primitives={[]}*/}
+      {/*  markers={[]}*/}
+      {/*  toolTipTop="40px"*/}
+      {/*  toolTipLeft="4px"*/}
+      {/*  ema={[]}*/}
+      {/*  maximumFractionDigits={3}*/}
+      {/*/>*/}
     </div>
   );
 };

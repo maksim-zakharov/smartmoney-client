@@ -169,7 +169,12 @@ export const ArbitrageMOEXPage = () => {
     },
     { key: 'cny_tom', label: 'CNY!1 / CNYRUB_TOM', element: <CNY_TOM_Page /> },
     { key: 'cnyrubf', label: 'CNY!1 / CNYRUBF', element: <CNYRUBF_Page /> },
-    { key: 'ed', label: 'EU/SI/ED', element: <Triangle_Page first="EU" second="SI" third="ED" multiple={1} /> },
+    { key: 'ed', label: 'EU/SI/ED', element: <Triangle_Page first="EU-9.25" second="SI-9.25" third="ED-9.25" multiple={10} /> },
+    {
+      key: 'SI_CNY',
+      label: 'SI/CNY/UC',
+      element: <Triangle_Page first="SI-9.25" second="CNY-9.25" third="UCNY-9.25" multiple={0.01} />,
+    },
     {
       key: 'SILV FOREX',
       label: 'FX:SILVER/SV1!',
@@ -214,11 +219,6 @@ export const ArbitrageMOEXPage = () => {
       key: 'CNY FOREX',
       label: 'SI/CNY vs FX:USD/CNY',
       element: <Triangle_Page first="SI" second="CNY" third="FX:USD/CNY" multiple={0.001} />,
-    },
-    {
-      key: 'SI_CNY',
-      label: 'SI/CNY/UC',
-      element: <Triangle_Page first="SI" second="CNY" third="UCNY" multiple={0.001} />,
     },
     {
       key: 'USDRUBF/CNY-9.25/UCNY-9.25',
