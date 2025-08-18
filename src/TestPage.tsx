@@ -91,15 +91,6 @@ export const TestPage = () => {
     [tinkoffPortfolio?.positions],
   );
 
-  const PnLMap = useMemo(
-    () =>
-      (tinkoffPortfolio?.positions || []).reduce((acc, curr) => {
-        acc[curr.instrumentUid] = curr.expectedYield;
-        return acc;
-      }, {}),
-    [tinkoffPortfolio?.positions],
-  );
-
   const PairPnl = (pair) => {
     return pair.reduce((acc, curr) => acc + PnLMap[curr] || 0, 0);
   };
@@ -119,7 +110,7 @@ export const TestPage = () => {
 
   const amount = (tinkoffPortfolio?.totalAmountPortfolio || 0) - bondsMargin;
 
-  const cTraderPositionsMapped = useMemo(() => {
+  const cTraderPositionsMapped = useMemo<any[]>(() => {
     const positionMap = (cTraderPositions?.position || []).reduce((acc, curr) => {
       if (!acc[curr.tradeData.symbolId]) {
         acc[curr.tradeData.symbolId] = { ...curr, PnL: pnl.get(curr.positionId), volume: curr.tradeData.volume };
@@ -137,6 +128,20 @@ export const TestPage = () => {
       .map(([key, value]) => value)
       .sort((a, b) => b.PnL - a.PnL);
   }, [cTraderPositions?.position, pnl]);
+
+  const PnLMap = useMemo(
+    () => ({
+      ...(tinkoffPortfolio?.positions || []).reduce((acc, curr) => {
+        acc[curr.instrumentUid] = curr.expectedYield;
+        return acc;
+      }, {}),
+      ...cTraderPositionsMapped.reduce((acc, curr) => {
+        acc[curr.tradeData.symbolId] = (curr.PnL || 0) * 80;
+        return acc;
+      }, {}),
+    }),
+    [tinkoffPortfolio?.positions, cTraderPositionsMapped],
+  );
 
   const total = totalPnL + totalPnLForex * 80;
 
@@ -294,36 +299,33 @@ export const TestPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {(tinkoffPortfolio?.positions || []).map((invoice, index) => (
-                          <TableRow
-                            key={invoice.invoice}
-                            className={cn(
-                              index % 2 ? 'rowOdd' : 'rowEven',
-                              selected === instrumentTypeMap[invoice.instrumentType] && 'rowHover',
-                            )}
-                          >
+                        {[...(tinkoffPortfolio?.positions || []), ...cTraderPositionsMapped].map((invoice, index) => (
+                          <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
                             <TableCell className="flex gap-2">
                               <Checkbox
-                                checked={selectedTicker.includes(invoice.instrumentUid)}
+                                checked={selectedTicker.includes(invoice.instrumentUid || invoice.tradeData.symbolId)}
                                 className="flex"
                                 onCheckedChange={(checked) =>
                                   checked
-                                    ? setSelectedTicker((prevState) => [...prevState, invoice.instrumentUid])
-                                    : setSelectedTicker((prevState) => prevState.filter((p) => p !== invoice.instrumentUid))
+                                    ? setSelectedTicker((prevState) => [...prevState, invoice.instrumentUid || invoice.tradeData.symbolId])
+                                    : setSelectedTicker((prevState) =>
+                                        prevState.filter((p) => p !== (invoice.instrumentUid || invoice.tradeData.symbolId)),
+                                      )
                                 }
                               />
-                              <FigiLabel uid={invoice.instrumentUid} />
+                              {invoice.instrumentUid && <FigiLabel uid={invoice.instrumentUid} />}
+                              {invoice.tradeData?.symbolId && <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />}
                             </TableCell>
                             <TableCell
                               className={
-                                invoice.expectedYield > 0
+                                (invoice.expectedYield || invoice.PnL) > 0
                                   ? 'text-right profitCell'
-                                  : invoice.expectedYield < 0
+                                  : (invoice.expectedYield || invoice.PnL) < 0
                                     ? 'text-right lossCell'
                                     : 'text-right'
                               }
                             >
-                              {moneyFormat(invoice.expectedYield)}
+                              {moneyFormat(invoice.expectedYield || invoice.PnL || 0)}
                             </TableCell>
                           </TableRow>
                         ))}
