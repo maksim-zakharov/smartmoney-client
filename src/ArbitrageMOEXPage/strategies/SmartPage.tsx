@@ -419,7 +419,7 @@ export const SmartPage = () => {
                           </FormItem>
                           <FormItem className="flex items-center gap-3">
                             <FormControl>
-                              <RadioGroupItem value="tiple" />
+                              <RadioGroupItem value="triple" />
                             </FormControl>
                             <FormLabel className="font-normal">Тройной</FormLabel>
                           </FormItem>
@@ -626,58 +626,58 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-            <Col span={span}>
-              <Triangle_Page
-                second={`CNY-${expirationMonth}`}
-                first={`SI-${expirationMonth}`}
-                third={`UCNY-${expirationMonth}`}
-                onlyChart
-                multiple={0.001}
-                rate={0.13}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <Triangle_Page
-                first={`EU-${expirationMonth}`}
-                second={`SI-${expirationMonth}`}
-                third={`ED-${expirationMonth}`}
-                onlyChart
-                multiple={1}
-                rate={0.13}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <Triangle_Page
-                first={`EU-${expirationMonth}`}
-                second={`SI-${expirationMonth}`}
-                third={`EURUSD_xp`}
-                onlyChart
-                multiple={1}
-                rate={0.13}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <Triangle_Page
-                first={`EU-${expirationMonth}`}
-                second={`CNY-${expirationMonth}`}
-                third={`EURCNH_xp`}
-                onlyChart
-                multiple={0.01}
-                rate={0.13}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    second={`CNY-${expirationMonth}`}*/}
+            {/*    first={`SI-${expirationMonth}`}*/}
+            {/*    third={`UCNY-${expirationMonth}`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={0.001}*/}
+            {/*    rate={0.13}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first={`EU-${expirationMonth}`}*/}
+            {/*    second={`SI-${expirationMonth}`}*/}
+            {/*    third={`ED-${expirationMonth}`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={1}*/}
+            {/*    rate={0.13}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first={`EU-${expirationMonth}`}*/}
+            {/*    second={`SI-${expirationMonth}`}*/}
+            {/*    third={`EURUSD_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={1}*/}
+            {/*    rate={0.13}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first={`EU-${expirationMonth}`}*/}
+            {/*    second={`CNY-${expirationMonth}`}*/}
+            {/*    third={`EURCNH_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={0.01}*/}
+            {/*    rate={0.13}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
             <Col span={span}>
               <Triangle_Page
                 first={`GL-${expirationMonth}`}
