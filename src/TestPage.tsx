@@ -261,9 +261,7 @@ export const TestPage = () => {
             {pairs.map((invoice, index) => (
               <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
                 <TableCell className="flex gap-2">
-                  {invoice.map((p) => (
-                    <FigiLabel uid={p} />
-                  ))}
+                  {invoice.map((p) => (Number.isInteger(p) ? <ForexLabel ticker={map.get(p)?.symbolName} /> : <FigiLabel uid={p} />))}
                 </TableCell>
                 <TableCell
                   className={PairPnl(invoice) > 0 ? 'text-right profitCell' : PairPnl(invoice) < 0 ? 'text-right lossCell' : 'text-right'}
