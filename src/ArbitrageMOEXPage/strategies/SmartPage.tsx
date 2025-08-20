@@ -678,58 +678,58 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-            <Col span={span}>
-              <Triangle_Page
-                first={`GL-${expirationMonth}`}
-                second={`SI-${expirationMonth}`}
-                third={`GOLD-${expirationMonth}`}
-                onlyChart
-                multiple={31100}
-                rate={0.18}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <Triangle_Page
-                first={`GL-${expirationMonth}`}
-                second={`SI-${expirationMonth}`}
-                third={`XAUUSD_xp`}
-                onlyChart
-                multiple={31100000}
-                rate={0.18}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <Triangle_Page
-                first={`GL-${expirationMonth}`}
-                second={`EU-${expirationMonth}`}
-                third={`XAUEUR_xp`}
-                onlyChart
-                multiple={31100000}
-                rate={0.18}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
-            <Col span={span}>
-              <Triangle_Page
-                first={`SILV-${expirationMonth}`}
-                second={`ED-${expirationMonth}`}
-                third={`XAGEUR_xp`}
-                onlyChart
-                multiple={100}
-                rate={0.18}
-                noExp
-                height={height}
-                seriesType="Line"
-              />
-            </Col>
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first={`GL-${expirationMonth}`}*/}
+            {/*    second={`SI-${expirationMonth}`}*/}
+            {/*    third={`GOLD-${expirationMonth}`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={31100}*/}
+            {/*    rate={0.18}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first={`GL-${expirationMonth}`}*/}
+            {/*    second={`SI-${expirationMonth}`}*/}
+            {/*    third={`XAUUSD_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={31100000}*/}
+            {/*    rate={0.18}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first={`GL-${expirationMonth}`}*/}
+            {/*    second={`EU-${expirationMonth}`}*/}
+            {/*    third={`XAUEUR_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={31100000}*/}
+            {/*    rate={0.18}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
+            {/*<Col span={span}>*/}
+            {/*  <Triangle_Page*/}
+            {/*    first={`SILV-${expirationMonth}`}*/}
+            {/*    second={`ED-${expirationMonth}`}*/}
+            {/*    third={`XAGEUR_xp`}*/}
+            {/*    onlyChart*/}
+            {/*    multiple={100}*/}
+            {/*    rate={0.18}*/}
+            {/*    noExp*/}
+            {/*    height={height}*/}
+            {/*    seriesType="Line"*/}
+            {/*  />*/}
+            {/*</Col>*/}
           </Row>
         </TabsContent>
         <TabsContent value="futures-stats">
