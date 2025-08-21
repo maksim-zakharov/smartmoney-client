@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useAppSelector } from '../store.ts';
 import { DataFeed } from '../api/datafeed.ts';
-import { AlorApi } from 'alor-api';
 import { getTimezone } from '../utils.ts';
 import {
   ChartingLibraryFeatureset,
@@ -23,14 +22,14 @@ import {
 
 export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, small }: any) => {
   const ref = useRef<HTMLDivElement>(null);
-  const api = useAppSelector((state) => state.alorSlice.api);
+  const dataService = useAppSelector((state) => state.alorSlice.dataService);
   const ws = useAppSelector((state) => state.alorSlice.ws);
   const cTraderAccount = useAppSelector((state) => state.alorSlice.cTraderAccount);
 
   const datafeed = useMemo(
     () =>
-      api ? new DataFeed({ ws, api: api as AlorApi, data, multiple, ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId }) : null,
-    [ws, api, cTraderAccount?.ctidTraderAccountId, data, multiple],
+      dataService ? new DataFeed({ ws, dataService, data, multiple, ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId }) : null,
+    [ws, dataService, cTraderAccount?.ctidTraderAccountId, data, multiple],
   );
 
   useEffect(() => {

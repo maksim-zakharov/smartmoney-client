@@ -5,6 +5,7 @@ import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/s
 import { io, Socket } from 'socket.io-client';
 import { tinkoffApi } from './tinkoff.api.ts';
 import { ctraderApi } from './ctrader.api.ts';
+import { DataService } from './data.service.ts';
 
 type Settings = {
   token: string;
@@ -34,6 +35,7 @@ ws.on('disconnect', () => console.log('WS disconnected'));
 
 const initialState = {
   api: undefined,
+  dataService: undefined,
   agreementsMap: {},
   activeOperations: [],
   lastWithdrawals: [],
@@ -64,6 +66,7 @@ const initialState = {
   };
   ws: Socket;
   api: undefined | AlorApi;
+  dataService?: DataService;
   apiAuth: boolean;
   userInfo: UserInfoResponse;
   settings: Settings;
@@ -93,7 +96,7 @@ export const alorSlice = createSlice({
       // Если API уже создан, не пересоздаем его
       if (!state.api) {
         console.log('init');
-        state.api = new AlorApi({
+        const _api = new AlorApi({
           token: action.payload.token,
           accessToken: action.payload.accessToken,
           endpoint: Endpoint.PROD,
@@ -101,6 +104,9 @@ export const alorSlice = createSlice({
           wssEndpointBeta: WssEndpointBeta.PROD,
           refreshType: action.payload.type,
         });
+        state.api = _api;
+
+        state.dataService = new DataService(_api);
       }
 
       state.release?.();

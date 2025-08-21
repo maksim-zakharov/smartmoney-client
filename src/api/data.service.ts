@@ -1,0 +1,95 @@
+import { AlorApi } from 'alor-api';
+import { catchError, from, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer } from 'rxjs';
+import { PeriodParams, ResolutionString } from '../assets/charting_library';
+
+export class DataService {
+  private serverTimeCache$: Observable<any>;
+
+  private readonly ctraderUrl: string;
+
+  constructor(public readonly alorApi: AlorApi) {
+    // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
+    this.ctraderUrl = 'https://176.114.69.4';
+  }
+
+  get serverTime$() {
+    if (!this.serverTimeCache$) {
+      this.serverTimeCache$ = from(this.alorApi.http.get(`https://api.alor.ru/md/v2/time`)).pipe(
+        pluck('data'),
+        shareReplay({ bufferSize: 1, refCount: true }),
+      );
+    }
+    return this.serverTimeCache$;
+  }
+
+  getChartData(ticker: string, resolution: ResolutionString, periodParams: PeriodParams) {
+    const request$ = ticker.includes('_xp')
+      ? from(
+          fetch(
+            `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}`,
+            {
+              headers: {
+                'x-ctrader-token': localStorage.getItem('cTraderAuth')
+                  ? JSON.parse(localStorage.getItem('cTraderAuth'))?.accessToken
+                  : undefined,
+              },
+            },
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))))
+      : from(
+          this.alorApi.instruments.getHistory({
+            symbol: ticker,
+            exchange: 'MOEX',
+            from: Math.max(periodParams.from, 0),
+            to: Math.max(periodParams.to, 1),
+            tf: this.parseTimeframe(resolution),
+            countBack: periodParams.countBack,
+          }),
+        );
+
+    return request$.pipe(
+      retryWhen((errors) =>
+        errors.pipe(
+          mergeMap((error, attempt) => {
+            // Можно добавить логирование ошибок
+            console.warn(`Attempt ${attempt + 1} failed:`, error.message);
+
+            // Если превышено максимальное количество попыток, пробрасываем ошибку
+            // if (attempt >= 10) {
+            //   // Максимум 10 попыток
+            //   return throwError(() => error);
+            // }
+
+            // Ретраим каждые 5 секунд
+            return timer(5000);
+          }),
+        ),
+      ),
+    );
+  }
+
+  private parseTimeframe(resolution: ResolutionString): string {
+    const code = resolution.slice(-1);
+    if (['D', 'W', 'M', 'Y'].includes(code)) {
+      return resolution;
+    }
+
+    const count = Number(resolution.substring(0, resolution.length - 1));
+
+    if (code === 'S') {
+      return count.toString();
+    }
+
+    if (code === 'H') {
+      return (count * 60 * 60).toString();
+    }
+
+    // resolution contains minutes
+    return (Number(resolution) * 60).toString();
+  }
+}

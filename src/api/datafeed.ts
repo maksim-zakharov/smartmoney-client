@@ -20,6 +20,7 @@ import { getCommonCandles, getPrecision } from '../utils';
 import { calculateCandle } from '../../symbolFuturePairs';
 import { BehaviorSubject, combineLatest, filter } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
+import { DataService } from './data.service.ts';
 
 const resolveOneSymbol = ({ api, symbolName }: { api: AlorApi; symbolName: string }) => {
   const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);
@@ -75,6 +76,7 @@ const resolveOneSymbol = ({ api, symbolName }: { api: AlorApi; symbolName: strin
 export class DataFeed implements IBasicDataFeed {
   private readonly subscriptions = new Map<string, any[]>();
   private readonly api: AlorApi;
+  private readonly dataService: DataService;
   private readonly data?: HistoryObject[];
   private readonly multiple: number;
   private readonly ctidTraderAccountId?: number;
@@ -83,8 +85,9 @@ export class DataFeed implements IBasicDataFeed {
 
   private ws: Socket | null = null; // Add to class
 
-  constructor(options: { ws: Socket; ctidTraderAccountId?: number; data?: HistoryObject[]; multiple: number; api: AlorApi }) {
-    this.api = options.api;
+  constructor(options: { ws: Socket; ctidTraderAccountId?: number; data?: HistoryObject[]; multiple: number; dataService: DataService }) {
+    this.api = options.dataService.alorApi;
+    this.dataService = options.dataService;
     this.data = options.data;
     this.multiple = options.multiple;
     this.ctidTraderAccountId = options.ctidTraderAccountId;
@@ -108,7 +111,7 @@ export class DataFeed implements IBasicDataFeed {
   }
 
   getServerTime?(callback: ServerTimeCallback): void {
-    this.api.http.get(`https://api.alor.ru/md/v2/time`).then((r) => callback(r.data));
+    this.dataService.serverTime$.subscribe(callback);
   }
   searchSymbols(userInput: string, exchange: string, symbolType: string, onResult: SearchSymbolsCallback): void {
     this.api.instruments
@@ -241,28 +244,7 @@ export class DataFeed implements IBasicDataFeed {
     }
     const isSentetic = symbolInfo.ticker.includes('/');
     if (!isSentetic) {
-      (symbolInfo.ticker.includes('_xp')
-        ? fetch(
-            `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}`,
-            {
-              headers: {
-                'x-ctrader-token': localStorage.getItem('cTraderAuth')
-                  ? JSON.parse(localStorage.getItem('cTraderAuth'))?.accessToken
-                  : undefined,
-              },
-            },
-          )
-            .then((res) => res.json())
-            .then((d) => ({ history: d, next: null, prev: null }))
-        : this.api.instruments.getHistory({
-            symbol: symbolInfo.ticker,
-            exchange: symbolInfo.exchange as any,
-            from: Math.max(periodParams.from, 0),
-            to: Math.max(periodParams.to, 1),
-            tf: this.parseTimeframe(resolution),
-            countBack: periodParams.countBack,
-          })
-      ).then((res) => {
+      this.dataService.getChartData(symbolInfo.ticker, resolution, periodParams).subscribe((res) => {
         const dataIsEmpty = res.history.length === 0;
 
         const nextTime = periodParams.firstDataRequest ? res.next : res.prev;
