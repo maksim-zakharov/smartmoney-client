@@ -34,6 +34,7 @@ const ForexLabel = ({ ticker }) => {
     XAGUSD_xp: 'SilverFut',
     XPDUSD_xp: 'Palladium',
     XPTUSD_xp: 'Platinum',
+    SPXUSD_xp: 's&p500',
     USDCNH_xp: 'USDCNY',
     EURUSD_xp: 'EURUSD3',
     CUCUSD_xp: 'Co',
