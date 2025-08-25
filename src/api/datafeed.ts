@@ -264,31 +264,7 @@ export class DataFeed implements IBasicDataFeed {
       });
     } else {
       const parts = symbolInfo.ticker.split('/');
-      Promise.all(
-        parts.map((symbol) =>
-          this.dataService
-            .getChartData(symbol, resolution, periodParams)
-            .toPromise()
-            .then((res) => {
-              const dataIsEmpty = res.history.length === 0;
-
-              const nextTime = periodParams.firstDataRequest ? res.next : res.prev;
-              onResult(
-                res.history.map(
-                  (x) =>
-                    ({
-                      ...x,
-                      time: x.time * 1000,
-                    }) as Bar,
-                ),
-                {
-                  noData: dataIsEmpty,
-                  nextTime: dataIsEmpty ? nextTime : undefined,
-                },
-              );
-            }),
-        ),
-      ).then((res) => {
+      Promise.all(parts.map((symbol) => this.dataService.getChartData(symbol, resolution, periodParams).toPromise())).then((res) => {
         const dataIsEmpty = res.some((r) => !r.history.length);
 
         const nextTime = periodParams.firstDataRequest ? res.find((r) => r.next)?.next : res.find((r) => r.prev)?.prev;

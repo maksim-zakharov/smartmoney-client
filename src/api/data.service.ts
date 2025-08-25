@@ -42,7 +42,10 @@ export class DataService {
           }
           return res.json();
         }),
-      ).pipe(catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))));
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
     } else if (ticker.includes('GATE:')) {
       const _ticker = ticker.split('GATE:')[1];
       request$ = from(
@@ -54,7 +57,10 @@ export class DataService {
           }
           return res.json();
         }),
-      ).pipe(catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))));
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
     } else if (ticker.includes('BYBIT:')) {
       const _ticker = ticker.split('BYBIT:')[1];
       request$ = from(
@@ -66,7 +72,10 @@ export class DataService {
           }
           return res.json();
         }),
-      ).pipe(catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))));
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
     } else {
       request$ = from(
         this.alorApi.instruments.getHistory({
@@ -81,7 +90,6 @@ export class DataService {
     }
 
     return request$.pipe(
-      map((r) => ({ history: r })),
       retryWhen((errors) =>
         errors.pipe(
           mergeMap((error, attempt) => {
