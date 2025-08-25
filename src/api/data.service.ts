@@ -1,5 +1,5 @@
 import { AlorApi } from 'alor-api';
-import { catchError, from, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer } from 'rxjs';
+import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer } from 'rxjs';
 import { PeriodParams, ResolutionString } from '../assets/charting_library';
 
 export class DataService {
@@ -23,36 +23,65 @@ export class DataService {
   }
 
   getChartData(ticker: string, resolution: ResolutionString, periodParams: PeriodParams) {
-    const request$ = ticker.includes('_xp')
-      ? from(
-          fetch(
-            `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbolInfo.ticker}&to=${Math.max(periodParams.to, 1)}`,
-            {
-              headers: {
-                'x-ctrader-token': localStorage.getItem('cTraderAuth')
-                  ? JSON.parse(localStorage.getItem('cTraderAuth'))?.accessToken
-                  : undefined,
-              },
+    let request$;
+
+    if (ticker.includes('_xp')) {
+      request$ = from(
+        fetch(
+          `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${ticker}&to=${Math.max(periodParams.to, 1)}`,
+          {
+            headers: {
+              'x-ctrader-token': localStorage.getItem('cTraderAuth')
+                ? JSON.parse(localStorage.getItem('cTraderAuth'))?.accessToken
+                : undefined,
             },
-          ).then((res) => {
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            return res.json();
-          }),
-        ).pipe(catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))))
-      : from(
-          this.alorApi.instruments.getHistory({
-            symbol: ticker,
-            exchange: 'MOEX',
-            from: Math.max(periodParams.from, 0),
-            to: Math.max(periodParams.to, 1),
-            tf: this.parseTimeframe(resolution),
-            countBack: periodParams.countBack,
-          }),
-        );
+          },
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))));
+    } else if (ticker.includes('GATE:')) {
+      const _ticker = ticker.split('GATE:')[1];
+      request$ = from(
+        fetch(
+          `${this.ctraderUrl}/gate/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))));
+    } else if (ticker.includes('BYBIT:')) {
+      const _ticker = ticker.split('BYBIT:')[1];
+      request$ = from(
+        fetch(
+          `${this.ctraderUrl}/bybit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))));
+    } else {
+      request$ = from(
+        this.alorApi.instruments.getHistory({
+          symbol: ticker,
+          exchange: 'MOEX',
+          from: Math.max(periodParams.from, 0),
+          to: Math.max(periodParams.to, 1),
+          tf: this.parseTimeframe(resolution),
+          countBack: periodParams.countBack,
+        }),
+      );
+    }
 
     return request$.pipe(
+      map((r) => ({ history: r })),
       retryWhen((errors) =>
         errors.pipe(
           mergeMap((error, attempt) => {

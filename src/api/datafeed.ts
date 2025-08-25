@@ -160,18 +160,18 @@ export class DataFeed implements IBasicDataFeed {
       const parts = symbolName.split('/');
       Promise.all(
         parts.map((part) =>
-          part.includes('_xp')
-            ? Promise.resolve({
+          !part.includes('_xp') && !part.includes(':')
+            ? this.api.instruments.getSecurityByExchangeAndSymbol({
+                symbol: part,
+                exchange: Exchange.MOEX,
+                format: 'Simple',
+              })
+            : Promise.resolve({
                 symbol: part,
                 exchange: 'XPBEE',
                 currency: 'USDT',
                 minstep: 0.001,
                 type: '',
-              })
-            : this.api.instruments.getSecurityByExchangeAndSymbol({
-                symbol: part,
-                exchange: Exchange.MOEX,
-                format: 'Simple',
               }),
         ),
       ).then((instruments) => {
@@ -266,27 +266,27 @@ export class DataFeed implements IBasicDataFeed {
       const parts = symbolInfo.ticker.split('/');
       Promise.all(
         parts.map((symbol) =>
-          symbol.includes('_xp')
-            ? fetch(
-                `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${symbol}&to=${Math.max(periodParams.to, 1)}${this.ctidTraderAccountId ? `&ctidTraderAccountId=${this.ctidTraderAccountId}` : ''}`,
+          this.dataService
+            .getChartData(symbol, resolution, periodParams)
+            .toPromise()
+            .then((res) => {
+              const dataIsEmpty = res.history.length === 0;
+
+              const nextTime = periodParams.firstDataRequest ? res.next : res.prev;
+              onResult(
+                res.history.map(
+                  (x) =>
+                    ({
+                      ...x,
+                      time: x.time * 1000,
+                    }) as Bar,
+                ),
                 {
-                  headers: {
-                    'x-ctrader-token': localStorage.getItem('cTraderAuth')
-                      ? JSON.parse(localStorage.getItem('cTraderAuth'))?.accessToken
-                      : undefined,
-                  },
+                  noData: dataIsEmpty,
+                  nextTime: dataIsEmpty ? nextTime : undefined,
                 },
-              )
-                .then((res) => res.json())
-                .then((d) => ({ history: d, next: null, prev: null }))
-            : this.api.instruments.getHistory({
-                symbol: symbol,
-                exchange: symbolInfo.exchange as any,
-                from: Math.max(periodParams.from, 0),
-                to: Math.max(periodParams.to, 1),
-                tf: this.parseTimeframe(resolution),
-                countBack: periodParams.countBack,
-              }),
+              );
+            }),
         ),
       ).then((res) => {
         const dataIsEmpty = res.some((r) => !r.history.length);

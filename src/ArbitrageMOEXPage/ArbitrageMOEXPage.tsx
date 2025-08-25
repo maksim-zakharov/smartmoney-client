@@ -78,6 +78,11 @@ export const ArbitrageMOEXPage = () => {
     { key: 'SBER', label: 'SBER/SBERP', element: <StatArbPage tickerStock="SBER" _tickerFuture="SBERP" /> },
     { key: 'SNGS', label: 'SNGS/SNGSP', element: <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" /> },
     {
+      key: 'BYBIT:BTCUSD',
+      label: 'BYBIT:BTCUSD/GATE:BTCUSD',
+      element: <StatArbPage tickerStock="BYBIT:BTC_USDT" _tickerFuture="GATE:BTC_USDT" multi={1} />,
+    },
+    {
       key: 'IMOEXF',
       label: 'IMOEXF/MIX-9.25',
       element: <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" seriesType="Line" multi={10000} />,
