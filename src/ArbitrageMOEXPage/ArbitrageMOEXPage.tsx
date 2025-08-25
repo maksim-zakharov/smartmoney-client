@@ -79,8 +79,63 @@ export const ArbitrageMOEXPage = () => {
     { key: 'SNGS', label: 'SNGS/SNGSP', element: <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" /> },
     {
       key: 'BYBIT:BTCUSD',
-      label: 'BYBIT:BTCUSD/GATE:BTCUSD',
-      element: <StatArbPage tickerStock="BYBIT:BTC_USDT" _tickerFuture="GATE:BTC_USDT" multi={1} />,
+      label: 'BYBIT:BTCUSD/GATE:BTC_USDT',
+      element: <StatArbPage tickerStock="BYBIT:BTCUSDT" _tickerFuture="GATE:BTC_USDT" multi={100} />,
+    },
+    {
+      key: 'BYBIT:ETHUSD',
+      label: 'BYBIT:ETHUSD/GATE:ETHUSD',
+      element: <StatArbPage tickerStock="BYBIT:ETHUSDT" _tickerFuture="GATE:ETH_USDT" multi={100} />,
+    },
+    {
+      key: 'BYBIT:XRPUSD',
+      label: 'BYBIT:XRPUSD/GATE:XRPUSD',
+      element: <StatArbPage tickerStock="BYBIT:XRPUSDT" _tickerFuture="GATE:XRP_USDT" multi={100} />,
+    },
+    {
+      key: 'BYBIT:SOLUSDT',
+      label: 'BYBIT:SOLUSDT/GATE:XRPUSD',
+      element: <StatArbPage tickerStock="BYBIT:SOLUSDT" _tickerFuture="GATE:SOL_USDT" multi={100} />,
+    },
+    {
+      key: 'BYBIT:TRXUSDT',
+      label: 'BYBIT:TRXUSDT/GATE:TRXUSDT',
+      element: <StatArbPage tickerStock="BYBIT:TRXUSDT" _tickerFuture="GATE:TRX_USDT" multi={100} />,
+    },
+    {
+      key: 'BYBIT:DOGEUSDT',
+      label: 'BYBIT:DOGEUSDT/GATE:DOGEUSDT',
+      element: <StatArbPage tickerStock="BYBIT:DOGEUSDT" _tickerFuture="GATE:DOGE_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:DOGEUSDT',
+      label: 'MEXC:DOGEUSDT/GATE:DOGEUSDT',
+      element: <StatArbPage tickerStock="MEXC:DOGE_USDT" _tickerFuture="GATE:DOGE_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:PUBLIC_USDT',
+      label: 'MEXC:PUBLIC_USDT/GATE:PUBLIC_USDT',
+      element: <StatArbPage tickerStock="MEXC:PUBLIC_USDT" _tickerFuture="GATE:PUBLIC_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:WAI_USDT',
+      label: 'MEXC:WAI_USDT/GATE:WAI_USDT',
+      element: <StatArbPage tickerStock="MEXC:WAI_USDT" _tickerFuture="GATE:WAI_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:OKB_USDT',
+      label: 'MEXC:OKB_USDT/GATE:OKB_USDT',
+      element: <StatArbPage tickerStock="MEXC:OKB_USDT" _tickerFuture="GATE:OKB_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:MAT_USDT',
+      label: 'MEXC:MAT_USDT/GATE:MAT_USDT',
+      element: <StatArbPage tickerStock="MEXC:MAT_USDT" _tickerFuture="GATE:MAT_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:BOOM_USDT',
+      label: 'MEXC:BOOM_USDT/GATE:BOOM_USDT',
+      element: <StatArbPage tickerStock="MEXC:BOOM_USDT" _tickerFuture="GATE:BOOM_USDT" multi={100} />,
     },
     {
       key: 'IMOEXF',
