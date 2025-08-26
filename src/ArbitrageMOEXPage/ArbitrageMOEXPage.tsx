@@ -128,6 +128,21 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="MEXC:OKB_USDT" _tickerFuture="GATE:OKB_USDT" multi={100} />,
     },
     {
+      key: 'BINGX:OKB-USDT',
+      label: 'BINGX:OKB-USDT/GATE:OKB_USDT',
+      element: <StatArbPage tickerStock="BINGX:OKB-USDT" _tickerFuture="GATE:OKB_USDT" multi={100} />,
+    },
+    {
+      key: 'BINGX:HOUSE-USDT',
+      label: 'BINGX:HOUSE-USDT/GATE:HOUSE_USDT',
+      element: <StatArbPage tickerStock="BINGX:HOUSE-USDT" _tickerFuture="GATE:HOUSE_USDT" multi={100} />,
+    },
+    {
+      key: 'BINGX:PI-USDT',
+      label: 'BINGX:PI-USDT/GATE:PI_USDT',
+      element: <StatArbPage tickerStock="BINGX:PI-USDT" _tickerFuture="GATE:PI_USDT" multi={100} />,
+    },
+    {
       key: 'MEXC:MAT_USDT',
       label: 'MEXC:MAT_USDT/GATE:MAT_USDT',
       element: <StatArbPage tickerStock="MEXC:MAT_USDT" _tickerFuture="GATE:MAT_USDT" multi={100} />,
@@ -136,6 +151,11 @@ export const ArbitrageMOEXPage = () => {
       key: 'MEXC:BOOM_USDT',
       label: 'MEXC:BOOM_USDT/GATE:BOOM_USDT',
       element: <StatArbPage tickerStock="MEXC:BOOM_USDT" _tickerFuture="GATE:BOOM_USDT" multi={100} />,
+    },
+    {
+      key: 'BINGX:BOOM-USDT',
+      label: 'BINGX:BOOM-USDT/GATE:BOOM_USDT',
+      element: <StatArbPage tickerStock="BINGX:BOOM-USDT" _tickerFuture="GATE:BOOM_USDT" multi={100} />,
     },
     {
       key: 'IMOEXF',

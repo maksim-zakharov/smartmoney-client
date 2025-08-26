@@ -91,6 +91,21 @@ export class DataService {
         map((r) => ({ history: r })),
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
+    } else if (ticker.includes('BINGX:')) {
+      const _ticker = ticker.split('BINGX:')[1];
+      request$ = from(
+        fetch(
+          `${this.ctraderUrl}/bingx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
     } else {
       request$ = from(
         this.alorApi.instruments.getHistory({
