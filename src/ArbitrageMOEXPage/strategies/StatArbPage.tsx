@@ -677,98 +677,52 @@ export const StatArbPage = ({
       <div className="relative" style={{ height }}>
         {isVisible && (
           <>
-            <div
-              style={
-                // isSecondForex
-                //   ? {
-                //       top: 8,
-                //       position: 'absolute',
-                //       zIndex: 3,
-                //       left: 8,
-                //       gap: 8,
-                //       display: 'flex',
-                //       flexWrap: 'wrap',
-                //       alignItems: 'center',
-                //     }
-                //   :
-                {
-                  bottom: 38,
-                  position: 'absolute',
-                  zIndex: 3,
-                  left: 8,
-                  gap: 8,
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  alignItems: 'center',
-                }
-              }
-            >
-              {/*<TimeframeSelect value={tf} onChange={setSize} />*/}
-              {/*<TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />*/}
-              {/*<TickerSelect filterSymbols={futureTickers} value={_tickerFuture} onSelect={onSelectTicker('future')} />*/}
-              {/*<Select*/}
-              {/*    value={tickerFuture}*/}
-              {/*    showSearch*/}
-              {/*    placeholder="Введи тикер"*/}
-              {/*    onSelect={onSelectTicker('future')}*/}
-              {/*    filterOption={(input, option) =>*/}
-              {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
-              {/*    }*/}
-              {/*    style={{width: 160}}*/}
-              {/*    options={options}*/}
-              {/*/>*/}
-
-              {/*<DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />*/}
-              <div style={{ display: 'flex', gap: 8, flexDirection: 'column', background: 'rgba(23,35,46,0.7)', padding: '4px 8px' }}>
-                <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>
-                <Statistic
-                  title="Финрез"
-                  style={{ display: 'flex', gap: 8 }}
-                  value={`${PnL.toFixed(2)}%`}
-                  precision={2}
-                  valueStyle={{
-                    color: PnL > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
-                    fontSize: 14,
-                  }}
-                />
-                <Statistic
-                  title="Тейки"
-                  style={{ display: 'flex', gap: 8 }}
-                  value={new Intl.NumberFormat('en-US', {
-                    notation: 'compact',
-                  }).format(profits)}
-                  valueStyle={{ color: 'rgb(44, 232, 156)', fontSize: 14 }}
-                  suffix={`(${!profits ? 0 : ((profits * 100) / (profits + losses)).toFixed(2)})%`}
-                />
-                <Statistic
-                  title="Лоси"
-                  style={{ display: 'flex', gap: 8 }}
-                  value={new Intl.NumberFormat('en-US', {
-                    notation: 'compact',
-                  }).format(losses)}
-                  valueStyle={{ color: 'rgb(255, 117, 132)', fontSize: 14 }}
-                  suffix={`(${!losses ? 0 : ((losses * 100) / (profits + losses)).toFixed(2)})%`}
-                />
-                {/*<Statistic*/}
-                {/*  title="Лонги"*/}
-                {/*  style={{ display: 'flex', gap: 8 }}*/}
-                {/*  value={new Intl.NumberFormat('en-US', {*/}
-                {/*    notation: 'compact',*/}
-                {/*  }).format(longs)}*/}
-                {/*  valueStyle={{ color: 'rgb(44, 232, 156)', fontSize: 14 }}*/}
-                {/*  suffix={`(${!longs ? 0 : ((longs * 100) / (shorts + longs)).toFixed(2)})%`}*/}
-                {/*/>*/}
-                {/*<Statistic*/}
-                {/*  title="Шорты"*/}
-                {/*  style={{ display: 'flex', gap: 8 }}*/}
-                {/*  value={new Intl.NumberFormat('en-US', {*/}
-                {/*    notation: 'compact',*/}
-                {/*  }).format(shorts)}*/}
-                {/*  valueStyle={{ color: 'rgb(255, 117, 132)', fontSize: 14 }}*/}
-                {/*  suffix={`(${!shorts ? 0 : ((shorts * 100) / (shorts + longs)).toFixed(2)})%`}*/}
-                {/*/>*/}
-              </div>
-            </div>
+            {/*<div*/}
+            {/*  style={*/}
+            {/*    {*/}
+            {/*      bottom: 38,*/}
+            {/*      position: 'absolute',*/}
+            {/*      zIndex: 3,*/}
+            {/*      left: 8,*/}
+            {/*      gap: 8,*/}
+            {/*      display: 'flex',*/}
+            {/*      flexWrap: 'wrap',*/}
+            {/*      alignItems: 'center',*/}
+            {/*    }*/}
+            {/*  }*/}
+            {/*>*/}
+            {/*  <div style={{ display: 'flex', gap: 8, flexDirection: 'column', background: 'rgba(23,35,46,0.7)', padding: '4px 8px' }}>*/}
+            {/*    <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>*/}
+            {/*    <Statistic*/}
+            {/*      title="Финрез"*/}
+            {/*      style={{ display: 'flex', gap: 8 }}*/}
+            {/*      value={`${PnL.toFixed(2)}%`}*/}
+            {/*      precision={2}*/}
+            {/*      valueStyle={{*/}
+            {/*        color: PnL > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',*/}
+            {/*        fontSize: 14,*/}
+            {/*      }}*/}
+            {/*    />*/}
+            {/*    <Statistic*/}
+            {/*      title="Тейки"*/}
+            {/*      style={{ display: 'flex', gap: 8 }}*/}
+            {/*      value={new Intl.NumberFormat('en-US', {*/}
+            {/*        notation: 'compact',*/}
+            {/*      }).format(profits)}*/}
+            {/*      valueStyle={{ color: 'rgb(44, 232, 156)', fontSize: 14 }}*/}
+            {/*      suffix={`(${!profits ? 0 : ((profits * 100) / (profits + losses)).toFixed(2)})%`}*/}
+            {/*    />*/}
+            {/*    <Statistic*/}
+            {/*      title="Лоси"*/}
+            {/*      style={{ display: 'flex', gap: 8 }}*/}
+            {/*      value={new Intl.NumberFormat('en-US', {*/}
+            {/*        notation: 'compact',*/}
+            {/*      }).format(losses)}*/}
+            {/*      valueStyle={{ color: 'rgb(255, 117, 132)', fontSize: 14 }}*/}
+            {/*      suffix={`(${!losses ? 0 : ((losses * 100) / (profits + losses)).toFixed(2)})%`}*/}
+            {/*    />*/}
+            {/*  </div>*/}
+            {/*</div>*/}
             {/*<TWChart data={data} />*/}
             {/*{!isSecondForex ? (*/}
             <TWChart ticker={`${tickerStock}/${tickerFuture}`} height={height} multiple={multiple} small={onlyChart} />
