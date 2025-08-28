@@ -329,7 +329,7 @@ export const TestPage = () => {
                   {invoice.some((i) => tinkoffInstrumentUidPositionMap[i] || cTraderPositionsMapped[i]) && (
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button size="xs" variant="default">
+                        <Button size="xs" variant="destructive">
                           Закрыть
                         </Button>
                       </DialogTrigger>
@@ -371,14 +371,19 @@ export const TestPage = () => {
                           </Table>
                         </div>
                         <DialogClose asChild>
-                          <Button className="m-2" onClick={handleClosePositionClick(invoice)} disabled={tClosePositionLoading}>
+                          <Button
+                            className="m-2"
+                            onClick={handleClosePositionClick(invoice)}
+                            disabled={tClosePositionLoading}
+                            variant="destructive"
+                          >
                             Закрыть
                           </Button>
                         </DialogClose>
                       </DialogContent>
                     </Dialog>
                   )}
-                  <Button size="sm" variant="ghost" onClick={() => handleDeletePair(invoice)}>
+                  <Button size="sm" variant="ghost" onClick={() => handleDeletePair(invoice)} className="p-0 h-0">
                     <CircleX />
                   </Button>
                 </TableCell>
