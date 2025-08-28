@@ -64,7 +64,20 @@ export const tinkoffApi = createApi({
         params,
       }),
     }),
+    closePosition: builder.mutation<void, { instrumentUid: string; brokerAccountId: string }>({
+      query: (body) => ({
+        url: '/closePosition',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useGetInstrumentByIdQuery, useGetTinkoffPortfolioQuery, useGetTinkoffOrdersQuery, useGetTinkoffAccountsQuery } = tinkoffApi;
+export const {
+  useGetInstrumentByIdQuery,
+  useGetTinkoffPortfolioQuery,
+  useClosePositionMutation,
+  useGetTinkoffOrdersQuery,
+  useGetTinkoffAccountsQuery,
+} = tinkoffApi;

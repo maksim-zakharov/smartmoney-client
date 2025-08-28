@@ -7,13 +7,14 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { cn } from './lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 import { TWChart } from './components/TWChart';
-import { useGetInstrumentByIdQuery } from './api/tinkoff.api';
-import { useGetCTraderSymbolsQuery } from './api/ctrader.api';
+import { useClosePositionMutation, useGetInstrumentByIdQuery } from './api/tinkoff.api';
+import { useCTraderclosePositionMutation, useGetCTraderSymbolsQuery } from './api/ctrader.api';
 import { Button } from './components/ui/button.tsx';
 import { CirclePlus, CircleX } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Checkbox } from './components/ui/checkbox.tsx';
 import { useGetMEXCContractQuery } from './api/mexc.api.ts';
+import { TypographyParagraph } from './components/ui/typography.tsx';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -61,6 +62,9 @@ const ForexLabel = ({ ticker }) => {
 };
 
 export const TestPage = () => {
+  const [tClosePositionMutation, { isLoading: tClosePositionLoading }] = useClosePositionMutation();
+  const [ctraderClosePositionMutation, { isLoading: ctraderClosePositionLoading }] = useCTraderclosePositionMutation();
+
   const {
     tinkoffAccounts,
     tinkoffPortfolio,
@@ -179,6 +183,16 @@ export const TestPage = () => {
     [tinkoffPortfolio?.positions],
   );
 
+  const tinkoffInstrumentUidPositionMap = useMemo(
+    () =>
+      (tinkoffPortfolio?.positions || []).reduce((acc, curr) => {
+        acc[curr.instrumentUid] = curr;
+
+        return acc;
+      }, {}),
+    [tinkoffPortfolio?.positions],
+  );
+
   const [selectedTicker, setSelectedTicker] = useState([]);
 
   const [pairs, setPairs] = useState(localStorage.getItem('pairs') ? JSON.parse(localStorage.getItem('pairs')) : []);
@@ -196,6 +210,28 @@ export const TestPage = () => {
     localStorage.setItem('pairs', JSON.stringify(pairs));
 
     setSelectedTicker([]);
+  };
+
+  const handleClosePositionClick = (tickers: string[]) => async (e) => {
+    const tiTickers = tickers.filter((t) => !Number.isInteger(t));
+    await Promise.all(
+      tiTickers.map((instrumentUid) =>
+        tClosePositionMutation({
+          brokerAccountId: tinkoffPortfolio?.accountId,
+          instrumentUid,
+        }).unwrap(),
+      ),
+    );
+
+    const ctraderTickers = tickers.filter((t) => Number.isInteger(t));
+    await Promise.all(
+      ctraderTickers.map((symbolId) =>
+        ctraderClosePositionMutation({
+          ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+          symbolId,
+        }).unwrap(),
+      ),
+    );
   };
 
   return (
@@ -290,6 +326,58 @@ export const TestPage = () => {
                   {moneyFormat(PairPnl(invoice))}
                 </TableCell>
                 <TableCell className="text-right">
+                  {invoice.some((i) => tinkoffInstrumentUidPositionMap[i] || cTraderPositionsMapped[i]) && (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="xs" variant="default">
+                          Закрыть
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md gap-0">
+                        <DialogHeader>
+                          <DialogTitle>Закрытие позиции</DialogTitle>
+                        </DialogHeader>
+                        <div className="p-3 gap-2 flex flex-col">
+                          <TypographyParagraph>Вы уверены что хотите закрыть позицию?</TypographyParagraph>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-[200px]">Инструмент</TableHead>
+                                <TableHead className="text-right">Доход</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {[invoice].map((invoice, index) => (
+                                <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
+                                  <TableCell className="flex gap-2">
+                                    {invoice.map((p) =>
+                                      Number.isInteger(p) ? <ForexLabel ticker={map.get(p)?.symbolName} /> : <FigiLabel uid={p} />,
+                                    )}
+                                  </TableCell>
+                                  <TableCell
+                                    className={
+                                      PairPnl(invoice) > 0
+                                        ? 'text-right profitCell'
+                                        : PairPnl(invoice) < 0
+                                          ? 'text-right lossCell'
+                                          : 'text-right'
+                                    }
+                                  >
+                                    {moneyFormat(PairPnl(invoice))}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <DialogClose asChild>
+                          <Button className="m-2" onClick={handleClosePositionClick(invoice)} disabled={tClosePositionLoading}>
+                            Закрыть
+                          </Button>
+                        </DialogClose>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                   <Button size="sm" variant="ghost" onClick={() => handleDeletePair(invoice)}>
                     <CircleX />
                   </Button>
