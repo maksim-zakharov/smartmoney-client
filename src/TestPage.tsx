@@ -13,6 +13,7 @@ import { Button } from './components/ui/button.tsx';
 import { CirclePlus, CircleX } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Checkbox } from './components/ui/checkbox.tsx';
+import { useGetMEXCContractQuery } from './api/mexc.api.ts';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -24,6 +25,17 @@ const FigiLabel = ({ uid }) => {
         style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/${data?.brand.logoName.replace('.png', '')}x160.png")` }}
       ></div>
       {data?.ticker}
+    </div>
+  );
+};
+
+const MEXCLabel = ({ symbol }) => {
+  const { data } = useGetMEXCContractQuery({ symbol });
+
+  return (
+    <div className="flex gap-1">
+      <div className="img" style={{ backgroundImage: `url("${data?.baseCoinIconUrl}")` }}></div>
+      {data?.symbol}
     </div>
   );
 };
@@ -49,8 +61,16 @@ const ForexLabel = ({ ticker }) => {
 };
 
 export const TestPage = () => {
-  const { tinkoffAccounts, tinkoffPortfolio, tinkoffOrders, cTraderPositions, cTraderPositionPnL, cTraderAccount, cTraderSymbols } =
-    useAppSelector((state) => state.alorSlice);
+  const {
+    tinkoffAccounts,
+    tinkoffPortfolio,
+    tinkoffOrders,
+    cTraderPositions,
+    cTraderPositionPnL,
+    cTraderAccount,
+    cTraderSymbols,
+    MEXCPositions,
+  } = useAppSelector((state) => state.alorSlice);
 
   const map = useMemo(() => new Map<number, any>(cTraderSymbols?.map((s) => [s.symbolId, s])), [cTraderSymbols]);
 
@@ -421,6 +441,49 @@ export const TestPage = () => {
                 </TableCell>
                 <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>
                   {moneyFormat(invoice.PnL * 80, 'RUB', 0, 2)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Table wrapperClassName="pt-2">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px] text-center" colSpan={6}>
+                MEXC
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px]">Инструмент</TableHead>
+              <TableHead>Лотов</TableHead>
+              <TableHead>Использованная маржа</TableHead>
+              <TableHead className="text-right">Чистая прибыль USDT</TableHead>
+              <TableHead className="text-right">Чистая прибыль RUB</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(MEXCPositions || []).map((invoice, index) => (
+              <TableRow key={invoice.symbol} className={index % 2 ? 'rowOdd' : 'rowEven'}>
+                <TableCell>
+                  <MEXCLabel symbol={invoice.symbol} />
+                </TableCell>
+                <TableCell>{invoice.holdVol}</TableCell>
+                <TableCell>{moneyFormat(invoice.marginRatio, 'USD', 0, 2)}</TableCell>
+                <TableCell
+                  className={
+                    invoice.profitRatio > 0 ? 'text-right profitCell' : invoice.profitRatio < 0 ? 'text-right lossCell' : 'text-right'
+                  }
+                >
+                  {moneyFormat(invoice.profitRatio, 'USD', 0, 2)}
+                </TableCell>
+                <TableCell
+                  className={
+                    invoice.profitRatio > 0 ? 'text-right profitCell' : invoice.profitRatio < 0 ? 'text-right lossCell' : 'text-right'
+                  }
+                >
+                  {moneyFormat(invoice.profitRatio * 80, 'RUB', 0, 2)}
                 </TableCell>
               </TableRow>
             ))}

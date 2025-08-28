@@ -6,6 +6,7 @@ import { io, Socket } from 'socket.io-client';
 import { tinkoffApi } from './tinkoff.api.ts';
 import { ctraderApi } from './ctrader.api.ts';
 import { DataService } from './data.service.ts';
+import { mexcApi } from './mexc.api.ts';
 
 type Settings = {
   token: string;
@@ -79,6 +80,8 @@ const initialState = {
   cTraderPositions?: any;
   cTraderPositionPnL?: any;
   cTraderSymbols?: any;
+
+  MEXCPositions?: any;
 
   tinkoffAccounts?: any;
   tinkoffPortfolio?: any;
@@ -157,6 +160,9 @@ export const alorSlice = createSlice({
     });
     builder.addMatcher(ctraderApi.endpoints.getCTraderPositions.matchFulfilled, (state, { payload }) => {
       state.cTraderPositions = payload;
+    });
+    builder.addMatcher(mexcApi.endpoints.getMEXCPositions.matchFulfilled, (state, { payload }) => {
+      state.MEXCPositions = payload;
     });
     builder.addMatcher(ctraderApi.endpoints.getCTraderPositionPnL.matchFulfilled, (state, { payload }) => {
       state.cTraderPositionPnL = payload;

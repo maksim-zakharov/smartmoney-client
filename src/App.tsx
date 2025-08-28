@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from './components/ui/label';
 import { Input } from './components/ui/input';
 import { useGetTinkoffAccountsQuery, useGetTinkoffOrdersQuery, useGetTinkoffPortfolioQuery } from './api/tinkoff.api';
+import { useGetMEXCPositionsQuery } from './api/mexc.api.ts';
 
 export default function App() {
   const navigate = useNavigate();
@@ -38,6 +39,13 @@ export default function App() {
     process.env.NODE_ENV !== 'production' ? 'http://localhost:5173/' : `https://maksim-zakharov.github.io/smartmoney-client/`;
 
   const tiBrokerAccountId = localStorage.getItem('tiBrokerAccountId');
+
+  useGetMEXCPositionsQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
 
   useGetTinkoffAccountsQuery(
     {},

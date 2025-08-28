@@ -6,6 +6,7 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import { twelveApi } from './twelveApi.ts';
 import { tinkoffApi } from './api/tinkoff.api.ts';
 import { ctraderApi } from './api/ctrader.api.ts';
+import { mexcApi } from './api/mexc.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -14,6 +15,7 @@ export const reducers = {
   [tinkoffApi.reducerPath]: tinkoffApi.reducer,
   [alorSlice.name]: alorSlice.reducer,
   [ctraderApi.reducerPath]: ctraderApi.reducer,
+  [mexcApi.reducerPath]: mexcApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -29,6 +31,7 @@ export const store = configureStore({
       .concat(twelveApi.middleware)
       .concat(tinkoffApi.middleware)
       .concat(ctraderApi.middleware)
+      .concat(mexcApi.middleware)
       .concat(api.middleware) as any,
 });
 
