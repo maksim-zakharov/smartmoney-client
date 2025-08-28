@@ -62,6 +62,8 @@ const ForexLabel = ({ ticker }) => {
 };
 
 export const TestPage = () => {
+  const USDRate = 80.292;
+
   const [tClosePositionMutation, { isLoading: tClosePositionLoading }] = useClosePositionMutation();
   const [ctraderClosePositionMutation, { isLoading: ctraderClosePositionLoading }] = useCTraderclosePositionMutation();
 
@@ -161,14 +163,14 @@ export const TestPage = () => {
         return acc;
       }, {}),
       ...cTraderPositionsMapped.reduce((acc, curr) => {
-        acc[curr.tradeData.symbolId] = (curr.PnL || 0) * 80;
+        acc[curr.tradeData.symbolId] = (curr.PnL || 0) * USDRate;
         return acc;
       }, {}),
     }),
     [tinkoffPortfolio?.positions, cTraderPositionsMapped],
   );
 
-  const total = totalPnL + totalPnLForex * 80;
+  const total = totalPnL + totalPnLForex * USDRate;
 
   const tinkoffPositionsMap = useMemo(
     () =>
@@ -533,7 +535,7 @@ export const TestPage = () => {
                   {moneyFormat(invoice.PnL, 'USD', 0, 2)}
                 </TableCell>
                 <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>
-                  {moneyFormat(invoice.PnL * 80, 'RUB', 0, 2)}
+                  {moneyFormat(invoice.PnL * USDRate, 'RUB', 0, 2)}
                 </TableCell>
               </TableRow>
             ))}
