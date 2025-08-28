@@ -15,6 +15,7 @@ import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTr
 import { Checkbox } from './components/ui/checkbox.tsx';
 import { useGetMEXCContractQuery } from './api/mexc.api.ts';
 import { TypographyParagraph } from './components/ui/typography.tsx';
+import { toast } from 'sonner';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -225,6 +226,8 @@ export const TestPage = () => {
       ),
     );
 
+    toast.success('Позиции в Тинькофф закрыты');
+
     const ctraderTickers = tickers.filter((t) => Number.isInteger(t));
     await Promise.all(
       ctraderTickers.map((symbolId) =>
@@ -234,6 +237,8 @@ export const TestPage = () => {
         }).unwrap(),
       ),
     );
+
+    toast.success('Позиции в CTrader закрыты');
   };
 
   return (
