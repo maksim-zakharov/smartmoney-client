@@ -163,6 +163,18 @@ export default function App() {
     localStorage.setItem('tiBrokerAccountId', e.target.value);
   };
 
+  const [bybitApiKey, setbybitApiKey] = useState<string | null>(localStorage.getItem('bybitApiKey'));
+  const handleEditbybitApiKey = (e) => {
+    setbybitApiKey(e.target.value);
+    localStorage.setItem('bybitApiKey', e.target.value);
+  };
+
+  const [bybitSecretKey, setbybitSecretKey] = useState<string | null>(localStorage.getItem('bybitSecretKey'));
+  const handleEditbybitSecretKey = (e) => {
+    setbybitSecretKey(e.target.value);
+    localStorage.setItem('bybitSecretKey', e.target.value);
+  };
+
   function onClick(params) {
     console.log(params);
     navigate(params.key);
@@ -205,6 +217,10 @@ export default function App() {
                   <Input id="tToken" value={tiToken} onChange={handleEditToken} />
                   <Label htmlFor="tBrokerAccountId">Тинькофф BrokerAccountId</Label>
                   <Input id="tBrokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
+                  <Label htmlFor="bybitApiKey">Bybit Api Key</Label>
+                  <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
+                  <Label htmlFor="bybitSecretKey">Bybit Secret Key</Label>
+                  <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
                 </div>
               </DialogContent>
             </Dialog>

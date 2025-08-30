@@ -168,6 +168,11 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="BYBIT:BTRUSDT" _tickerFuture="MEXC:BTR_USDT" multi={100} />,
     },
     {
+      key: 'BYBIT:CELBUSDT',
+      label: 'BYBIT:CELBUSDT/MEXC:CELB_USDT',
+      element: <StatArbPage tickerStock="BYBIT:CELBUSDT" _tickerFuture="MEXC:CELB_USDT" multi={100} />,
+    },
+    {
       key: 'GMGN:MITO_USDT',
       label: 'GMGN:MITOUSDT/MEXC:MITO_USDT',
       element: <StatArbPage tickerStock="GMGN:MITOUSDT" _tickerFuture="MEXC:MITO_USDT" multi={100} />,
