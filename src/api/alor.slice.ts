@@ -25,14 +25,20 @@ export interface AppsTokenResponse {
   description: null;
 }
 
-const url = 'http://176.114.69.4:3000';
-// const url = 'http://localhost:3000';
+// const url = 'http://176.114.69.4:3000';
+const url = 'http://localhost:3000';
 
-const ws = io(`${url}/ctrader-ws`, {
+const ctraderWs = io(`${url}/ctrader-ws`, {
   transports: ['websocket'],
 });
-ws.on('connect', () => console.log('WS connected'));
-ws.on('disconnect', () => console.log('WS disconnected'));
+ctraderWs.on('connect', () => console.log('WS connected'));
+ctraderWs.on('disconnect', () => console.log('WS disconnected'));
+
+const mexcWs = io(`${url}/mexc-ws`, {
+  transports: ['websocket'],
+});
+mexcWs.on('connect', () => console.log('WS connected'));
+mexcWs.on('disconnect', () => console.log('WS disconnected'));
 
 const initialState = {
   api: undefined,
@@ -42,7 +48,8 @@ const initialState = {
   lastWithdrawals: [],
   release: undefined,
   apiAuth: false,
-  ws,
+  ws: ctraderWs,
+  mexcWs: mexcWs,
   darkColors: {
     backgroundColor: 'rgb(30,44,57)',
     color: 'rgb(166,189,213)',
@@ -66,6 +73,7 @@ const initialState = {
     borderColor: string;
   };
   ws: Socket;
+  mexcWs: Socket;
   api: undefined | AlorApi;
   dataService?: DataService;
   apiAuth: boolean;

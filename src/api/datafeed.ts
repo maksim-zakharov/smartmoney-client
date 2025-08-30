@@ -84,17 +84,26 @@ export class DataFeed implements IBasicDataFeed {
   private readonly ctraderUrl: string;
 
   private ws: Socket | null = null; // Add to class
+  private mexcWs: Socket | null = null; // Add to class
 
-  constructor(options: { ws: Socket; ctidTraderAccountId?: number; data?: HistoryObject[]; multiple: number; dataService: DataService }) {
+  constructor(options: {
+    ws: Socket;
+    mexcWs: Socket;
+    ctidTraderAccountId?: number;
+    data?: HistoryObject[];
+    multiple: number;
+    dataService: DataService;
+  }) {
     this.api = options.dataService.alorApi;
     this.dataService = options.dataService;
     this.data = options.data;
     this.multiple = options.multiple;
     this.ctidTraderAccountId = options.ctidTraderAccountId;
     this.ws = options.ws;
+    this.mexcWs = options.mexcWs;
 
-    // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
-    this.ctraderUrl = 'https://176.114.69.4';
+    this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
+    // this.ctraderUrl = 'https://176.114.69.4';
   }
 
   // In constructor or onReady, init ws if needed.
@@ -102,11 +111,22 @@ export class DataFeed implements IBasicDataFeed {
   private initWs() {
     if (!this.ws) {
       // this.ws = io(`http://localhost:3000/ctrader-ws`, {
-      this.ws = io(`http://176.114.69.4:3000/ctrader-ws`, {
+      this.ws = io(`${this.ctraderUrl}/ctrader-ws`, {
         transports: ['websocket'],
       });
       this.ws.on('connect', () => console.log('WS connected'));
       this.ws.on('disconnect', () => console.log('WS disconnected'));
+    }
+  }
+
+  private initMexcWs() {
+    if (!this.mexcWs) {
+      // this.ws = io(`http://localhost:3000/ctrader-ws`, {
+      this.mexcWs = io(`${this.ctraderUrl}/mexc-ws`, {
+        transports: ['websocket'],
+      });
+      this.mexcWs.on('connect', () => console.log('WS connected'));
+      this.mexcWs.on('disconnect', () => console.log('WS disconnected'));
     }
   }
 
@@ -374,7 +394,7 @@ export class DataFeed implements IBasicDataFeed {
           if (newCandle) onTick({ ...newCandle, time: newCandle.time * 1000 } as Bar);
         });
 
-      const secondProm = (symbol: string) => {
+      const secondProm = async (symbol: string) => {
         const isForex = symbol.includes('_xp');
         if (isForex) {
           this.initWs();
@@ -397,6 +417,42 @@ export class DataFeed implements IBasicDataFeed {
             this.ws.emit('unsubscribe_candle', { symbol, tf });
             this.ws.off('candle', eventHandler);
           });
+        } else if (symbol.includes('BYBIT')) {
+          return this.dataService.bybitSubscribeCandles(symbol.split('BYBIT:')[1], resolution).subscribe((data) => {
+            lastCandles[symbol].next(data);
+          });
+        } else if (symbol.includes('MEXC')) {
+          return this.dataService.mexcSubscribeCandles(symbol.split('MEXC:')[1], resolution).subscribe((data) => {
+            lastCandles[symbol].next(data);
+          });
+          // this.initMexcWs();
+          // const tf = this.parseTimeframe(resolution) as Timeframe; // Ensure it matches Timeframe enum
+          //
+          // // Subscribe to WS;
+          // await new Promise((resolve) => {
+          //   const interval = setInterval(() => {
+          //     if (this.mexcWs.connected) {
+          //       clearInterval(interval);
+          //       resolve(true);
+          //     }
+          //   }, 100);
+          // });
+          // this.mexcWs.emit('subscribe_candle', { symbol: symbol.split('MEXC:')[1], tf });
+          //
+          // // Listen for updates
+          // const eventHandler = (data: { symbol: string; tf: string; candle: HistoryObject }) => {
+          //   if (data.tf.toString() === tf.toString() && data.symbol === symbol) lastCandles[symbol].next(data.candle);
+          // };
+          // this.mexcWs.on('candle', eventHandler);
+          //
+          // // Store for unsubscribe: e.g., this.subscriptions.set(listenerGuid, () => {
+          // //   this.ws.emit('unsubscribe_candle', { symbol, tf });
+          // //   this.ws.off('candle', eventHandler);
+          // // });
+          // return Promise.resolve(() => {
+          //   this.mexcWs.emit('unsubscribe_candle', { symbol, tf });
+          //   this.mexcWs.off('candle', eventHandler);
+          // });
         } else {
           return this.api.subscriptions.candles(
             {
