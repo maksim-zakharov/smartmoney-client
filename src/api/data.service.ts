@@ -58,10 +58,24 @@ export class DataService {
     };
 
     this.mexcWs = new WebSocket(`wss://contract.mexc.com/edge`);
+
+    let interval;
     this.mexcWs.onopen = () => {
       console.log('WS connected');
       this._opened$.next(true);
+      if (interval) clearInterval(interval);
+
+      interval = setInterval(
+        () =>
+          this.mexcWs.send(
+            JSON.stringify({
+              method: 'ping',
+            }),
+          ),
+        10000,
+      );
     };
+
     this.mexcWs.onmessage = (ev: MessageEvent) => {
       const { channel, data, symbol } = JSON.parse(ev.data);
       if (channel === 'push.kline') {

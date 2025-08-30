@@ -25,8 +25,8 @@ export interface AppsTokenResponse {
   description: null;
 }
 
-// const url = 'http://176.114.69.4:3000';
-const url = 'http://localhost:3000';
+const url = 'http://176.114.69.4:3000';
+// const url = 'http://localhost:3000';
 
 const ctraderWs = io(`${url}/ctrader-ws`, {
   transports: ['websocket'],

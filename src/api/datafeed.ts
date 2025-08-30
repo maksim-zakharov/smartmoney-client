@@ -102,8 +102,8 @@ export class DataFeed implements IBasicDataFeed {
     this.ws = options.ws;
     this.mexcWs = options.mexcWs;
 
-    this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
-    // this.ctraderUrl = 'https://176.114.69.4';
+    // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
+    this.ctraderUrl = 'https://176.114.69.4';
   }
 
   // In constructor or onReady, init ws if needed.
