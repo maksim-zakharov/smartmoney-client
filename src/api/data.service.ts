@@ -1,131 +1,31 @@
 import { AlorApi } from 'alor-api';
-import {
-  BehaviorSubject,
-  catchError,
-  from,
-  map,
-  mergeMap,
-  Observable,
-  pluck,
-  retryWhen,
-  shareReplay,
-  Subject,
-  throwError,
-  timer,
-} from 'rxjs';
+import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer } from 'rxjs';
 import { PeriodParams, ResolutionString } from '../assets/charting_library';
+import { BybitWebsocketClient } from './bybit.ws-client';
+import { MexcWsClient } from './mexc.ws-client';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
 
   private readonly ctraderUrl: string;
 
-  private readonly _opened$ = new BehaviorSubject<boolean>(false);
-
-  private bybitSubscribes = new Map<string, Subject<any>>([]);
-
-  private mexcSubscribes = new Map<string, Subject<any>>([]);
-
-  private readonly bybitWs: WebSocket;
-  private readonly mexcWs: WebSocket;
+  private readonly bybitWsClient: BybitWebsocketClient;
+  private readonly mexcWsClient: MexcWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
     this.ctraderUrl = 'https://176.114.69.4';
 
-    // this.bybitWs = new WebSocket(`wss://stream.bybit.com/v5/public/spot`);
-    this.bybitWs = new WebSocket(`wss://stream.bybit.com/v5/public/linear`);
-    this.bybitWs.onopen = () => {
-      console.log('WS connected');
-      this._opened$.next(true);
-    };
-    this.bybitWs.onmessage = (ev: MessageEvent) => {
-      const { topic, data } = JSON.parse(ev.data);
-      if (data && data[0]) {
-        const { open, high, low, close, start } = data[0];
-        this.bybitSubscribes.get(topic)?.next({
-          open: Number(open),
-          high: Number(high),
-          low: Number(low),
-          close: Number(close),
-          time: Math.round(start / 1000),
-        });
-      }
-    };
-    this.bybitWs.onclose = () => {
-      this._opened$.next(false);
-      console.log('WS disconnected');
-    };
-
-    this.mexcWs = new WebSocket(`wss://contract.mexc.com/edge`);
-
-    let interval;
-    this.mexcWs.onopen = () => {
-      console.log('WS connected');
-      this._opened$.next(true);
-      if (interval) clearInterval(interval);
-
-      interval = setInterval(
-        () =>
-          this.mexcWs.send(
-            JSON.stringify({
-              method: 'ping',
-            }),
-          ),
-        10000,
-      );
-    };
-
-    this.mexcWs.onmessage = (ev: MessageEvent) => {
-      const { channel, data, symbol } = JSON.parse(ev.data);
-      if (channel === 'push.kline') {
-        const key = `${symbol}_${data.interval}`;
-        const { o, h, l, c, t } = data;
-        this.mexcSubscribes.get(key)?.next({
-          open: Number(o),
-          high: Number(h),
-          low: Number(l),
-          close: Number(c),
-          time: t,
-        });
-      }
-    };
-    this.mexcWs.onclose = () => {
-      this._opened$.next(false);
-      console.log('WS disconnected');
-    };
+    this.bybitWsClient = new BybitWebsocketClient();
+    this.mexcWsClient = new MexcWsClient();
   }
 
   mexcSubscribeCandles(symbol: string, resolution: ResolutionString) {
-    const subj = new Subject<any>();
-    const interval = `Min${resolution}`;
-    const key = `${symbol}_${interval}`;
-    this.mexcSubscribes.set(key, subj);
-    this.mexcWs.send(
-      JSON.stringify({
-        method: 'sub.kline',
-        param: {
-          symbol,
-          interval,
-        },
-      }),
-    );
-
-    return subj;
+    return this.mexcWsClient.subscribeCandles(symbol, resolution);
   }
 
   bybitSubscribeCandles(symbol: string, resolution: ResolutionString) {
-    const args = `kline.${resolution}.${symbol}`; // `kline.1.${symbol}`;
-    const subj = new Subject<any>();
-    this.bybitSubscribes.set(args, subj);
-    this.bybitWs.send(
-      JSON.stringify({
-        op: 'subscribe',
-        args: [args],
-      }),
-    );
-
-    return subj;
+    return this.bybitWsClient.subscribeCandles(symbol, resolution);
   }
 
   get serverTime$() {

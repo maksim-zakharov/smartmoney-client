@@ -3,10 +3,10 @@ import { AlorApi, Endpoint, WssEndpoint, WssEndpointBeta } from 'alor-api';
 import { alorApi } from './alor.api';
 import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/services/ClientInfoService/ClientInfoService';
 import { io, Socket } from 'socket.io-client';
-import { tinkoffApi } from './tinkoff.api.ts';
-import { ctraderApi } from './ctrader.api.ts';
-import { DataService } from './data.service.ts';
-import { mexcApi } from './mexc.api.ts';
+import { tinkoffApi } from './tinkoff.api';
+import { ctraderApi } from './ctrader.api';
+import { DataService } from './data.service';
+import { mexcApi } from './mexc.api';
 
 type Settings = {
   token: string;
