@@ -158,6 +158,16 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="BYBIT:MITOUSDT" _tickerFuture="MEXC:MITO_USDT" multi={100} />,
     },
     {
+      key: 'BYBIT:CAMPUSDT',
+      label: 'BYBIT:CAMPUSDT/MEXC:CAMP_USDT',
+      element: <StatArbPage tickerStock="BYBIT:CAMPUSDT" _tickerFuture="MEXC:CAMP_USDT" multi={100} />,
+    },
+    {
+      key: 'BYBIT:BTRUSDT',
+      label: 'BYBIT:BTRUSDT/MEXC:BTR_USDT',
+      element: <StatArbPage tickerStock="BYBIT:BTRUSDT" _tickerFuture="MEXC:BTR_USDT" multi={100} />,
+    },
+    {
       key: 'GMGN:MITO_USDT',
       label: 'GMGN:MITOUSDT/MEXC:MITO_USDT',
       element: <StatArbPage tickerStock="GMGN:MITOUSDT" _tickerFuture="MEXC:MITO_USDT" multi={100} />,
