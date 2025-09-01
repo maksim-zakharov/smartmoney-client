@@ -3,7 +3,6 @@ import { api } from './api/api.ts';
 import { alorApi } from './api/alor.api';
 import { alorSlice } from './api/alor.slice';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import { twelveApi } from './twelveApi.ts';
 import { tinkoffApi } from './api/tinkoff.api.ts';
 import { ctraderApi } from './api/ctrader.api.ts';
 import { mexcApi } from './api/mexc.api.ts';
@@ -11,7 +10,6 @@ import { mexcApi } from './api/mexc.api.ts';
 export const reducers = {
   [api.reducerPath]: api.reducer,
   [alorApi.reducerPath]: alorApi.reducer,
-  [twelveApi.reducerPath]: twelveApi.reducer,
   [tinkoffApi.reducerPath]: tinkoffApi.reducer,
   [alorSlice.name]: alorSlice.reducer,
   [ctraderApi.reducerPath]: ctraderApi.reducer,
@@ -28,7 +26,6 @@ export const store = configureStore({
       serializableCheck: false,
     })
       .concat(alorApi.middleware)
-      .concat(twelveApi.middleware)
       .concat(tinkoffApi.middleware)
       .concat(ctraderApi.middleware)
       .concat(mexcApi.middleware)

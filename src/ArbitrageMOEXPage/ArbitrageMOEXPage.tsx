@@ -52,14 +52,6 @@ export async function fetchSecurityDetails(symbol, token) {
 }
 
 export const ArbitrageMOEXPage = () => {
-  // const { data: tdData } = useTdCandlesQuery({
-  //   start_date: '2020-07-14',
-  //   outputsize: 5000,
-  //   symbol: 'GOLD/USD',
-  //   interval: '5min',
-  //   apikey: '20dc749373754927b09d95723d963e88',
-  // });
-
   const [searchParams, setSearchParams] = useSearchParams();
 
   const items: MenuItem[] = [
@@ -158,9 +150,14 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="BYBIT:MITOUSDT" _tickerFuture="MEXC:MITO_USDT" multi={100} />,
     },
     {
-      key: 'BYBIT:CAMPUSDT',
-      label: 'BYBIT:CAMPUSDT/MEXC:CAMP_USDT',
-      element: <StatArbPage tickerStock="BYBIT:CAMPUSDT" _tickerFuture="MEXC:CAMP_USDT" multi={100} />,
+      key: 'BYBIT:XNYUSDT',
+      label: 'BYBIT:XNYUSDT/MEXC:XNY_USDT',
+      element: <StatArbPage tickerStock="BYBIT:XNYUSDT" _tickerFuture="MEXC:XNY_USDT" multi={100} />,
+    },
+    {
+      key: 'BYBIT:WLFIUSDT',
+      label: 'BYBIT:WLFIUSDT/MEXC:WLFI_USDT',
+      element: <StatArbPage tickerStock="BYBIT:WLFIUSDT" _tickerFuture="MEXC:WLFI_USDT" multi={100} />,
     },
     {
       key: 'BYBIT:BTRUSDT',

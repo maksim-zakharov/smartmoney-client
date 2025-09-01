@@ -2,7 +2,7 @@ import { Card, Col, Radio, Row, Select, Statistic, Table } from 'antd';
 import { TimeframeSelect } from '../../TimeframeSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getCommonCandles, getOvernightDays } from '../../utils.ts';
 import moment from 'moment';
@@ -10,7 +10,6 @@ import { HistoryObject } from '../../sm-lib/models.ts';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
 import { LineStyle } from 'lightweight-charts';
 import { useGetHistoryQuery, useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
-import { useTdCandlesQuery } from '../../twelveApi.ts';
 import { Exchange } from 'alor-api';
 import { useAppSelector } from '../../store.ts';
 import { DatesPicker } from '../../DatesPicker.tsx';
@@ -100,47 +99,6 @@ export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart
   );
 
   const ucnyData = xpCandles?.length ? xpCandles : _ucnyData?.history || [];
-
-  const fxTfMap = {
-    '60': '1min',
-    '300': '5min',
-    '900': '15min',
-    '1800': '30min',
-    // '900': '45min',
-    '3600': '1h',
-    // '900': '2h',
-    '14400': '4h',
-    // '900': '8h',
-    D: '1day',
-    // '900': '1week',
-  };
-
-  const { data: fxThirdData } = useTdCandlesQuery(
-    {
-      start_date: dayjs(fromDate * 1000).format('YYYY-MM-DD'),
-      outputsize: 5000,
-      symbol: third.split(':')[1],
-      interval: fxTfMap[tf],
-      apikey: '20dc749373754927b09d95723d963e88',
-    },
-    {
-      skip: !isThirdForex,
-    },
-  );
-
-  const fxThirdCandles = (fxThirdData?.values || []).map((v) => ({
-    time: dayjs(v.datetime).unix(),
-    open: Number(v.open),
-    close: Number(v.close),
-    low: Number(v.low),
-    high: Number(v.high),
-  }));
-
-  useEffect(() => {
-    if (isThirdForex) {
-      // setData((prevState) => ({ ...prevState, ucnyData: fxThirdCandles }));
-    }
-  }, [isThirdForex, fxThirdCandles]);
 
   const startDateMap = {
     '3.25': '2024-12-20',

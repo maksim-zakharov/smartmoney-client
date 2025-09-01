@@ -8,9 +8,8 @@ import { calculateBollingerBands, calculateCandle, symbolFuturePairs } from '../
 import { LineStyle, Time } from 'lightweight-charts';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
-import { useGetHistoryQuery, useGetSecurityByExchangeAndSymbolQuery, useGetSecurityDetailsQuery } from '../../api/alor.api';
+import { useGetHistoryQuery } from '../../api/alor.api';
 import { useAppSelector } from '../../store';
-import { useTdCandlesQuery } from '../../twelveApi';
 import { TWChart } from '../../components/TWChart';
 import { useCandlesQuery } from '../../api/ctrader.api.ts';
 
@@ -117,14 +116,6 @@ export const StatArbPage = ({
 
   const tickerFuture = _tickerFuture;
 
-  const { data: security } = useGetSecurityByExchangeAndSymbolQuery({
-    symbol: tickerStock,
-    exchange: 'MOEX',
-  });
-  const isSecondForex = tickerFuture.includes('_xp');
-  const { data: details } = useGetSecurityDetailsQuery({ ticker: tickerStock });
-  const expirationDate = details?.cancellation?.split('T')[0] || '2025-09-18';
-
   const { data: _futureData } = useGetHistoryQuery(
     {
       tf,
@@ -180,8 +171,6 @@ export const StatArbPage = ({
   //   },
   // });
 
-  const isFirstForex = tickerStock.includes(':');
-
   const { data: _stockData } = useGetHistoryQuery(
     {
       tf,
@@ -192,47 +181,11 @@ export const StatArbPage = ({
     },
     {
       pollingInterval: 5000,
-      skip: !tickerStock || !apiAuth || isFirstForex,
+      skip: !tickerStock || !apiAuth,
     },
   );
 
-  const fxTfMap = {
-    '60': '1min',
-    '300': '5min',
-    '900': '15min',
-    '1800': '30min',
-    // '900': '45min',
-    '3600': '1h',
-    // '900': '2h',
-    '14400': '4h',
-    // '900': '8h',
-    D: '1day',
-    // '900': '1week',
-  };
-
-  const { data: fxFirstData } = useTdCandlesQuery(
-    {
-      start_date: dayjs(fromDate * 1000).format('YYYY-MM-DD'),
-      outputsize: 5000,
-      symbol: tickerStock.split(':')[1],
-      interval: fxTfMap[tf],
-      apikey: '20dc749373754927b09d95723d963e88',
-    },
-    {
-      pollingInterval: 5000,
-      skip: !isFirstForex,
-    },
-  );
-
-  const fxThirdCandles = (fxFirstData?.values || []).map((v) => ({
-    time: dayjs(v.datetime).unix(),
-    open: Number(v.open),
-    close: Number(v.close),
-    low: Number(v.low),
-    high: Number(v.high),
-  }));
-
-  const stockData = fxThirdCandles?.length ? fxThirdCandles : _stockData?.history || [];
+  const stockData = _stockData?.history || [];
   const stockDataRef = stockData;
 
   // const [stockDataRef, setstockDataRef] = useState<HistoryObject[]>([]);

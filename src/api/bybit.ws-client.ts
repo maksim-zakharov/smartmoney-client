@@ -14,14 +14,21 @@ export class BybitWebsocketClient {
     this.bybitWs.onmessage = (ev: MessageEvent) => {
       const { topic, data } = JSON.parse(ev.data);
       if (data && data[0]) {
-        const { open, high, low, close, start } = data[0];
-        this.bybitSubscribes.get(topic)?.next({
-          open: Number(open),
-          high: Number(high),
-          low: Number(low),
-          close: Number(close),
-          time: Math.round(start / 1000),
-        });
+        if (topic.startsWith('kline')) {
+          const { open, high, low, close, start } = data[0];
+          this.bybitSubscribes.get(topic)?.next({
+            open: Number(open),
+            high: Number(high),
+            low: Number(low),
+            close: Number(close),
+            time: Math.round(start / 1000),
+          });
+        } else if (topic.startsWith('tickers')) {
+          const { lastPrice } = data[0];
+          this.bybitSubscribes.get(topic)?.next({
+            lastPrice: Number(lastPrice),
+          });
+        }
       }
     };
     this.bybitWs.onclose = () => {
@@ -30,7 +37,21 @@ export class BybitWebsocketClient {
   }
 
   subscribeCandles(symbol: string, resolution: ResolutionString) {
-    const args = `kline.${resolution}.${symbol}`; // `kline.1.${symbol}`;
+    const args = `kline.${resolution}.${symbol}`;
+    const subj = new Subject<any>();
+    this.bybitSubscribes.set(args, subj);
+    this.bybitWs.send(
+      JSON.stringify({
+        op: 'subscribe',
+        args: [args],
+      }),
+    );
+
+    return subj;
+  }
+
+  subscribeQuotes(symbol: string) {
+    const args = `tickers.${symbol}`;
     const subj = new Subject<any>();
     this.bybitSubscribes.set(args, subj);
     this.bybitWs.send(
