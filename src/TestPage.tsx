@@ -467,7 +467,7 @@ export const TestPage = () => {
                       </DialogContent>
                     </Dialog>
                   )}
-                  <Button size="sm" variant="ghost" onClick={() => handleDeletePair(invoice)} className="p-0 h-0">
+                  <Button size="sm" variant="ghost" onClick={() => handleDeletePair(invoice)} className="p-0 h-5 w-5">
                     <CircleX />
                   </Button>
                 </TableCell>
