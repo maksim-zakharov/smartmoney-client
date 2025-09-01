@@ -216,18 +216,6 @@ export const TestPage = () => {
   };
 
   const handleClosePositionClick = (tickers: string[]) => async (e) => {
-    const tiTickers = tickers.filter((t) => !Number.isInteger(t));
-    await Promise.all(
-      tiTickers.map((instrumentUid) =>
-        tClosePositionMutation({
-          brokerAccountId: tinkoffPortfolio?.accountId,
-          instrumentUid,
-        }).unwrap(),
-      ),
-    );
-
-    toast.success('Позиции в Тинькофф закрыты');
-
     const ctraderTickers = tickers.filter((t) => Number.isInteger(t));
     await Promise.all(
       ctraderTickers.map((symbolId) =>
@@ -239,6 +227,18 @@ export const TestPage = () => {
     );
 
     toast.success('Позиции в CTrader закрыты');
+
+    const tiTickers = tickers.filter((t) => !Number.isInteger(t));
+    await Promise.all(
+      tiTickers.map((instrumentUid) =>
+        tClosePositionMutation({
+          brokerAccountId: tinkoffPortfolio?.accountId,
+          instrumentUid,
+        }).unwrap(),
+      ),
+    );
+
+    toast.success('Позиции в Тинькофф закрыты');
   };
 
   return (
