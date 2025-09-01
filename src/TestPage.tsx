@@ -392,6 +392,7 @@ export const TestPage = () => {
                                 <Button
                                   size="xs"
                                   variant="success"
+                                  disabled={!Number.isInteger(p) ? tPostOrderLoading : ctraderPostOrderLoading}
                                   onClick={!Number.isInteger(p) ? handleTPostOrderClick(p, 'buy') : handleCTraderPostOrderClick(p, 'buy')}
                                 >
                                   Купить
@@ -399,6 +400,7 @@ export const TestPage = () => {
                                 <Button
                                   size="xs"
                                   variant="destructive"
+                                  disabled={!Number.isInteger(p) ? tPostOrderLoading : ctraderPostOrderLoading}
                                   onClick={!Number.isInteger(p) ? handleTPostOrderClick(p, 'sell') : handleCTraderPostOrderClick(p, 'sell')}
                                 >
                                   Продать
