@@ -13,8 +13,8 @@ export class DataService {
   private readonly mexcWsClient: MexcWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
-    this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
-    // this.ctraderUrl = 'https://176.114.69.4';
+    // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
+    this.ctraderUrl = 'https://176.114.69.4';
 
     this.bybitWsClient = new BybitWebsocketClient();
     this.mexcWsClient = new MexcWsClient();
