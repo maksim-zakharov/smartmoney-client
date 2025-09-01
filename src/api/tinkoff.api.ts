@@ -71,6 +71,13 @@ export const tinkoffApi = createApi({
         body,
       }),
     }),
+    TinkoffPostOrder: builder.mutation<void, { instrumentUid: string; brokerAccountId: string; quantity: number; side: 'buy' | 'sell' }>({
+      query: (body) => ({
+        url: '/postOrder',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -80,4 +87,5 @@ export const {
   useClosePositionMutation,
   useGetTinkoffOrdersQuery,
   useGetTinkoffAccountsQuery,
+  useTinkoffPostOrderMutation,
 } = tinkoffApi;

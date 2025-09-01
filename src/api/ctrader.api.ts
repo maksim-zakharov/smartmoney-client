@@ -55,6 +55,13 @@ export const ctraderApi = createApi({
         params,
       }),
     }),
+    CTraderPlaceOrder: builder.mutation<void, { symbolId: string; ctidTraderAccountId: string; lots: number; side: 'buy' | 'sell' }>({
+      query: (body) => ({
+        url: '/postOrder',
+        method: 'POST',
+        body,
+      }),
+    }),
     CTraderclosePosition: builder.mutation<void, { symbolId: string; ctidTraderAccountId: string }>({
       query: (body) => ({
         url: '/closePosition',
@@ -75,4 +82,5 @@ export const {
   useGetCTraderPositionsQuery,
   useSelectAccountQuery,
   useCTraderclosePositionMutation,
+  useCTraderPlaceOrderMutation,
 } = ctraderApi;

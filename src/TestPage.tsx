@@ -7,8 +7,8 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { cn } from './lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 import { TWChart } from './components/TWChart';
-import { useClosePositionMutation, useGetInstrumentByIdQuery } from './api/tinkoff.api';
-import { useCTraderclosePositionMutation, useGetCTraderSymbolsQuery } from './api/ctrader.api';
+import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from './api/tinkoff.api';
+import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation, useGetCTraderSymbolsQuery } from './api/ctrader.api';
 import { Button } from './components/ui/button.tsx';
 import { CirclePlus, CircleX } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
@@ -16,6 +16,7 @@ import { Checkbox } from './components/ui/checkbox.tsx';
 import { useGetMEXCContractQuery } from './api/mexc.api.ts';
 import { TypographyParagraph } from './components/ui/typography.tsx';
 import { toast } from 'sonner';
+import { Input } from './components/ui/input.tsx';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -65,8 +66,13 @@ const ForexLabel = ({ ticker }) => {
 export const TestPage = () => {
   const USDRate = 80.292;
 
+  const [tPostOrderMutation, { isLoading: tPostOrderLoading }] = useTinkoffPostOrderMutation();
+  const [ctraderPostOrderMutation, { isLoading: ctraderPostOrderLoading }] = useCTraderPlaceOrderMutation();
+
   const [tClosePositionMutation, { isLoading: tClosePositionLoading }] = useClosePositionMutation();
   const [ctraderClosePositionMutation, { isLoading: ctraderClosePositionLoading }] = useCTraderclosePositionMutation();
+
+  const [qtyMap, setQtyMap] = useState(localStorage.getItem('qtyMap') ? JSON.parse(localStorage.getItem('qtyMap')) : {});
 
   const {
     tinkoffAccounts,
@@ -78,6 +84,30 @@ export const TestPage = () => {
     cTraderSymbols,
     MEXCPositions,
   } = useAppSelector((state) => state.alorSlice);
+
+  const handleCTraderPostOrderClick = (symbolId: string, side: 'buy' | 'sell') => async () => {
+    const lots = qtyMap[symbolId];
+    if (!lots) return;
+
+    await ctraderPostOrderMutation({
+      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+      symbolId,
+      side,
+      lots,
+    }).unwrap();
+  };
+
+  const handleTPostOrderClick = (instrumentUid: string, side: 'buy' | 'sell') => async () => {
+    const quantity = qtyMap[instrumentUid];
+    if (!quantity) return;
+
+    await tPostOrderMutation({
+      brokerAccountId: tinkoffPortfolio?.accountId,
+      instrumentUid,
+      side,
+      quantity,
+    }).unwrap();
+  };
 
   const map = useMemo(() => new Map<number, any>(cTraderSymbols?.map((s) => [s.symbolId, s])), [cTraderSymbols]);
 
@@ -241,6 +271,14 @@ export const TestPage = () => {
     toast.success('Позиции в Тинькофф закрыты');
   };
 
+  const handleOnChangeTickerQty = (ticker: string) => (e) => {
+    const qty = Number(e.target.value);
+
+    setQtyMap((prevState) => ({ ...prevState, [ticker]: qty }));
+
+    localStorage.setItem('qtyMap', JSON.stringify({ ...qtyMap, [ticker]: qty }));
+  };
+
   return (
     <>
       <Row gutter={[8, 8]}>
@@ -332,7 +370,46 @@ export const TestPage = () => {
                 >
                   {moneyFormat(PairPnl(invoice))}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right gap-2 flex justify-end">
+                  {invoice.some((i) => !tinkoffInstrumentUidPositionMap[i] || !cTraderPositionsMapped[i]) && (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="xs" variant="success">
+                          Открыть
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md gap-0">
+                        <DialogHeader>
+                          <DialogTitle>Открытие позиции</DialogTitle>
+                        </DialogHeader>
+                        <div className="p-3 gap-2 flex flex-col">
+                          <TypographyParagraph>Выберите объем для позиций</TypographyParagraph>
+                          {invoice.map((p) => (
+                            <div className="flex items-center justify-between gap-2">
+                              {Number.isInteger(p) ? <ForexLabel ticker={map.get(p)?.symbolName} /> : <FigiLabel uid={p} />}
+                              <div className="flex gap-2">
+                                <Input size="xs" type="number" onChange={handleOnChangeTickerQty(p)} value={qtyMap[p] || 0} step={0.01} />
+                                <Button
+                                  size="xs"
+                                  variant="success"
+                                  onClick={!Number.isInteger(p) ? handleTPostOrderClick(p, 'buy') : handleCTraderPostOrderClick(p, 'buy')}
+                                >
+                                  Купить
+                                </Button>
+                                <Button
+                                  size="xs"
+                                  variant="destructive"
+                                  onClick={!Number.isInteger(p) ? handleTPostOrderClick(p, 'sell') : handleCTraderPostOrderClick(p, 'sell')}
+                                >
+                                  Продать
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                   {invoice.some((i) => tinkoffInstrumentUidPositionMap[i] || cTraderPositionsMapped[i]) && (
                     <Dialog>
                       <DialogTrigger asChild>
