@@ -6,7 +6,7 @@ import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
 import { ArbitrageBYBITPage } from './ArbitrageBYBITPage/ArbitrageBYBITPage';
 import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
-import { AppsTokenResponse, initApi, setTiToken } from './api/alor.slice';
+import { AppsTokenResponse, initApi, selectCTraderAccount, setTiToken } from './api/alor.slice';
 import { TestPage } from './TestPage';
 import {
   useAuthAuthQuery,
@@ -20,7 +20,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from './components/ui/label';
 import { Input } from './components/ui/input';
 import { useGetTinkoffAccountsQuery, useGetTinkoffOrdersQuery, useGetTinkoffPortfolioQuery } from './api/tinkoff.api';
-import { useGetMEXCPositionsQuery } from './api/mexc.api.ts';
+import { useGetMEXCPositionsQuery } from './api/mexc.api';
+import { RadioGroup, RadioGroupItem } from './components/ui/radio-group.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ export default function App() {
   const tiToken = useAppSelector((state) => state.alorSlice.tToken);
   const { accessToken } = useAppSelector((state) => state.alorSlice.cTraderAuth || ({} as AppsTokenResponse));
   const cTraderAccount = useAppSelector((state) => state.alorSlice.cTraderAccount);
+  const cTraderAccounts = useAppSelector((state) => state.alorSlice.cTraderAccounts);
 
   const { refetch } = useGetUserInfoQuery({}, { skip: !localStorage.getItem('token') || !api });
 
@@ -196,7 +198,14 @@ export default function App() {
             style={{ flex: 1, minWidth: 0 }}
           />
           <Space>
-            {cTraderAccount?.ctidTraderAccountId && <>Аккаунт CTrader: {cTraderAccount?.traderLogin}</>}
+            {cTraderAccount?.ctidTraderAccountId && (
+              <>
+                Аккаунт CTrader:{' '}
+                <div>
+                  {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
+                </div>
+              </>
+            )}
             {!accessToken && (
               <Button size="small" onClick={handleCTraderLogin}>
                 Войти в cTrader
@@ -221,6 +230,22 @@ export default function App() {
                   <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
                   <Label htmlFor="bybitSecretKey">Bybit Secret Key</Label>
                   <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
+
+                  <Label htmlFor="bybitSecretKey">cTraderAccount</Label>
+                  <RadioGroup
+                    id="ctidTraderAccountId"
+                    value={cTraderAccount?.ctidTraderAccountId}
+                    onValueChange={(val) => dispatch(selectCTraderAccount(Number(val)))}
+                  >
+                    {cTraderAccounts?.map((cTraderAccount) => (
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value={cTraderAccount?.ctidTraderAccountId} id={cTraderAccount?.ctidTraderAccountId} />
+                        <Label htmlFor={cTraderAccount?.ctidTraderAccountId}>
+                          {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
                 </div>
               </DialogContent>
             </Dialog>

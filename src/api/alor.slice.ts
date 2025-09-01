@@ -48,6 +48,7 @@ const initialState = {
   lastWithdrawals: [],
   release: undefined,
   apiAuth: false,
+  cTraderAccounts: [],
   ws: ctraderWs,
   mexcWs: mexcWs,
   darkColors: {
@@ -85,6 +86,7 @@ const initialState = {
 
   cTraderAuth?: AppsTokenResponse;
   cTraderAccount?: any;
+  cTraderAccounts?: any;
   cTraderPositions?: any;
   cTraderPositionPnL?: any;
   cTraderSymbols?: any;
@@ -132,6 +134,10 @@ export const alorSlice = createSlice({
     },
     setTiToken(state, action: PayloadAction<string>) {
       state.tToken = action.payload;
+    },
+    selectCTraderAccount(state, action: PayloadAction<number>) {
+      state.cTraderAccount = state.cTraderAccounts.find((c) => c.ctidTraderAccountId.toString() === action.payload.toString());
+      localStorage.setItem('ctidTraderAccountId', action.payload.toString());
     },
     updateDarkColors(state, action: PayloadAction<typeof initialState.darkColors>) {
       state.darkColors = { ...state.darkColors, ...action.payload };
@@ -185,7 +191,9 @@ export const alorSlice = createSlice({
       }
     });
     builder.addMatcher(ctraderApi.endpoints.selectAccount.matchFulfilled, (state, { payload }) => {
-      state.cTraderAccount = payload[0];
+      state.cTraderAccounts = payload;
+      const selectedAccountId = localStorage.getItem('ctidTraderAccountId');
+      state.cTraderAccount = state.cTraderAccounts.find((c) => c.ctidTraderAccountId.toString() === selectedAccountId) || payload[0];
     });
     // builder.addMatcher(goApi.endpoints.getAdGroup.matchPending, _resetAdGroupError);
     builder.addMatcher(alorApi.endpoints.getOperations.matchFulfilled, (state, { payload }) => {
@@ -207,8 +215,7 @@ export const alorSlice = createSlice({
           {},
         ) || {};
     });
-    // builder.addMatcher(goApi.endpoints.editCampaign.matchPending, _resetEditCampaignError);
   },
 });
 
-export const { updatePairs, initApi, setTiToken, updateDarkColors, acquire, setSettings, logout } = alorSlice.actions;
+export const { updatePairs, selectCTraderAccount, initApi, setTiToken, updateDarkColors, acquire, setSettings, logout } = alorSlice.actions;
