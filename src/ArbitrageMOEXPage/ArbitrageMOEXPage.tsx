@@ -175,6 +175,11 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="GMGN:MITOUSDT" _tickerFuture="MEXC:MITO_USDT" multi={100} />,
     },
     {
+      key: 'BINANCE:XPLUSDT',
+      label: 'BINANCE:XPLUSDT/BYBIT:XPLUSDT',
+      element: <StatArbPage tickerStock="BINANCE:XPLUSDT" _tickerFuture="BYBIT:XPLUSDT" multi={100} />,
+    },
+    {
       key: 'IMOEXF',
       label: 'IMOEXF/MIX-9.25',
       element: <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" seriesType="Line" multi={10000} />,
