@@ -24,7 +24,7 @@ export class MexcWsClient {
     };
 
     this.mexcWs.onmessage = (ev: MessageEvent) => {
-      const { channel, data, symbol } = JSON.parse(ev.data as any);
+      const { channel, data, symbol, ts } = JSON.parse(ev.data as any);
       if (channel === 'push.kline') {
         const key = `${symbol}_${data.interval}`;
         const { o, h, l, c, t } = data;
@@ -34,6 +34,7 @@ export class MexcWsClient {
           low: Number(l),
           close: Number(c),
           time: t,
+          timestamp: ts,
         });
       }
       if (channel === 'push.tickers') {

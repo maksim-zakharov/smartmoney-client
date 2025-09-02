@@ -15,13 +15,14 @@ export class BybitWebsocketClient {
       const { topic, data } = JSON.parse(ev.data);
       if (data && data[0]) {
         if (topic.startsWith('kline')) {
-          const { open, high, low, close, start } = data[0];
+          const { open, high, low, close, start, timestamp } = data[0];
           this.bybitSubscribes.get(topic)?.next({
             open: Number(open),
             high: Number(high),
             low: Number(low),
             close: Number(close),
             time: Math.round(start / 1000),
+            timestamp,
           });
         } else if (topic.startsWith('tickers')) {
           const { lastPrice } = data[0];
