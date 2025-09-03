@@ -185,6 +185,11 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="MEXC:XPL_USDT" _tickerFuture="BYBIT:XPLUSDT" multi={100} />,
     },
     {
+      key: 'MEXC:LEVER_USDT',
+      label: 'MEXC:LEVER_USDT/GATE:LEVER_USDT',
+      element: <StatArbPage tickerStock="MEXC:LEVER_USDT" _tickerFuture="GATE:LEVER_USDT" multi={100} />,
+    },
+    {
       key: 'IMOEXF',
       label: 'IMOEXF/MIX-9.25',
       element: <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" seriesType="Line" multi={10000} />,

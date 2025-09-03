@@ -421,6 +421,10 @@ export class DataFeed implements IBasicDataFeed {
           return this.dataService.bybitSubscribeCandles(symbol.split('BYBIT:')[1], resolution).subscribe((data) => {
             lastCandles[symbol].next(data);
           });
+        } else if (symbol.includes('GATE')) {
+          return this.dataService.gateSubscribeCandles(symbol.split('GATE:')[1], resolution).subscribe((data) => {
+            lastCandles[symbol].next(data);
+          });
         } else if (symbol.includes('MEXC')) {
           return this.dataService.mexcSubscribeCandles(symbol.split('MEXC:')[1], resolution).subscribe((data) => {
             lastCandles[symbol].next(data);

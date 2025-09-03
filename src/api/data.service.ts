@@ -3,6 +3,7 @@ import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareRep
 import { PeriodParams, ResolutionString } from '../assets/charting_library';
 import { BybitWebsocketClient } from './bybit.ws-client';
 import { MexcWsClient } from './mexc.ws-client';
+import { GateWsClient } from './gate.ws-client.ts';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -11,6 +12,7 @@ export class DataService {
 
   private readonly bybitWsClient: BybitWebsocketClient;
   private readonly mexcWsClient: MexcWsClient;
+  private readonly gateWsClient: GateWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
@@ -18,10 +20,15 @@ export class DataService {
 
     this.bybitWsClient = new BybitWebsocketClient();
     this.mexcWsClient = new MexcWsClient();
+    this.gateWsClient = new GateWsClient();
   }
 
   mexcSubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.mexcWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  gateSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.gateWsClient.subscribeCandles(symbol, resolution);
   }
 
   bybitSubscribeCandles(symbol: string, resolution: ResolutionString) {
