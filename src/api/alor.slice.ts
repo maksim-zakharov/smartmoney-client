@@ -119,7 +119,7 @@ export const alorSlice = createSlice({
         });
         state.api = _api;
 
-        state.dataService = new DataService(_api);
+        state.dataService = new DataService(_api, localStorage.getItem('ctidTraderAccountId'));
       }
 
       state.release?.();

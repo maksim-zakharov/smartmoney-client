@@ -13,6 +13,7 @@ import {
   useAuthCodeQuery,
   useGetCTraderPositionPnLQuery,
   useGetCTraderPositionsQuery,
+  useGetCTraderSymbolsQuery,
   useSelectAccountQuery,
 } from './api/ctrader.api';
 import { ThemeProvider } from './components/theme-provider';
@@ -32,6 +33,7 @@ export default function App() {
   const { accessToken } = useAppSelector((state) => state.alorSlice.cTraderAuth || ({} as AppsTokenResponse));
   const cTraderAccount = useAppSelector((state) => state.alorSlice.cTraderAccount);
   const cTraderAccounts = useAppSelector((state) => state.alorSlice.cTraderAccounts);
+  const { cTraderSymbols } = useAppSelector((state) => state.alorSlice);
 
   const { refetch } = useGetUserInfoQuery({}, { skip: !localStorage.getItem('token') || !api });
 
@@ -119,6 +121,15 @@ export default function App() {
     },
     {
       pollingInterval: 5000,
+      skip: !cTraderAccount?.ctidTraderAccountId,
+    },
+  );
+
+  useGetCTraderSymbolsQuery(
+    {
+      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+    },
+    {
       skip: !cTraderAccount?.ctidTraderAccountId,
     },
   );
@@ -260,11 +271,14 @@ export default function App() {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Routes>
-            {menuItems.map((item) => (
-              <Route path={item.key} element={item.element} />
+          {!cTraderAccount?.ctidTraderAccountId ||
+            (cTraderSymbols?.length > 0 && (
+              <Routes>
+                {menuItems.map((item) => (
+                  <Route path={item.key} element={item.element} />
+                ))}
+              </Routes>
             ))}
-          </Routes>
         </Content>
       </Layout>
     </ThemeProvider>

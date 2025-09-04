@@ -76,7 +76,7 @@ export const {
   useCandlesQuery,
   useGetCTraderSymbolsQuery,
   useAuthAuthQuery,
-  useGetCTraderSymbolsByIdQuery,
+  // useGetCTraderSymbolsByIdQuery,
   useGetCTraderPositionPnLQuery,
   useAuthCodeQuery,
   useGetCTraderPositionsQuery,

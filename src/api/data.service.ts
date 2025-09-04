@@ -3,7 +3,7 @@ import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareRep
 import { PeriodParams, ResolutionString } from '../assets/charting_library';
 import { BybitWebsocketClient } from './bybit.ws-client';
 import { MexcWsClient } from './mexc.ws-client';
-import { GateWsClient } from './gate.ws-client.ts';
+import { GateWsClient } from './gate.ws-client';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -14,7 +14,10 @@ export class DataService {
   private readonly mexcWsClient: MexcWsClient;
   private readonly gateWsClient: GateWsClient;
 
-  constructor(public readonly alorApi: AlorApi) {
+  constructor(
+    public readonly alorApi: AlorApi,
+    private readonly ctidTraderAccountId: string,
+  ) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
     this.ctraderUrl = 'https://176.114.69.4';
 
@@ -48,10 +51,11 @@ export class DataService {
   getChartData(ticker: string, resolution: ResolutionString, periodParams: PeriodParams) {
     let request$;
 
-    if (ticker.includes('_xp')) {
+    if (ticker.includes('_xp') || ticker.includes('FOREX:')) {
+      const _ticker = ticker.split('FOREX:')[1] || ticker;
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}&ctidTraderAccountId=${this.ctidTraderAccountId}`,
           {
             headers: {
               'x-ctrader-token': localStorage.getItem('cTraderAuth')

@@ -20,7 +20,7 @@ import { getCommonCandles, getPrecision } from '../utils';
 import { calculateCandle } from '../../symbolFuturePairs';
 import { BehaviorSubject, combineLatest, filter } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
-import { DataService } from './data.service.ts';
+import { DataService } from './data.service';
 
 const resolveOneSymbol = ({ api, symbolName }: { api: AlorApi; symbolName: string }) => {
   const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);

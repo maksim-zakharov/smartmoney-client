@@ -8,7 +8,7 @@ import { cn } from './lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 import { TWChart } from './components/TWChart';
 import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from './api/tinkoff.api';
-import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation, useGetCTraderSymbolsQuery } from './api/ctrader.api';
+import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation } from './api/ctrader.api';
 import { Button } from './components/ui/button.tsx';
 import { CirclePlus, CircleX } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
@@ -110,15 +110,6 @@ export const TestPage = () => {
   };
 
   const map = useMemo(() => new Map<number, any>(cTraderSymbols?.map((s) => [s.symbolId, s])), [cTraderSymbols]);
-
-  useGetCTraderSymbolsQuery(
-    {
-      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
-    },
-    {
-      skip: !cTraderAccount?.ctidTraderAccountId,
-    },
-  );
 
   const [selected, setSelected] = useState();
 
@@ -554,6 +545,7 @@ export const TestPage = () => {
                 <TableHead>Количество</TableHead>
                 <TableHead>Средняя цена позиции</TableHead>
                 <TableHead>Текущая цена</TableHead>
+                {key === 'futures' && <TableHead className="text-right">Вариационка</TableHead>}
                 <TableHead className="text-right">Доход</TableHead>
               </TableRow>
             </TableHeader>
@@ -570,6 +562,13 @@ export const TestPage = () => {
                   <TableCell>{invoice.quantity}</TableCell>
                   <TableCell>{moneyFormat(invoice.averagePositionPrice, 'RUB', 0, 4)}</TableCell>
                   <TableCell>{invoice.currentPrice}</TableCell>
+                  <TableCell
+                    className={
+                      invoice.varMargin > 0 ? 'text-right profitCell' : invoice.varMargin < 0 ? 'text-right lossCell' : 'text-right'
+                    }
+                  >
+                    {moneyFormat(invoice.varMargin)}
+                  </TableCell>
                   <TableCell
                     className={
                       invoice.expectedYield > 0 ? 'text-right profitCell' : invoice.expectedYield < 0 ? 'text-right lossCell' : 'text-right'
