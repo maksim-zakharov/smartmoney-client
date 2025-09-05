@@ -346,8 +346,8 @@ export const TestPage = () => {
           </Card>
         </Col>
       </Row>
-      <div className="grid grid-cols-3 gap-2">
-        <Table wrapperClassName="pt-2">
+      <div className="grid grid-cols-3 gap-2 flex-wrap">
+        <Table wrapperClassName="pt-2 min-w-[470px]">
           <TableHeader>
             <TableRow>
               <TableHead className="w-[200px] text-center" colSpan={6}>

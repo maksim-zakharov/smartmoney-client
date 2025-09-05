@@ -159,6 +159,18 @@ export default function App() {
     { key: '/test123', label: 'Test', element: <TestPage /> },
   ];
 
+  const [telegramToken, settelegramToken] = useState<string | null>(localStorage.getItem('telegramToken'));
+  const handletelegramToken = (e) => {
+    settelegramToken(e.target.value);
+    localStorage.setItem('telegramToken', e.target.value);
+  };
+
+  const [telegramUserId, settelegramUserId] = useState<string | null>(localStorage.getItem('telegramUserId'));
+  const handletelegramUserId = (e) => {
+    settelegramUserId(e.target.value);
+    localStorage.setItem('telegramUserId', e.target.value);
+  };
+
   const [aToken, setAToken] = useState<string | null>(localStorage.getItem('token'));
   const handleEditAToken = (e) => {
     setAToken(e.target.value);
@@ -231,6 +243,10 @@ export default function App() {
                   <DialogTitle>Настройки</DialogTitle>
                 </DialogHeader>
                 <div className="p-3 flex gap-3 flex-col">
+                  <Label htmlFor="alorToken">Телеграм Токен</Label>
+                  <Input id="alorToken" value={telegramToken} onChange={handletelegramToken} />
+                  <Label htmlFor="alorToken">Телеграм UserID</Label>
+                  <Input id="alorToken" value={telegramUserId} onChange={handletelegramUserId} />
                   <Label htmlFor="alorToken">Алор Токен</Label>
                   <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
                   <Label htmlFor="tToken">Тинькофф Токен</Label>

@@ -391,7 +391,10 @@ export class DataFeed implements IBasicDataFeed {
           for (let i = 1; i < resp.length; i++) {
             newCandle = calculateCandle(newCandle, resp[i], i === resp.length - 1 ? this.multiple : 1);
           }
-          if (newCandle) onTick({ ...newCandle, time: newCandle.time * 1000 } as Bar);
+          if (newCandle) {
+            // Сюда добавить обработчик телеграмм алертов
+            onTick({ ...newCandle, time: newCandle.time * 1000 } as Bar);
+          }
         });
 
       const secondProm = async (symbol: string) => {

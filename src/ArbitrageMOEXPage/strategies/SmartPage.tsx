@@ -340,19 +340,19 @@ export const SmartPage = () => {
   const FormSchema = z.object({
     type: z
       .enum(['double', 'triple'], {
-        required_error: 'Нужно выбрать тип арбитража',
+        error: 'Нужно выбрать тип арбитража',
       })
       .default('double'),
     multiple: z
       .number({
-        required_error: 'Нужно выбрать множитель',
+        error: 'Нужно выбрать множитель',
       })
       .default(1),
     first: z.string({
-      required_error: 'Нужно выбрать тип арбитража',
+      error: 'Нужно выбрать тип арбитража',
     }),
     second: z.string({
-      required_error: 'Нужно выбрать тип арбитража',
+      error: 'Нужно выбрать тип арбитража',
     }),
     third: z.string().optional(),
   });

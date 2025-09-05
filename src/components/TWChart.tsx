@@ -13,6 +13,7 @@ import {
   IChartingLibraryWidget,
   IExternalSaveLoadAdapter,
   LineToolsAndGroupsState,
+  PlusClickParams,
   ResolutionString,
   StudyTemplateMetaInfo,
   SubscribeEventsMap,
@@ -20,11 +21,14 @@ import {
   widget,
 } from '../assets/charting_library';
 
-export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, small }: any) => {
+export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, small, onPlusClick }: any) => {
   const ref = useRef<HTMLDivElement>(null);
   const dataService = useAppSelector((state) => state.alorSlice.dataService);
   const ws = useAppSelector((state) => state.alorSlice.ws);
   const cTraderAccount = useAppSelector((state) => state.alorSlice.cTraderAccount);
+
+  const alerts = useAppSelector((state) => state.alertsSlice.alerts);
+  const tickerAlerts = useMemo(() => alerts.filter((a) => a.ticker === ticker.toUpperCase()), [alerts, ticker]);
 
   const datafeed = useMemo(
     () =>
@@ -146,13 +150,39 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
     subscribeToChartEvents(chartWidget);
     chartWidget.onChartReady(() => {
       const chart = chartWidget.chart();
+
+      tickerAlerts.forEach((alert) => {
+        chart
+          .createPositionLine()
+          .setPrice(alert.price) // Устанавливаем цену из события onPlusClick
+          .setText(`${alert.ticker}, ${alert.condition === 'lessThen' ? 'Меньше' : 'Больше'} чем ${alert.price.toFixed(5)}`) // Подпись для линии
+          .setQuantity('🔔') // Количество (опционально)
+          .setLineStyle(0) // Стиль линии (0 - сплошная, 1 - пунктирная и т.д.)
+          .setLineLength(100) // Длина линии (в процентах ширины графика)
+          .setLineColor('#FFF'); // Цвет линии
+      });
     });
-  }, [datafeed, height, lineSerieses, ticker]);
+  }, [datafeed, height, lineSerieses, ticker, tickerAlerts]);
 
   const subscribeToChartEvents = (widget: IChartingLibraryWidget): void => {
     // subscribeToChartEvent(widget, 'onPlusClick', (params: PlusClickParams) => this.selectPrice(params.price));
 
     subscribeToChartEvent(widget, 'onAutoSaveNeeded', () => saveChartLayout(widget));
+
+    subscribeToChartEvent(widget, 'onPlusClick', (params: PlusClickParams) => {
+      onPlusClick?.(params);
+
+      // работает
+      // const chart = widget.chart();
+      // chart
+      //   .createPositionLine()
+      //   .setPrice(params.price) // Устанавливаем цену из события onPlusClick
+      //   .setText('Позиция') // Подпись для линии
+      //   .setQuantity('1') // Количество (опционально)
+      //   .setLineStyle(0) // Стиль линии (0 - сплошная, 1 - пунктирная и т.д.)
+      //   .setLineLength(100) // Длина линии (в процентах ширины графика)
+      //   .setLineColor('#FF0000'); // Цвет линии
+    });
   };
 
   const saveChartLayout = (widget: IChartingLibraryWidget): void => {

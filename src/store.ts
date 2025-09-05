@@ -6,12 +6,14 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import { tinkoffApi } from './api/tinkoff.api.ts';
 import { ctraderApi } from './api/ctrader.api.ts';
 import { mexcApi } from './api/mexc.api.ts';
+import { alertsSlice } from './api/alerts.slice.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
   [alorApi.reducerPath]: alorApi.reducer,
   [tinkoffApi.reducerPath]: tinkoffApi.reducer,
   [alorSlice.name]: alorSlice.reducer,
+  [alertsSlice.name]: alertsSlice.reducer,
   [ctraderApi.reducerPath]: ctraderApi.reducer,
   [mexcApi.reducerPath]: mexcApi.reducer,
 };
