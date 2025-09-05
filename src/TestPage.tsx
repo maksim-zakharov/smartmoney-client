@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Col, Row } from 'antd';
 import { useAppSelector } from './store';
-import { moneyFormat } from './MainPage/MainPage';
+import { moneyFormat, numberFormat } from './MainPage/MainPage';
 import { normalizePrice } from './utils';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { cn } from './lib/utils';
@@ -270,6 +270,18 @@ export const TestPage = () => {
     localStorage.setItem('qtyMap', JSON.stringify({ ...qtyMap, [ticker]: qty }));
   };
 
+  const totalPositions = useMemo(() => {
+    const tiPos = [...(tinkoffPortfolio?.positions || [])];
+    tiPos.push(
+      ...cTraderPositionsMapped.map((t) => ({
+        ...t,
+        instrumentType: 'forex',
+      })),
+    );
+
+    return tiPos;
+  }, [tinkoffPortfolio?.positions, cTraderPositionsMapped]);
+
   return (
     <>
       <Row gutter={[8, 8]}>
@@ -529,28 +541,60 @@ export const TestPage = () => {
             </TableRow>
           </TableFooter>
         </Table>
-        {Object.entries(tinkoffPositionsMap).map(([key, value]) => (
-          <Table wrapperClassName="pt-2">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[200px] text-center" colSpan={7}>
-                  {instrumentTypeMap[key]}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[200px]">Инструмент</TableHead>
-                <TableHead>Лотов</TableHead>
-                <TableHead>Количество</TableHead>
-                <TableHead>Средняя цена позиции</TableHead>
-                <TableHead>Текущая цена</TableHead>
-                {key === 'futures' && <TableHead className="text-right">Вариационка</TableHead>}
-                <TableHead className="text-right">Доход</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {value.map((invoice, index) => (
+        <Table wrapperClassName="pt-2 col-span-2">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px] text-left" colSpan={10}>
+                Портфель
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableHeader className="bg-[rgb(36,52,66)]">
+            <TableRow>
+              <TableHead className="w-[200px]">Инструмент</TableHead>
+              <TableHead className="w-[200px]">Тип</TableHead>
+              <TableHead className="w-[200px]">Брокер</TableHead>
+              <TableHead>Лотов</TableHead>
+              <TableHead>Маржа</TableHead>
+              {/*<TableHead>Количество</TableHead>*/}
+              <TableHead>Средняя цена позиции</TableHead>
+              <TableHead>Текущая цена</TableHead>
+              <TableHead className="text-right">Свопы</TableHead>
+              <TableHead className="text-right">Вариационка</TableHead>
+              <TableHead className="text-right">Доход</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {totalPositions.map((invoice, index) =>
+              invoice.instrumentType === 'forex' ? (
+                <TableRow
+                  key={invoice.invoice}
+                  className={index % 2 ? 'rowOdd' : 'rowEven'}
+                  onClick={handleSelectForex(map.get(invoice.tradeData.symbolId)?.symbolName)}
+                >
+                  <TableCell>
+                    <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />
+                  </TableCell>
+                  <TableCell>Форекс</TableCell>
+                  <TableCell>XPBEE</TableCell>
+                  <TableCell>{invoice.volume / 10000}</TableCell>
+                  <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
+                  <TableCell>-</TableCell>
+                  <TableCell>-</TableCell>
+                  <TableCell
+                    className={invoice.swap > 0 ? 'text-right profitCell' : invoice.swap < 0 ? 'text-right lossCell' : 'text-right'}
+                  >
+                    {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}
+                  </TableCell>
+                  <TableCell className="text-right">-</TableCell>
+                  {/*<TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>*/}
+                  {/*  {moneyFormat(invoice.PnL, 'USD', 0, 2)}*/}
+                  {/*</TableCell>*/}
+                  <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>
+                    {moneyFormat(invoice.PnL * USDRate, 'RUB', 0, 2)}
+                  </TableCell>
+                </TableRow>
+              ) : (
                 <TableRow
                   key={invoice.invoice}
                   className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === instrumentTypeMap[invoice.instrumentType] && 'rowHover')}
@@ -558,19 +602,21 @@ export const TestPage = () => {
                   <TableCell>
                     <FigiLabel uid={invoice.instrumentUid} />
                   </TableCell>
-                  <TableCell>{invoice.quantityLots}</TableCell>
-                  <TableCell>{invoice.quantity}</TableCell>
+                  <TableCell>{instrumentTypeMap[invoice.instrumentType]}</TableCell>
+                  <TableCell>Тинькофф</TableCell>
+                  <TableCell>{numberFormat(invoice.quantityLots)}</TableCell>
+                  <TableCell>-</TableCell>
+                  {/*<TableCell>{numberFormat(invoice.quantity)}</TableCell>*/}
                   <TableCell>{moneyFormat(invoice.averagePositionPrice, 'RUB', 0, 4)}</TableCell>
                   <TableCell>{invoice.currentPrice}</TableCell>
-                  {key === 'futures' && (
-                    <TableCell
-                      className={
-                        invoice.varMargin > 0 ? 'text-right profitCell' : invoice.varMargin < 0 ? 'text-right lossCell' : 'text-right'
-                      }
-                    >
-                      {moneyFormat(invoice.varMargin)}
-                    </TableCell>
-                  )}
+                  <TableCell className="text-right">-</TableCell>
+                  <TableCell
+                    className={
+                      invoice.varMargin > 0 ? 'text-right profitCell' : invoice.varMargin < 0 ? 'text-right lossCell' : 'text-right'
+                    }
+                  >
+                    {moneyFormat(invoice.varMargin)}
+                  </TableCell>
                   <TableCell
                     className={
                       invoice.expectedYield > 0 ? 'text-right profitCell' : invoice.expectedYield < 0 ? 'text-right lossCell' : 'text-right'
@@ -579,96 +625,96 @@ export const TestPage = () => {
                     {moneyFormat(invoice.expectedYield)}
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ))}
-        <Table wrapperClassName="pt-2">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px] text-center" colSpan={6}>
-                Forex
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Инструмент</TableHead>
-              <TableHead>Лотов</TableHead>
-              <TableHead>Использованная маржа</TableHead>
-              <TableHead className="text-right">Своп</TableHead>
-              <TableHead className="text-right">Чистая прибыль USDT</TableHead>
-              <TableHead className="text-right">Чистая прибыль RUB</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cTraderPositionsMapped.map((invoice, index) => (
-              <TableRow
-                key={invoice.invoice}
-                className={index % 2 ? 'rowOdd' : 'rowEven'}
-                onClick={handleSelectForex(map.get(invoice.tradeData.symbolId)?.symbolName)}
-              >
-                <TableCell>
-                  <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />
-                </TableCell>
-                <TableCell>{invoice.volume / 10000}</TableCell>
-                <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
-                <TableCell className={invoice.swap > 0 ? 'text-right profitCell' : invoice.swap < 0 ? 'text-right lossCell' : 'text-right'}>
-                  {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}
-                </TableCell>
-                <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>
-                  {moneyFormat(invoice.PnL, 'USD', 0, 2)}
-                </TableCell>
-                <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>
-                  {moneyFormat(invoice.PnL * USDRate, 'RUB', 0, 2)}
-                </TableCell>
-              </TableRow>
-            ))}
+              ),
+            )}
           </TableBody>
         </Table>
-        <Table wrapperClassName="pt-2">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px] text-center" colSpan={6}>
-                MEXC
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Инструмент</TableHead>
-              <TableHead>Лотов</TableHead>
-              <TableHead>Использованная маржа</TableHead>
-              <TableHead className="text-right">Чистая прибыль USDT</TableHead>
-              <TableHead className="text-right">Чистая прибыль RUB</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(MEXCPositions || []).map((invoice, index) => (
-              <TableRow key={invoice.symbol} className={index % 2 ? 'rowOdd' : 'rowEven'}>
-                <TableCell>
-                  <MEXCLabel symbol={invoice.symbol} />
-                </TableCell>
-                <TableCell>{invoice.holdVol}</TableCell>
-                <TableCell>{moneyFormat(invoice.marginRatio, 'USD', 0, 2)}</TableCell>
-                <TableCell
-                  className={
-                    invoice.profitRatio > 0 ? 'text-right profitCell' : invoice.profitRatio < 0 ? 'text-right lossCell' : 'text-right'
-                  }
-                >
-                  {moneyFormat(invoice.profitRatio, 'USD', 0, 2)}
-                </TableCell>
-                <TableCell
-                  className={
-                    invoice.profitRatio > 0 ? 'text-right profitCell' : invoice.profitRatio < 0 ? 'text-right lossCell' : 'text-right'
-                  }
-                >
-                  {moneyFormat(invoice.profitRatio * 80, 'RUB', 0, 2)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        {/*<Table wrapperClassName="pt-2">*/}
+        {/*  <TableHeader>*/}
+        {/*    <TableRow>*/}
+        {/*      <TableHead className="w-[200px] text-center" colSpan={6}>*/}
+        {/*        Forex*/}
+        {/*      </TableHead>*/}
+        {/*    </TableRow>*/}
+        {/*  </TableHeader>*/}
+        {/*  <TableHeader className="bg-[rgb(36,52,66)]">*/}
+        {/*    <TableRow>*/}
+        {/*      <TableHead className="w-[200px]">Инструмент</TableHead>*/}
+        {/*      <TableHead>Лотов</TableHead>*/}
+        {/*      <TableHead>Использованная маржа</TableHead>*/}
+        {/*      <TableHead className="text-right">Своп</TableHead>*/}
+        {/*      <TableHead className="text-right">Чистая прибыль USDT</TableHead>*/}
+        {/*      <TableHead className="text-right">Чистая прибыль RUB</TableHead>*/}
+        {/*    </TableRow>*/}
+        {/*  </TableHeader>*/}
+        {/*  <TableBody>*/}
+        {/*    {cTraderPositionsMapped.map((invoice, index) => (*/}
+        {/*      <TableRow*/}
+        {/*        key={invoice.invoice}*/}
+        {/*        className={index % 2 ? 'rowOdd' : 'rowEven'}*/}
+        {/*        onClick={handleSelectForex(map.get(invoice.tradeData.symbolId)?.symbolName)}*/}
+        {/*      >*/}
+        {/*        <TableCell>*/}
+        {/*          <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />*/}
+        {/*        </TableCell>*/}
+        {/*        <TableCell>{invoice.volume / 10000}</TableCell>*/}
+        {/*        <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>*/}
+        {/*        <TableCell className={invoice.swap > 0 ? 'text-right profitCell' : invoice.swap < 0 ? 'text-right lossCell' : 'text-right'}>*/}
+        {/*          {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}*/}
+        {/*        </TableCell>*/}
+        {/*        <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>*/}
+        {/*          {moneyFormat(invoice.PnL, 'USD', 0, 2)}*/}
+        {/*        </TableCell>*/}
+        {/*        <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>*/}
+        {/*          {moneyFormat(invoice.PnL * USDRate, 'RUB', 0, 2)}*/}
+        {/*        </TableCell>*/}
+        {/*      </TableRow>*/}
+        {/*    ))}*/}
+        {/*  </TableBody>*/}
+        {/*</Table>*/}
+        {/*<Table wrapperClassName="pt-2">*/}
+        {/*  <TableHeader>*/}
+        {/*    <TableRow>*/}
+        {/*      <TableHead className="w-[200px] text-center" colSpan={6}>*/}
+        {/*        MEXC*/}
+        {/*      </TableHead>*/}
+        {/*    </TableRow>*/}
+        {/*  </TableHeader>*/}
+        {/*  <TableHeader>*/}
+        {/*    <TableRow>*/}
+        {/*      <TableHead className="w-[200px]">Инструмент</TableHead>*/}
+        {/*      <TableHead>Лотов</TableHead>*/}
+        {/*      <TableHead>Использованная маржа</TableHead>*/}
+        {/*      <TableHead className="text-right">Чистая прибыль USDT</TableHead>*/}
+        {/*      <TableHead className="text-right">Чистая прибыль RUB</TableHead>*/}
+        {/*    </TableRow>*/}
+        {/*  </TableHeader>*/}
+        {/*  <TableBody>*/}
+        {/*    {(MEXCPositions || []).map((invoice, index) => (*/}
+        {/*      <TableRow key={invoice.symbol} className={index % 2 ? 'rowOdd' : 'rowEven'}>*/}
+        {/*        <TableCell>*/}
+        {/*          <MEXCLabel symbol={invoice.symbol} />*/}
+        {/*        </TableCell>*/}
+        {/*        <TableCell>{invoice.holdVol}</TableCell>*/}
+        {/*        <TableCell>{moneyFormat(invoice.marginRatio, 'USD', 0, 2)}</TableCell>*/}
+        {/*        <TableCell*/}
+        {/*          className={*/}
+        {/*            invoice.profitRatio > 0 ? 'text-right profitCell' : invoice.profitRatio < 0 ? 'text-right lossCell' : 'text-right'*/}
+        {/*          }*/}
+        {/*        >*/}
+        {/*          {moneyFormat(invoice.profitRatio, 'USD', 0, 2)}*/}
+        {/*        </TableCell>*/}
+        {/*        <TableCell*/}
+        {/*          className={*/}
+        {/*            invoice.profitRatio > 0 ? 'text-right profitCell' : invoice.profitRatio < 0 ? 'text-right lossCell' : 'text-right'*/}
+        {/*          }*/}
+        {/*        >*/}
+        {/*          {moneyFormat(invoice.profitRatio * 80, 'RUB', 0, 2)}*/}
+        {/*        </TableCell>*/}
+        {/*      </TableRow>*/}
+        {/*    ))}*/}
+        {/*  </TableBody>*/}
+        {/*</Table>*/}
       </div>
       {selected && <TWChart ticker={selected} height={400} multiple={1} small />}
     </>

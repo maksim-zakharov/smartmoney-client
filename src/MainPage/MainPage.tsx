@@ -31,6 +31,16 @@ export const moneyFormat = (
   return numberFormat.format(money);
 };
 
+export const numberFormat = (money: number, minimumFractionDigits: number = 0, maximumFractionDigits: number = 0) => {
+  const options: Intl.NumberFormatOptions = {
+    minimumFractionDigits,
+    maximumFractionDigits,
+  };
+  const numberFormat = new Intl.NumberFormat('ru-RU', options);
+
+  return numberFormat.format(money);
+};
+
 const MainPage: React.FC = () => {
   const [stopFrom, setStopFrom] = useState(0);
   const [stopTo, setStopTo] = useState(100);
