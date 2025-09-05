@@ -562,13 +562,15 @@ export const TestPage = () => {
                   <TableCell>{invoice.quantity}</TableCell>
                   <TableCell>{moneyFormat(invoice.averagePositionPrice, 'RUB', 0, 4)}</TableCell>
                   <TableCell>{invoice.currentPrice}</TableCell>
-                  <TableCell
-                    className={
-                      invoice.varMargin > 0 ? 'text-right profitCell' : invoice.varMargin < 0 ? 'text-right lossCell' : 'text-right'
-                    }
-                  >
-                    {moneyFormat(invoice.varMargin)}
-                  </TableCell>
+                  {key === 'futures' && (
+                    <TableCell
+                      className={
+                        invoice.varMargin > 0 ? 'text-right profitCell' : invoice.varMargin < 0 ? 'text-right lossCell' : 'text-right'
+                      }
+                    >
+                      {moneyFormat(invoice.varMargin)}
+                    </TableCell>
+                  )}
                   <TableCell
                     className={
                       invoice.expectedYield > 0 ? 'text-right profitCell' : invoice.expectedYield < 0 ? 'text-right lossCell' : 'text-right'

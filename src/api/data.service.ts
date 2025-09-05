@@ -14,10 +14,7 @@ export class DataService {
   private readonly mexcWsClient: MexcWsClient;
   private readonly gateWsClient: GateWsClient;
 
-  constructor(
-    public readonly alorApi: AlorApi,
-    private readonly ctidTraderAccountId: string,
-  ) {
+  constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
     this.ctraderUrl = 'https://176.114.69.4';
 
@@ -55,7 +52,7 @@ export class DataService {
       const _ticker = ticker.split('FOREX:')[1] || ticker;
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}&ctidTraderAccountId=${this.ctidTraderAccountId}`,
+          `${this.ctraderUrl}/ctrader/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
           {
             headers: {
               'x-ctrader-token': localStorage.getItem('cTraderAuth')

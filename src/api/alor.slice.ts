@@ -108,7 +108,6 @@ export const alorSlice = createSlice({
     initApi(state, action: PayloadAction<{ token: string; accessToken?: string; type?: 'lk' | 'dev' }>) {
       // Если API уже создан, не пересоздаем его
       if (!state.api) {
-        console.log('init');
         const _api = new AlorApi({
           token: action.payload.token,
           accessToken: action.payload.accessToken,
@@ -119,7 +118,7 @@ export const alorSlice = createSlice({
         });
         state.api = _api;
 
-        state.dataService = new DataService(_api, localStorage.getItem('ctidTraderAccountId'));
+        state.dataService = new DataService(_api);
       }
 
       state.release?.();
