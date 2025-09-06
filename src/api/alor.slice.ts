@@ -34,12 +34,6 @@ const ctraderWs = io(`${url}/ctrader-ws`, {
 ctraderWs.on('connect', () => console.log('WS connected'));
 ctraderWs.on('disconnect', () => console.log('WS disconnected'));
 
-const mexcWs = io(`${url}/mexc-ws`, {
-  transports: ['websocket'],
-});
-mexcWs.on('connect', () => console.log('WS connected'));
-mexcWs.on('disconnect', () => console.log('WS disconnected'));
-
 const initialState = {
   api: undefined,
   dataService: undefined,
@@ -50,7 +44,6 @@ const initialState = {
   apiAuth: false,
   cTraderAccounts: [],
   ws: ctraderWs,
-  mexcWs: mexcWs,
   darkColors: {
     backgroundColor: 'rgb(30,44,57)',
     color: 'rgb(166,189,213)',
@@ -74,7 +67,6 @@ const initialState = {
     borderColor: string;
   };
   ws: Socket;
-  mexcWs: Socket;
   api: undefined | AlorApi;
   dataService?: DataService;
   apiAuth: boolean;

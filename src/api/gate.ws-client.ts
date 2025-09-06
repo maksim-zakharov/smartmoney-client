@@ -10,17 +10,18 @@ export class GateWsClient {
     let interval;
     this.ws.onopen = () => {
       console.log('WS connected');
-      // if (interval) clearInterval(interval);
-      //
-      // interval = setInterval(
-      //   () =>
-      //     this.ws.send(
-      //       JSON.stringify({
-      //         method: 'ping',
-      //       }),
-      //     ),
-      //   10000,
-      // );
+      if (interval) clearInterval(interval);
+
+      interval = setInterval(
+        () =>
+          this.ws.send(
+            JSON.stringify({
+              time: Math.round(Date.now() / 1000),
+              channel: 'spot.ping',
+            }),
+          ),
+        10000,
+      );
     };
 
     this.ws.onmessage = (ev: MessageEvent) => {

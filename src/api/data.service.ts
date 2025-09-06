@@ -4,6 +4,7 @@ import { PeriodParams, ResolutionString } from '../assets/charting_library';
 import { BybitWebsocketClient } from './bybit.ws-client';
 import { MexcWsClient } from './mexc.ws-client';
 import { GateWsClient } from './gate.ws-client';
+import { CtraderWsClient } from './ctrader.ws-client.ts';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -13,6 +14,7 @@ export class DataService {
   private readonly bybitWsClient: BybitWebsocketClient;
   private readonly mexcWsClient: MexcWsClient;
   private readonly gateWsClient: GateWsClient;
+  private readonly ctraderWsClient: CtraderWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
@@ -21,6 +23,7 @@ export class DataService {
     this.bybitWsClient = new BybitWebsocketClient();
     this.mexcWsClient = new MexcWsClient();
     this.gateWsClient = new GateWsClient();
+    this.ctraderWsClient = new CtraderWsClient();
   }
 
   mexcSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -33,6 +36,10 @@ export class DataService {
 
   bybitSubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.bybitWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  ctraderSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.ctraderWsClient.subscribeCandles(symbol, resolution);
   }
 
   get serverTime$() {
