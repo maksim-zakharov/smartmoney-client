@@ -17,8 +17,8 @@ export class DataService {
   private readonly ctraderWsClient: CtraderWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
-    // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
-    this.ctraderUrl = 'https://176.114.69.4';
+    this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
+    // this.ctraderUrl = 'https://176.114.69.4';
 
     this.bybitWsClient = new BybitWebsocketClient();
     this.mexcWsClient = new MexcWsClient();
@@ -82,6 +82,21 @@ export class DataService {
       request$ = from(
         fetch(
           `${this.ctraderUrl}/gate/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
+    } else if (ticker.includes('DEXCHECK:')) {
+      const _ticker = ticker.split('DEXCHECK:')[1];
+      request$ = from(
+        fetch(
+          `${this.ctraderUrl}/dexcheck/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
