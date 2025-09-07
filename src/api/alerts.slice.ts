@@ -20,7 +20,11 @@ export const alertsSlice = createSlice({
       state.alerts.push(action.payload);
       localStorage.setItem('alerts', JSON.stringify(state.alerts));
     },
+    deleteAlert(state, action: PayloadAction<Alert>) {
+      state.alerts = state.alerts.filter((a) => JSON.stringify(a) !== JSON.stringify(action.payload));
+      localStorage.setItem('alerts', JSON.stringify(state.alerts));
+    },
   },
 });
 
-export const { addAlert } = alertsSlice.actions;
+export const { addAlert, deleteAlert } = alertsSlice.actions;
