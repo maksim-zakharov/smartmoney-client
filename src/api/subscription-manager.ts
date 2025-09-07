@@ -50,9 +50,7 @@ export class SubscriptionManager {
     };
 
     this.ws.onmessage = (ev) => {
-      if (this._options.onMessage) {
-        this._options.onMessage(ev);
-      }
+      this.onMessage(ev);
     };
 
     this.ws.onerror = (error) => {

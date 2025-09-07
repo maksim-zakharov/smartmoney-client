@@ -82,12 +82,22 @@ export class DataFeed implements IBasicDataFeed {
 
   private readonly ctraderUrl: string;
 
-  constructor(options: { ctidTraderAccountId?: number; data?: HistoryObject[]; multiple: number; dataService: DataService }) {
+  private readonly onNewCandle: (ticker: string, candle: HistoryObject) => void;
+
+  constructor(options: {
+    onNewCandle: any;
+    ctidTraderAccountId?: number;
+    data?: HistoryObject[];
+    multiple: number;
+    dataService: DataService;
+  }) {
     this.api = options.dataService.alorApi;
     this.dataService = options.dataService;
     this.data = options.data;
     this.multiple = options.multiple;
     this.ctidTraderAccountId = options.ctidTraderAccountId;
+
+    this.onNewCandle = options.onNewCandle;
 
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
     this.ctraderUrl = 'https://176.114.69.4';
@@ -331,6 +341,8 @@ export class DataFeed implements IBasicDataFeed {
             newCandle = calculateCandle(newCandle, resp[i], i === resp.length - 1 ? this.multiple : 1);
           }
           if (newCandle) {
+            this.onNewCandle(symbolInfo.ticker, newCandle);
+
             // Сюда добавить обработчик телеграмм алертов
             onTick({ ...newCandle, time: newCandle.time * 1000 } as Bar);
           }

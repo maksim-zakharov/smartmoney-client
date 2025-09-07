@@ -28,6 +28,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Trash } from 'lucide-react';
 import { Button } from './components/ui/button.tsx';
 import { deleteAlert } from './api/alerts.slice.ts';
+import { AlertDialog } from './components/AlertDialog.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -345,6 +346,7 @@ export default function App() {
                 ))}
               </Routes>
             ))}
+          <AlertDialog />
         </Content>
       </Layout>
     </ThemeProvider>

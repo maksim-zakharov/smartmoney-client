@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { useAppSelector } from '../store.ts';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useAppDispatch, useAppSelector } from '../store.ts';
 import { DataFeed } from '../api/datafeed.ts';
 import { getTimezone } from '../utils.ts';
 import {
@@ -20,8 +20,12 @@ import {
   Timezone,
   widget,
 } from '../assets/charting_library';
+import { deleteAlert, openAlertDialog } from '../api/alerts.slice';
+import { HistoryObject } from 'alor-api';
 
 export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, small, onPlusClick }: any) => {
+  const dispatch = useAppDispatch();
+
   const ref = useRef<HTMLDivElement>(null);
   const dataService = useAppSelector((state) => state.alorSlice.dataService);
   const ws = useAppSelector((state) => state.alorSlice.ws);
@@ -30,10 +34,52 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
   const alerts = useAppSelector((state) => state.alertsSlice.alerts);
   const tickerAlerts = useMemo(() => alerts.filter((a) => a.ticker === ticker.toUpperCase()), [alerts, ticker]);
 
+  const onNewCandleHandle = useCallback(
+    (ticker: string, candle: HistoryObject) => {
+      const tickerAlerts = alerts.filter((a) => a.ticker.toUpperCase() === ticker.toUpperCase());
+      tickerAlerts.forEach((a) => {
+        if (a.condition === 'lessThen' && candle.close < a.price) {
+          const body = { chat_id: localStorage.getItem('telegramUserId'), text: a.message || `${ticker} Цена меньше чем ${a.price}` };
+          fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          });
+          if (a.trigger === 'once') dispatch(deleteAlert(a));
+        }
+        if (a.condition === 'lessThen' && candle.close > a.price) {
+          const body = { chat_id: localStorage.getItem('telegramUserId'), text: a.message || `${ticker} Цена больше чем ${a.price}` };
+          fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          });
+          if (a.trigger === 'once') dispatch(deleteAlert(a));
+        }
+      });
+    },
+    [alerts],
+  );
+
   const datafeed = useMemo(
     () =>
-      dataService ? new DataFeed({ ws, dataService, data, multiple, ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId }) : null,
-    [ws, dataService, cTraderAccount?.ctidTraderAccountId, data, multiple],
+      dataService
+        ? new DataFeed({
+            onNewCandle: onNewCandleHandle,
+            ws,
+            dataService,
+            data,
+            multiple,
+            ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+          })
+        : null,
+    [onNewCandleHandle, ws, dataService, cTraderAccount?.ctidTraderAccountId, data, multiple],
   );
 
   useEffect(() => {
@@ -171,6 +217,8 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
 
     subscribeToChartEvent(widget, 'onPlusClick', (params: PlusClickParams) => {
       onPlusClick?.(params);
+
+      dispatch(openAlertDialog({ ticker: params.symbol, price: Number(params.price.toFixed(5)) }));
 
       // работает
       // const chart = widget.chart();

@@ -8,8 +8,9 @@ export interface Alert {
   message?: string;
 }
 
-const initialState: { alerts: Alert[] } = {
+const initialState: { alerts: Alert[]; alertConfig: any } = {
   alerts: localStorage.getItem('alerts') ? JSON.parse(localStorage.getItem('alerts')) : [],
+  alertConfig: undefined,
 };
 
 export const alertsSlice = createSlice({
@@ -24,7 +25,13 @@ export const alertsSlice = createSlice({
       state.alerts = state.alerts.filter((a) => JSON.stringify(a) !== JSON.stringify(action.payload));
       localStorage.setItem('alerts', JSON.stringify(state.alerts));
     },
+    openAlertDialog(state, action: PayloadAction<Partial<Alert>>) {
+      state.alertConfig = action.payload;
+    },
+    clearAlertDialog(state, action: PayloadAction<void>) {
+      state.alertConfig = undefined;
+    },
   },
 });
 
-export const { addAlert, deleteAlert } = alertsSlice.actions;
+export const { addAlert, clearAlertDialog, openAlertDialog, deleteAlert } = alertsSlice.actions;
