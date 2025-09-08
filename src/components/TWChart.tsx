@@ -50,7 +50,7 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
           });
           if (a.trigger === 'once') dispatch(deleteAlert(a));
         }
-        if (a.condition === 'lessThen' && candle.close > a.price) {
+        if (a.condition === 'moreThen' && candle.close > a.price) {
           const body = { chat_id: localStorage.getItem('telegramUserId'), text: a.message || `${ticker} Цена больше чем ${a.price}` };
           fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
             method: 'POST',

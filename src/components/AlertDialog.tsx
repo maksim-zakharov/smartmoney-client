@@ -54,7 +54,10 @@ export const AlertDialog = () => {
     e.preventDefault();
     const values = form.getValues();
 
-    const body = { chat_id: localStorage.getItem('telegramUserId'), text: values.message };
+    const body = {
+      chat_id: localStorage.getItem('telegramUserId'),
+      text: values.message || `${values.ticker} Цена больше чем ${values.price}`,
+    };
 
     fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
       method: 'POST',
