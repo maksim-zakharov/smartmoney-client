@@ -249,7 +249,7 @@ export default function App() {
               <DialogTrigger asChild>
                 <Button variant="outline">Настройки</Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md gap-2">
+              <DialogContent className="sm:max-w-lg gap-2">
                 <DialogHeader>
                   <DialogTitle>Настройки</DialogTitle>
                 </DialogHeader>
