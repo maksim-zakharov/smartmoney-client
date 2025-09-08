@@ -180,6 +180,16 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="GMGN:CARDS" _tickerFuture="MEXC:CARDS_USDT" multi={100} />,
     },
     {
+      key: 'MEXC:AIOT_USDT/MEXC:AIOTUSDT',
+      label: 'MEXC:AIOT_USDT/MEXC:AIOTUSDT',
+      element: <StatArbPage tickerStock="MEXC:AIOT_USDT" _tickerFuture="MEXC:AIOTUSDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:MIRROR_USDT/MEXC:MIRRORUSDT',
+      label: 'MEXC:MIRROR_USDT/MEXC:MIRRORUSDT',
+      element: <StatArbPage tickerStock="MEXC:MIRROR_USDT" _tickerFuture="MEXC:MIRRORUSDT" multi={100} />,
+    },
+    {
       key: 'DEXCHECK/MEXC:CARDS',
       label: 'DEXCHECK:CARDS/MEXC:CARDS_USDT',
       element: <StatArbPage tickerStock="DEXCHECK:CARDS" _tickerFuture="MEXC:CARDS_USDT" multi={100} />,

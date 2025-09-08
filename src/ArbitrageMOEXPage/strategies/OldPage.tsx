@@ -15,11 +15,9 @@ import {
   TimeRangePickerProps,
   Typography,
 } from 'antd';
-import { TimeframeSelect } from '../../TimeframeSelect';
 import { TickerSelect } from '../../TickerSelect';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
-import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
@@ -35,6 +33,7 @@ import {
   useGetSecurityByExchangeAndSymbolQuery,
   useGetSecurityDetailsQuery,
 } from '../../api/alor.api.ts';
+import { TWChart } from '../../components/TWChart.tsx';
 
 const { RangePicker } = DatePicker;
 
@@ -144,7 +143,7 @@ export const OldPage = () => {
       exchange: 'MOEX',
     },
     {
-      skip: !tickerFuture,
+      skip: true, // !tickerFuture,
     },
   );
 
@@ -159,7 +158,7 @@ export const OldPage = () => {
       exchange: 'MOEX',
     },
     {
-      skip: !tickerStock,
+      skip: true, // !tickerStock,
     },
   );
 
@@ -706,8 +705,9 @@ export const OldPage = () => {
       <Layout>
         <Content style={{ padding: 0, paddingRight: 20 }}>
           <div style={{ position: 'relative' }}>
-            <Space style={{ top: 8, position: 'absolute', zIndex: 3, left: 8 }}>
-              <TimeframeSelect value={tf} onChange={setSize} />
+            <Space>
+              {/*<Space style={{ top: 8, position: 'absolute', zIndex: 3, left: 8 }}>*/}
+              {/*<TimeframeSelect value={tf} onChange={setSize} />*/}
               <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
               {/*<Select*/}
               {/*    value={tickerFuture}*/}
@@ -720,12 +720,12 @@ export const OldPage = () => {
               {/*    style={{width: 160}}*/}
               {/*    options={options}*/}
               {/*/>*/}
-              <RangePicker
-                presets={rangePresets}
-                value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}
-                format="YYYY-MM-DD"
-                onChange={onChangeRangeDates}
-              />
+              {/*<RangePicker*/}
+              {/*  presets={rangePresets}*/}
+              {/*  value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}*/}
+              {/*  format="YYYY-MM-DD"*/}
+              {/*  onChange={onChangeRangeDates}*/}
+              {/*/>*/}
 
               <Select
                 value={expirationMonth}
@@ -741,17 +741,20 @@ export const OldPage = () => {
               {/*  Хеджировать акцией*/}
               {/*</Checkbox>*/}
             </Space>
-            <Chart
-              hideCross
-              lineSerieses={ls}
-              primitives={primitives}
-              markers={[]}
-              toolTipTop="40px"
-              toolTipLeft="4px"
-              data={data}
-              ema={[]}
-              maximumFractionDigits={4}
-            />
+            {/*<Chart*/}
+            {/*  hideCross*/}
+            {/*  lineSerieses={ls}*/}
+            {/*  primitives={primitives}*/}
+            {/*  markers={[]}*/}
+            {/*  toolTipTop="40px"*/}
+            {/*  toolTipLeft="4px"*/}
+            {/*  data={data}*/}
+            {/*  ema={[]}*/}
+            {/*  maximumFractionDigits={4}*/}
+            {/*/>*/}
+
+            <TWChart ticker={`${tickerStock}/${tickerFuture}`} multiple={multiple} />
+
             <Row style={{ paddingBottom: '8px' }} gutter={8}>
               <Col span={6}>
                 <Card bordered={false}>
