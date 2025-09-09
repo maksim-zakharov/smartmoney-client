@@ -1,22 +1,6 @@
-import {
-  Card,
-  Checkbox,
-  Col,
-  ColorPicker,
-  DatePicker,
-  Divider,
-  Layout,
-  Row,
-  Select,
-  Slider,
-  Space,
-  Statistic,
-  Table,
-  TimeRangePickerProps,
-  Typography,
-} from 'antd';
+import { Checkbox, ColorPicker, DatePicker, Divider, Layout, Select, Slider, Space } from 'antd';
 import { TickerSelect } from '../../TickerSelect';
-import dayjs, { type Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 // import { Chart } from '../../Chart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -92,10 +76,6 @@ export const OldPage = () => {
   }, []);
 
   const emaPeriod = Number(searchParams.get('emaPeriod') || 100);
-  const setEmaPeriod = (value) => {
-    searchParams.set('emaPeriod', value);
-    setSearchParams(searchParams);
-  };
 
   const bbMiltiplier = Number(searchParams.get('bbMiltiplier') || 2);
   const setbbMiltiplier = (value) => {
@@ -104,10 +84,6 @@ export const OldPage = () => {
   };
 
   const emaBBPeriod = Number(searchParams.get('emaBBPeriod') || 20);
-  const setEmaBBPeriod = (value) => {
-    searchParams.set('emaBBPeriod', value);
-    setSearchParams(searchParams);
-  };
 
   const checkboxValues = new Set(
     (searchParams.get('checkboxes') || 'tradeOB,BOS,swings,showEndOB,showHiddenSwings,showPositions').split(','),
@@ -363,34 +339,10 @@ export const OldPage = () => {
     };
   }, [positions]);
 
-  const setSize = (tf: string) => {
-    searchParams.set('tf', tf);
-    setSearchParams(searchParams);
-  };
-
   const onSelectTicker = (type: 'stock' | 'future') => (ticker) => {
     searchParams.set(`ticker-${type}`, ticker);
     setSearchParams(searchParams);
   };
-
-  const onChangeRangeDates = (value: Dayjs[], dateString) => {
-    console.log('Selected Time: ', value);
-    console.log('Formatted Selected Time: ', dateString);
-
-    searchParams.set('fromDate', value[0].unix());
-    searchParams.set('toDate', value[1].unix());
-    setSearchParams(searchParams);
-  };
-
-  const rangePresets: TimeRangePickerProps['presets'] = [
-    { label: 'Сегодня', value: [dayjs().startOf('day'), dayjs()] },
-    { label: 'Последние 7 дней', value: [dayjs().add(-7, 'd'), dayjs()] },
-    { label: 'Последние 14 дней', value: [dayjs().add(-14, 'd'), dayjs()] },
-    { label: 'Последние 30 дней', value: [dayjs().add(-30, 'd'), dayjs()] },
-    { label: 'Последние 90 дней', value: [dayjs().add(-90, 'd'), dayjs()] },
-    { label: 'Последние 182 дня', value: [dayjs().add(-182, 'd'), dayjs()] },
-    { label: 'Последние 365 дней', value: [dayjs().add(-365, 'd'), dayjs()] },
-  ];
 
   const ls = useMemo(() => {
     const markers = positions.map((s) => [
@@ -654,50 +606,6 @@ export const OldPage = () => {
     return _primitives;
   }, [BB, data, checkboxValues]);
 
-  const historyColumns = [
-    {
-      title: 'Время входа',
-      dataIndex: 'openTime',
-      key: 'openTime',
-      // colSpan: 2,
-      onCell: (row, index) => ({
-        colSpan: row.type === 'summary' ? 4 : 1,
-      }),
-      render: (value, row) => moment(row?.openTime * 1000).format('YYYY-MM-DD HH:mm'),
-    },
-    {
-      title: 'Цена входа',
-      dataIndex: 'openPrice',
-      key: 'openPrice',
-    },
-    {
-      title: 'Тейк цена',
-      dataIndex: 'takeProfit',
-      key: 'takeProfit',
-      render: (value, row) => {
-        const percent = row.openPrice > row?.takeProfit ? row.openPrice / row?.takeProfit : row?.takeProfit / row.openPrice;
-
-        return `${row?.takeProfit} (${((percent - 1) * 100).toFixed(2)}%)`;
-      },
-    },
-    {
-      title: 'Время выхода',
-      dataIndex: 'closeTime',
-      key: 'closeTime',
-      // colSpan: 2,
-      onCell: (row, index) => ({
-        colSpan: row.type === 'summary' ? 4 : 1,
-      }),
-      render: (value, row) => moment(row?.closeTime * 1000).format('YYYY-MM-DD HH:mm'),
-    },
-    {
-      title: 'Финрез',
-      dataIndex: 'newPnl',
-      key: 'newPnl',
-      align: 'right',
-      render: (value, row) => (row.newPnl ? `${row.newPnl.toFixed(2)}%` : '-'),
-    },
-  ].filter(Boolean);
   const multiOptions = [10000, 1000, 100, 10, 1, 0.1, 0.01];
 
   return (
@@ -706,26 +614,7 @@ export const OldPage = () => {
         <Content style={{ padding: 0, paddingRight: 20 }}>
           <div style={{ position: 'relative' }}>
             <Space>
-              {/*<Space style={{ top: 8, position: 'absolute', zIndex: 3, left: 8 }}>*/}
-              {/*<TimeframeSelect value={tf} onChange={setSize} />*/}
               <TickerSelect filterSymbols={stockTickers} value={tickerStock} onSelect={onSelectTicker('stock')} />
-              {/*<Select*/}
-              {/*    value={tickerFuture}*/}
-              {/*    showSearch*/}
-              {/*    placeholder="Введи тикер"*/}
-              {/*    onSelect={onSelectTicker('future')}*/}
-              {/*    filterOption={(input, option) =>*/}
-              {/*        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())*/}
-              {/*    }*/}
-              {/*    style={{width: 160}}*/}
-              {/*    options={options}*/}
-              {/*/>*/}
-              {/*<RangePicker*/}
-              {/*  presets={rangePresets}*/}
-              {/*  value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]}*/}
-              {/*  format="YYYY-MM-DD"*/}
-              {/*  onChange={onChangeRangeDates}*/}
-              {/*/>*/}
 
               <Select
                 value={expirationMonth}
@@ -734,95 +623,9 @@ export const OldPage = () => {
                 options={expirationMonths.map((v) => ({ label: v, value: v }))}
               />
               <Select value={multi} onSelect={setmulti} style={{ width: 80 }} options={multiOptions.map((v) => ({ label: v, value: v }))} />
-
-              {/*{profit.PnL}% B:{profit.buyTrades} S:{profit.sellTrades} S:{moneyFormat(positions.totalPnL)}*/}
-              {/*{positions.length}*/}
-              {/*<Checkbox checked={useHage} onChange={(e) => setuseHage(e.target.checked)}>*/}
-              {/*  Хеджировать акцией*/}
-              {/*</Checkbox>*/}
             </Space>
-            {/*<Chart*/}
-            {/*  hideCross*/}
-            {/*  lineSerieses={ls}*/}
-            {/*  primitives={primitives}*/}
-            {/*  markers={[]}*/}
-            {/*  toolTipTop="40px"*/}
-            {/*  toolTipLeft="4px"*/}
-            {/*  data={data}*/}
-            {/*  ema={[]}*/}
-            {/*  maximumFractionDigits={4}*/}
-            {/*/>*/}
 
-            <TWChart ticker={`${tickerStock}/${tickerFuture}`} multiple={multiple} />
-
-            <Row style={{ paddingBottom: '8px' }} gutter={8}>
-              <Col span={6}>
-                <Card bordered={false}>
-                  <Statistic
-                    title="Общий финрез"
-                    value={`${PnL.toFixed(2)}%`}
-                    precision={2}
-                    valueStyle={{
-                      color: PnL > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
-                    }}
-                  />
-                </Card>
-              </Col>
-              <Col span={6}>
-                <Card bordered={false}>
-                  <Statistic title="Комиссия" value={`${Fee.toFixed(2)}%`} precision={2} valueStyle={{ color: 'rgb(255, 117, 132)' }} />
-                </Card>
-              </Col>
-              <Col span={6}>
-                <Card bordered={false}>
-                  <Statistic
-                    title="Тейки"
-                    value={new Intl.NumberFormat('en-US', {
-                      notation: 'compact',
-                    }).format(profits)}
-                    valueStyle={{ color: 'rgb(44, 232, 156)' }}
-                    suffix={`(${!profits ? 0 : ((profits * 100) / (profits + losses)).toFixed(2)})%`}
-                  />
-                </Card>
-              </Col>
-              <Col span={6}>
-                <Card bordered={false}>
-                  <Statistic
-                    title="Лоси"
-                    value={new Intl.NumberFormat('en-US', {
-                      notation: 'compact',
-                    }).format(losses)}
-                    valueStyle={{ color: 'rgb(255, 117, 132)' }}
-                    suffix={`(${!losses ? 0 : ((losses * 100) / (profits + losses)).toFixed(2)})%`}
-                  />
-                </Card>
-              </Col>
-            </Row>
-            <Table
-              size="small"
-              dataSource={positions}
-              columns={historyColumns as any}
-              pagination={{
-                pageSize: 30,
-              }}
-              onRow={(record) => {
-                return {
-                  style:
-                    record.newPnl < 0
-                      ? {
-                          backgroundColor: '#d1261b66',
-                          color: 'rgb(255, 117, 132)',
-                        }
-                      : record.newPnl > 0
-                        ? {
-                            backgroundColor: '#15785566',
-                            color: 'rgb(44, 232, 156)',
-                          }
-                        : undefined,
-                  className: 'hoverable',
-                };
-              }}
-            />
+            <TWChart ticker={`${tickerStock}/${tickerFuture}`} multiple={multiple} height={700} />
           </div>
         </Content>
         <Sider width="300px" style={{ marginRight: '-20px', padding: 20 }}>
@@ -831,31 +634,6 @@ export const OldPage = () => {
             value={Array.from(checkboxValues)}
             style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
           >
-            <Checkbox key="enableEMA" value="enableEMA">
-              Скользящая средняя EMA
-            </Checkbox>
-            <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
-              <div>Период EMA</div>
-              <ColorPicker
-                value={colors.ema}
-                size="small"
-                onChange={(val) => setColors((prevState) => ({ ...prevState, ema: val.toRgbString() }))}
-              />
-            </Typography>
-            <Slider value={emaPeriod} min={1} max={300} step={1} onChange={setEmaPeriod} />
-            <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
-            <Checkbox key="enableBB" value="enableBB">
-              Индикатор Бойленджера
-            </Checkbox>
-            <Typography style={{ justifyContent: 'space-between', display: 'flex', width: '100%' }}>
-              <div>Период BB EMA</div>
-              <ColorPicker
-                value={colors.bbEma}
-                size="small"
-                onChange={(val) => setColors((prevState) => ({ ...prevState, bbEma: val.toRgbString() }))}
-              />
-            </Typography>
-            <Slider value={emaBBPeriod} min={1} max={300} step={1} onChange={setEmaBBPeriod} />
             <FormItem label="Стандартное отклонение" layout="vertical" style={{ margin: 0 }}>
               <Slider value={bbMiltiplier} min={1} max={10} step={1} onChange={setbbMiltiplier} />
             </FormItem>
@@ -897,29 +675,6 @@ export const OldPage = () => {
             </Checkbox>
             <Checkbox key="buyEmaLineData1per5" value="buyEmaLineData1per5">
               -1.5% от справедливой
-            </Checkbox>
-            <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
-            <Checkbox key="buyBBtoBB" value="buyBBtoBB">
-              Покупка от BB до BB
-            </Checkbox>
-            <Checkbox key="tradePercent0.25" value="tradePercent0.25">
-              Заходим на 0.25%
-            </Checkbox>
-            <Checkbox key="tradePercent0.5" value="tradePercent0.5">
-              Заходим на 0.5%
-            </Checkbox>
-            <Checkbox key="tradePercent1" value="tradePercent1">
-              Заходим на 1%
-            </Checkbox>
-            <Checkbox key="tradePercent1.5" value="tradePercent1.5">
-              Заходим на 1.5%
-            </Checkbox>
-            <Divider plain orientation="left" style={{ margin: '0 0 8px' }} />
-            <Checkbox key="avg1" value="avg1">
-              Усредняемся на 1%
-            </Checkbox>
-            <Checkbox key="avg1.5" value="avg1.5">
-              Усредняемся на 1.5%
             </Checkbox>
           </Checkbox.Group>
         </Sider>

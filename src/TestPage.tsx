@@ -64,7 +64,7 @@ const ForexLabel = ({ ticker }) => {
 };
 
 export const TestPage = () => {
-  const USDRate = 80.59;
+  const USDRate = 82.34;
 
   const [tPostOrderMutation, { isLoading: tPostOrderLoading }] = useTinkoffPostOrderMutation();
   const [ctraderPostOrderMutation, { isLoading: ctraderPostOrderLoading }] = useCTraderPlaceOrderMutation();

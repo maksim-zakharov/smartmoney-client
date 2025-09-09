@@ -3,7 +3,6 @@ import { Layout, Menu, Space, theme } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
-import { ArbitrageBYBITPage } from './ArbitrageBYBITPage/ArbitrageBYBITPage';
 import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
 import { AppsTokenResponse, initApi, selectCTraderAccount, setTiToken } from './api/alor.slice';
@@ -155,7 +154,6 @@ export default function App() {
     { key: '/', label: 'Главная', element: <ArbitrageMOEXPage /> },
     // { key: '/test', label: 'BOS/IDM', element: <SoloTestPage /> },
     { key: '/arbitrage-moex', label: 'Арбитраж MOEX', element: <ArbitrageMOEXPage /> },
-    { key: '/arbitrage-bybit', label: 'Арбитраж BYBIT', element: <ArbitrageBYBITPage /> },
     // { key: '/discrepancy-rating', label: 'Расдвижки', element: <DiscrepancyRatingPage /> },
     // { key: '/testing', label: 'Тестирование', element: <MultiTestPage /> },
     // { key: '/demo', label: 'Обучение', element: <DemoPage /> },
