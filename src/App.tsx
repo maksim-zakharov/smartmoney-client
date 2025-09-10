@@ -3,7 +3,7 @@ import { Layout, Menu, Space, theme } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
-import { useGetUserInfoQuery } from './api/alor.api';
+import { useGetPositionsQuery, useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
 import { AppsTokenResponse, initApi, selectCTraderAccount, setTiToken } from './api/alor.slice';
 import { TestPage } from './TestPage';
@@ -49,6 +49,18 @@ export default function App() {
     process.env.NODE_ENV !== 'production' ? 'http://localhost:5173/' : `https://maksim-zakharov.github.io/smartmoney-client/`;
 
   const tiBrokerAccountId = localStorage.getItem('tiBrokerAccountId');
+
+  useGetPositionsQuery(
+    {
+      format: 'Simple',
+      portfolio: localStorage.getItem('aPortfolio'),
+      exchange: 'MOEX',
+    },
+    {
+      skip: !api || !localStorage.getItem('aPortfolio'),
+      pollingInterval: 5000,
+    },
+  );
 
   useGetMEXCPositionsQuery(
     {},
@@ -182,6 +194,12 @@ export default function App() {
     localStorage.setItem('token', e.target.value);
   };
 
+  const [aPortfolio, setaPortfolio] = useState<string | null>(localStorage.getItem('aPortfolio'));
+  const handleaPortfolio = (e) => {
+    setaPortfolio(e.target.value);
+    localStorage.setItem('aPortfolio', e.target.value);
+  };
+
   const handleEditToken = (e) => {
     dispatch(setTiToken(e.target.value));
     localStorage.setItem('tiToken', e.target.value);
@@ -264,6 +282,8 @@ export default function App() {
                       <Input id="alorToken" value={telegramUserId} onChange={handletelegramUserId} />
                       <Label htmlFor="alorToken">Алор Токен</Label>
                       <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
+                      <Label htmlFor="alorToken">Алор Портфель</Label>
+                      <Input id="alorToken" value={aPortfolio} onChange={handleaPortfolio} />
                       <Label htmlFor="tToken">Тинькофф Токен</Label>
                       <Input id="tToken" value={tiToken} onChange={handleEditToken} />
                       <Label htmlFor="tBrokerAccountId">Тинькофф BrokerAccountId</Label>

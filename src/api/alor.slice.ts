@@ -7,6 +7,7 @@ import { tinkoffApi } from './tinkoff.api';
 import { ctraderApi } from './ctrader.api';
 import { DataService } from './data.service';
 import { mexcApi } from './mexc.api';
+import { Positions } from 'alor-api/dist/models/models';
 
 type Settings = {
   token: string;
@@ -37,9 +38,12 @@ ctraderWs.on('disconnect', () => console.log('WS disconnected'));
 const initialState = {
   api: undefined,
   dataService: undefined,
+
   agreementsMap: {},
   activeOperations: [],
   lastWithdrawals: [],
+  alorPositions: [],
+
   release: undefined,
   apiAuth: false,
   cTraderAccounts: [],
@@ -72,6 +76,8 @@ const initialState = {
   apiAuth: boolean;
   userInfo: UserInfoResponse;
   settings: Settings;
+
+  alorPositions: Positions;
   agreementsMap: any;
   activeOperations: GetOperationsResponse[];
   lastWithdrawals: number[];
@@ -186,7 +192,9 @@ export const alorSlice = createSlice({
       const selectedAccountId = localStorage.getItem('ctidTraderAccountId');
       state.cTraderAccount = state.cTraderAccounts.find((c) => c.ctidTraderAccountId.toString() === selectedAccountId) || payload[0];
     });
-    // builder.addMatcher(goApi.endpoints.getAdGroup.matchPending, _resetAdGroupError);
+    builder.addMatcher(alorApi.endpoints.getPositions.matchFulfilled, (state, { payload }) => {
+      state.alorPositions = payload;
+    });
     builder.addMatcher(alorApi.endpoints.getOperations.matchFulfilled, (state, { payload }) => {
       state.activeOperations = payload ? payload.filter((o) => ![Status.Overdue, Status.Refused].includes(o.status)) : [];
       state.lastWithdrawals = Array.from(new Set(state.activeOperations.map((o) => o.data.amount)))

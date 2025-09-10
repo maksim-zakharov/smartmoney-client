@@ -43,6 +43,26 @@ const MEXCLabel = ({ symbol }) => {
   );
 };
 
+const AlorLabel = ({ symbol }) => {
+  const map = {
+    GD: 'GoldFut2',
+    PLD: 'Palladium',
+    PLT: 'Platinum',
+    UCNY: 'USDCNY',
+    ED: 'EURUSD3',
+    RUB: 'ruble',
+  };
+
+  const key = map[symbol.split('-')[0]];
+
+  return (
+    <div className="flex gap-1">
+      {key && <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/${key}x160.png")` }}></div>}
+      {symbol}
+    </div>
+  );
+};
+
 const ForexLabel = ({ ticker }) => {
   const map = {
     XAUUSD_xp: 'GoldFut2',
@@ -84,6 +104,8 @@ export const TestPage = () => {
     cTraderSymbols,
     MEXCPositions,
   } = useAppSelector((state) => state.alorSlice);
+
+  const alorPositions = useAppSelector((state) => state.alorSlice.alorPositions);
 
   const handleCTraderPostOrderClick = (symbolId: string, side: 'buy' | 'sell') => async () => {
     const lots = qtyMap[symbolId];
@@ -144,12 +166,17 @@ export const TestPage = () => {
     return pair.reduce((acc, curr) => acc + PnLMap[curr] || 0, 0);
   };
 
-  const totalPnL = useMemo(
+  const totalTIPnL = useMemo(
     () =>
       (tinkoffPortfolio?.positions || [])
         .filter((p) => ['share', 'futures'].includes(p.instrumentType))
         .reduce((acc, cur) => acc + cur.expectedYield, 0),
     [tinkoffPortfolio?.positions],
+  );
+
+  const totalAlorPnL = useMemo(
+    () => (alorPositions || []).filter((p) => p.symbol !== 'symbol').reduce((acc, cur) => acc + cur.unrealisedPl, 0),
+    [alorPositions],
   );
 
   const totalPnLForex = useMemo(
@@ -188,23 +215,24 @@ export const TestPage = () => {
         acc[curr.tradeData.symbolId] = (curr.PnL || 0) * USDRate;
         return acc;
       }, {}),
+      ...alorPositions.reduce((acc, curr) => {
+        acc[curr.symbol] = curr.unrealisedPl || 0;
+        return acc;
+      }, {}),
     }),
-    [tinkoffPortfolio?.positions, cTraderPositionsMapped],
+    [tinkoffPortfolio?.positions, cTraderPositionsMapped, alorPositions],
   );
 
-  const total = totalPnL + totalPnLForex * USDRate;
+  const total = totalTIPnL + totalPnLForex * USDRate + totalAlorPnL;
 
-  const tinkoffPositionsMap = useMemo(
+  const alorSymbolPositionMap = useMemo(
     () =>
-      (tinkoffPortfolio?.positions || []).reduce((acc, curr) => {
-        if (!acc[curr.instrumentType]) {
-          acc[curr.instrumentType] = [];
-        }
-        acc[curr.instrumentType].push(curr);
+      (alorPositions || []).reduce((acc, curr) => {
+        acc[curr.symbol] = curr;
 
         return acc;
       }, {}),
-    [tinkoffPortfolio?.positions],
+    [alorPositions],
   );
 
   const tinkoffInstrumentUidPositionMap = useMemo(
@@ -279,8 +307,71 @@ export const TestPage = () => {
       })),
     );
 
+    tiPos.push(
+      ...alorPositions.map((t) => ({
+        ...t,
+        instrumentType: 'alor',
+      })),
+    );
+
     return tiPos;
-  }, [tinkoffPortfolio?.positions, cTraderPositionsMapped]);
+  }, [tinkoffPortfolio?.positions, cTraderPositionsMapped, alorPositions]);
+
+  const ForexRow = ({ invoice, index }: { invoice: any; index: number }) => (
+    <TableRow
+      key={invoice.invoice}
+      className={index % 2 ? 'rowOdd' : 'rowEven'}
+      onClick={handleSelectForex(map.get(invoice.tradeData.symbolId)?.symbolName)}
+    >
+      <TableCell>
+        <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />
+      </TableCell>
+      <TableCell>Форекс</TableCell>
+      <TableCell>XPBEE</TableCell>
+      <TableCell>{invoice.volume / 10000}</TableCell>
+      <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
+      <TableCell>-</TableCell>
+      <TableCell>-</TableCell>
+      <TableCell className={invoice.swap > 0 ? 'text-right profitCell' : invoice.swap < 0 ? 'text-right lossCell' : 'text-right'}>
+        {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}
+      </TableCell>
+      <TableCell className="text-right">-</TableCell>
+      {/*<TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>*/}
+      {/*  {moneyFormat(invoice.PnL, 'USD', 0, 2)}*/}
+      {/*</TableCell>*/}
+      <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>
+        {moneyFormat(invoice.PnL * USDRate, 'RUB', 0, 2)}
+      </TableCell>
+    </TableRow>
+  );
+
+  const AlorRow = ({ invoice, index }: { invoice: any; index: number }) => (
+    <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
+      <TableCell>
+        <AlorLabel symbol={invoice.symbol} />
+      </TableCell>
+      <TableCell>{invoice.exchange}</TableCell>
+      <TableCell>Алор</TableCell>
+      <TableCell>{invoice.qty}</TableCell>
+      <TableCell>-</TableCell>
+      <TableCell>{moneyFormat(invoice.volume, 'RUB', 0, 2)}</TableCell>
+      <TableCell>{moneyFormat(invoice.currentVolume, 'RUB', 0, 2)}</TableCell>
+      <TableCell>-</TableCell>
+      <TableCell className="text-right">-</TableCell>
+      <TableCell
+        className={invoice.unrealisedPl > 0 ? 'text-right profitCell' : invoice.unrealisedPl < 0 ? 'text-right lossCell' : 'text-right'}
+      >
+        {moneyFormat(invoice.unrealisedPl, 'RUB', 0, 2)}
+      </TableCell>
+    </TableRow>
+  );
+
+  const SymbolComp = ({ invoice }: { invoice: string }) => {
+    if (Number.isInteger(invoice)) return <ForexLabel ticker={map.get(invoice)?.symbolName} />;
+    if (invoice.includes('.') || invoice === 'RUB') return <AlorLabel symbol={invoice} />;
+
+    return <FigiLabel uid={invoice} />;
+  };
 
   return (
     <>
@@ -303,14 +394,29 @@ export const TestPage = () => {
         <Col span={4}>
           <Card>
             <CardHeader>
-              <CardDescription>Текущий финрез (акции)</CardDescription>
+              <CardDescription>Текущий финрез (Тинькофф)</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  totalPnL > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                  totalTIPnL > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(totalPnL)}
+                {moneyFormat(totalTIPnL)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </Col>
+        <Col span={4}>
+          <Card>
+            <CardHeader>
+              <CardDescription>Текущий финрез (Алор)</CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  totalAlorPnL > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(totalAlorPnL)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -366,7 +472,9 @@ export const TestPage = () => {
             {pairs.map((invoice, index) => (
               <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
                 <TableCell className="flex gap-2">
-                  {invoice.map((p) => (Number.isInteger(p) ? <ForexLabel ticker={map.get(p)?.symbolName} /> : <FigiLabel uid={p} />))}
+                  {invoice.map((p) => (
+                    <SymbolComp invoice={p} />
+                  ))}
                 </TableCell>
                 <TableCell
                   className={PairPnl(invoice) > 0 ? 'text-right profitCell' : PairPnl(invoice) < 0 ? 'text-right lossCell' : 'text-right'}
@@ -374,7 +482,7 @@ export const TestPage = () => {
                   {moneyFormat(PairPnl(invoice))}
                 </TableCell>
                 <TableCell className="text-right gap-2 flex justify-end">
-                  {invoice.some((i) => !tinkoffInstrumentUidPositionMap[i] || !cTraderPositionsMapped[i]) && (
+                  {invoice.some((i) => !tinkoffInstrumentUidPositionMap[i] || !cTraderPositionsMapped[i] || !alorSymbolPositionMap[i]) && (
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button size="xs" variant="success">
@@ -389,7 +497,7 @@ export const TestPage = () => {
                           <TypographyParagraph>Выберите объем для позиций</TypographyParagraph>
                           {invoice.map((p) => (
                             <div className="flex items-center justify-between gap-2">
-                              {Number.isInteger(p) ? <ForexLabel ticker={map.get(p)?.symbolName} /> : <FigiLabel uid={p} />}
+                              <SymbolComp invoice={p} />
                               <div className="flex gap-2">
                                 <Input size="xs" type="number" onChange={handleOnChangeTickerQty(p)} value={qtyMap[p] || 0} step={0.01} />
                                 <Button
@@ -415,7 +523,7 @@ export const TestPage = () => {
                       </DialogContent>
                     </Dialog>
                   )}
-                  {invoice.some((i) => tinkoffInstrumentUidPositionMap[i] || cTraderPositionsMapped[i]) && (
+                  {invoice.some((i) => tinkoffInstrumentUidPositionMap[i] || cTraderPositionsMapped[i] || alorSymbolPositionMap[i]) && (
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button size="xs" variant="destructive">
@@ -439,9 +547,9 @@ export const TestPage = () => {
                               {[invoice].map((invoice, index) => (
                                 <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
                                   <TableCell className="flex gap-2">
-                                    {invoice.map((p) =>
-                                      Number.isInteger(p) ? <ForexLabel ticker={map.get(p)?.symbolName} /> : <FigiLabel uid={p} />,
-                                    )}
+                                    {invoice.map((p) => (
+                                      <SymbolComp invoice={p} />
+                                    ))}
                                   </TableCell>
                                   <TableCell
                                     className={
@@ -500,33 +608,39 @@ export const TestPage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {[...(tinkoffPortfolio?.positions || []), ...cTraderPositionsMapped].map((invoice, index) => (
+                        {[...(tinkoffPortfolio?.positions || []), ...cTraderPositionsMapped, ...alorPositions].map((invoice, index) => (
                           <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
                             <TableCell className="flex gap-2">
                               <Checkbox
-                                checked={selectedTicker.includes(invoice.instrumentUid || invoice.tradeData.symbolId)}
+                                checked={selectedTicker.includes(invoice.symbol || invoice.instrumentUid || invoice.tradeData.symbolId)}
                                 className="flex"
                                 onCheckedChange={(checked) =>
                                   checked
-                                    ? setSelectedTicker((prevState) => [...prevState, invoice.instrumentUid || invoice.tradeData.symbolId])
+                                    ? setSelectedTicker((prevState) => [
+                                        ...prevState,
+                                        invoice.symbol || invoice.instrumentUid || invoice.tradeData.symbolId,
+                                      ])
                                     : setSelectedTicker((prevState) =>
-                                        prevState.filter((p) => p !== (invoice.instrumentUid || invoice.tradeData.symbolId)),
+                                        prevState.filter(
+                                          (p) => p !== (invoice.symbol || invoice.instrumentUid || invoice.tradeData.symbolId),
+                                        ),
                                       )
                                 }
                               />
+                              {invoice.symbol && <AlorLabel symbol={invoice.symbol} />}
                               {invoice.instrumentUid && <FigiLabel uid={invoice.instrumentUid} />}
                               {invoice.tradeData?.symbolId && <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />}
                             </TableCell>
                             <TableCell
                               className={
-                                (invoice.expectedYield || invoice.PnL) > 0
+                                (invoice.unrealisedPl || invoice.expectedYield || invoice.PnL) > 0
                                   ? 'text-right profitCell'
-                                  : (invoice.expectedYield || invoice.PnL) < 0
+                                  : (invoice.unrealisedPl || invoice.expectedYield || invoice.PnL) < 0
                                     ? 'text-right lossCell'
                                     : 'text-right'
                               }
                             >
-                              {moneyFormat(invoice.expectedYield || invoice.PnL || 0)}
+                              {moneyFormat(invoice.unrealisedPl || invoice.expectedYield || invoice.PnL || 0)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -567,33 +681,9 @@ export const TestPage = () => {
           <TableBody>
             {totalPositions.map((invoice, index) =>
               invoice.instrumentType === 'forex' ? (
-                <TableRow
-                  key={invoice.invoice}
-                  className={index % 2 ? 'rowOdd' : 'rowEven'}
-                  onClick={handleSelectForex(map.get(invoice.tradeData.symbolId)?.symbolName)}
-                >
-                  <TableCell>
-                    <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />
-                  </TableCell>
-                  <TableCell>Форекс</TableCell>
-                  <TableCell>XPBEE</TableCell>
-                  <TableCell>{invoice.volume / 10000}</TableCell>
-                  <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
-                  <TableCell>-</TableCell>
-                  <TableCell>-</TableCell>
-                  <TableCell
-                    className={invoice.swap > 0 ? 'text-right profitCell' : invoice.swap < 0 ? 'text-right lossCell' : 'text-right'}
-                  >
-                    {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}
-                  </TableCell>
-                  <TableCell className="text-right">-</TableCell>
-                  {/*<TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>*/}
-                  {/*  {moneyFormat(invoice.PnL, 'USD', 0, 2)}*/}
-                  {/*</TableCell>*/}
-                  <TableCell className={invoice.PnL > 0 ? 'text-right profitCell' : invoice.PnL < 0 ? 'text-right lossCell' : 'text-right'}>
-                    {moneyFormat(invoice.PnL * USDRate, 'RUB', 0, 2)}
-                  </TableCell>
-                </TableRow>
+                <ForexRow invoice={invoice} index={index} />
+              ) : invoice.instrumentType === 'alor' ? (
+                <AlorRow invoice={invoice} index={index} />
               ) : (
                 <TableRow
                   key={invoice.invoice}
