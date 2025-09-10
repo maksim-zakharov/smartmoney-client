@@ -12,9 +12,13 @@ import {
 } from 'alor-api/dist/services/ClientInfoService/ClientInfoService';
 import { AlorApi, DevHistoryParams, History as AHistory, Securities, Security, Summary } from 'alor-api';
 import {
+  BodyrequestOrdersActionsLimitTV,
   DevGetAllPositionsParams,
+  DevOrderbookExchangSeccodeParams,
   DevSecuritiesSearchParams,
   ExchangePortfolioSummaryParams,
+  Orderbook,
+  OrdersActionsLimitMarketCommandAPI,
   Positions,
 } from 'alor-api/dist/models/models';
 import { Mutex, MutexInterface } from 'async-mutex';
@@ -396,9 +400,12 @@ export const alorApi = createApi({
     getPositions: builder.query<Positions, DevGetAllPositionsParams>({
       queryFn: recurcive((api) => api.clientInfo.getPositions),
     } as any),
-    sendLimitOrder: builder.mutation<{ validations: []; errorMessage: null; success: true }, any>({
+    sendLimitOrder: builder.mutation<OrdersActionsLimitMarketCommandAPI, BodyrequestOrdersActionsLimitTV>({
       queryFn: recurcive((api) => api.orders.sendLimitOrder),
     }),
+    getOrderbook: builder.mutation<Orderbook, DevOrderbookExchangSeccodeParams>({
+      queryFn: recurcive((api) => api.instruments.getOrderbookBySeccode),
+    } as any),
   }),
 });
 
@@ -421,6 +428,8 @@ export const {
   useGetMoneyMovesQuery,
   useGetOperationsQuery,
   useGetPositionsQuery,
+  useSendLimitOrderMutation,
   useGetSummaryQuery,
   useGetSecuritiesQQuery,
+  useGetOrderbookMutation,
 } = alorApi;

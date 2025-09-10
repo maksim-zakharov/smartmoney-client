@@ -17,6 +17,8 @@ import { useGetMEXCContractQuery } from './api/mexc.api.ts';
 import { TypographyParagraph } from './components/ui/typography.tsx';
 import { toast } from 'sonner';
 import { Input } from './components/ui/input.tsx';
+import { useGetOrderbookMutation, useSendLimitOrderMutation } from './api/alor.api.ts';
+import { Exchange, Side } from 'alor-api';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -84,13 +86,16 @@ const ForexLabel = ({ ticker }) => {
 };
 
 export const TestPage = () => {
-  const USDRate = 82.34;
+  const USDRate = 83.24;
 
   const [tPostOrderMutation, { isLoading: tPostOrderLoading }] = useTinkoffPostOrderMutation();
   const [ctraderPostOrderMutation, { isLoading: ctraderPostOrderLoading }] = useCTraderPlaceOrderMutation();
 
   const [tClosePositionMutation, { isLoading: tClosePositionLoading }] = useClosePositionMutation();
   const [ctraderClosePositionMutation, { isLoading: ctraderClosePositionLoading }] = useCTraderclosePositionMutation();
+
+  const [getOrderbookMutation] = useGetOrderbookMutation();
+  const [sendLimitOrderAlor] = useSendLimitOrderMutation();
 
   const [qtyMap, setQtyMap] = useState(localStorage.getItem('qtyMap') ? JSON.parse(localStorage.getItem('qtyMap')) : {});
 
@@ -289,18 +294,34 @@ export const TestPage = () => {
 
     toast.success('Позиции в Тинькофф закрыты');
 
-    // TODO Доделать (лимитка в стакан)
-    // const alorTickers = tickers.filter((t) => !Number.isInteger(t) && t.split('-').length <= 1);
-    // await Promise.all(
-    //   alorTickers.map((symbol) =>
-    //     tClosePositionMutation({
-    //       brokerAccountId: localStorage.getItem('aPortfolio'),
-    //       symbol,
-    //     }).unwrap(),
-    //   ),
-    // );
+    const alorTicker = tickers.find((t) => !Number.isInteger(t) && t.split('-').length <= 1);
+    const tickerPosition = alorPositions.find((t) => t.symbol === alorTicker);
+    if (tickerPosition) {
+      // Получить стакан
+      const orderbook = await getOrderbookMutation({
+        exchange: 'MOEX',
+        format: 'Simple',
+        depth: 5,
+        seccode: alorTicker,
+      }).unwrap();
 
-    toast.success('Позиции в Тинькофф закрыты');
+      // Встать в лучшую цену
+      await sendLimitOrderAlor({
+        side: tickerPosition.qty > 0 ? Side.Sell : Side.Buy,
+        user: {
+          portfolio: localStorage.getItem('aPortfolio'),
+        },
+        instrument: {
+          symbol: alorTicker,
+          exchange: Exchange.MOEX,
+        },
+        quantity: Math.abs(tickerPosition.qty),
+        price: tickerPosition.qty > 0 ? orderbook.asks[0].price : orderbook.bids[0].price,
+        type: 'limit',
+      }).unwrap();
+    }
+
+    // toast.success('Позиции в Тинькофф закрыты');
   };
 
   const handleOnChangeTickerQty = (ticker: string) => (e) => {
