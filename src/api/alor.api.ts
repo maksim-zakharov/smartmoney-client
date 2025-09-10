@@ -396,6 +396,9 @@ export const alorApi = createApi({
     getPositions: builder.query<Positions, DevGetAllPositionsParams>({
       queryFn: recurcive((api) => api.clientInfo.getPositions),
     } as any),
+    sendLimitOrder: builder.mutation<{ validations: []; errorMessage: null; success: true }, any>({
+      queryFn: recurcive((api) => api.orders.sendLimitOrder),
+    }),
   }),
 });
 

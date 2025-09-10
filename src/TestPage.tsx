@@ -277,7 +277,7 @@ export const TestPage = () => {
 
     toast.success('Позиции в CTrader закрыты');
 
-    const tiTickers = tickers.filter((t) => !Number.isInteger(t));
+    const tiTickers = tickers.filter((t) => t.split('-').length > 1);
     await Promise.all(
       tiTickers.map((instrumentUid) =>
         tClosePositionMutation({
@@ -286,6 +286,19 @@ export const TestPage = () => {
         }).unwrap(),
       ),
     );
+
+    toast.success('Позиции в Тинькофф закрыты');
+
+    // TODO Доделать (лимитка в стакан)
+    // const alorTickers = tickers.filter((t) => !Number.isInteger(t) && t.split('-').length <= 1);
+    // await Promise.all(
+    //   alorTickers.map((symbol) =>
+    //     tClosePositionMutation({
+    //       brokerAccountId: localStorage.getItem('aPortfolio'),
+    //       symbol,
+    //     }).unwrap(),
+    //   ),
+    // );
 
     toast.success('Позиции в Тинькофф закрыты');
   };
