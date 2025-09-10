@@ -230,6 +230,76 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="MEXC:GLMR_USDT" _tickerFuture="GATE:GLMR_USDT" multi={100} />,
     },
     {
+      key: 'GATE:MYXUSDT',
+      label: 'GATE:MYXUSDT/GATE:MYX_USDT',
+      element: <StatArbPage tickerStock="GATE:MYXUSDT" _tickerFuture="GATE:MYX_USDT" multi={100} />,
+    },
+    {
+      key: 'GATE:SOMIUSDT',
+      label: 'GATE:SOMIUSDT/GATE:SOMI_USDT',
+      element: <StatArbPage tickerStock="GATE:SOMIUSDT" _tickerFuture="GATE:SOMI_USDT" multi={100} />,
+    },
+    {
+      key: 'GATE:TAUSDT',
+      label: 'GATE:TAUSDT/GATE:TA_USDT',
+      element: <StatArbPage tickerStock="GATE:TAUSDT" _tickerFuture="GATE:TA_USDT" multi={100} />,
+    },
+    {
+      key: 'GATE:WLFIUSDT',
+      label: 'GATE:WLFIUSDT/GATE:WLFI_USDT',
+      element: <StatArbPage tickerStock="GATE:WLFIUSDT" _tickerFuture="GATE:WLFI_USDT" multi={100} />,
+    },
+    {
+      key: 'GATE:OPENUSDT',
+      label: 'GATE:OPENUSDT/GATE:OPEN_USDT',
+      element: <StatArbPage tickerStock="GATE:OPENUSDT" _tickerFuture="GATE:OPEN_USDT" multi={100} />,
+    },
+    {
+      key: 'GATE:PTBUSDT',
+      label: 'GATE:PTBUSDT/GATE:PTB_USDT',
+      element: <StatArbPage tickerStock="GATE:PTBUSDT" _tickerFuture="GATE:PTB_USDT" multi={100} />,
+    },
+    {
+      key: 'GATE:XNYUSDT',
+      label: 'GATE:XNYUSDT/GATE:XNY_USDT',
+      element: <StatArbPage tickerStock="GATE:XNYUSDT" _tickerFuture="GATE:XNY_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:AAPLSTOCK_USDT',
+      label: 'MEXC:AAPLSTOCK_USDT/FOREX:AAPL_xp',
+      element: <StatArbPage tickerStock="MEXC:AAPLSTOCK_USDT" _tickerFuture="FOREX:AAPL_xp" multi={100000} />,
+    },
+    {
+      key: 'MEXC:METASTOCK_USDT',
+      label: 'MEXC:METASTOCK_USDT/FOREX:META_xp',
+      element: <StatArbPage tickerStock="MEXC:METASTOCK_USDT" _tickerFuture="FOREX:META_xp" multi={100000} />,
+    },
+    {
+      key: 'MEXC:AVNT_USDT',
+      label: 'MEXC:AVNT_USDT/GATE:AVNT_USDT',
+      element: <StatArbPage tickerStock="MEXC:AVNT_USDT" _tickerFuture="GATE:AVNT_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:TA_USDT',
+      label: 'MEXC:TA_USDT/GATE:TA_USDT',
+      element: <StatArbPage tickerStock="MEXC:TA_USDT" _tickerFuture="GATE:TA_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:TAUSDT',
+      label: 'MEXC:TA_USDT/MEXC:TAUSDT',
+      element: <StatArbPage tickerStock="MEXC:TA_USDT" _tickerFuture="MEXC:TAUSDT" multi={100} />,
+    },
+    {
+      key: 'GATE:TAUSDT',
+      label: 'GATE:TA_USDT/GATE:TAUSDT',
+      element: <StatArbPage tickerStock="GATE:TA_USDT" _tickerFuture="GATE:TAUSDT" multi={100} />,
+    },
+    {
+      key: 'GATE:MOREUSDT',
+      label: 'GATE:MORE_USDT/GATE:MOREUSDT',
+      element: <StatArbPage tickerStock="GATE:MORE_USDT" _tickerFuture="GATE:MOREUSDT" multi={100} />,
+    },
+    {
       key: 'IMOEXF',
       label: 'IMOEXF/MIX-9.25',
       element: <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" seriesType="Line" multi={10000} />,

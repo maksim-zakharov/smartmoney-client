@@ -1,10 +1,10 @@
-import { AlorApi } from 'alor-api';
+import { AlorApi, Exchange } from 'alor-api';
 import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer } from 'rxjs';
 import { PeriodParams, ResolutionString } from '../assets/charting_library';
 import { BybitWebsocketClient } from './bybit.ws-client';
 import { MexcWsClient } from './mexc.ws-client';
 import { GateWsClient } from './gate.ws-client';
-import { CtraderWsClient } from './ctrader.ws-client.ts';
+import { CtraderWsClient } from './ctrader.ws-client';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -50,6 +50,35 @@ export class DataService {
       );
     }
     return this.serverTimeCache$;
+  }
+
+  getSymbol(symbol: string) {
+    if (symbol.includes('_xp')) {
+      return Promise.resolve({
+        symbol: symbol,
+        exchange: 'XPBEE',
+        currency: 'USDT',
+        minstep: 0.001,
+        type: '',
+      });
+    }
+    if (symbol.includes(':')) {
+      const exchange = symbol.split(':')[0];
+
+      return Promise.resolve({
+        symbol: symbol,
+        exchange,
+        currency: 'USDT',
+        minstep: 0.001,
+        type: '',
+      });
+    }
+
+    return this.alorApi.instruments.getSecurityByExchangeAndSymbol({
+      symbol: symbol,
+      exchange: Exchange.MOEX,
+      format: 'Simple',
+    });
   }
 
   getChartData(ticker: string, resolution: ResolutionString, periodParams: PeriodParams) {

@@ -15,33 +15,19 @@ import {
   SubscribeBarsCallback,
   SymbolResolveExtension,
 } from '../assets/charting_library';
-import { AlorApi, Exchange, Format, HistoryObject } from 'alor-api';
+import { AlorApi, Format, HistoryObject } from 'alor-api';
 import { getCommonCandles, getPrecision } from '../utils';
 import { calculateCandle } from '../../symbolFuturePairs';
 import { BehaviorSubject, combineLatest, filter } from 'rxjs';
 import { DataService } from './data.service';
 
-const resolveOneSymbol = ({ api, symbolName }: { api: AlorApi; symbolName: string }) => {
+const resolveOneSymbol = ({ dataService, symbolName }: { dataService: DataService; symbolName: string }) => {
   const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);
   if (exist) {
     return Promise.resolve(JSON.parse(exist));
   }
 
-  return (
-    symbolName.includes('_xp')
-      ? Promise.resolve({
-          symbol: symbolName,
-          exchange: 'XPBEE',
-          currency: 'USDT',
-          minstep: 0.001,
-          type: '',
-        })
-      : api.instruments.getSecurityByExchangeAndSymbol({
-          symbol: symbolName,
-          exchange: Exchange.MOEX,
-          format: 'Simple',
-        })
-  ).then((r) => {
+  return dataService.getSymbol(symbolName).then((r) => {
     const precision = getPrecision(r.minstep);
     const priceScale = Number((10 ** precision).toFixed(precision));
 
@@ -141,7 +127,7 @@ export class DataFeed implements IBasicDataFeed {
     const isSentetic = symbolName.includes('/');
     if (!isSentetic) {
       resolveOneSymbol({
-        api: this.api,
+        dataService: this.dataService,
         symbolName,
       }).then(onResolve);
     } else {
@@ -151,23 +137,7 @@ export class DataFeed implements IBasicDataFeed {
         return;
       }
       const parts = symbolName.split('/');
-      Promise.all(
-        parts.map((part) =>
-          !part.includes('_xp') && !part.includes(':')
-            ? this.api.instruments.getSecurityByExchangeAndSymbol({
-                symbol: part,
-                exchange: Exchange.MOEX,
-                format: 'Simple',
-              })
-            : Promise.resolve({
-                symbol: part,
-                exchange: 'XPBEE',
-                currency: 'USDT',
-                minstep: 0.001,
-                type: '',
-              }),
-        ),
-      ).then((instruments) => {
+      Promise.all(parts.map((part) => this.dataService.getSymbol(part))).then((instruments) => {
         const obj = instruments.reduce(
           (acc, curr) =>
             ({

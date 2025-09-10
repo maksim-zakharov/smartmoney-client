@@ -1,4 +1,4 @@
-import { Card, Checkbox, Col, ColorPicker, Form, Input, Layout, Row, Slider, Statistic, Switch, Table, Typography } from 'antd';
+import { Checkbox, ColorPicker, Form, Input, Layout, Slider, Switch, Typography } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -750,89 +750,8 @@ export const StatArbPage = ({
           {/*  <Button icon={<FullscreenOutlined />} onClick={() => setIsFullscreen((prevState) => !prevState)} />*/}
           {/*  <div>Профит: {((data[data.length - 1]?.close / BB.middle[BB.middle.length - 1] - 1) * 100).toFixed(2)}%</div>*/}
           {/*</div>*/}
-          <TWChart ticker={`${tickerStock}/${tickerFuture}`} multiple={multiple} />
-          {/*<TWChart data={data} lineSerieses={ls} />*/}
-          {/*<Chart*/}
-          {/*  seriesType={seriesType}*/}
-          {/*  hideCross*/}
-          {/*  lineSerieses={ls}*/}
-          {/*  primitives={[]}*/}
-          {/*  markers={[]}*/}
-          {/*  toolTipTop="40px"*/}
-          {/*  toolTipLeft="4px"*/}
-          {/*  data={data}*/}
-          {/*  ema={[]}*/}
-          {/*  maximumFractionDigits={3}*/}
-          {/*/>*/}
+          <TWChart ticker={`${tickerStock}/${tickerFuture}`} multiple={multiple} height={700} />
         </div>
-        <Row style={{ paddingBottom: '8px', paddingTop: 8 }} gutter={8}>
-          <Col span={6}>
-            <Card bordered={false}>
-              <Statistic
-                title="Общий финрез"
-                value={`${PnL.toFixed(2)}%`}
-                precision={2}
-                valueStyle={{
-                  color: PnL > 0 ? 'rgb(44, 232, 156)' : 'rgb(255, 117, 132)',
-                }}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card bordered={false}>
-              <Statistic title="Комиссия" value={`${Fee.toFixed(2)}%`} precision={2} valueStyle={{ color: 'rgb(255, 117, 132)' }} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card bordered={false}>
-              <Statistic
-                title="Тейки"
-                value={new Intl.NumberFormat('en-US', {
-                  notation: 'compact',
-                }).format(profits)}
-                valueStyle={{ color: 'rgb(44, 232, 156)' }}
-                suffix={`(${!profits ? 0 : ((profits * 100) / (profits + losses)).toFixed(2)})%`}
-              />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card bordered={false}>
-              <Statistic
-                title="Лоси"
-                value={new Intl.NumberFormat('en-US', {
-                  notation: 'compact',
-                }).format(losses)}
-                valueStyle={{ color: 'rgb(255, 117, 132)' }}
-                suffix={`(${!losses ? 0 : ((losses * 100) / (profits + losses)).toFixed(2)})%`}
-              />
-            </Card>
-          </Col>
-        </Row>
-        <Table
-          size="small"
-          dataSource={positions}
-          columns={historyColumns as any}
-          pagination={{
-            pageSize: 30,
-          }}
-          onRow={(record) => {
-            return {
-              style:
-                record.newPnl < 0
-                  ? {
-                      backgroundColor: '#d1261b66',
-                      color: 'rgb(255, 117, 132)',
-                    }
-                  : record.newPnl > 0
-                    ? {
-                        backgroundColor: '#15785566',
-                        color: 'rgb(44, 232, 156)',
-                      }
-                    : undefined,
-              className: 'hoverable',
-            };
-          }}
-        />
       </Content>
       <Sider width="300px" style={{ marginRight: '-20px', padding: 20 }}>
         <Checkbox.Group
