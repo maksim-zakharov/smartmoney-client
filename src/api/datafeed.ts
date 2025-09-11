@@ -336,6 +336,10 @@ export class DataFeed implements IBasicDataFeed {
           return this.dataService.mexcSubscribeCandles(symbol.split('MEXC:')[1], resolution).subscribe((data) => {
             lastCandles[symbol].next(data);
           });
+        } else if (symbol.includes('FINAM')) {
+          return this.dataService.finamSubscribeCandles(symbol.split('FINAM:')[1], resolution).subscribe((data) => {
+            lastCandles[symbol].next(data);
+          });
         } else {
           return this.api.subscriptions.candles(
             {

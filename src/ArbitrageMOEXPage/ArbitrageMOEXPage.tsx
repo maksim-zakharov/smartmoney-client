@@ -300,6 +300,31 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="GATE:MORE_USDT" _tickerFuture="GATE:MOREUSDT" multi={100} />,
     },
     {
+      key: 'GATE:NAORISUSDT',
+      label: 'GATE:NAORIS_USDT/GATE:NAORISUSDT',
+      element: <StatArbPage tickerStock="GATE:NAORIS_USDT" _tickerFuture="GATE:NAORISUSDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:HOLO_USDT',
+      label: 'MEXC:HOLO_USDT/GATE:HOLO_USDT',
+      element: <StatArbPage tickerStock="MEXC:HOLO_USDT" _tickerFuture="GATE:HOLO_USDT" multi={100} />,
+    },
+    {
+      key: 'MEXC:NVIDIA_USDT',
+      label: 'MEXC:NVIDIA_USDT/FINAM:NVDX@BATS',
+      element: <StatArbPage tickerStock="MEXC:NVIDIA_USDT" _tickerFuture="FINAM:NVDX@BATS" multi={10} />,
+    },
+    {
+      key: 'MEXC:NVIDIA_USDT/FOREX',
+      label: 'MEXC:NVIDIA_USDT/FOREX:NVDA_xp',
+      element: <StatArbPage tickerStock="MEXC:NVIDIA_USDT" _tickerFuture="FOREX:NVDA_xp" multi={100000} />,
+    },
+    {
+      key: 'FOREX:NVDA_xp',
+      label: 'FOREX:NVDA_xp/FINAM:NVDX@BATS',
+      element: <StatArbPage tickerStock="FOREX:NVDA_xp" _tickerFuture="FINAM:NVDX@BATS" multi={10} />,
+    },
+    {
       key: 'IMOEXF',
       label: 'IMOEXF/MIX-9.25',
       element: <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" seriesType="Line" multi={10000} />,

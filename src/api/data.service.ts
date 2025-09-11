@@ -5,6 +5,7 @@ import { BybitWebsocketClient } from './bybit.ws-client';
 import { MexcWsClient } from './mexc.ws-client';
 import { GateWsClient } from './gate.ws-client';
 import { CtraderWsClient } from './ctrader.ws-client';
+import { FinamWsClient } from './finam.ws-client';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -15,6 +16,7 @@ export class DataService {
   private readonly mexcWsClient: MexcWsClient;
   private readonly gateWsClient: GateWsClient;
   private readonly ctraderWsClient: CtraderWsClient;
+  private readonly finamWsClient: FinamWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
@@ -24,6 +26,7 @@ export class DataService {
     this.mexcWsClient = new MexcWsClient();
     this.gateWsClient = new GateWsClient();
     this.ctraderWsClient = new CtraderWsClient();
+    this.finamWsClient = new FinamWsClient();
   }
 
   mexcSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -40,6 +43,10 @@ export class DataService {
 
   ctraderSubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.ctraderWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  finamSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.finamWsClient.subscribeCandles(symbol, resolution);
   }
 
   get serverTime$() {
@@ -156,6 +163,21 @@ export class DataService {
       request$ = from(
         fetch(
           `${this.ctraderUrl}/binance/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
+    } else if (ticker.includes('FINAM:')) {
+      const _ticker = ticker.split('FINAM:')[1];
+      request$ = from(
+        fetch(
+          `${this.ctraderUrl}/finam/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
