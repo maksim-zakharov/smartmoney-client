@@ -731,8 +731,8 @@ export const TestPage = () => {
                   <TableCell>{numberFormat(invoice.quantityLots)}</TableCell>
                   <TableCell>-</TableCell>
                   {/*<TableCell>{numberFormat(invoice.quantity)}</TableCell>*/}
-                  <TableCell>{moneyFormat(invoice.averagePositionPrice, 'RUB', 0, 4)}</TableCell>
-                  <TableCell>{invoice.currentPrice}</TableCell>
+                  <TableCell>{moneyFormat(invoice.averagePositionPrice, 'RUB', 0, 2)}</TableCell>
+                  <TableCell>{moneyFormat(invoice.currentPrice, 'RUB', 0, 2)}</TableCell>
                   <TableCell className="text-right">-</TableCell>
                   <TableCell
                     className={
