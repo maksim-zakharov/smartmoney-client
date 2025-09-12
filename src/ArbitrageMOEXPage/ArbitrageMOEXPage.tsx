@@ -325,6 +325,11 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="FOREX:NVDA_xp" _tickerFuture="FINAM:NVDX@BATS" multi={0.01} />,
     },
     {
+      key: 'FOREX:NVDA_xp/ITS:NVDA',
+      label: 'FOREX:NVDA_xp/ITS:NVDA',
+      element: <StatArbPage tickerStock="FOREX:NVDA_xp" _tickerFuture="ITS:NVDA" multi={0.1} />,
+    },
+    {
       key: 'IMOEXF',
       label: 'IMOEXF/MIX-9.25',
       element: <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" seriesType="Line" multi={10000} />,

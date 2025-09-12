@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AlorApi, Endpoint, WssEndpoint, WssEndpointBeta } from 'alor-api';
+import { AlorApi, AuthEndpoint, Endpoint, WssEndpoint, WssEndpointBeta } from 'alor-api';
 import { alorApi } from './alor.api';
 import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/services/ClientInfoService/ClientInfoService';
 import { io, Socket } from 'socket.io-client';
@@ -109,6 +109,7 @@ export const alorSlice = createSlice({
         const _api = new AlorApi({
           token: action.payload.token,
           accessToken: action.payload.accessToken,
+          authEndpoint: AuthEndpoint.PROD,
           endpoint: Endpoint.PROD,
           wssEndpoint: WssEndpoint.PROD,
           wssEndpointBeta: WssEndpointBeta.PROD,
