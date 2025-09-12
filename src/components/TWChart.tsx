@@ -20,7 +20,7 @@ import {
   Timezone,
   widget,
 } from '../assets/charting_library';
-import { deleteAlert, openAlertDialog } from '../api/alerts.slice';
+import { alertsService, deleteAlert, openAlertDialog } from '../api/alerts.slice';
 import { HistoryObject } from 'alor-api';
 
 export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, small, onPlusClick }: any) => {
@@ -31,41 +31,34 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
   const ws = useAppSelector((state) => state.alorSlice.ws);
   const cTraderAccount = useAppSelector((state) => state.alorSlice.cTraderAccount);
 
-  const alerts = useAppSelector((state) => state.alertsSlice.alerts);
-  const tickerAlerts = useMemo(() => alerts.filter((a) => a.ticker === ticker.toUpperCase()), [alerts, ticker]);
-
-  const onNewCandleHandle = useCallback(
-    (ticker: string, candle: HistoryObject) => {
-      const tickerAlerts = alerts.filter((a) => a.ticker.toUpperCase() === ticker.toUpperCase());
-      tickerAlerts.forEach((a) => {
-        if (a.condition === 'lessThen' && candle.close < a.price) {
-          const body = { chat_id: localStorage.getItem('telegramUserId'), text: a.message || `${ticker} Цена меньше чем ${a.price}` };
-          fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-          });
-          if (a.trigger === 'once') dispatch(deleteAlert(a));
-        }
-        if (a.condition === 'moreThen' && candle.close > a.price) {
-          const body = { chat_id: localStorage.getItem('telegramUserId'), text: a.message || `${ticker} Цена больше чем ${a.price}` };
-          fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-          });
-          if (a.trigger === 'once') dispatch(deleteAlert(a));
-        }
-      });
-    },
-    [alerts],
-  );
+  const onNewCandleHandle = useCallback((ticker: string, candle: HistoryObject) => {
+    alertsService.getAlertsByTicker(ticker).forEach((a) => {
+      if (a.condition === 'lessThen' && candle.close < a.price) {
+        const body = { chat_id: localStorage.getItem('telegramUserId'), text: a.message || `${ticker} Цена меньше чем ${a.price}` };
+        fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+        if (a.trigger === 'once') dispatch(deleteAlert(a));
+      }
+      if (a.condition === 'moreThen' && candle.close > a.price) {
+        const body = { chat_id: localStorage.getItem('telegramUserId'), text: a.message || `${ticker} Цена больше чем ${a.price}` };
+        fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+        if (a.trigger === 'once') dispatch(deleteAlert(a));
+      }
+    });
+  }, []);
 
   const datafeed = useMemo(
     () =>
@@ -197,18 +190,50 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
     chartWidget.onChartReady(() => {
       const chart = chartWidget.chart();
 
-      tickerAlerts.forEach((alert) => {
-        chart
-          .createPositionLine()
-          .setPrice(alert.price) // Устанавливаем цену из события onPlusClick
-          .setText(`${alert.ticker}, ${alert.condition === 'lessThen' ? 'Меньше' : 'Больше'} чем ${alert.price.toFixed(5)}`) // Подпись для линии
-          .setQuantity('🔔') // Количество (опционально)
-          .setLineStyle(0) // Стиль линии (0 - сплошная, 1 - пунктирная и т.д.)
-          .setLineLength(100) // Длина линии (в процентах ширины графика)
-          .setLineColor('#FFF'); // Цвет линии
+      alertsService.getAlertsByTicker(ticker).forEach((alert) => {
+        alertsService.addPosition(
+          chart
+            .createPositionLine()
+            .setPrice(alert.price) // Устанавливаем цену из события onPlusClick
+            .setText(`${alert.ticker}, ${alert.condition === 'lessThen' ? 'Меньше' : 'Больше'} чем ${alert.price.toFixed(5)}`) // Подпись для линии
+            .setQuantity('🔔') // Количество (опционально)
+            .setLineStyle(0) // Стиль линии (0 - сплошная, 1 - пунктирная и т.д.)
+            .setLineLength(100) // Длина линии (в процентах ширины графика)
+            .setLineColor('#FFF'), // Цвет линии
+        );
       });
+
+      alertsService.on(ticker, (alert, action) => {
+        if (action === 'add') {
+          const text = `${alert.ticker}, ${alert.condition === 'lessThen' ? 'Меньше' : 'Больше'} чем ${alert.price.toFixed(5)}`;
+
+          alertsService.addPosition(
+            chart
+              .createPositionLine()
+              .setPrice(alert.price) // Устанавливаем цену из события onPlusClick
+              .setText(text) // Подпись для линии
+              .setQuantity('🔔') // Количество (опционально)
+              .setLineStyle(0) // Стиль линии (0 - сплошная, 1 - пунктирная и т.д.)
+              .setLineLength(100) // Длина линии (в процентах ширины графика)
+              .setLineColor('#FFF'), // Цвет линии
+          );
+        } else if (action === 'delete') {
+          alertsService.deletePositionByAlert(alert);
+        }
+      });
+
+      // alertsService.on('delete', (alert) => {
+      //   chart
+      //     .createPositionLine()
+      //     .setPrice(alert.price) // Устанавливаем цену из события onPlusClick
+      //     .setText(`${alert.ticker}, ${alert.condition === 'lessThen' ? 'Меньше' : 'Больше'} чем ${alert.price.toFixed(5)}`) // Подпись для линии
+      //     .setQuantity('🔔') // Количество (опционально)
+      //     .setLineStyle(0) // Стиль линии (0 - сплошная, 1 - пунктирная и т.д.)
+      //     .setLineLength(100) // Длина линии (в процентах ширины графика)
+      //     .setLineColor('#FFF'); // Цвет линии
+      // })
     });
-  }, [datafeed, height, lineSerieses, ticker, tickerAlerts]);
+  }, [datafeed, height, lineSerieses, ticker]);
 
   const subscribeToChartEvents = (widget: IChartingLibraryWidget): void => {
     // subscribeToChartEvent(widget, 'onPlusClick', (params: PlusClickParams) => this.selectPrice(params.price));
