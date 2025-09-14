@@ -10,7 +10,7 @@ import { TWChart } from './components/TWChart';
 import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from './api/tinkoff.api';
 import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation } from './api/ctrader.api';
 import { Button } from './components/ui/button.tsx';
-import { CirclePlus, CircleX } from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpWideNarrow, CirclePlus, CircleX } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Checkbox } from './components/ui/checkbox.tsx';
 import { useGetMEXCContractQuery, useGetTickersQuery } from './api/mexc.api.ts';
@@ -116,6 +116,8 @@ export const TestPage = () => {
       pollingInterval: 5000,
     },
   );
+
+  const [sorter, setSorter] = useState<any>({});
 
   const alorPositions = useAppSelector((state) => state.alorSlice.alorPositions);
 
@@ -760,13 +762,61 @@ export const TestPage = () => {
           <TableHeader className="bg-[rgb(36,52,66)]">
             <TableRow>
               <TableHead className="w-[200px]">Тикер</TableHead>
-              <TableHead className="w-[200px]">Изменение %</TableHead>
-              <TableHead className="w-[200px]">Оборот</TableHead>
+              <TableHead
+                className="w-[200px]"
+                onClick={() =>
+                  setSorter((prevState) => ({
+                    ...prevState,
+                    riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
+                  }))
+                }
+              >
+                <div className="flex gap-3 items-center cursor-pointer">
+                  {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                  {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изменение %
+                </div>
+              </TableHead>
+              <TableHead
+                className="w-[200px]"
+                onClick={() =>
+                  setSorter((prevState) => ({
+                    ...prevState,
+                    amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                  }))
+                }
+              >
+                <div className="flex gap-3 items-center cursor-pointer">
+                  {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                  {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {[...mexcTickers]
-              .sort((a, b) => Number(b.riseFallRate) - Number(a.riseFallRate))
+              .sort((a, b) => {
+                if (!sorter['riseFallRate'] && !sorter['amount24']) {
+                  return 0;
+                }
+
+                if (sorter['riseFallRate'] === 'desc') {
+                  return Number(b.riseFallRate) - Number(a.riseFallRate);
+                }
+
+                if (sorter['riseFallRate'] === 'asc') {
+                  return Number(a.riseFallRate) - Number(b.riseFallRate);
+                }
+
+                if (sorter['amount24'] === 'desc') {
+                  return Number(b.amount24) - Number(a.amount24);
+                }
+
+                if (sorter['amount24'] === 'asc') {
+                  return Number(a.amount24) - Number(b.amount24);
+                }
+
+                return 0;
+              })
               .map((invoice, index) => (
                 <TableRow
                   className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `MEXC:${invoice.symbol}` && 'rowHover')}
