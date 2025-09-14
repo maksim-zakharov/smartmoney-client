@@ -7,6 +7,7 @@ import { tinkoffApi } from './api/tinkoff.api.ts';
 import { ctraderApi } from './api/ctrader.api.ts';
 import { mexcApi } from './api/mexc.api.ts';
 import { alertsSlice } from './api/alerts.slice.ts';
+import { bingxApi } from './api/bingx.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -16,6 +17,7 @@ export const reducers = {
   [alertsSlice.name]: alertsSlice.reducer,
   [ctraderApi.reducerPath]: ctraderApi.reducer,
   [mexcApi.reducerPath]: mexcApi.reducer,
+  [bingxApi.reducerPath]: bingxApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -31,6 +33,7 @@ export const store = configureStore({
       .concat(tinkoffApi.middleware)
       .concat(ctraderApi.middleware)
       .concat(mexcApi.middleware)
+      .concat(bingxApi.middleware)
       .concat(api.middleware) as any,
 });
 
