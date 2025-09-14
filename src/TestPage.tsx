@@ -780,13 +780,27 @@ export const TestPage = () => {
                 onClick={() =>
                   setSorter((prevState) => ({
                     ...prevState,
+                    price: prevState.price === 'desc' ? 'asc' : prevState.price === 'asc' ? undefined : 'desc',
+                  }))
+                }
+              >
+                <div className="flex gap-3 items-center cursor-pointer">
+                  {sorter['price'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                  {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
+                </div>
+              </TableHead>
+              <TableHead
+                className="w-[200px]"
+                onClick={() =>
+                  setSorter((prevState) => ({
+                    ...prevState,
                     riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
                   }))
                 }
               >
                 <div className="flex gap-3 items-center cursor-pointer">
                   {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
-                  {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изменение %
+                  {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
                 </div>
               </TableHead>
               <TableHead
@@ -808,8 +822,16 @@ export const TestPage = () => {
           <TableBody>
             {[...mexcTickers]
               .sort((a, b) => {
-                if (!sorter['riseFallRate'] && !sorter['symbol'] && !sorter['amount24']) {
+                if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                   return 0;
+                }
+
+                if (sorter['price'] === 'desc') {
+                  return Number(b.lastPrice) - Number(a.lastPrice);
+                }
+
+                if (sorter['price'] === 'asc') {
+                  return Number(a.lastPrice) - Number(b.lastPrice);
                 }
 
                 if (sorter['riseFallRate'] === 'desc') {
@@ -848,6 +870,7 @@ export const TestPage = () => {
                       ${invoice.symbol}
                     </a>
                   </TableCell>
+                  <TableCell>{invoice.lastPrice}</TableCell>
                   <TableCell
                     className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
                   >
