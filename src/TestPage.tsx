@@ -780,7 +780,11 @@ export const TestPage = () => {
               .sort((a, b) => Number(b.riseFallRate) - Number(a.riseFallRate))
               .map((invoice, index) => (
                 <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
-                  <TableCell>{invoice.symbol}</TableCell>
+                  <TableCell>
+                    <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
+                      ${invoice.symbol}
+                    </a>
+                  </TableCell>
                   <TableCell
                     className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
                   >
