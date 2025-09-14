@@ -181,7 +181,7 @@ export const StatArbPage = ({
     },
     {
       pollingInterval: 5000,
-      skip: !tickerStock || !apiAuth,
+      skip: true, // !tickerStock || !apiAuth,
     },
   );
 

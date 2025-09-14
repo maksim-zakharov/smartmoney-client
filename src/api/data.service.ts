@@ -6,6 +6,7 @@ import { MexcWsClient } from './mexc.ws-client';
 import { GateWsClient } from './gate.ws-client';
 import { CtraderWsClient } from './ctrader.ws-client';
 import { FinamWsClient } from './finam.ws-client';
+import { MexcSpotWsClient } from './mexc-spot.ws-client.ts';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -17,6 +18,7 @@ export class DataService {
   private readonly gateWsClient: GateWsClient;
   private readonly ctraderWsClient: CtraderWsClient;
   private readonly finamWsClient: FinamWsClient;
+  private readonly mexcSpotWsClient: MexcSpotWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
@@ -27,10 +29,13 @@ export class DataService {
     this.gateWsClient = new GateWsClient();
     this.ctraderWsClient = new CtraderWsClient();
     this.finamWsClient = new FinamWsClient();
+    this.mexcSpotWsClient = new MexcSpotWsClient();
   }
 
   mexcSubscribeCandles(symbol: string, resolution: ResolutionString) {
-    return this.mexcWsClient.subscribeCandles(symbol, resolution);
+    if (symbol.includes('_')) return this.mexcWsClient.subscribeCandles(symbol, resolution);
+
+    return this.mexcSpotWsClient.subscribeCandles(symbol, resolution);
   }
 
   gateSubscribeCandles(symbol: string, resolution: ResolutionString) {

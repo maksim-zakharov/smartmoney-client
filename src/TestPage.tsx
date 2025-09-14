@@ -13,7 +13,7 @@ import { Button } from './components/ui/button.tsx';
 import { CirclePlus, CircleX } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Checkbox } from './components/ui/checkbox.tsx';
-import { useGetMEXCContractQuery } from './api/mexc.api.ts';
+import { useGetMEXCContractQuery, useGetTickersQuery } from './api/mexc.api.ts';
 import { TypographyParagraph } from './components/ui/typography.tsx';
 import { toast } from 'sonner';
 import { Input } from './components/ui/input.tsx';
@@ -109,6 +109,13 @@ export const TestPage = () => {
     cTraderSymbols,
     MEXCPositions,
   } = useAppSelector((state) => state.alorSlice);
+
+  const { data: mexcTickers = [] } = useGetTickersQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
 
   const alorPositions = useAppSelector((state) => state.alorSlice.alorPositions);
 
@@ -751,6 +758,37 @@ export const TestPage = () => {
                 </TableRow>
               ),
             )}
+          </TableBody>
+        </Table>
+        <Table wrapperClassName="pt-2 h-120">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px] text-left" colSpan={3}>
+                Mexc Фьючерсы
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableHeader className="bg-[rgb(36,52,66)]">
+            <TableRow>
+              <TableHead className="w-[200px]">Тикер</TableHead>
+              <TableHead className="w-[200px]">Изменение %</TableHead>
+              <TableHead className="w-[200px]">Оборот</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...mexcTickers]
+              .sort((a, b) => Number(b.riseFallRate) - Number(a.riseFallRate))
+              .map((invoice, index) => (
+                <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
+                  <TableCell>{invoice.symbol}</TableCell>
+                  <TableCell
+                    className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
+                  >
+                    {(Number(invoice.riseFallRate) * 100).toFixed(2)}%
+                  </TableCell>
+                  <TableCell>{moneyFormat(invoice.amount24, 'USD', 0, 0)}</TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
         {/*<Table wrapperClassName="pt-2">*/}

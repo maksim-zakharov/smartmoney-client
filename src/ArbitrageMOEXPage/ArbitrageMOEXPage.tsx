@@ -330,6 +330,16 @@ export const ArbitrageMOEXPage = () => {
       element: <StatArbPage tickerStock="FOREX:NVDA_xp" _tickerFuture="ITS:NVDA" multi={0.1} />,
     },
     {
+      key: 'MEXC:COINONUSDT',
+      label: 'MEXC:COINONUSDT/FINAM:COIN@XNGS',
+      element: <StatArbPage tickerStock="MEXC:COINONUSDT" _tickerFuture="FINAM:COIN@XNGS" multi={100} />,
+    },
+    {
+      key: 'MEXC:COINONUSDT/ITS:COIN',
+      label: 'MEXC:COINONUSDT/ITS:COIN',
+      element: <StatArbPage tickerStock="MEXC:COINONUSDT" _tickerFuture="ITS:COIN" multi={100} />,
+    },
+    {
       key: 'IMOEXF',
       label: 'IMOEXF/MIX-9.25',
       element: <StatArbPage tickerStock="IMOEXF" _tickerFuture="MIX-9.25" seriesType="Line" multi={10000} />,

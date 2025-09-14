@@ -38,6 +38,13 @@ export const SmartPage = () => {
 
   const favoritePairs = useAppSelector((state) => state.alorSlice.favoritePairs || []);
 
+  const { cTraderSymbols } = useAppSelector((state) => state.alorSlice);
+
+  const stockSymbols = useMemo(
+    () => cTraderSymbols.filter((s) => s.symbolCategoryId === 6 && s.symbolName.includes('_xp')),
+    [cTraderSymbols],
+  );
+
   const setMinProfit = (value) => {
     searchParams.set('minProfit', value);
     setSearchParams(searchParams);
@@ -94,6 +101,10 @@ export const SmartPage = () => {
     {
       label: 'Акции',
       value: 'stocks',
+    },
+    {
+      label: 'US-Акции',
+      value: 'us-stocks',
     },
     {
       label: 'Стат-фьючи',
@@ -501,6 +512,21 @@ export const SmartPage = () => {
             {filteredOthers.map((item) => (
               <Col span={span}>
                 <StatArbPage tickerStock={item.left} _tickerFuture={item.right} onlyChart height={height} />
+              </Col>
+            ))}
+          </Row>
+        </TabsContent>
+        <TabsContent value="us-stocks">
+          <Row>
+            {stockSymbols.map((item) => (
+              <Col span={span}>
+                <StatArbPage
+                  tickerStock={`FOREX:${item.symbolName}`}
+                  _tickerFuture={`ITS:${item.symbolName.replace('_xp', '')}`}
+                  multi={0.1}
+                  onlyChart
+                  height={height}
+                />
               </Col>
             ))}
           </Row>
