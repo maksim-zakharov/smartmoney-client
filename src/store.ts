@@ -8,6 +8,7 @@ import { ctraderApi } from './api/ctrader.api.ts';
 import { mexcApi } from './api/mexc.api.ts';
 import { alertsSlice } from './api/alerts.slice.ts';
 import { bingxApi } from './api/bingx.api.ts';
+import { gateApi } from './api/gate.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -18,6 +19,7 @@ export const reducers = {
   [ctraderApi.reducerPath]: ctraderApi.reducer,
   [mexcApi.reducerPath]: mexcApi.reducer,
   [bingxApi.reducerPath]: bingxApi.reducer,
+  [gateApi.reducerPath]: gateApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -34,6 +36,7 @@ export const store = configureStore({
       .concat(ctraderApi.middleware)
       .concat(mexcApi.middleware)
       .concat(bingxApi.middleware)
+      .concat(gateApi.middleware)
       .concat(api.middleware) as any,
 });
 
