@@ -754,7 +754,7 @@ export const TestPage = () => {
         <Table wrapperClassName="pt-2 h-120">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px] text-left" colSpan={3}>
+              <TableHead className="w-[200px] text-left" colSpan={4}>
                 Mexc Фьючерсы
               </TableHead>
             </TableRow>
