@@ -761,7 +761,20 @@ export const TestPage = () => {
           </TableHeader>
           <TableHeader className="bg-[rgb(36,52,66)]">
             <TableRow>
-              <TableHead className="w-[200px]">Тикер</TableHead>
+              <TableHead
+                className="w-[200px]"
+                onClick={() =>
+                  setSorter((prevState) => ({
+                    ...prevState,
+                    symbol: prevState.symbol === 'desc' ? 'asc' : prevState.symbol === 'asc' ? undefined : 'desc',
+                  }))
+                }
+              >
+                <div className="flex gap-3 items-center cursor-pointer">
+                  {sorter['symbol'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                  {sorter['symbol'] === 'asc' && <ArrowUpWideNarrow size={13} />} Тикер
+                </div>
+              </TableHead>
               <TableHead
                 className="w-[200px]"
                 onClick={() =>
@@ -795,7 +808,7 @@ export const TestPage = () => {
           <TableBody>
             {[...mexcTickers]
               .sort((a, b) => {
-                if (!sorter['riseFallRate'] && !sorter['amount24']) {
+                if (!sorter['riseFallRate'] && !sorter['symbol'] && !sorter['amount24']) {
                   return 0;
                 }
 
@@ -813,6 +826,14 @@ export const TestPage = () => {
 
                 if (sorter['amount24'] === 'asc') {
                   return Number(a.amount24) - Number(b.amount24);
+                }
+
+                if (sorter['symbol'] === 'desc') {
+                  return b.symbol.localeCompare(a.symbol);
+                }
+
+                if (sorter['symbol'] === 'asc') {
+                  return a.symbol.localeCompare(b.symbol);
                 }
 
                 return 0;
