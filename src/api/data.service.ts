@@ -75,13 +75,13 @@ export class DataService {
       });
     }
     if (symbol.includes(':')) {
-      const exchange = symbol.split(':')[0];
+      const [exchange, _symbol] = symbol.split(':');
 
       return Promise.resolve({
-        symbol: symbol,
+        symbol: _symbol,
         exchange,
         currency: 'USDT',
-        minstep: 0.001,
+        minstep: 0.0001,
         type: '',
       });
     }

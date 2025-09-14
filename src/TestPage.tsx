@@ -145,11 +145,7 @@ export const TestPage = () => {
 
   const map = useMemo(() => new Map<number, any>(cTraderSymbols?.map((s) => [s.symbolId, s])), [cTraderSymbols]);
 
-  const [selected, setSelected] = useState();
-
-  const handleSelectForex = (symbol: string) => () => {
-    setSelected(symbol);
-  };
+  const [selected, setSelected] = useState<string>();
 
   const pnl = new Map<number, number>(
     (cTraderPositionPnL?.positionUnrealizedPnL || []).map((p) => [
@@ -359,11 +355,7 @@ export const TestPage = () => {
   }, [tinkoffPortfolio?.positions, cTraderPositionsMapped, alorPositions]);
 
   const ForexRow = ({ invoice, index }: { invoice: any; index: number }) => (
-    <TableRow
-      key={invoice.invoice}
-      className={index % 2 ? 'rowOdd' : 'rowEven'}
-      onClick={handleSelectForex(map.get(invoice.tradeData.symbolId)?.symbolName)}
-    >
+    <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
       <TableCell>
         <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />
       </TableCell>
@@ -726,10 +718,7 @@ export const TestPage = () => {
               ) : invoice.instrumentType === 'alor' ? (
                 <AlorRow invoice={invoice} index={index} />
               ) : (
-                <TableRow
-                  key={invoice.invoice}
-                  className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === instrumentTypeMap[invoice.instrumentType] && 'rowHover')}
-                >
+                <TableRow key={invoice.invoice} className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
                   <TableCell>
                     <FigiLabel uid={invoice.instrumentUid} />
                   </TableCell>
@@ -779,7 +768,10 @@ export const TestPage = () => {
             {[...mexcTickers]
               .sort((a, b) => Number(b.riseFallRate) - Number(a.riseFallRate))
               .map((invoice, index) => (
-                <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
+                <TableRow
+                  className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `MEXC:${invoice.symbol}` && 'rowHover')}
+                  onClick={(e) => setSelected(`MEXC:${invoice.symbol}`)}
+                >
                   <TableCell>
                     <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
                       ${invoice.symbol}
@@ -795,6 +787,7 @@ export const TestPage = () => {
               ))}
           </TableBody>
         </Table>
+        <div className="col-span-2">{selected && <TWChart ticker={selected} height={480} multiple={1} small />}</div>
         {/*<Table wrapperClassName="pt-2">*/}
         {/*  <TableHeader>*/}
         {/*    <TableRow>*/}
@@ -882,7 +875,6 @@ export const TestPage = () => {
         {/*  </TableBody>*/}
         {/*</Table>*/}
       </div>
-      {selected && <TWChart ticker={selected} height={400} multiple={1} small />}
     </>
   );
 };

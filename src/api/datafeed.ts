@@ -265,24 +265,45 @@ export class DataFeed implements IBasicDataFeed {
     listenerGuid: string,
     onResetCacheNeededCallback: () => void,
   ): void {
+    const secondProm = async (symbol: string, callback) => {
+      const isForex = symbol.includes('_xp');
+      if (isForex) {
+        return this.dataService.ctraderSubscribeCandles(symbol, resolution).subscribe((data) => {
+          callback(data);
+        });
+      } else if (symbol.includes('BYBIT')) {
+        return this.dataService.bybitSubscribeCandles(symbol.split('BYBIT:')[1], resolution).subscribe((data) => {
+          callback(data);
+        });
+      } else if (symbol.includes('GATE')) {
+        return this.dataService.gateSubscribeCandles(symbol.split('GATE:')[1], resolution).subscribe((data) => {
+          callback(data);
+        });
+      } else if (symbol.includes('MEXC')) {
+        return this.dataService.mexcSubscribeCandles(symbol.split('MEXC:')[1], resolution).subscribe((data) => {
+          callback(data);
+        });
+      } else if (symbol.includes('FINAM')) {
+        return this.dataService.finamSubscribeCandles(symbol.split('FINAM:')[1], resolution).subscribe((data) => {
+          callback(data);
+        });
+      } else {
+        return this.api.subscriptions.candles(
+          {
+            code: symbol,
+            exchange: symbolInfo.exchange,
+            format: Format.Simple,
+            tf: this.parseTimeframe(resolution),
+          },
+          (data) => callback(data),
+        );
+      }
+    };
+
     const parts = symbolInfo.ticker.split('/');
     const isForex = symbolInfo.ticker.includes('_xp');
     if (parts.length === 1) {
-      if (isForex) {
-        return;
-      } else {
-        this.api.subscriptions
-          .candles(
-            {
-              code: parts[0],
-              exchange: symbolInfo.exchange,
-              format: Format.Simple,
-              tf: this.parseTimeframe(resolution),
-            },
-            (data) => onTick({ ...data, time: data.time * 1000 } as Bar),
-          )
-          .then((unsub) => this.subscriptions.set(listenerGuid, [unsub]));
-      }
+      secondProm(parts[0], (data) => onTick({ ...data, time: data.time * 1000 } as Bar));
     } else {
       const lastCandles = parts.reduce((acc, curr) => {
         acc[curr] = new BehaviorSubject<HistoryObject>(null);
@@ -317,42 +338,9 @@ export class DataFeed implements IBasicDataFeed {
             onTick({ ...newCandle, time: newCandle.time * 1000 } as Bar);
           }
         });
-
-      const secondProm = async (symbol: string) => {
-        const isForex = symbol.includes('_xp');
-        if (isForex) {
-          return this.dataService.ctraderSubscribeCandles(symbol, resolution).subscribe((data) => {
-            lastCandles[symbol].next(data);
-          });
-        } else if (symbol.includes('BYBIT')) {
-          return this.dataService.bybitSubscribeCandles(symbol.split('BYBIT:')[1], resolution).subscribe((data) => {
-            lastCandles[symbol].next(data);
-          });
-        } else if (symbol.includes('GATE')) {
-          return this.dataService.gateSubscribeCandles(symbol.split('GATE:')[1], resolution).subscribe((data) => {
-            lastCandles[symbol].next(data);
-          });
-        } else if (symbol.includes('MEXC')) {
-          return this.dataService.mexcSubscribeCandles(symbol.split('MEXC:')[1], resolution).subscribe((data) => {
-            lastCandles[symbol].next(data);
-          });
-        } else if (symbol.includes('FINAM')) {
-          return this.dataService.finamSubscribeCandles(symbol.split('FINAM:')[1], resolution).subscribe((data) => {
-            lastCandles[symbol].next(data);
-          });
-        } else {
-          return this.api.subscriptions.candles(
-            {
-              code: symbol,
-              exchange: symbolInfo.exchange,
-              format: Format.Simple,
-              tf: this.parseTimeframe(resolution),
-            },
-            (data) => lastCandles[symbol].next(data),
-          );
-        }
-      };
-      Promise.all([parts.map(secondProm)]).then((unsubs) => this.subscriptions.set(listenerGuid, unsubs));
+      Promise.all([parts.map((part) => secondProm(part, (candle) => lastCandles[part].next(candle)))]).then((unsubs) =>
+        this.subscriptions.set(listenerGuid, unsubs),
+      );
     }
   }
   unsubscribeBars(listenerGuid: string): void {
