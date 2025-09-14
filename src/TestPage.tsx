@@ -117,7 +117,9 @@ export const TestPage = () => {
     },
   );
 
-  const [sorter, setSorter] = useState<any>({});
+  const [sorter, setSorter] = useState<any>({
+    riseFallRate: 'desc',
+  });
 
   const alorPositions = useAppSelector((state) => state.alorSlice.alorPositions);
 

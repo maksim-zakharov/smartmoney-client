@@ -19,6 +19,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { updatePairs } from '../../api/alor.slice.ts';
 import { useAppDispatch, useAppSelector } from '../../store.ts';
+import { TWChart } from '../../components/TWChart.tsx';
 
 export const SmartPage = () => {
   const height = 350;
@@ -350,10 +351,10 @@ export const SmartPage = () => {
 
   const FormSchema = z.object({
     type: z
-      .enum(['double', 'triple'], {
+      .enum(['solo', 'double', 'triple'], {
         error: 'Нужно выбрать тип арбитража',
       })
-      .default('double'),
+      .default('solo'),
     multiple: z
       .number({
         error: 'Нужно выбрать множитель',
@@ -362,9 +363,11 @@ export const SmartPage = () => {
     first: z.string({
       error: 'Нужно выбрать тип арбитража',
     }),
-    second: z.string({
-      error: 'Нужно выбрать тип арбитража',
-    }),
+    second: z
+      .string({
+        error: 'Нужно выбрать тип арбитража',
+      })
+      .optional(),
     third: z.string().optional(),
   });
 
@@ -406,11 +409,11 @@ export const SmartPage = () => {
         {tab === 'others' && <Pagination current={page} total={others.length} pageSize={24 / span} onChange={setPage} />}
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">Добавить арбитраж</Button>
+            <Button variant="outline">Добавить тикер</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Добавление арбитража</DialogTitle>
+              <DialogTitle>Добавление тикера</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 p-3 pt-0">
@@ -422,6 +425,12 @@ export const SmartPage = () => {
                       <FormLabel>Тип арбитража</FormLabel>
                       <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col">
+                          <FormItem className="flex items-center gap-3">
+                            <FormControl>
+                              <RadioGroupItem value="solo" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Один тикер</FormLabel>
+                          </FormItem>
                           <FormItem className="flex items-center gap-3">
                             <FormControl>
                               <RadioGroupItem value="double" />
@@ -535,6 +544,11 @@ export const SmartPage = () => {
           <Row>
             {favoritePairs.map((fp) => (
               <Col span={span}>
+                {fp.type === 'solo' && (
+                  <div className="relative" style={{ height }}>
+                    <TWChart ticker={fp.first} height={height} small multiple={1} />
+                  </div>
+                )}
                 {fp.type === 'double' && (
                   <StatArbPage tickerStock={fp.first} _tickerFuture={fp.second} multi={fp.multiple} onlyChart height={height} />
                 )}
