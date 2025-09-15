@@ -9,6 +9,7 @@ import { mexcApi } from './api/mexc.api.ts';
 import { alertsSlice } from './api/alerts.slice.ts';
 import { bingxApi } from './api/bingx.api.ts';
 import { gateApi } from './api/gate.api.ts';
+import { bybitApi } from './api/bybit.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -20,6 +21,7 @@ export const reducers = {
   [mexcApi.reducerPath]: mexcApi.reducer,
   [bingxApi.reducerPath]: bingxApi.reducer,
   [gateApi.reducerPath]: gateApi.reducer,
+  [bybitApi.reducerPath]: bybitApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -37,6 +39,7 @@ export const store = configureStore({
       .concat(mexcApi.middleware)
       .concat(bingxApi.middleware)
       .concat(gateApi.middleware)
+      .concat(bybitApi.middleware)
       .concat(api.middleware) as any,
 });
 
