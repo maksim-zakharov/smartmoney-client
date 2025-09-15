@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs.t
 import { useGetGateTickersQuery } from './api/gate.api.ts';
 import { useGetBYBITTickersQuery } from './api/bybit.api.ts';
 import { useGetBinanceTickersQuery } from './api/binance.api.ts';
+import dayjs from 'dayjs';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -1273,6 +1274,7 @@ export const TestPage = () => {
               </TableHeader>
               <TableBody>
                 {[...binanceTickers]
+                  .filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;
