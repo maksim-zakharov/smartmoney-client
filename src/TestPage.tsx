@@ -356,10 +356,10 @@ export const TestPage = () => {
 
   const [tab, setTab] = useState<string>('mexc-futures');
 
-  const options: { label: string; value: string }[] = [
-    { label: 'Mexc Фьючерсы', value: 'mexc-futures' },
-    { label: 'Gate Фьючерсы', value: 'gate-futures' },
-    { label: 'Bingx Фьючерсы', value: 'bingx-futures' },
+  const options: { label: string; value: string; imgSrc?: string }[] = [
+    { label: 'Mexc Фьючерсы', value: 'mexc-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png' },
+    { label: 'Gate Фьючерсы', value: 'gate-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/302.png' },
+    { label: 'Bingx Фьючерсы', value: 'bingx-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/1064.png' },
   ];
 
   const totalPositions = useMemo(() => {
@@ -780,7 +780,10 @@ export const TestPage = () => {
         <Tabs value={tab} onValueChange={setTab} className="gap-0">
           <TabsList style={{ marginTop: '4px' }}>
             {options.map((o) => (
-              <TabsTrigger value={o.value}>{o.label}</TabsTrigger>
+              <TabsTrigger value={o.value}>
+                <img src={o.imgSrc} className="h-5 rounded-full" loading="lazy" decoding="async" />
+                {o.label}
+              </TabsTrigger>
             ))}
           </TabsList>
           <TabsContent value="gate-futures">
