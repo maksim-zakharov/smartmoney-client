@@ -794,7 +794,7 @@ export const TestPage = () => {
         </Table>
 
         <Tabs value={tab} onValueChange={setTab} className="gap-0">
-          <TabsList style={{ marginTop: '4px' }}>
+          <TabsList style={{ marginTop: '4px' }} className="grid grid-cols-auto-fit gap-1 grid-cols-4 h-auto pb-2 pl-0">
             {options.map((o) => (
               <TabsTrigger value={o.value}>
                 <img src={o.imgSrc} className="h-5 rounded-full" loading="lazy" decoding="async" />
