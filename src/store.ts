@@ -10,6 +10,7 @@ import { alertsSlice } from './api/alerts.slice.ts';
 import { bingxApi } from './api/bingx.api.ts';
 import { gateApi } from './api/gate.api.ts';
 import { bybitApi } from './api/bybit.api.ts';
+import { binanceApi } from './api/binance.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -22,6 +23,7 @@ export const reducers = {
   [bingxApi.reducerPath]: bingxApi.reducer,
   [gateApi.reducerPath]: gateApi.reducer,
   [bybitApi.reducerPath]: bybitApi.reducer,
+  [binanceApi.reducerPath]: binanceApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -40,6 +42,7 @@ export const store = configureStore({
       .concat(bingxApi.middleware)
       .concat(gateApi.middleware)
       .concat(bybitApi.middleware)
+      .concat(binanceApi.middleware)
       .concat(api.middleware) as any,
 });
 
