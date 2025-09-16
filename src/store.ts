@@ -11,6 +11,7 @@ import { bingxApi } from './api/bingx.api.ts';
 import { gateApi } from './api/gate.api.ts';
 import { bybitApi } from './api/bybit.api.ts';
 import { binanceApi } from './api/binance.api.ts';
+import { htxApi } from './api/htx.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -24,6 +25,7 @@ export const reducers = {
   [gateApi.reducerPath]: gateApi.reducer,
   [bybitApi.reducerPath]: bybitApi.reducer,
   [binanceApi.reducerPath]: binanceApi.reducer,
+  [htxApi.reducerPath]: htxApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -43,6 +45,7 @@ export const store = configureStore({
       .concat(gateApi.middleware)
       .concat(bybitApi.middleware)
       .concat(binanceApi.middleware)
+      .concat(htxApi.middleware)
       .concat(api.middleware) as any,
 });
 

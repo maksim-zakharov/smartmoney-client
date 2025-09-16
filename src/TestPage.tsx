@@ -25,6 +25,7 @@ import { useGetGateTickersQuery } from './api/gate.api.ts';
 import { useGetBYBITTickersQuery } from './api/bybit.api.ts';
 import { useGetBinanceTickersQuery } from './api/binance.api.ts';
 import dayjs from 'dayjs';
+import { useGetHTXTickersQuery } from './api/htx.api.ts';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -92,7 +93,7 @@ const ForexLabel = ({ ticker }) => {
 };
 
 export const TestPage = () => {
-  const USDRate = 83.24;
+  const USDRate = 83.071;
 
   const [tPostOrderMutation, { isLoading: tPostOrderLoading }] = useTinkoffPostOrderMutation();
   const [ctraderPostOrderMutation, { isLoading: ctraderPostOrderLoading }] = useCTraderPlaceOrderMutation();
@@ -141,6 +142,12 @@ export const TestPage = () => {
     },
   );
   const { data: binanceTickers = [] } = useGetBinanceTickersQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
+  const { data: htxTickers = [] } = useGetHTXTickersQuery(
     {},
     {
       pollingInterval: 5000,
@@ -377,6 +384,7 @@ export const TestPage = () => {
     { label: 'Bingx Фьючерсы', value: 'bingx-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/1064.png' },
     { label: 'Bybit Фьючерсы', value: 'bybit-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png' },
     { label: 'Binance Фьючерсы', value: 'binance-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png' },
+    { label: 'HTX Фьючерсы', value: 'htx-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/102.png' },
   ];
 
   const totalPositions = useMemo(() => {
@@ -1465,6 +1473,139 @@ export const TestPage = () => {
                         {(Number(invoice.price24hPcnt) * 100).toFixed(2)}%
                       </TableCell>
                       <TableCell>{moneyFormat(invoice.turnover24h, 'USD', 0, 0)}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TabsContent>
+          <TabsContent value="htx-futures">
+            <Table wrapperClassName="pt-2 h-120">
+              {/*<TableHeader>*/}
+              {/*  <TableRow>*/}
+              {/*    <TableHead className="w-[200px] text-left" colSpan={4}>*/}
+              {/*      Mexc Фьючерсы*/}
+              {/*    </TableHead>*/}
+              {/*  </TableRow>*/}
+              {/*</TableHeader>*/}
+              <TableHeader className="bg-[rgb(36,52,66)]">
+                <TableRow>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        symbol: prevState.symbol === 'desc' ? 'asc' : prevState.symbol === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['symbol'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['symbol'] === 'asc' && <ArrowUpWideNarrow size={13} />} Тикер
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        price: prevState.price === 'desc' ? 'asc' : prevState.price === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['price'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                    </div>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...htxTickers]
+                  .map((t) => ({ ...t, priceChangePercent: Number(t.close) / Number(t.open) - 1 }))
+                  .sort((a, b) => {
+                    if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
+                      return 0;
+                    }
+
+                    if (sorter['price'] === 'desc') {
+                      return Number(b.lastPrice) - Number(a.lastPrice);
+                    }
+
+                    if (sorter['price'] === 'asc') {
+                      return Number(a.lastPrice) - Number(b.lastPrice);
+                    }
+
+                    if (sorter['riseFallRate'] === 'desc') {
+                      return b.priceChangePercent - a.priceChangePercent;
+                    }
+
+                    if (sorter['riseFallRate'] === 'asc') {
+                      return a.priceChangePercent - b.priceChangePercent;
+                    }
+
+                    if (sorter['amount24'] === 'desc') {
+                      return Number(b.vol) - Number(a.vol);
+                    }
+
+                    if (sorter['amount24'] === 'asc') {
+                      return Number(a.vol) - Number(b.vol);
+                    }
+
+                    if (sorter['symbol'] === 'desc') {
+                      return b.contract_code.localeCompare(a.contract_code);
+                    }
+
+                    if (sorter['symbol'] === 'asc') {
+                      return a.contract_code.localeCompare(b.contract_code);
+                    }
+
+                    return 0;
+                  })
+                  .map((invoice, index) => (
+                    <TableRow
+                      className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `HTX:${invoice.contract_code}` && 'rowHover')}
+                      onClick={(e) => setSelected(`HTX:${invoice.contract_code}`)}
+                    >
+                      <TableCell>
+                        <a href={`https://www.mexc.com/ru-RU/futures/${invoice.contract_code}`} target="_blank">
+                          ${invoice.contract_code}
+                        </a>
+                      </TableCell>
+                      <TableCell>{Number(invoice.close)}</TableCell>
+                      <TableCell
+                        className={invoice.priceChangePercent > 0 ? 'profitCell' : invoice.priceChangePercent < 0 ? 'lossCell' : ''}
+                      >
+                        {(invoice.priceChangePercent * 100).toFixed(2)}%
+                      </TableCell>
+                      <TableCell>{moneyFormat(invoice.vol, 'USD', 0, 0)}</TableCell>
                     </TableRow>
                   ))}
               </TableBody>
