@@ -81,6 +81,23 @@ export class GateWsClient {
     return subj;
   }
 
+  unsubscribeCandles(symbol: string, resolution: string) {
+    const subj = new Subject<any>();
+    const interval = `${resolution}m`;
+    const key = `${interval}_${symbol}`;
+    this.subscribes.set(key, subj);
+    this.ws.send(
+      JSON.stringify({
+        time: Math.round(Date.now() / 1000),
+        channel: 'futures.candlesticks',
+        event: 'unsubscribe',
+        payload: [interval, symbol],
+      }),
+    );
+
+    return subj;
+  }
+
   subscribeOrderbook(symbol: string, depth: number) {
     const subj = new Subject<any>();
     const key = `depth_${symbol}`;

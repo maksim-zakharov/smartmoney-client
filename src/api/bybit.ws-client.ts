@@ -51,6 +51,20 @@ export class BybitWebsocketClient {
     return subj;
   }
 
+  unsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    const args = `kline.${resolution}.${symbol}`;
+    const subj = new Subject<any>();
+    this.bybitSubscribes.set(args, subj);
+    this.bybitWs.send(
+      JSON.stringify({
+        op: 'unsubscribe',
+        args: [args],
+      }),
+    );
+
+    return subj;
+  }
+
   subscribeQuotes(symbol: string) {
     const args = `tickers.${symbol}`;
     const subj = new Subject<any>();

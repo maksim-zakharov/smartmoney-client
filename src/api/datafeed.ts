@@ -272,13 +272,17 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
       } else if (symbol.includes('BYBIT')) {
-        return this.dataService.bybitSubscribeCandles(symbol.split('BYBIT:')[1], resolution).subscribe((data) => {
+        this.dataService.bybitSubscribeCandles(symbol.split('BYBIT:')[1], resolution).subscribe((data) => {
           callback(data);
         });
+
+        return () => this.dataService.bybitUnsubscribeCandles(symbol.split('BYBIT:')[1], resolution);
       } else if (symbol.includes('GATE')) {
-        return this.dataService.gateSubscribeCandles(symbol.split('GATE:')[1], resolution).subscribe((data) => {
+        this.dataService.gateSubscribeCandles(symbol.split('GATE:')[1], resolution).subscribe((data) => {
           callback(data);
         });
+
+        return () => this.dataService.gateUnsubscribeCandles(symbol.split('GATE:')[1], resolution);
       } else if (symbol.includes('MEXC')) {
         return this.dataService.mexcSubscribeCandles(symbol.split('MEXC:')[1], resolution).subscribe((data) => {
           callback(data);
@@ -287,6 +291,11 @@ export class DataFeed implements IBasicDataFeed {
         return this.dataService.finamSubscribeCandles(symbol.split('FINAM:')[1], resolution).subscribe((data) => {
           callback(data);
         });
+      } else if (symbol.includes('KUCOIN')) {
+        this.dataService.kucoinSubscribeCandles(symbol.split('KUCOIN:')[1], resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.kucoinUnsubscribeCandles(symbol.split('KUCOIN:')[1], resolution);
       } else {
         return this.api.subscriptions.candles(
           {
@@ -303,7 +312,9 @@ export class DataFeed implements IBasicDataFeed {
     const parts = symbolInfo.ticker.split('/');
     const isForex = symbolInfo.ticker.includes('_xp');
     if (parts.length === 1) {
-      secondProm(parts[0], (data) => onTick({ ...data, time: data.time * 1000 } as Bar));
+      secondProm(parts[0], (data) => onTick({ ...data, time: data.time * 1000 } as Bar)).then((unsubs) =>
+        this.subscriptions.set(listenerGuid, [unsubs]),
+      );
     } else {
       const lastCandles = parts.reduce((acc, curr) => {
         acc[curr] = new BehaviorSubject<HistoryObject>(null);

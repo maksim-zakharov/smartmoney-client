@@ -7,6 +7,7 @@ import { GateWsClient } from './gate.ws-client';
 import { CtraderWsClient } from './ctrader.ws-client';
 import { FinamWsClient } from './finam.ws-client';
 import { MexcSpotWsClient } from './mexc-spot.ws-client.ts';
+import { KucoinWsClient } from './kucoin.ws-client.ts';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -19,6 +20,7 @@ export class DataService {
   private readonly ctraderWsClient: CtraderWsClient;
   private readonly finamWsClient: FinamWsClient;
   private readonly mexcSpotWsClient: MexcSpotWsClient;
+  private readonly kucoinWsClient: KucoinWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
@@ -30,6 +32,7 @@ export class DataService {
     this.ctraderWsClient = new CtraderWsClient();
     this.finamWsClient = new FinamWsClient();
     this.mexcSpotWsClient = new MexcSpotWsClient();
+    this.kucoinWsClient = new KucoinWsClient();
   }
 
   mexcSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -42,8 +45,16 @@ export class DataService {
     return this.gateWsClient.subscribeCandles(symbol, resolution);
   }
 
+  gateUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.gateWsClient.unsubscribeCandles(symbol, resolution);
+  }
+
   bybitSubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.bybitWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  bybitUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.bybitWsClient.unsubscribeCandles(symbol, resolution);
   }
 
   ctraderSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -52,6 +63,14 @@ export class DataService {
 
   finamSubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.finamWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  kucoinSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.kucoinWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  kucoinUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.kucoinWsClient.unsubscribeCandles(symbol, resolution);
   }
 
   get serverTime$() {
