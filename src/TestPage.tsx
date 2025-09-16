@@ -1704,11 +1704,11 @@ export const TestPage = () => {
                     }
 
                     if (sorter['riseFallRate'] === 'desc') {
-                      return Number(b.changePrice) - Number(a.changePrice);
+                      return Number(b.changeRate) - Number(a.changeRate);
                     }
 
                     if (sorter['riseFallRate'] === 'asc') {
-                      return Number(a.changePrice) - Number(b.changePrice);
+                      return Number(a.changeRate) - Number(b.changeRate);
                     }
 
                     if (sorter['amount24'] === 'desc') {
@@ -1736,14 +1736,14 @@ export const TestPage = () => {
                     >
                       <TableCell>
                         <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
-                          ${invoice.contract_code}
+                          ${invoice.symbol}
                         </a>
                       </TableCell>
                       <TableCell>{Number(invoice.last)}</TableCell>
                       <TableCell
-                        className={Number(invoice.changePrice) > 0 ? 'profitCell' : Number(invoice.changePrice) < 0 ? 'lossCell' : ''}
+                        className={Number(invoice.changeRate) > 0 ? 'profitCell' : Number(invoice.changeRate) < 0 ? 'lossCell' : ''}
                       >
-                        {Number(invoice.changePrice0 * 100).toFixed(2)}%
+                        {Number(invoice.changeRate * 100).toFixed(2)}%
                       </TableCell>
                       <TableCell>{moneyFormat(invoice.volValue, 'USD', 0, 0)}</TableCell>
                     </TableRow>

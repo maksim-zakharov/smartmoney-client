@@ -5,7 +5,7 @@ export const kucoinApi = createApi({
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
     // baseUrl: 'http://localhost:3000/ctrader',
-    baseUrl: 'https://api.kucoin.com/',
+    baseUrl: 'https://176.114.69.4/kucoin',
     paramsSerializer: (params) => {
       return new URLSearchParams(
         Object.entries(params).flatMap(([key, value]) =>
@@ -17,11 +17,8 @@ export const kucoinApi = createApi({
   endpoints: (builder) => ({
     getKuCoinTickers: builder.query<any, any>({
       query: (params) => ({
-        url: '/api/v1/market/allTickers',
+        url: '/tickers',
       }),
-      transformResponse(baseQueryReturnValue: any): any {
-        return baseQueryReturnValue?.data?.ticker;
-      },
     }),
   }),
 });
