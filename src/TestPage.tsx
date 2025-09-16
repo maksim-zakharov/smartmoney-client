@@ -1731,8 +1731,8 @@ export const TestPage = () => {
                   })
                   .map((invoice, index) => (
                     <TableRow
-                      className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `KUKOIN:${invoice.symbol}` && 'rowHover')}
-                      onClick={(e) => setSelected(`KUKOIN:${invoice.symbol}`)}
+                      className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `KUCOIN:${invoice.symbol}` && 'rowHover')}
+                      onClick={(e) => setSelected(`KUCOIN:${invoice.symbol}`)}
                     >
                       <TableCell>
                         <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
