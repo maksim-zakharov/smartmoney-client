@@ -12,6 +12,7 @@ import { gateApi } from './api/gate.api.ts';
 import { bybitApi } from './api/bybit.api.ts';
 import { binanceApi } from './api/binance.api.ts';
 import { htxApi } from './api/htx.api.ts';
+import { kucoinApi } from './api/kucoin.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -26,6 +27,7 @@ export const reducers = {
   [bybitApi.reducerPath]: bybitApi.reducer,
   [binanceApi.reducerPath]: binanceApi.reducer,
   [htxApi.reducerPath]: htxApi.reducer,
+  [kucoinApi.reducerPath]: kucoinApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -46,6 +48,7 @@ export const store = configureStore({
       .concat(bybitApi.middleware)
       .concat(binanceApi.middleware)
       .concat(htxApi.middleware)
+      .concat(kucoinApi.middleware)
       .concat(api.middleware) as any,
 });
 
