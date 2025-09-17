@@ -1336,7 +1336,7 @@ export const TestPage = () => {
                           </a>
                         </div>
                       </TableCell>
-                      <TableCell>{dayjs(invoice.createTime).format('MM-DD-YYYY HH:mm')}</TableCell>
+                      <TableCell>{dayjs(invoice.createTime).format('DD-MM-YYYY HH:mm')}</TableCell>
                       <TableCell>{invoice.lastPrice}</TableCell>
                       <TableCell
                         className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
@@ -1434,6 +1434,19 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        maxAmount: prevState.maxAmount === 'desc' ? 'asc' : prevState.maxAmount === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['maxAmount'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['maxAmount'] === 'asc' && <ArrowUpWideNarrow size={13} />} Макс объем
+                    </div>
+                  </TableHead>
+                  <TableHead
                     className="w-[350px]"
                     onClick={() =>
                       setSorter((prevState) => ({
@@ -1515,7 +1528,7 @@ export const TestPage = () => {
                           </a>
                         </div>
                       </TableCell>
-                      <TableCell>{dayjs(invoice.createTime).format('MM-DD-YYYY HH:mm')}</TableCell>
+                      <TableCell>{dayjs(invoice.createTime).format('DD-MM-YYYY HH:mm')}</TableCell>
                       <TableCell>{invoice.lastPrice}</TableCell>
                       <TableCell
                         className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
@@ -1523,6 +1536,16 @@ export const TestPage = () => {
                         {(Number(invoice.riseFallRate) * 100).toFixed(2)}%
                       </TableCell>
                       <TableCell>{moneyFormat(invoice.amount24, 'USD', 0, 0)}</TableCell>
+                      <TableCell>
+                        {moneyFormat(
+                          mexcContractDetailsMap.get(invoice.symbol)?.contractSize *
+                            mexcContractDetailsMap.get(invoice.symbol)?.maxVol *
+                            invoice.lastPrice,
+                          'USD',
+                          0,
+                          0,
+                        )}
+                      </TableCell>
                       <TableCell>
                         {/*<div className="flex gap-1">*/}
                         {/*  {(mexcContractDetailsMap.get(invoice.symbol)?.indexOrigin || []).map((exchange) =>*/}
