@@ -131,7 +131,7 @@ export const TestPage = () => {
     },
   );
 
-  const bingxMap = useMemo(() => new Set<string>(bingxTickers.map((t) => t.symbol)), [bingxTickers]);
+  const bingxMap = useMemo(() => new Set<string>(bingxTickers.map((t) => t.symbol.split('-USDT')[0])), [bingxTickers]);
 
   const { data: gateTickers = [] } = useGetGateTickersQuery(
     {},
@@ -140,7 +140,7 @@ export const TestPage = () => {
     },
   );
 
-  const gateMap = useMemo(() => new Set<string>(gateTickers.map((t) => t.symbol)), [gateTickers]);
+  const gateMap = useMemo(() => new Set<string>(gateTickers.map((t) => t.contract.split('_USDT')[0])), [gateTickers]);
 
   const { data: bybitTickers = [] } = useGetBYBITTickersQuery(
     {},
@@ -173,6 +173,8 @@ export const TestPage = () => {
       pollingInterval: 5000,
     },
   );
+
+  const kukoinMap = useMemo(() => new Set<string>(kukoinTickers.map((t) => t.symbol.split('-USDT')[0])), [kukoinTickers]);
 
   const { data: mexcContractDetails = [] } = useGetContractDetailsQuery(
     {},
@@ -409,6 +411,11 @@ export const TestPage = () => {
 
   const options: { label: string; value: string; imgSrc?: string }[] = [
     { label: 'Mexc Фьючерсы', value: 'mexc-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png' },
+    {
+      label: 'Mexc Фьюч (New)',
+      value: 'mexc-futures-new',
+      imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png',
+    },
     { label: 'Gate Фьючерсы', value: 'gate-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/302.png' },
     { label: 'Bingx Фьючерсы', value: 'bingx-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/1064.png' },
     { label: 'Bybit Фьючерсы', value: 'bybit-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png' },
@@ -433,6 +440,7 @@ export const TestPage = () => {
     OKX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/294.png',
     BITSTAMP: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/70.png',
     BITFINEX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/37.png',
+    BINGX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/1064.png',
   };
 
   const totalPositions = useMemo(() => {
@@ -541,8 +549,11 @@ export const TestPage = () => {
         {/*{marketPairs.map((mp) => (*/}
         {/*  <img className="h-5 rounded-full" src={`https://s2.coinmarketcap.com/static/img/exchanges/64x64/${mp.exchangeId}.png`} />*/}
         {/*))}*/}
-        {binanceMap[symbol.split('_')[0]] && 'Binance'}
-        {bybitMap[symbol.split('_')[0]] && 'Bybit'}
+        {binanceMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BINANCE']} />}
+        {bybitMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BYBIT']} />}
+        {gateMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['GATEIO']} />}
+        {bingxMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BINGX']} />}
+        {kukoinMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['KUCOIN']} />}
       </div>
     );
   };
@@ -1196,6 +1207,19 @@ export const TestPage = () => {
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
+                        createTime: prevState.createTime === 'desc' ? 'asc' : prevState.createTime === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['createTime'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['createTime'] === 'asc' && <ArrowUpWideNarrow size={13} />} Время создания
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
                         price: prevState.price === 'desc' ? 'asc' : prevState.price === 'asc' ? undefined : 'desc',
                       }))
                     }
@@ -1249,6 +1273,7 @@ export const TestPage = () => {
               </TableHeader>
               <TableBody>
                 {[...mexcTickers]
+                  .map((t) => ({ ...t, createTime: mexcContractDetailsMap.get(t.symbol)?.createTime }))
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;
@@ -1286,6 +1311,14 @@ export const TestPage = () => {
                       return a.symbol.localeCompare(b.symbol);
                     }
 
+                    if (sorter['createTime'] === 'desc') {
+                      return b.createTime - a.createTime;
+                    }
+
+                    if (sorter['createTime'] === 'asc') {
+                      return a.createTime - b.createTime;
+                    }
+
                     return 0;
                   })
                   .map((invoice, index) => (
@@ -1299,10 +1332,190 @@ export const TestPage = () => {
                             <img className="h-4 rounded-full" src={mexcContractDetailsMap.get(invoice.symbol)?.baseCoinIconUrl} />
                           )}
                           <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
-                            ${invoice.symbol}
+                            ${invoice.symbol} {mexcContractDetailsMap.get(invoice.symbol)?.isNew && '(Новый)'}
                           </a>
                         </div>
                       </TableCell>
+                      <TableCell>{dayjs(invoice.createTime).format('MM-DD-YYYY HH:mm')}</TableCell>
+                      <TableCell>{invoice.lastPrice}</TableCell>
+                      <TableCell
+                        className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
+                      >
+                        {(Number(invoice.riseFallRate) * 100).toFixed(2)}%
+                      </TableCell>
+                      <TableCell>{moneyFormat(invoice.amount24, 'USD', 0, 0)}</TableCell>
+                      <TableCell>
+                        {/*<div className="flex gap-1">*/}
+                        {/*  {(mexcContractDetailsMap.get(invoice.symbol)?.indexOrigin || []).map((exchange) =>*/}
+                        {/*    exchangeImgMap[exchange] ? <img className="h-5 rounded-full" src={exchangeImgMap[exchange]} /> : exchange,*/}
+                        {/*  )}*/}
+                        {/*</div>*/}
+                        <Exchanges symbol={invoice.symbol} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TabsContent>
+          <TabsContent value="mexc-futures-new">
+            <Table wrapperClassName="pt-2 h-120">
+              {/*<TableHeader>*/}
+              {/*  <TableRow>*/}
+              {/*    <TableHead className="w-[200px] text-left" colSpan={4}>*/}
+              {/*      Mexc Фьючерсы*/}
+              {/*    </TableHead>*/}
+              {/*  </TableRow>*/}
+              {/*</TableHeader>*/}
+              <TableHeader className="bg-[rgb(36,52,66)]">
+                <TableRow>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        symbol: prevState.symbol === 'desc' ? 'asc' : prevState.symbol === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['symbol'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['symbol'] === 'asc' && <ArrowUpWideNarrow size={13} />} Тикер
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        createTime: prevState.createTime === 'desc' ? 'asc' : prevState.createTime === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['createTime'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['createTime'] === 'asc' && <ArrowUpWideNarrow size={13} />} Время создания
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        price: prevState.price === 'desc' ? 'asc' : prevState.price === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['price'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[350px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        exchange: prevState.exchange === 'desc' ? 'asc' : prevState.exchange === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['exchange'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['exchange'] === 'asc' && <ArrowUpWideNarrow size={13} />} Биржи
+                    </div>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...mexcTickers]
+                  .map((t) => ({ ...t, createTime: mexcContractDetailsMap.get(t.symbol)?.createTime }))
+                  .filter((invoice) => mexcContractDetailsMap.get(invoice.symbol)?.isNew)
+                  .sort((a, b) => {
+                    if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
+                      return 0;
+                    }
+
+                    if (sorter['price'] === 'desc') {
+                      return Number(b.lastPrice) - Number(a.lastPrice);
+                    }
+
+                    if (sorter['price'] === 'asc') {
+                      return Number(a.lastPrice) - Number(b.lastPrice);
+                    }
+
+                    if (sorter['riseFallRate'] === 'desc') {
+                      return Number(b.riseFallRate) - Number(a.riseFallRate);
+                    }
+
+                    if (sorter['riseFallRate'] === 'asc') {
+                      return Number(a.riseFallRate) - Number(b.riseFallRate);
+                    }
+
+                    if (sorter['amount24'] === 'desc') {
+                      return Number(b.amount24) - Number(a.amount24);
+                    }
+
+                    if (sorter['amount24'] === 'asc') {
+                      return Number(a.amount24) - Number(b.amount24);
+                    }
+
+                    if (sorter['symbol'] === 'desc') {
+                      return b.symbol.localeCompare(a.symbol);
+                    }
+
+                    if (sorter['symbol'] === 'asc') {
+                      return a.symbol.localeCompare(b.symbol);
+                    }
+
+                    if (sorter['createTime'] === 'desc') {
+                      return b.createTime - a.createTime;
+                    }
+
+                    if (sorter['createTime'] === 'asc') {
+                      return a.createTime - b.createTime;
+                    }
+
+                    return 0;
+                  })
+                  .map((invoice, index) => (
+                    <TableRow
+                      className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `MEXC:${invoice.symbol}` && 'rowHover')}
+                      onClick={(e) => setSelected(`MEXC:${invoice.symbol}`)}
+                    >
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {mexcContractDetailsMap.get(invoice.symbol)?.baseCoinIconUrl && (
+                            <img className="h-4 rounded-full" src={mexcContractDetailsMap.get(invoice.symbol)?.baseCoinIconUrl} />
+                          )}
+                          <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
+                            ${invoice.symbol} {mexcContractDetailsMap.get(invoice.symbol)?.isNew && '(Новый)'}
+                          </a>
+                        </div>
+                      </TableCell>
+                      <TableCell>{dayjs(invoice.createTime).format('MM-DD-YYYY HH:mm')}</TableCell>
                       <TableCell>{invoice.lastPrice}</TableCell>
                       <TableCell
                         className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
