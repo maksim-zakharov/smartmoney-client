@@ -41,6 +41,12 @@ export class DataService {
     return this.mexcSpotWsClient.subscribeCandles(symbol, resolution);
   }
 
+  mexcUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_')) return this.mexcWsClient.unsubscribeCandles(symbol, resolution);
+
+    return Promise.resolve(); //  this.mexcSpotWsClient.subscribeCandles(symbol, resolution);
+  }
+
   gateSubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.gateWsClient.subscribeCandles(symbol, resolution);
   }

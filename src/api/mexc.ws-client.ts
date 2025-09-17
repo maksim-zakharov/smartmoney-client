@@ -65,6 +65,22 @@ export class MexcWsClient extends SubscriptionManager {
     return subj;
   }
 
+  unsubscribeCandles(symbol: string, resolution: string) {
+    const subj = new Subject<any>();
+    const interval = `Min${resolution}`;
+    const key = `${symbol}_${interval}`;
+    this.subscribeSubjs.set(key, subj);
+    this.subscribe({
+      method: 'unsub.kline',
+      param: {
+        symbol,
+        interval,
+      },
+    });
+
+    return subj;
+  }
+
   subscribeOrderbook(symbol: string, depth: number) {
     const subj = new Subject<any>();
     const key = `depth_${symbol}`;

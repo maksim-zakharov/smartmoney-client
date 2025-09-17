@@ -267,10 +267,12 @@ export class DataFeed implements IBasicDataFeed {
   ): void {
     const secondProm = async (symbol: string, callback) => {
       const isForex = symbol.includes('_xp');
+      // TODO Сделать отписки
       if (isForex) {
         return this.dataService.ctraderSubscribeCandles(symbol, resolution).subscribe((data) => {
           callback(data);
         });
+        // TODO BYBIT крипо работают свечи в целом
       } else if (symbol.includes('BYBIT')) {
         this.dataService.bybitSubscribeCandles(symbol.split('BYBIT:')[1], resolution).subscribe((data) => {
           callback(data);
@@ -283,10 +285,14 @@ export class DataFeed implements IBasicDataFeed {
         });
 
         return () => this.dataService.gateUnsubscribeCandles(symbol.split('GATE:')[1], resolution);
+        // TODO Сделать отписки для спота
       } else if (symbol.includes('MEXC')) {
-        return this.dataService.mexcSubscribeCandles(symbol.split('MEXC:')[1], resolution).subscribe((data) => {
+        this.dataService.mexcSubscribeCandles(symbol.split('MEXC:')[1], resolution).subscribe((data) => {
           callback(data);
         });
+
+        return () => this.dataService.mexcUnsubscribeCandles(symbol.split('MEXC:')[1], resolution);
+        // TODO Сделать отписки
       } else if (symbol.includes('FINAM')) {
         return this.dataService.finamSubscribeCandles(symbol.split('FINAM:')[1], resolution).subscribe((data) => {
           callback(data);

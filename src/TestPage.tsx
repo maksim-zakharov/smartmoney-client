@@ -13,7 +13,7 @@ import { Button } from './components/ui/button.tsx';
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, CirclePlus, CircleX } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Checkbox } from './components/ui/checkbox.tsx';
-import { useGetMEXCContractQuery, useGetTickersQuery } from './api/mexc.api.ts';
+import { useGetContractDetailsQuery, useGetMEXCContractQuery, useGetTickersQuery } from './api/mexc.api.ts';
 import { TypographyParagraph } from './components/ui/typography.tsx';
 import { toast } from 'sonner';
 import { Input } from './components/ui/input.tsx';
@@ -130,36 +130,58 @@ export const TestPage = () => {
       pollingInterval: 5000,
     },
   );
+
+  const bingxMap = useMemo(() => new Set<string>(bingxTickers.map((t) => t.symbol)), [bingxTickers]);
+
   const { data: gateTickers = [] } = useGetGateTickersQuery(
     {},
     {
       pollingInterval: 5000,
     },
   );
+
+  const gateMap = useMemo(() => new Set<string>(gateTickers.map((t) => t.symbol)), [gateTickers]);
+
   const { data: bybitTickers = [] } = useGetBYBITTickersQuery(
     {},
     {
       pollingInterval: 5000,
     },
   );
+
+  const bybitMap = useMemo(() => new Set<string>(bybitTickers.map((t) => t.symbol.split('USDT')[0])), [bybitTickers]);
+
   const { data: binanceTickers = [] } = useGetBinanceTickersQuery(
     {},
     {
       pollingInterval: 5000,
     },
   );
+
+  const binanceMap = useMemo(() => new Set<string>(binanceTickers.map((t) => t.symbol.split('USDT')[0])), [binanceTickers]);
+
   const { data: htxTickers = [] } = useGetHTXTickersQuery(
     {},
     {
       pollingInterval: 5000,
     },
   );
+
   const { data: kukoinTickers = [] } = useGetKuCoinTickersQuery(
     {},
     {
       pollingInterval: 5000,
     },
   );
+
+  const { data: mexcContractDetails = [] } = useGetContractDetailsQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
+
+  const mexcContractDetailsMap = useMemo(() => new Map<string, any>(mexcContractDetails.map((s) => [s.symbol, s])), [mexcContractDetails]);
 
   const [sorter, setSorter] = useState<any>({
     riseFallRate: 'desc',
@@ -395,6 +417,24 @@ export const TestPage = () => {
     { label: 'KuCoin Фьючерсы', value: 'kucoin-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/311.png' },
   ];
 
+  const exchangeImgMap = {
+    BINANCE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png',
+    BINANCE_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png',
+    HTX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/102.png',
+    MEXC: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png',
+    GATEIO: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/302.png',
+    KUCOIN: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/311.png',
+    BYBIT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png',
+    BYBIT_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png',
+    BITGET: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/513.png',
+    BITGET_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/513.png',
+    COINBASE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/89.png',
+    KRAKEN: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/24.png',
+    OKX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/294.png',
+    BITSTAMP: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/70.png',
+    BITFINEX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/37.png',
+  };
+
   const totalPositions = useMemo(() => {
     const tiPos = [...(tinkoffPortfolio?.positions || [])];
     tiPos.push(
@@ -464,6 +504,47 @@ export const TestPage = () => {
     if (invoice.includes('.') || invoice === 'RUB') return <AlorLabel symbol={invoice} />;
 
     return <FigiLabel uid={invoice} />;
+  };
+
+  const Exchanges = ({ symbol }: { symbol: string }) => {
+    // const { data: tickers = [] } = useSearchTickersQuery(
+    //   {
+    //     q: symbol.toLowerCase().split('_')[0],
+    //   },
+    //   {
+    //     skip: !symbol,
+    //   },
+    // );
+    //
+    // const cids = useMemo(() => new Set<number>(tickers.map((t) => t.cid).filter(Boolean)), [tickers]);
+    //
+    // const { data: quotes = [] } = useGetQuotesByIdsQuery(
+    //   {
+    //     ids: Array.from(cids),
+    //   },
+    //   {
+    //     skip: !cids.size,
+    //   },
+    // );
+    //
+    // const { data: marketPairs = [] } = useGetCryptocurrencyBySlugQuery(
+    //   {
+    //     slug: quotes[0]?.slug,
+    //   },
+    //   {
+    //     skip: !quotes.length,
+    //   },
+    // );
+
+    return (
+      <div className="flex gap-1">
+        {/*{marketPairs.map((mp) => (*/}
+        {/*  <img className="h-5 rounded-full" src={`https://s2.coinmarketcap.com/static/img/exchanges/64x64/${mp.exchangeId}.png`} />*/}
+        {/*))}*/}
+        {binanceMap[symbol.split('_')[0]] && 'Binance'}
+        {bybitMap[symbol.split('_')[0]] && 'Bybit'}
+      </div>
+    );
   };
 
   return (
@@ -1099,7 +1180,6 @@ export const TestPage = () => {
               <TableHeader className="bg-[rgb(36,52,66)]">
                 <TableRow>
                   <TableHead
-                    className="w-[200px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1113,7 +1193,6 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[200px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1127,7 +1206,6 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[200px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1141,7 +1219,6 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[200px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1152,6 +1229,20 @@ export const TestPage = () => {
                     <div className="flex gap-3 items-center cursor-pointer">
                       {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
                       {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[350px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        exchange: prevState.exchange === 'desc' ? 'asc' : prevState.exchange === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['exchange'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['exchange'] === 'asc' && <ArrowUpWideNarrow size={13} />} Биржи
                     </div>
                   </TableHead>
                 </TableRow>
@@ -1203,9 +1294,14 @@ export const TestPage = () => {
                       onClick={(e) => setSelected(`MEXC:${invoice.symbol}`)}
                     >
                       <TableCell>
-                        <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
-                          ${invoice.symbol}
-                        </a>
+                        <div className="flex gap-1">
+                          {mexcContractDetailsMap.get(invoice.symbol)?.baseCoinIconUrl && (
+                            <img className="h-4 rounded-full" src={mexcContractDetailsMap.get(invoice.symbol)?.baseCoinIconUrl} />
+                          )}
+                          <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
+                            ${invoice.symbol}
+                          </a>
+                        </div>
                       </TableCell>
                       <TableCell>{invoice.lastPrice}</TableCell>
                       <TableCell
@@ -1214,6 +1310,14 @@ export const TestPage = () => {
                         {(Number(invoice.riseFallRate) * 100).toFixed(2)}%
                       </TableCell>
                       <TableCell>{moneyFormat(invoice.amount24, 'USD', 0, 0)}</TableCell>
+                      <TableCell>
+                        {/*<div className="flex gap-1">*/}
+                        {/*  {(mexcContractDetailsMap.get(invoice.symbol)?.indexOrigin || []).map((exchange) =>*/}
+                        {/*    exchangeImgMap[exchange] ? <img className="h-5 rounded-full" src={exchangeImgMap[exchange]} /> : exchange,*/}
+                        {/*  )}*/}
+                        {/*</div>*/}
+                        <Exchanges symbol={invoice.symbol} />
+                      </TableCell>
                     </TableRow>
                   ))}
               </TableBody>

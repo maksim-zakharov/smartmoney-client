@@ -31,7 +31,14 @@ export const mexcApi = createApi({
         params,
       }),
     }),
+    getContractDetails: builder.query<any, any>({
+      query: (params) => ({
+        url: '/contract',
+        params,
+      }),
+    }),
   }),
 });
 
-export const { useGetMEXCCandlesQuery, useGetTickersQuery, useGetMEXCContractQuery, useGetMEXCPositionsQuery } = mexcApi;
+export const { useGetMEXCCandlesQuery, useGetContractDetailsQuery, useGetTickersQuery, useGetMEXCContractQuery, useGetMEXCPositionsQuery } =
+  mexcApi;
