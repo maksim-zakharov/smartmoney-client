@@ -197,7 +197,7 @@ export class DataService {
           return res.json();
         }),
       ).pipe(
-        map((r) => ({ history: r })),
+        map((r) => ({ history: r.sort((a, b) => a.time - b.time) })),
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
     } else if (ticker.includes('BINANCE:')) {
