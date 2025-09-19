@@ -17,7 +17,7 @@ export const bingxApi = createApi({
   endpoints: (builder) => ({
     getBINGXTickers: builder.query<any, any>({
       query: (params) => ({
-        url: '/stats',
+        url: '/stats-2',
         params,
       }),
     }),

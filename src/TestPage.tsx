@@ -1064,7 +1064,6 @@ export const TestPage = () => {
               <TableHeader className="bg-[rgb(36,52,66)]">
                 <TableRow>
                   <TableHead
-                    className="w-[200px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1078,7 +1077,19 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        createTime: prevState.createTime === 'desc' ? 'asc' : prevState.createTime === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['createTime'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['createTime'] === 'asc' && <ArrowUpWideNarrow size={13} />} Время создания
+                    </div>
+                  </TableHead>
+                  <TableHead
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1092,7 +1103,6 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[200px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1106,7 +1116,6 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[200px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1143,27 +1152,27 @@ export const TestPage = () => {
                     }
 
                     if (sorter['price'] === 'desc') {
-                      return Number(b.lastPrice) - Number(a.lastPrice);
+                      return Number(b.lastPrice || b.tradePrice) - Number(a.lastPrice || a.tradePrice);
                     }
 
                     if (sorter['price'] === 'asc') {
-                      return Number(a.lastPrice) - Number(b.lastPrice);
+                      return Number(a.lastPrice || a.tradePrice) - Number(b.lastPrice || b.tradePrice);
                     }
 
                     if (sorter['riseFallRate'] === 'desc') {
-                      return Number(b.priceChangePercent) - Number(a.priceChangePercent);
+                      return Number(b.priceChangePercent || b.changePercentage) - Number(a.priceChangePercent || a.changePercentage);
                     }
 
                     if (sorter['riseFallRate'] === 'asc') {
-                      return Number(a.priceChangePercent) - Number(b.priceChangePercent);
+                      return Number(a.priceChangePercent || a.changePercentage) - Number(b.priceChangePercent || b.changePercentage);
                     }
 
                     if (sorter['amount24'] === 'desc') {
-                      return Number(b.quoteVolume) - Number(a.quoteVolume);
+                      return Number(b.quoteVolume || b.valueF) - Number(a.quoteVolume || a.valueF);
                     }
 
                     if (sorter['amount24'] === 'asc') {
-                      return Number(a.quoteVolume) - Number(b.quoteVolume);
+                      return Number(a.quoteVolume || a.valueF) - Number(b.quoteVolume || b.valueF);
                     }
 
                     if (sorter['symbol'] === 'desc') {
@@ -1172,6 +1181,14 @@ export const TestPage = () => {
 
                     if (sorter['symbol'] === 'asc') {
                       return a.symbol.localeCompare(b.symbol);
+                    }
+
+                    if (sorter['createTime'] === 'desc') {
+                      return b.openTime - a.openTime;
+                    }
+
+                    if (sorter['createTime'] === 'asc') {
+                      return a.openTime - b.openTime;
                     }
 
                     return 0;
@@ -1186,15 +1203,20 @@ export const TestPage = () => {
                           ${invoice.symbol}
                         </a>
                       </TableCell>
-                      <TableCell>{invoice.lastPrice}</TableCell>
+                      <TableCell>{invoice.openTime ? dayjs(invoice.openTime).format('DD-MM-YYYY HH:mm') : '-'}</TableCell>
+                      <TableCell>{invoice.lastPrice || invoice.tradePrice}</TableCell>
                       <TableCell
                         className={
-                          Number(invoice.priceChangePercent) > 0 ? 'profitCell' : Number(invoice.priceChangePercent) < 0 ? 'lossCell' : ''
+                          Number(invoice.priceChangePercent || invoice.changePercentage) > 0
+                            ? 'profitCell'
+                            : Number(invoice.priceChangePercent || invoice.changePercentage) < 0
+                              ? 'lossCell'
+                              : ''
                         }
                       >
-                        {Number(invoice.priceChangePercent)}%
+                        {Number(invoice.priceChangePercent || invoice.changePercentage)}%
                       </TableCell>
-                      <TableCell>{moneyFormatCompact(invoice.quoteVolume, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.quoteVolume || invoice.valueF, 'USD', 0, 0)}</TableCell>
                       <TableCell>
                         <Exchanges symbol={invoice.symbol?.split('-')[0]} />
                       </TableCell>
