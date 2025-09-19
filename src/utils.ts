@@ -939,3 +939,21 @@ function toMskTime(utcDate: Date): Date {
 export function normalizePrice(rawPrice: number, digits: number): number {
   return rawPrice / Math.pow(10, digits);
 }
+
+export const moneyFormatCompact = (
+  money: number,
+  currency: string = 'RUB',
+  minimumFractionDigits: number = 0,
+  maximumFractionDigits: number = 0,
+) => {
+  const options: Intl.NumberFormatOptions = {
+    style: 'currency',
+    notation: 'compact',
+    currency,
+    minimumFractionDigits,
+    maximumFractionDigits,
+  };
+  const numberFormat = new Intl.NumberFormat('en-US', options);
+
+  return numberFormat.format(money);
+};

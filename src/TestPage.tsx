@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Col, Row } from 'antd';
 import { useAppSelector } from './store';
 import { moneyFormat, numberFormat } from './MainPage/MainPage';
-import { normalizePrice } from './utils';
+import { moneyFormatCompact, normalizePrice } from './utils';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { cn } from './lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
@@ -55,7 +55,7 @@ const MEXCLabel = ({ symbol }) => {
 
 const AlorLabel = ({ symbol }) => {
   const map = {
-    GD: 'GoldFut2',
+    GOLD: 'GoldFut2',
     PLD: 'Palladium',
     PLT: 'Platinum',
     UCNY: 'USDCNY',
@@ -124,6 +124,9 @@ export const TestPage = () => {
       pollingInterval: 5000,
     },
   );
+
+  const mexcMap = useMemo(() => new Set<string>(mexcTickers.map((t) => t.symbol.split('_USDT')[0])), [mexcTickers]);
+
   const { data: bingxTickers = [] } = useGetBINGXTickersQuery(
     {},
     {
@@ -166,6 +169,8 @@ export const TestPage = () => {
       pollingInterval: 5000,
     },
   );
+
+  const htxMap = useMemo(() => new Set<string>(htxTickers.map((t) => t.contract_code.split('-USDT')[0])), [htxTickers]);
 
   const { data: kukoinTickers = [] } = useGetKuCoinTickersQuery(
     {},
@@ -549,11 +554,13 @@ export const TestPage = () => {
         {/*{marketPairs.map((mp) => (*/}
         {/*  <img className="h-5 rounded-full" src={`https://s2.coinmarketcap.com/static/img/exchanges/64x64/${mp.exchangeId}.png`} />*/}
         {/*))}*/}
-        {binanceMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BINANCE']} />}
-        {bybitMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BYBIT']} />}
-        {gateMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['GATEIO']} />}
-        {bingxMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BINGX']} />}
-        {kukoinMap.has(symbol.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['KUCOIN']} />}
+        {binanceMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BINANCE']} />}
+        {bybitMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BYBIT']} />}
+        {gateMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['GATEIO']} />}
+        {bingxMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BINGX']} />}
+        {kukoinMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['KUCOIN']} />}
+        {mexcMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['MEXC']} />}
+        {htxMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['HTX']} />}
       </div>
     );
   };
@@ -1039,7 +1046,7 @@ export const TestPage = () => {
                       >
                         {Number(invoice.change_percentage)}%
                       </TableCell>
-                      <TableCell>{moneyFormat(invoice.volume_24h, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.volume_24h, 'USD', 0, 0)}</TableCell>
                     </TableRow>
                   ))}
               </TableBody>
@@ -1112,6 +1119,20 @@ export const TestPage = () => {
                       {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
                     </div>
                   </TableHead>
+                  <TableHead
+                    className="w-[550px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        exchange: prevState.exchange === 'desc' ? 'asc' : prevState.exchange === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['exchange'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['exchange'] === 'asc' && <ArrowUpWideNarrow size={13} />} Биржи
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1173,7 +1194,10 @@ export const TestPage = () => {
                       >
                         {Number(invoice.priceChangePercent)}%
                       </TableCell>
-                      <TableCell>{moneyFormat(invoice.quoteVolume, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.quoteVolume, 'USD', 0, 0)}</TableCell>
+                      <TableCell>
+                        <Exchanges symbol={invoice.symbol?.split('-')[0]} />
+                      </TableCell>
                     </TableRow>
                   ))}
               </TableBody>
@@ -1256,7 +1280,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[350px]"
+                    className="w-[550px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1343,7 +1367,7 @@ export const TestPage = () => {
                       >
                         {(Number(invoice.riseFallRate) * 100).toFixed(2)}%
                       </TableCell>
-                      <TableCell>{moneyFormat(invoice.amount24, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.amount24, 'USD', 0, 0)}</TableCell>
                       <TableCell>
                         {/*<div className="flex gap-1">*/}
                         {/*  {(mexcContractDetailsMap.get(invoice.symbol)?.indexOrigin || []).map((exchange) =>*/}
@@ -1443,11 +1467,11 @@ export const TestPage = () => {
                   >
                     <div className="flex gap-3 items-center cursor-pointer">
                       {sorter['maxAmount'] === 'desc' && <ArrowDownWideNarrow size={13} />}
-                      {sorter['maxAmount'] === 'asc' && <ArrowUpWideNarrow size={13} />} Макс объем
+                      {sorter['maxAmount'] === 'asc' && <ArrowUpWideNarrow size={13} />} MaxVol
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[350px]"
+                    className="w-[550px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1535,7 +1559,7 @@ export const TestPage = () => {
                       >
                         {(Number(invoice.riseFallRate) * 100).toFixed(2)}%
                       </TableCell>
-                      <TableCell>{moneyFormat(invoice.amount24, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.amount24, 'USD', 0, 2)}</TableCell>
                       <TableCell>
                         {moneyFormat(
                           mexcContractDetailsMap.get(invoice.symbol)?.contractSize *
@@ -1688,7 +1712,7 @@ export const TestPage = () => {
                       >
                         {Number(invoice.priceChangePercent).toFixed(2)}%
                       </TableCell>
-                      <TableCell>{moneyFormat(invoice.volume, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.volume, 'USD', 0, 0)}</TableCell>
                     </TableRow>
                   ))}
               </TableBody>
@@ -1820,7 +1844,7 @@ export const TestPage = () => {
                       >
                         {(Number(invoice.price24hPcnt) * 100).toFixed(2)}%
                       </TableCell>
-                      <TableCell>{moneyFormat(invoice.turnover24h, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.turnover24h, 'USD', 0, 0)}</TableCell>
                     </TableRow>
                   ))}
               </TableBody>
@@ -1893,6 +1917,20 @@ export const TestPage = () => {
                       {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
                     </div>
                   </TableHead>
+                  <TableHead
+                    className="w-[550px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        exchange: prevState.exchange === 'desc' ? 'asc' : prevState.exchange === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['exchange'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['exchange'] === 'asc' && <ArrowUpWideNarrow size={13} />} Биржи
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1953,7 +1991,10 @@ export const TestPage = () => {
                       >
                         {(invoice.priceChangePercent * 100).toFixed(2)}%
                       </TableCell>
-                      <TableCell>{moneyFormat(invoice.vol, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.vol, 'USD', 0, 0)}</TableCell>
+                      <TableCell>
+                        <Exchanges symbol={invoice.contract_code?.split('-')[0]} />
+                      </TableCell>
                     </TableRow>
                   ))}
               </TableBody>
@@ -2085,7 +2126,7 @@ export const TestPage = () => {
                       >
                         {Number(invoice.changeRate * 100).toFixed(2)}%
                       </TableCell>
-                      <TableCell>{moneyFormat(invoice.volValue, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.volValue, 'USD', 0, 0)}</TableCell>
                     </TableRow>
                   ))}
               </TableBody>
