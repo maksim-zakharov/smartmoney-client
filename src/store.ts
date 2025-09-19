@@ -14,6 +14,8 @@ import { binanceApi } from './api/binance.api.ts';
 import { htxApi } from './api/htx.api.ts';
 import { kucoinApi } from './api/kucoin.api.ts';
 import { coinmarketcapApi } from './api/coinmarketcap.api.ts';
+import { bitgetApi } from './api/bitget.api.ts';
+import { bitstampApi } from './api/bitstamp.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -30,6 +32,8 @@ export const reducers = {
   [htxApi.reducerPath]: htxApi.reducer,
   [kucoinApi.reducerPath]: kucoinApi.reducer,
   [coinmarketcapApi.reducerPath]: coinmarketcapApi.reducer,
+  [bitgetApi.reducerPath]: bitgetApi.reducer,
+  [bitstampApi.reducerPath]: bitstampApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -52,6 +56,8 @@ export const store = configureStore({
       .concat(htxApi.middleware)
       .concat(kucoinApi.middleware)
       .concat(coinmarketcapApi.middleware)
+      .concat(bitgetApi.middleware)
+      .concat(bitstampApi.middleware)
       .concat(api.middleware) as any,
 });
 

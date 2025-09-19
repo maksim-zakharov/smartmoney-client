@@ -27,6 +27,8 @@ import { useGetBinanceTickersQuery } from './api/binance.api.ts';
 import dayjs from 'dayjs';
 import { useGetHTXTickersQuery } from './api/htx.api.ts';
 import { useGetKuCoinTickersQuery } from './api/kucoin.api.ts';
+import { useGetBitgetTickersQuery } from './api/bitget.api.ts';
+import { useGetBitstampTickersQuery } from './api/bitstamp.api.ts';
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -180,6 +182,24 @@ export const TestPage = () => {
   );
 
   const kukoinMap = useMemo(() => new Set<string>(kukoinTickers.map((t) => t.symbol.split('-USDT')[0])), [kukoinTickers]);
+
+  const { data: bitgetTickers = [] } = useGetBitgetTickersQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
+
+  const bitgetMap = useMemo(() => new Set<string>(bitgetTickers.map((t) => t.symbol.split('USDT')[0])), [bitgetTickers]);
+
+  const { data: bitstampTickers = [] } = useGetBitstampTickersQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
+
+  const bitstampMap = useMemo(() => new Set<string>(bitstampTickers.map((t) => t.pair.split('/USD-PERP')[0])), [bitstampTickers]);
 
   const { data: mexcContractDetails = [] } = useGetContractDetailsQuery(
     {},
@@ -427,6 +447,8 @@ export const TestPage = () => {
     { label: 'Binance Фьючерсы', value: 'binance-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png' },
     { label: 'HTX Фьючерсы', value: 'htx-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/102.png' },
     { label: 'KuCoin Фьючерсы', value: 'kucoin-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/311.png' },
+    { label: 'Bitget Фьючерсы', value: 'bitget-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/513.png' },
+    { label: 'Bitstamp Фьючерсы', value: 'bitstamp-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/70.png' },
   ];
 
   const exchangeImgMap = {
@@ -561,6 +583,8 @@ export const TestPage = () => {
         {kukoinMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['KUCOIN']} />}
         {mexcMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['MEXC']} />}
         {htxMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['HTX']} />}
+        {bitgetMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BITGET']} />}
+        {bitstampMap.has(symbol?.split('_')[0]) && <img className="h-5 rounded-full" src={exchangeImgMap['BITSTAMP']} />}
       </div>
     );
   };
@@ -1129,7 +1153,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[550px]"
+                    className="w-[650px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1302,7 +1326,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[550px]"
+                    className="w-[650px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1493,7 +1517,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[550px]"
+                    className="w-[650px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1940,7 +1964,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[550px]"
+                    className="w-[650px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -2149,6 +2173,304 @@ export const TestPage = () => {
                         {Number(invoice.changeRate * 100).toFixed(2)}%
                       </TableCell>
                       <TableCell>{moneyFormatCompact(invoice.volValue, 'USD', 0, 0)}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TabsContent>
+          <TabsContent value="bitget-futures">
+            <Table wrapperClassName="pt-2 h-120">
+              {/*<TableHeader>*/}
+              {/*  <TableRow>*/}
+              {/*    <TableHead className="w-[200px] text-left" colSpan={4}>*/}
+              {/*      Mexc Фьючерсы*/}
+              {/*    </TableHead>*/}
+              {/*  </TableRow>*/}
+              {/*</TableHeader>*/}
+              <TableHeader className="bg-[rgb(36,52,66)]">
+                <TableRow>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        symbol: prevState.symbol === 'desc' ? 'asc' : prevState.symbol === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['symbol'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['symbol'] === 'asc' && <ArrowUpWideNarrow size={13} />} Тикер
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        price: prevState.price === 'desc' ? 'asc' : prevState.price === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['price'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[650px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        exchange: prevState.exchange === 'desc' ? 'asc' : prevState.exchange === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['exchange'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['exchange'] === 'asc' && <ArrowUpWideNarrow size={13} />} Биржи
+                    </div>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...bitgetTickers]
+                  .sort((a, b) => {
+                    if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
+                      return 0;
+                    }
+
+                    if (sorter['price'] === 'desc') {
+                      return Number(b.lastPr) - Number(a.lastPr);
+                    }
+
+                    if (sorter['price'] === 'asc') {
+                      return Number(a.lastPr) - Number(b.lastPr);
+                    }
+
+                    if (sorter['riseFallRate'] === 'desc') {
+                      return Number(b.change24h) - Number(a.change24h);
+                    }
+
+                    if (sorter['riseFallRate'] === 'asc') {
+                      return Number(a.change24h) - Number(b.change24h);
+                    }
+
+                    if (sorter['amount24'] === 'desc') {
+                      return Number(b.usdtVolume) - Number(a.usdtVolume);
+                    }
+
+                    if (sorter['amount24'] === 'asc') {
+                      return Number(a.usdtVolume) - Number(b.usdtVolume);
+                    }
+
+                    if (sorter['symbol'] === 'desc') {
+                      return b.symbol.localeCompare(a.symbol);
+                    }
+
+                    if (sorter['symbol'] === 'asc') {
+                      return a.symbol.localeCompare(b.symbol);
+                    }
+
+                    return 0;
+                  })
+                  .map((invoice, index) => (
+                    <TableRow
+                      className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `KUCOIN:${invoice.symbol}` && 'rowHover')}
+                      onClick={(e) => setSelected(`KUCOIN:${invoice.symbol}`)}
+                    >
+                      <TableCell>
+                        <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
+                          ${invoice.symbol}
+                        </a>
+                      </TableCell>
+                      <TableCell>{Number(invoice.lastPr)}</TableCell>
+                      <TableCell className={Number(invoice.change24h) > 0 ? 'profitCell' : Number(invoice.change24h) < 0 ? 'lossCell' : ''}>
+                        {(Number(invoice.change24h) * 100).toFixed(2)}%
+                      </TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.usdtVolume, 'USD', 0, 0)}</TableCell>
+                      <TableCell>
+                        <Exchanges symbol={invoice.symbol?.split('USDT')[0]} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TabsContent>
+          <TabsContent value="bitstamp-futures">
+            <Table wrapperClassName="pt-2 h-120">
+              {/*<TableHeader>*/}
+              {/*  <TableRow>*/}
+              {/*    <TableHead className="w-[200px] text-left" colSpan={4}>*/}
+              {/*      Mexc Фьючерсы*/}
+              {/*    </TableHead>*/}
+              {/*  </TableRow>*/}
+              {/*</TableHeader>*/}
+              <TableHeader className="bg-[rgb(36,52,66)]">
+                <TableRow>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        symbol: prevState.symbol === 'desc' ? 'asc' : prevState.symbol === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['symbol'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['symbol'] === 'asc' && <ArrowUpWideNarrow size={13} />} Тикер
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        price: prevState.price === 'desc' ? 'asc' : prevState.price === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['price'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[200px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[650px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        exchange: prevState.exchange === 'desc' ? 'asc' : prevState.exchange === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['exchange'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['exchange'] === 'asc' && <ArrowUpWideNarrow size={13} />} Биржи
+                    </div>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...bitstampTickers]
+                  .sort((a, b) => {
+                    if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
+                      return 0;
+                    }
+
+                    if (sorter['price'] === 'desc') {
+                      return Number(b.last) - Number(a.last);
+                    }
+
+                    if (sorter['price'] === 'asc') {
+                      return Number(a.last) - Number(b.last);
+                    }
+
+                    if (sorter['riseFallRate'] === 'desc') {
+                      return Number(b.percent_change_24) - Number(a.percent_change_24);
+                    }
+
+                    if (sorter['riseFallRate'] === 'asc') {
+                      return Number(a.percent_change_24) - Number(b.percent_change_24);
+                    }
+
+                    if (sorter['amount24'] === 'desc') {
+                      return Number(b.volume) - Number(a.volume);
+                    }
+
+                    if (sorter['amount24'] === 'asc') {
+                      return Number(a.volume) - Number(b.volume);
+                    }
+
+                    if (sorter['symbol'] === 'desc') {
+                      return b.pair.localeCompare(a.pair);
+                    }
+
+                    if (sorter['symbol'] === 'asc') {
+                      return a.pair.localeCompare(b.pair);
+                    }
+
+                    return 0;
+                  })
+                  .map((invoice, index) => (
+                    <TableRow
+                      className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `KUCOIN:${invoice.pair}` && 'rowHover')}
+                      onClick={(e) => setSelected(`KUCOIN:${invoice.pair}`)}
+                    >
+                      <TableCell>
+                        <a href={`https://www.mexc.com/ru-RU/futures/${invoice.pair}`} target="_blank">
+                          ${invoice.pair}
+                        </a>
+                      </TableCell>
+                      <TableCell>{Number(invoice.lastPr)}</TableCell>
+                      <TableCell
+                        className={
+                          Number(invoice.percent_change_24) > 0 ? 'profitCell' : Number(invoice.percent_change_24) < 0 ? 'lossCell' : ''
+                        }
+                      >
+                        {(Number(invoice.percent_change_24) * 100).toFixed(2)}%
+                      </TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.volume, 'USD', 0, 0)}</TableCell>
+                      <TableCell>
+                        <Exchanges symbol={invoice.pair?.split('/USD-PERP')[0]} />
+                      </TableCell>
                     </TableRow>
                   ))}
               </TableBody>
