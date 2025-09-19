@@ -2459,7 +2459,7 @@ export const TestPage = () => {
                           ${invoice.pair}
                         </a>
                       </TableCell>
-                      <TableCell>{Number(invoice.lastPr)}</TableCell>
+                      <TableCell>{Number(invoice.last)}</TableCell>
                       <TableCell
                         className={
                           Number(invoice.percent_change_24) > 0 ? 'profitCell' : Number(invoice.percent_change_24) < 0 ? 'lossCell' : ''
