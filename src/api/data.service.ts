@@ -8,6 +8,7 @@ import { CtraderWsClient } from './ctrader.ws-client';
 import { FinamWsClient } from './finam.ws-client';
 import { MexcSpotWsClient } from './mexc-spot.ws-client.ts';
 import { KucoinWsClient } from './kucoin.ws-client.ts';
+import { BingxWsClient } from './bingx.ws-client.ts';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -21,6 +22,7 @@ export class DataService {
   private readonly finamWsClient: FinamWsClient;
   private readonly mexcSpotWsClient: MexcSpotWsClient;
   private readonly kucoinWsClient: KucoinWsClient;
+  private readonly bingxWsClient: BingxWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
@@ -31,6 +33,7 @@ export class DataService {
     this.gateWsClient = new GateWsClient();
     this.ctraderWsClient = new CtraderWsClient();
     this.finamWsClient = new FinamWsClient();
+    this.bingxWsClient = new BingxWsClient();
     this.mexcSpotWsClient = new MexcSpotWsClient();
     this.kucoinWsClient = new KucoinWsClient();
   }
@@ -53,6 +56,10 @@ export class DataService {
 
   gateUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.gateWsClient.unsubscribeCandles(symbol, resolution);
+  }
+
+  bingxSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.bingxWsClient.subscribeCandles(symbol, resolution);
   }
 
   bybitSubscribeCandles(symbol: string, resolution: ResolutionString) {
