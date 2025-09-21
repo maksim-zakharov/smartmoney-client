@@ -1009,6 +1009,20 @@ export const TestPage = () => {
                       {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
                     </div>
                   </TableHead>
+                  <TableHead
+                    className="w-[750px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        exchange: prevState.exchange === 'desc' ? 'asc' : prevState.exchange === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['exchange'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['exchange'] === 'asc' && <ArrowUpWideNarrow size={13} />} Биржи
+                    </div>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1071,6 +1085,9 @@ export const TestPage = () => {
                         {Number(invoice.change_percentage)}%
                       </TableCell>
                       <TableCell>{moneyFormatCompact(invoice.volume_24h, 'USD', 0, 0)}</TableCell>
+                      <TableCell>
+                        <Exchanges symbol={invoice.contract?.split('_')[0]} />
+                      </TableCell>
                     </TableRow>
                   ))}
               </TableBody>
@@ -1153,7 +1170,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[650px]"
+                    className="w-[750px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1326,7 +1343,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[650px]"
+                    className="w-[750px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1517,7 +1534,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[650px]"
+                    className="w-[750px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1964,7 +1981,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[650px]"
+                    className="w-[750px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -2246,7 +2263,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[650px]"
+                    className="w-[750px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -2393,7 +2410,7 @@ export const TestPage = () => {
                     </div>
                   </TableHead>
                   <TableHead
-                    className="w-[650px]"
+                    className="w-[750px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
