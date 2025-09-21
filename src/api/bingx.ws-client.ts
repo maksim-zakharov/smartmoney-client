@@ -22,7 +22,7 @@ export class BingxWsClient {
 
   // Подключение к WebSocket
   private connect() {
-    // this.ws = io(`http://localhost:3000/finam-ws`, {
+    // this.ws = io(`http://localhost:3000/bingx-ws`, {
     this.ws = io(`http://176.114.69.4:3000/bingx-ws`, {
       transports: ['websocket'],
     });
