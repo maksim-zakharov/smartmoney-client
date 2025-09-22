@@ -284,7 +284,7 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
 
-        return () => this.dataService.bybitUnsubscribeCandles(symbol.split('BYBIT:')[1], resolution);
+        return () => this.dataService.bingxUnsubscribeCandles(symbol.split('BINGX:')[1], resolution);
       } else if (symbol.includes('GATE')) {
         this.dataService.gateSubscribeCandles(symbol.split('GATE:')[1], resolution).subscribe((data) => {
           callback(data);

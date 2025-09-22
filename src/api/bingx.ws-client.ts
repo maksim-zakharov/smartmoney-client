@@ -81,6 +81,13 @@ export class BingxWsClient {
     this.subscriptions.add(JSON.stringify(request));
   }
 
+  protected unsubscribe(request) {
+    if (this.isConnected) {
+      this.ws.emit('unsubscribe_candle', request);
+    }
+    this.subscriptions.add(JSON.stringify(request));
+  }
+
   subscribeCandles(symbol: string, resolution: ResolutionString) {
     const subj = new Subject();
 
@@ -92,6 +99,15 @@ export class BingxWsClient {
     this.subscribe({ symbol, tf });
 
     return subj;
+  }
+
+  unsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    const tf = this.parseTimeframe(resolution) as Timeframe; // Ensure it matches Timeframe enum
+    const key = `${symbol}_${tf}`;
+
+    this.subscribeSubjs.delete(key);
+
+    this.unsubscribe({ symbol, tf });
   }
 
   private parseTimeframe(resolution: ResolutionString): string {

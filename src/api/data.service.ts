@@ -62,6 +62,10 @@ export class DataService {
     return this.bingxWsClient.subscribeCandles(symbol, resolution);
   }
 
+  bingxUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.bingxWsClient.unsubscribeCandles(symbol, resolution);
+  }
+
   bybitSubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.bybitWsClient.subscribeCandles(symbol, resolution);
   }

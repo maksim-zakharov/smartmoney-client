@@ -2326,7 +2326,7 @@ export const TestPage = () => {
                       onClick={(e) => setSelected(`KUCOIN:${invoice.symbol}`)}
                     >
                       <TableCell>
-                        <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
+                        <a href={`https://www.bitget.com/futures/usdt/${invoice.symbol}`} target="_blank">
                           ${invoice.symbol}
                         </a>
                       </TableCell>
