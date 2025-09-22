@@ -58,6 +58,7 @@ const MEXCLabel = ({ symbol }) => {
 const AlorLabel = ({ symbol }) => {
   const map = {
     GOLD: 'GoldFut2',
+    SILV: 'SilverFut',
     PLD: 'Palladium',
     PLT: 'Platinum',
     UCNY: 'USDCNY',
