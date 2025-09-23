@@ -5,7 +5,7 @@ import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
 import { useGetPositionsQuery, useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
-import { AppsTokenResponse, initApi, selectCTraderAccount, setTiToken } from './api/alor.slice';
+import { AppsTokenResponse, deletePair, initApi, selectCTraderAccount, setTiToken } from './api/alor.slice';
 import { TestPage } from './TestPage';
 import {
   useAuthAuthQuery,
@@ -40,6 +40,7 @@ export default function App() {
   const cTraderAccounts = useAppSelector((state) => state.alorSlice.cTraderAccounts);
   const { cTraderSymbols } = useAppSelector((state) => state.alorSlice);
   const alerts = useAppSelector((state) => state.alertsSlice.alerts || []);
+  const favoritePairs = useAppSelector((state) => state.alorSlice.favoritePairs || []);
 
   const { refetch } = useGetUserInfoQuery({}, { skip: !localStorage.getItem('token') || !api });
 
@@ -273,6 +274,7 @@ export default function App() {
                   <TabsList className="px-2">
                     <TabsTrigger value="keys">Безопасность</TabsTrigger>
                     <TabsTrigger value="alerts">Оповещения</TabsTrigger>
+                    <TabsTrigger value="tickers">Тикеры</TabsTrigger>
                   </TabsList>
                   <TabsContent value="keys">
                     <div className="p-3 flex gap-3 flex-col">
@@ -334,6 +336,39 @@ export default function App() {
                               {/*</Button>*/}
 
                               <Button size="sm" variant="ghost" className="p-0 h-4 w-4" onClick={handleDeleteAlert(invoice)}>
+                                <Trash />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TabsContent>
+                  <TabsContent value="tickers">
+                    <Table className="mb-3">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">Тикер</TableHead>
+                          <TableHead>Тип</TableHead>
+                          <TableHead>Мультипликатор</TableHead>
+                          <TableHead className="text-right">Действия</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {favoritePairs.map((invoice, index) => (
+                          <TableRow className={index % 2 ? 'rowOdd' : 'rowEven'}>
+                            <TableCell>{[invoice.first, invoice.second, invoice.third].filter(Boolean).join('/')}</TableCell>
+                            <TableCell>{invoice.type}</TableCell>
+                            <TableCell>{invoice.multiple}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="p-0 h-4 w-4"
+                                onClick={() =>
+                                  dispatch(deletePair({ ticker: [invoice.first, invoice.second, invoice.third].filter(Boolean).join('/') }))
+                                }
+                              >
                                 <Trash />
                               </Button>
                             </TableCell>

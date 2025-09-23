@@ -122,12 +122,26 @@ export const alorSlice = createSlice({
 
       state.release?.();
     },
-    updatePairs(state, action: PayloadAction<any[]>) {
+    addPair(state, action: PayloadAction<any>) {
       if (!state.favoritePairs) {
         state.favoritePairs = [action.payload];
       } else {
         state.favoritePairs.push(action.payload);
       }
+      localStorage.setItem('favoritePairs', JSON.stringify(state.favoritePairs));
+    },
+    updatePair(state, action: PayloadAction<{ ticker: string; pair: any }>) {
+      state.favoritePairs = state.favoritePairs.map((p) => {
+        const ticker = [p.first, p.second, p.third].filter(Boolean).join('/');
+        return ticker == action.payload.ticker ? action.payload.pair : p;
+      });
+      localStorage.setItem('favoritePairs', JSON.stringify(state.favoritePairs));
+    },
+    deletePair(state, action: PayloadAction<{ ticker: string }>) {
+      state.favoritePairs = state.favoritePairs.filter((p) => {
+        const ticker = [p.first, p.second, p.third].filter(Boolean).join('/');
+        return ticker !== action.payload.ticker;
+      });
       localStorage.setItem('favoritePairs', JSON.stringify(state.favoritePairs));
     },
     setTiToken(state, action: PayloadAction<string>) {
@@ -218,4 +232,15 @@ export const alorSlice = createSlice({
   },
 });
 
-export const { updatePairs, selectCTraderAccount, initApi, setTiToken, updateDarkColors, acquire, setSettings, logout } = alorSlice.actions;
+export const {
+  deletePair,
+  addPair,
+  updatePair,
+  selectCTraderAccount,
+  initApi,
+  setTiToken,
+  updateDarkColors,
+  acquire,
+  setSettings,
+  logout,
+} = alorSlice.actions;

@@ -35,11 +35,10 @@ export class CtraderWsClient {
     });
 
     // Listen for updates
-    const eventHandler = (data: { symbol: string; tf: string; candle: HistoryObject }) => {
+    this.ws.on('candle', (data: { symbol: string; tf: string; candle: HistoryObject }) => {
       const key = `${data.symbol}_${data.tf}`;
       this.subscribeSubjs.get(key)?.next(data.candle);
-    };
-    this.ws.on('candle', eventHandler);
+    });
 
     this.ws.on('disconnect', () => {
       this.isConnected = false;
