@@ -1416,17 +1416,21 @@ export const TestPage = () => {
                       {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
                     </div>
                   </TableHead>
-                  <TableHead
-                    onClick={() =>
-                      setSorter((prevState) => ({
-                        ...prevState,
-                        spread: prevState.spread === 'desc' ? 'asc' : prevState.spread === 'asc' ? undefined : 'desc',
-                      }))
-                    }
-                  >
-                    <div className="flex gap-3 items-center cursor-pointer">
-                      {sorter['spread'] === 'desc' && <ArrowDownWideNarrow size={13} />}
-                      {sorter['spread'] === 'asc' && <ArrowUpWideNarrow size={13} />} Спред
+                  <TableHead>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            spread: prevState.spread === 'desc' ? 'asc' : prevState.spread === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['spread'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['spread'] === 'asc' && <ArrowUpWideNarrow size={13} />} Спред
+                      </span>
+                      <TableColumnFilter _key="mexc-futures-spread" label="Спред" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -1442,17 +1446,21 @@ export const TestPage = () => {
                       {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
                     </div>
                   </TableHead>
-                  <TableHead
-                    onClick={() =>
-                      setSorter((prevState) => ({
-                        ...prevState,
-                        amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
-                      }))
-                    }
-                  >
-                    <div className="flex gap-3 items-center cursor-pointer">
-                      {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
-                      {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                  <TableHead>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                      </span>
+                      <TableColumnFilter _key="mexc-futures-amount24" label="Оборот" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -1475,9 +1483,14 @@ export const TestPage = () => {
                 {[...mexcTickers]
                   .map((t) => ({
                     ...t,
-                    spread: Number(t.ask1) / Number(t.bid1) - 1,
+                    spread: (Number(t.ask1) / Number(t.bid1) - 1) * 100,
                     createTime: mexcContractDetailsMap.get(t.symbol)?.createTime,
                   }))
+                  .filter(
+                    (t) =>
+                      (!filters['mexc-futures-amount24'] || Number(t.amount24) >= Number(filters['mexc-futures-amount24'])) &&
+                      (!filters['mexc-futures-spread'] || Number(t.spread) >= Number(filters['mexc-futures-spread'])),
+                  )
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;
@@ -1550,7 +1563,7 @@ export const TestPage = () => {
                       </TableCell>
                       <TableCell>{dayjs(invoice.createTime).format('DD-MM-YYYY HH:mm')}</TableCell>
                       <TableCell>{invoice.lastPrice}</TableCell>
-                      <TableCell>{(invoice.spread * 100).toFixed(2)}%</TableCell>
+                      <TableCell>{invoice.spread.toFixed(2)}%</TableCell>
                       <TableCell
                         className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
                       >
@@ -2308,6 +2321,23 @@ export const TestPage = () => {
                       {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
                     </div>
                   </TableHead>
+                  <TableHead>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            spread: prevState.spread === 'desc' ? 'asc' : prevState.spread === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['spread'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['spread'] === 'asc' && <ArrowUpWideNarrow size={13} />} Спред
+                      </span>
+                      <TableColumnFilter _key="kucoin-futures-spread" label="Спред" />
+                    </div>
+                  </TableHead>
                   <TableHead
                     className="w-[200px]"
                     onClick={() =>
@@ -2322,24 +2352,47 @@ export const TestPage = () => {
                       {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
                     </div>
                   </TableHead>
+                  <TableHead>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                      </span>
+                      <TableColumnFilter _key="kucoin-futures-amount24" label="Оборот" />
+                    </div>
+                  </TableHead>
                   <TableHead
-                    className="w-[200px]"
+                    className="w-[750px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
-                        amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                        exchange: prevState.exchange === 'desc' ? 'asc' : prevState.exchange === 'asc' ? undefined : 'desc',
                       }))
                     }
                   >
                     <div className="flex gap-3 items-center cursor-pointer">
-                      {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
-                      {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                      {sorter['exchange'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['exchange'] === 'asc' && <ArrowUpWideNarrow size={13} />} Биржи
                     </div>
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {[...kukoinTickers]
+                  .map((t) => ({ ...t, spread: (Number(t.sell) / Number(t.buy) - 1) * 100 }))
+                  .filter(
+                    (t) =>
+                      (!filters['kucoin-futures-amount24'] || Number(t.volValue) >= Number(filters['kucoin-futures-amount24'])) &&
+                      (!filters['kucoin-futures-spread'] || Number(t.spread) >= Number(filters['kucoin-futures-spread'])),
+                  )
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;
@@ -2390,12 +2443,16 @@ export const TestPage = () => {
                         </a>
                       </TableCell>
                       <TableCell>{Number(invoice.last)}</TableCell>
+                      <TableCell>{invoice.spread.toFixed(2)}%</TableCell>
                       <TableCell
                         className={Number(invoice.changeRate) > 0 ? 'profitCell' : Number(invoice.changeRate) < 0 ? 'lossCell' : ''}
                       >
                         {Number(invoice.changeRate * 100).toFixed(2)}%
                       </TableCell>
                       <TableCell>{moneyFormatCompact(invoice.volValue, 'USD', 0, 0)}</TableCell>
+                      <TableCell>
+                        <Exchanges symbol={invoice.symbol?.split('-')[0]} />
+                      </TableCell>
                     </TableRow>
                   ))}
               </TableBody>
