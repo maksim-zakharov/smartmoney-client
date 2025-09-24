@@ -41,7 +41,6 @@ const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => 
 
   const handleSubmitFilter = () => {
     dispatch(setFilter({ key: _key, value: val }));
-    setVal(undefined);
   };
 
   return (
@@ -1180,17 +1179,21 @@ export const TestPage = () => {
                       {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
                     </div>
                   </TableHead>
-                  <TableHead
-                    onClick={() =>
-                      setSorter((prevState) => ({
-                        ...prevState,
-                        spread: prevState.spread === 'desc' ? 'asc' : prevState.spread === 'asc' ? undefined : 'desc',
-                      }))
-                    }
-                  >
-                    <div className="flex gap-3 items-center cursor-pointer">
-                      {sorter['spread'] === 'desc' && <ArrowDownWideNarrow size={13} />}
-                      {sorter['spread'] === 'asc' && <ArrowUpWideNarrow size={13} />} Спред
+                  <TableHead>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            spread: prevState.spread === 'desc' ? 'asc' : prevState.spread === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['spread'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['spread'] === 'asc' && <ArrowUpWideNarrow size={13} />} Спред
+                      </span>
+                      <TableColumnFilter _key="bingx-futures-spread" label="Спред" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -1241,10 +1244,12 @@ export const TestPage = () => {
               </TableHeader>
               <TableBody>
                 {[...bingxTickers]
-                  .map((t) => ({ ...t, spread: Number(t.askPrice) / Number(t.bidPrice) - 1 }))
+                  .map((t) => ({ ...t, spread: (Number(t.askPrice) / Number(t.bidPrice) - 1) * 100 }))
                   .filter(
                     (t) =>
-                      !filters['bingx-futures-amount24'] || Number(t.quoteVolume || t.valueF) >= Number(filters['bingx-futures-amount24']),
+                      (!filters['bingx-futures-amount24'] ||
+                        Number(t.quoteVolume || t.valueF) >= Number(filters['bingx-futures-amount24'])) &&
+                      (!filters['bingx-futures-spread'] || Number(t.spread) >= Number(filters['bingx-futures-spread'])),
                   )
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
@@ -1313,7 +1318,7 @@ export const TestPage = () => {
                       </TableCell>
                       <TableCell>{invoice.openTime ? dayjs(invoice.openTime).format('DD-MM-YYYY HH:mm') : '-'}</TableCell>
                       <TableCell>{invoice.lastPrice || invoice.tradePrice}</TableCell>
-                      <TableCell>{(invoice.spread * 100).toFixed(2)}%</TableCell>
+                      <TableCell>{invoice.spread.toFixed(2)}%</TableCell>
                       <TableCell
                         className={
                           Number(invoice.priceChangePercent || invoice.changePercentage) > 0
