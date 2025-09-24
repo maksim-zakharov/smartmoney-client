@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Col, Row } from 'antd';
-import { useAppSelector } from './store';
+import { useAppDispatch, useAppSelector } from './store';
 import { moneyFormat, numberFormat } from './MainPage/MainPage';
 import { moneyFormatCompact, normalizePrice } from './utils';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './components/ui/table';
@@ -10,7 +10,7 @@ import { TWChart } from './components/TWChart';
 import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from './api/tinkoff.api';
 import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation } from './api/ctrader.api';
 import { Button } from './components/ui/button.tsx';
-import { ArrowDownWideNarrow, ArrowUpWideNarrow, CirclePlus, CircleX } from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpWideNarrow, CirclePlus, CircleX, Funnel } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Checkbox } from './components/ui/checkbox.tsx';
 import { useGetContractDetailsQuery, useGetMEXCContractQuery, useGetTickersQuery } from './api/mexc.api.ts';
@@ -29,6 +29,40 @@ import { useGetHTXTickersQuery } from './api/htx.api.ts';
 import { useGetKuCoinTickersQuery } from './api/kucoin.api.ts';
 import { useGetBitgetTickersQuery } from './api/bitget.api.ts';
 import { useGetBitstampTickersQuery } from './api/bitstamp.api.ts';
+import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover.tsx';
+import { Label } from './components/ui/label.tsx';
+import { setFilter } from './api/alor.slice.ts';
+
+const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => {
+  const { filters } = useAppSelector((state) => state.alorSlice);
+  const [val, setVal] = useState(filters[_key]);
+
+  const dispatch = useAppDispatch();
+
+  const handleSubmitFilter = () => {
+    dispatch(setFilter({ key: _key, value: val }));
+    setVal(undefined);
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger className="cursor-pointer">
+        <Funnel
+          size={13}
+          fill={filters[_key] ? 'var(--primary)' : 'transparent'}
+          stroke={filters[_key] ? 'var(--primary)' : 'var(--muted-foreground)'}
+        />
+      </PopoverTrigger>
+      <PopoverContent className="w-[160px] flex flex-col gap-2">
+        <Label htmlFor="amount24Filter">{label}</Label>
+        <Input size="xs" id="amount24Filter" value={val} onChange={(e) => setVal(e.target.value)} />
+        <Button size="xs" onClick={handleSubmitFilter}>
+          Применить
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -111,6 +145,7 @@ export const TestPage = () => {
   const [qtyMap, setQtyMap] = useState(localStorage.getItem('qtyMap') ? JSON.parse(localStorage.getItem('qtyMap')) : {});
 
   const {
+    filters,
     tinkoffAccounts,
     tinkoffPortfolio,
     tinkoffOrders,
@@ -1171,17 +1206,21 @@ export const TestPage = () => {
                       {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
                     </div>
                   </TableHead>
-                  <TableHead
-                    onClick={() =>
-                      setSorter((prevState) => ({
-                        ...prevState,
-                        amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
-                      }))
-                    }
-                  >
-                    <div className="flex gap-3 items-center cursor-pointer">
-                      {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
-                      {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                  <TableHead>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                      </span>
+                      <TableColumnFilter _key="bingx-futures-amount24" label="Оборот" />
                     </div>
                   </TableHead>
                   <TableHead
@@ -1203,6 +1242,10 @@ export const TestPage = () => {
               <TableBody>
                 {[...bingxTickers]
                   .map((t) => ({ ...t, spread: Number(t.askPrice) / Number(t.bidPrice) - 1 }))
+                  .filter(
+                    (t) =>
+                      !filters['bingx-futures-amount24'] || Number(t.quoteVolume || t.valueF) >= Number(filters['bingx-futures-amount24']),
+                  )
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;

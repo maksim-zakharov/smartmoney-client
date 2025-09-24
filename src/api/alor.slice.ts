@@ -39,6 +39,8 @@ const initialState = {
   api: undefined,
   dataService: undefined,
 
+  filters: localStorage.getItem('filters') ? JSON.parse(localStorage.getItem('filters')) : {},
+
   agreementsMap: {},
   activeOperations: [],
   lastWithdrawals: [],
@@ -76,6 +78,8 @@ const initialState = {
   apiAuth: boolean;
   userInfo: UserInfoResponse;
   settings: Settings;
+
+  filters: any;
 
   alorPositions: Positions;
   agreementsMap: any;
@@ -146,6 +150,10 @@ export const alorSlice = createSlice({
     },
     setTiToken(state, action: PayloadAction<string>) {
       state.tToken = action.payload;
+    },
+    setFilter(state, action: PayloadAction<{ key: string; value: any }>) {
+      state.filters[action.payload.key] = action.payload.value;
+      localStorage.setItem('filters', JSON.stringify(state.filters));
     },
     selectCTraderAccount(state, action: PayloadAction<number>) {
       state.cTraderAccount = state.cTraderAccounts.find((c) => c.ctidTraderAccountId.toString() === action.payload.toString());
@@ -233,6 +241,7 @@ export const alorSlice = createSlice({
 });
 
 export const {
+  setFilter,
   deletePair,
   addPair,
   updatePair,
