@@ -1345,6 +1345,19 @@ export const TestPage = () => {
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
+                        spread: prevState.spread === 'desc' ? 'asc' : prevState.spread === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['spread'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['spread'] === 'asc' && <ArrowUpWideNarrow size={13} />} Спред
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
                         riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
                       }))
                     }
@@ -1385,10 +1398,22 @@ export const TestPage = () => {
               </TableHeader>
               <TableBody>
                 {[...mexcTickers]
-                  .map((t) => ({ ...t, createTime: mexcContractDetailsMap.get(t.symbol)?.createTime }))
+                  .map((t) => ({
+                    ...t,
+                    spread: Number(t.ask1) / Number(t.bid1) - 1,
+                    createTime: mexcContractDetailsMap.get(t.symbol)?.createTime,
+                  }))
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;
+                    }
+
+                    if (sorter['spread'] === 'desc') {
+                      return b.spread - a.spread;
+                    }
+
+                    if (sorter['spread'] === 'asc') {
+                      return a.spread - b.spread;
                     }
 
                     if (sorter['price'] === 'desc') {
@@ -1450,6 +1475,7 @@ export const TestPage = () => {
                       </TableCell>
                       <TableCell>{dayjs(invoice.createTime).format('DD-MM-YYYY HH:mm')}</TableCell>
                       <TableCell>{invoice.lastPrice}</TableCell>
+                      <TableCell>{(invoice.spread * 100).toFixed(2)}%</TableCell>
                       <TableCell
                         className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
                       >
@@ -1523,6 +1549,19 @@ export const TestPage = () => {
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
+                        spread: prevState.spread === 'desc' ? 'asc' : prevState.spread === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['spread'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['spread'] === 'asc' && <ArrowUpWideNarrow size={13} />} Спред
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
                         riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
                       }))
                     }
@@ -1576,11 +1615,23 @@ export const TestPage = () => {
               </TableHeader>
               <TableBody>
                 {[...mexcTickers]
-                  .map((t) => ({ ...t, createTime: mexcContractDetailsMap.get(t.symbol)?.createTime }))
+                  .map((t) => ({
+                    ...t,
+                    spread: Number(t.ask1) / Number(t.bid1) - 1,
+                    createTime: mexcContractDetailsMap.get(t.symbol)?.createTime,
+                  }))
                   .filter((invoice) => mexcContractDetailsMap.get(invoice.symbol)?.isNew)
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;
+                    }
+
+                    if (sorter['spread'] === 'desc') {
+                      return b.spread - a.spread;
+                    }
+
+                    if (sorter['spread'] === 'asc') {
+                      return a.spread - b.spread;
                     }
 
                     if (sorter['price'] === 'desc') {
@@ -1642,6 +1693,7 @@ export const TestPage = () => {
                       </TableCell>
                       <TableCell>{dayjs(invoice.createTime).format('DD-MM-YYYY HH:mm')}</TableCell>
                       <TableCell>{invoice.lastPrice}</TableCell>
+                      <TableCell>{(invoice.spread * 100).toFixed(2)}%</TableCell>
                       <TableCell
                         className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
                       >
