@@ -32,6 +32,7 @@ import { useGetBitstampTickersQuery } from './api/bitstamp.api.ts';
 import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover.tsx';
 import { Label } from './components/ui/label.tsx';
 import { setFilter } from './api/alor.slice.ts';
+import { useSearchParams } from 'react-router-dom';
 
 const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => {
   const { filters } = useAppSelector((state) => state.alorSlice);
@@ -470,7 +471,14 @@ export const TestPage = () => {
     localStorage.setItem('qtyMap', JSON.stringify({ ...qtyMap, [ticker]: qty }));
   };
 
-  const [tab, setTab] = useState<string>('mexc-futures');
+  // const [tab, setTab] = useState<string>('mexc-futures');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') || 'mexc-futures';
+
+  const setTab = (tab: string) => {
+    searchParams.set('tab', tab);
+    setSearchParams(searchParams);
+  };
 
   const options: { label: string; value: string; imgSrc?: string }[] = [
     { label: 'Mexc Фьючерсы', value: 'mexc-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png' },
