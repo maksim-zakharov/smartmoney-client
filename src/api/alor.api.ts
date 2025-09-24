@@ -287,6 +287,11 @@ export const alorApi = createApi({
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery(),
   endpoints: (builder) => ({
+    getRuRate: builder.query<any, void>({
+      query: (params) => ({
+        url: 'https://www.cbr-xml-daily.ru/daily_json.js',
+      }),
+    }),
     createOperation: builder.mutation<
       {
         validations: [];
@@ -432,4 +437,5 @@ export const {
   useGetSummaryQuery,
   useGetSecuritiesQQuery,
   useGetOrderbookMutation,
+  useGetRuRateQuery,
 } = alorApi;

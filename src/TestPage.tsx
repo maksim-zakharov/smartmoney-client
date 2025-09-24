@@ -17,7 +17,7 @@ import { useGetContractDetailsQuery, useGetMEXCContractQuery, useGetTickersQuery
 import { TypographyParagraph } from './components/ui/typography.tsx';
 import { toast } from 'sonner';
 import { Input } from './components/ui/input.tsx';
-import { useGetOrderbookMutation, useSendLimitOrderMutation } from './api/alor.api.ts';
+import { useGetOrderbookMutation, useGetRuRateQuery, useSendLimitOrderMutation } from './api/alor.api.ts';
 import { Exchange, Side } from 'alor-api';
 import { useGetBINGXTickersQuery } from './api/bingx.api.ts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
@@ -130,7 +130,10 @@ const ForexLabel = ({ ticker }) => {
 };
 
 export const TestPage = () => {
-  const USDRate = 83.071;
+  // const USDRate = 83.071;
+
+  const { data: rateData } = useGetRuRateQuery();
+  const USDRate = rateData?.Valute.USD.Value;
 
   const [tPostOrderMutation, { isLoading: tPostOrderLoading }] = useTinkoffPostOrderMutation();
   const [ctraderPostOrderMutation, { isLoading: ctraderPostOrderLoading }] = useCTraderPlaceOrderMutation();
