@@ -1106,6 +1106,7 @@ export const TestPage = () => {
               <TableHeader className="bg-[rgb(36,52,66)]">
                 <TableRow>
                   <TableHead
+                    className="w-[100px]"
                     onClick={() =>
                       setSorter((prevState) => ({
                         ...prevState,
@@ -1142,6 +1143,19 @@ export const TestPage = () => {
                     <div className="flex gap-3 items-center cursor-pointer">
                       {sorter['price'] === 'desc' && <ArrowDownWideNarrow size={13} />}
                       {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        spread: prevState.spread === 'desc' ? 'asc' : prevState.spread === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['spread'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['spread'] === 'asc' && <ArrowUpWideNarrow size={13} />} Спред
                     </div>
                   </TableHead>
                   <TableHead
@@ -1188,9 +1202,18 @@ export const TestPage = () => {
               </TableHeader>
               <TableBody>
                 {[...bingxTickers]
+                  .map((t) => ({ ...t, spread: Number(t.askPrice) / Number(t.bidPrice) - 1 }))
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;
+                    }
+
+                    if (sorter['spread'] === 'desc') {
+                      return b.spread - a.spread;
+                    }
+
+                    if (sorter['spread'] === 'asc') {
+                      return a.spread - b.spread;
                     }
 
                     if (sorter['price'] === 'desc') {
@@ -1247,6 +1270,7 @@ export const TestPage = () => {
                       </TableCell>
                       <TableCell>{invoice.openTime ? dayjs(invoice.openTime).format('DD-MM-YYYY HH:mm') : '-'}</TableCell>
                       <TableCell>{invoice.lastPrice || invoice.tradePrice}</TableCell>
+                      <TableCell>{(invoice.spread * 100).toFixed(2)}%</TableCell>
                       <TableCell
                         className={
                           Number(invoice.priceChangePercent || invoice.changePercentage) > 0
