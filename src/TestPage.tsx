@@ -17,7 +17,7 @@ import { useGetContractDetailsQuery, useGetMEXCContractQuery, useGetTickersQuery
 import { TypographyParagraph } from './components/ui/typography.tsx';
 import { toast } from 'sonner';
 import { Input } from './components/ui/input.tsx';
-import { useGetOrderbookMutation, useGetRuRateQuery, useSendLimitOrderMutation } from './api/alor.api.ts';
+import { useGetOrderbookMutation, useGetRuRateQuery, useGetSummaryQuery, useSendLimitOrderMutation } from './api/alor.api.ts';
 import { Exchange, Side } from 'alor-api';
 import { useGetBINGXTickersQuery } from './api/bingx.api.ts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
@@ -144,6 +144,18 @@ export const TestPage = () => {
 
   const [getOrderbookMutation] = useGetOrderbookMutation();
   const [sendLimitOrderAlor] = useSendLimitOrderMutation();
+
+  const { data: alorSummary } = useGetSummaryQuery(
+    {
+      format: 'Simple',
+      portfolio: localStorage.getItem('aPortfolio'),
+      exchange: 'MOEX',
+    },
+    {
+      skip: !localStorage.getItem('aPortfolio'),
+      pollingInterval: 5000,
+    },
+  );
 
   const [qtyMap, setQtyMap] = useState(localStorage.getItem('qtyMap') ? JSON.parse(localStorage.getItem('qtyMap')) : {});
 
@@ -471,7 +483,6 @@ export const TestPage = () => {
     localStorage.setItem('qtyMap', JSON.stringify({ ...qtyMap, [ticker]: qty }));
   };
 
-  // const [tab, setTab] = useState<string>('mexc-futures');
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'mexc-futures';
 
@@ -641,7 +652,7 @@ export const TestPage = () => {
         <Col span={4}>
           <Card>
             <CardHeader>
-              <CardDescription>Портфель {tinkoffPortfolio?.accountId}</CardDescription>
+              <CardDescription>Тинькофф Портфель {tinkoffPortfolio?.accountId}</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
@@ -649,6 +660,21 @@ export const TestPage = () => {
                 )}
               >
                 {moneyFormat(amount)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </Col>
+        <Col span={4}>
+          <Card>
+            <CardHeader>
+              <CardDescription>Алор Портфель {localStorage.getItem('aPortfolio')}</CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  amount > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(alorSummary?.portfolioLiquidationValue || 0)}
               </CardTitle>
             </CardHeader>
           </Card>
