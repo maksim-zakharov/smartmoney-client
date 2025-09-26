@@ -28,6 +28,7 @@ import { Trash } from 'lucide-react';
 import { Button } from './components/ui/button.tsx';
 import { deleteAlert } from './api/alerts.slice.ts';
 import { AlertDialog } from './components/AlertDialog.tsx';
+import { TypographyH4 } from './components/ui/typography.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -266,34 +267,62 @@ export default function App() {
               <DialogTrigger asChild>
                 <Button variant="outline">Настройки</Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-lg gap-2">
+              <DialogContent className="sm:max-w-xl gap-2">
                 <DialogHeader>
                   <DialogTitle>Настройки</DialogTitle>
                 </DialogHeader>
                 <Tabs defaultValue="keys">
                   <TabsList className="px-2">
-                    <TabsTrigger value="keys">Безопасность</TabsTrigger>
+                    <TabsTrigger value="keys">Управление API</TabsTrigger>
                     <TabsTrigger value="alerts">Оповещения</TabsTrigger>
                     <TabsTrigger value="tickers">Тикеры</TabsTrigger>
                   </TabsList>
                   <TabsContent value="keys">
                     <div className="p-3 flex gap-3 flex-col">
-                      <Label htmlFor="alorToken">Телеграм Токен</Label>
-                      <Input id="alorToken" value={telegramToken} onChange={handletelegramToken} />
-                      <Label htmlFor="alorToken">Телеграм UserID</Label>
-                      <Input id="alorToken" value={telegramUserId} onChange={handletelegramUserId} />
-                      <Label htmlFor="alorToken">Алор Токен</Label>
-                      <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
-                      <Label htmlFor="alorToken">Алор Портфель</Label>
-                      <Input id="alorToken" value={aPortfolio} onChange={handleaPortfolio} />
-                      <Label htmlFor="tToken">Тинькофф Токен</Label>
-                      <Input id="tToken" value={tiToken} onChange={handleEditToken} />
-                      <Label htmlFor="tBrokerAccountId">Тинькофф BrokerAccountId</Label>
-                      <Input id="tBrokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
-                      <Label htmlFor="bybitApiKey">Bybit Api Key</Label>
-                      <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
-                      <Label htmlFor="bybitSecretKey">Bybit Secret Key</Label>
-                      <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
+                      <TypographyH4>Telegram</TypographyH4>
+                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="alorToken">Token</Label>
+                          <Input id="alorToken" value={telegramToken} onChange={handletelegramToken} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="alorToken">UserID</Label>
+                          <Input id="alorToken" value={telegramUserId} onChange={handletelegramUserId} />
+                        </div>
+                      </div>
+                      <TypographyH4>Alor</TypographyH4>
+                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="alorToken">Token</Label>
+                          <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="alorToken">Портфель</Label>
+                          <Input id="alorToken" value={aPortfolio} onChange={handleaPortfolio} />
+                        </div>
+                      </div>
+                      <TypographyH4>Тинькофф</TypographyH4>
+                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="alorToken">Token</Label>
+                          <Input id="tToken" value={tiToken} onChange={handleEditToken} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="alorToken">BrokerAccountId</Label>
+                          <Input id="tBrokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
+                        </div>
+                      </div>
+                      <TypographyH4>Bybit</TypographyH4>
+                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="alorToken">Api Key</Label>
+                          <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="alorToken">Secret Key</Label>
+                          <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
+                        </div>
+                      </div>
 
                       <Label htmlFor="bybitSecretKey">cTraderAccount</Label>
                       <RadioGroup
