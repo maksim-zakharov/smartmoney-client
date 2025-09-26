@@ -64,7 +64,7 @@ const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => 
   );
 };
 
-const FigiLabel = ({ uid }) => {
+export const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
 
   return (
@@ -89,7 +89,7 @@ const MEXCLabel = ({ symbol }) => {
   );
 };
 
-const AlorLabel = ({ symbol }) => {
+export const AlorLabel = ({ symbol }) => {
   const map = {
     GOLD: 'GoldFut2',
     SILV: 'SilverFut',
@@ -110,7 +110,7 @@ const AlorLabel = ({ symbol }) => {
   );
 };
 
-const ForexLabel = ({ ticker }) => {
+export const ForexLabel = ({ ticker }) => {
   const map = {
     XAUUSD_xp: 'GoldFut2',
     XAGUSD_xp: 'SilverFut',
