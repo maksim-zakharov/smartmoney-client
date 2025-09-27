@@ -1,80 +1,103 @@
 import { Subject } from 'rxjs';
-import { ResolutionString } from '../assets/charting_library';
+import { SubscriptionManager } from './subscription-manager';
 
-export class BybitWebsocketClient {
-  private bybitSubscribes = new Map<string, Subject<any>>([]);
-  private readonly bybitWs: WebSocket;
-
+export class BybitWebsocketClient extends SubscriptionManager {
   constructor() {
+    super({
+      name: 'BingX Futures',
+      url: `wss://stream.bybit.com/v5/public/linear`,
+      pingRequest: () => ({
+        op: 'ping',
+      }),
+    });
     // this.bybitWs = new WebSocket(`wss://stream.bybit.com/v5/public/spot`);
-    this.bybitWs = new WebSocket(`wss://stream.bybit.com/v5/public/linear`);
-    this.bybitWs.onopen = () => {
-      console.log('WS connected');
-    };
-    this.bybitWs.onmessage = (ev: MessageEvent) => {
-      const { topic, data } = JSON.parse(ev.data);
-      if (data && data[0]) {
-        if (topic.startsWith('kline')) {
-          const { open, high, low, close, start, timestamp } = data[0];
-          this.bybitSubscribes.get(topic)?.next({
-            open: Number(open),
-            high: Number(high),
-            low: Number(low),
-            close: Number(close),
-            time: Math.round(start / 1000),
-            timestamp,
-          });
-        } else if (topic.startsWith('tickers')) {
-          const { lastPrice } = data[0];
-          this.bybitSubscribes.get(topic)?.next({
-            lastPrice: Number(lastPrice),
-          });
-        }
-      }
-    };
-    this.bybitWs.onclose = () => {
-      console.log('WS disconnected');
-    };
+
+    this.on('connect', () => this.onOpen());
+    this.on('disconnect', () => this.onClose());
+    this.on('message', (m) => this.onMessage(m));
   }
 
-  subscribeCandles(symbol: string, resolution: ResolutionString) {
-    const args = `kline.${resolution}.${symbol}`;
+  protected onClose() {
+    console.log(`Bybit Futures Websocket соединение разорвано`);
+  }
+
+  protected onOpen() {
+    console.log(`Bybit Futures Websocket соединение установлено`);
+  }
+
+  onMessage(ev) {
+    const { topic, data } = JSON.parse(ev.data as any);
+    if (topic?.startsWith('kline')) {
+      if (data && data[0]) {
+        const { open, high, low, close, start, timestamp } = data[0];
+        this.subscribeSubjs.get(topic)?.next({
+          open: Number(open),
+          high: Number(high),
+          low: Number(low),
+          close: Number(close),
+          time: Math.round(start / 1000),
+          timestamp,
+        });
+      }
+    } else if (topic?.startsWith('tickers')) {
+      const { lastPrice } = data;
+      lastPrice &&
+        this.subscribeSubjs.get(topic)?.next({
+          lastPrice: Number(lastPrice),
+        });
+    } else if (topic?.startsWith('orderbook')) {
+      const { b, a } = data;
+      this.subscribeSubjs.get(topic)?.next({
+        bids: b.map((p) => ({ price: Number(p[0]), value: Number(p[1]) })),
+        asks: a.map((p) => ({ price: Number(p[0]), value: Number(p[1]) })),
+      });
+    }
+  }
+
+  subscribeOrderbook(symbol: string, depth: number) {
+    const args = `orderbook.${depth}.${symbol}`;
     const subj = new Subject<any>();
-    this.bybitSubscribes.set(args, subj);
-    this.bybitWs.send(
-      JSON.stringify({
-        op: 'subscribe',
-        args: [args],
-      }),
-    );
+    this.subscribeSubjs.set(args, subj);
+    this.subscribe({
+      op: 'subscribe',
+      args: [args],
+    });
 
     return subj;
   }
 
-  unsubscribeCandles(symbol: string, resolution: ResolutionString) {
+  subscribeCandles(symbol: string, resolution: string) {
     const args = `kline.${resolution}.${symbol}`;
     const subj = new Subject<any>();
-    this.bybitSubscribes.set(args, subj);
-    this.bybitWs.send(
-      JSON.stringify({
-        op: 'unsubscribe',
-        args: [args],
-      }),
-    );
+    this.subscribeSubjs.set(args, subj);
+    this.subscribe({
+      op: 'subscribe',
+      args: [args],
+    });
+
+    return subj;
+  }
+
+  unsubscribeCandles(symbol: string, resolution: string) {
+    const args = `kline.${resolution}.${symbol}`;
+    const subj = new Subject<any>();
+    this.subscribeSubjs.set(args, subj);
+    this.subscribe({
+      op: 'unsubscribe',
+      args: [args],
+    });
 
     return subj;
   }
 
   subscribeQuotes(symbol: string) {
     const args = `tickers.${symbol}`;
-    const subj = new Subject<any>();
-    this.bybitSubscribes.set(args, subj);
-    this.bybitWs.send(
-      JSON.stringify({
-        op: 'subscribe',
-        args: [args],
-      }),
-    );
+    const subj = new Subject<{ lastPrice: number }>();
+    this.subscribeSubjs.set(args, subj);
+    this.subscribe({
+      op: 'subscribe',
+      args: [args],
+    });
 
     return subj;
   }
