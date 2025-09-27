@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs';
-import { SubscriptionManager } from '../subscription-manager.ts';
+import { SubscriptionManager } from '../common/subscription-manager.ts';
 import { MexcOrderbook } from '../mexc.models.ts';
 
 export class MexcWsClient extends SubscriptionManager {

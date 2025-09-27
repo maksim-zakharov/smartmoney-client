@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryCTraderWithReauth } from './baseQueryCTrader';
+import { baseQueryCTraderWithReauth } from './common/baseQueryCTrader.ts';
 import { HistoryObject } from '../sm-lib/models.ts';
 
 export const ctraderApi = createApi({

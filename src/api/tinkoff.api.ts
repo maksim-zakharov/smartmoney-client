@@ -1,5 +1,5 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryTinkoffWithReauth } from './baseQueryTinkoff.ts';
+import { baseQueryTinkoffWithReauth } from './common/baseQueryTinkoff.ts';
 
 export interface Security {
   symbol: string;

@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 import { WebSocket } from 'public-ws';
-import { EventEmitter } from './event-emitter';
+import { EventEmitter } from './event-emitter.ts';
 
 export type BaseEventTypes = 'message' | 'error' | 'connect' | 'disconnect' | 'subscribe';
 

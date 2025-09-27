@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 import { Alltrade, HistoryObject, Orderbook, OrderbookAsk, Side } from 'alor-api';
 import { OrderbookBid } from 'alor-api/dist/models/models';
-import { SubscriptionManager } from '../subscription-manager.ts';
+import { SubscriptionManager } from '../common/subscription-manager.ts';
 
 export class BitgetFuturesWsClient extends SubscriptionManager {
   private readonly apiKey: string;
