@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { HistoryObject, Timeframe } from 'alor-api';
-import { ResolutionString } from '../assets/charting_library';
+import { ResolutionString } from '../../assets/charting_library';
 
 export class CtraderWsClient {
   private ws: Socket | null = null; // Add to class

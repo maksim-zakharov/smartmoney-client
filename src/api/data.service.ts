@@ -1,15 +1,15 @@
 import { AlorApi, Exchange } from 'alor-api';
 import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer } from 'rxjs';
 import { PeriodParams, ResolutionString } from '../assets/charting_library';
-import { BybitWebsocketClient } from './bybit.ws-client';
-import { MexcWsClient } from './mexc.ws-client';
-import { GateFuturesWsClient } from './gate.ws-client';
-import { CtraderWsClient } from './ctrader.ws-client';
-import { FinamWsClient } from './finam.ws-client';
-import { MexcSpotWsClient } from './mexc-spot.ws-client';
-import { KucoinWsClient } from './kucoin.ws-client';
-import { BingxWsClient } from './bingx.ws-client';
-import { BitgetFuturesWsClient } from './bitget-futures.ws-client';
+import { BybitWebsocketClient } from './public-ws/bybit.ws-client.ts';
+import { MexcWsClient } from './public-ws/mexc.ws-client.ts';
+import { GateFuturesWsClient } from './public-ws/gate.ws-client.ts';
+import { CtraderWsClient } from './private-ws/ctrader.ws-client.ts';
+import { FinamWsClient } from './private-ws/finam.ws-client.ts';
+import { MexcSpotWsClient } from './private-ws/mexc-spot.ws-client.ts';
+import { KucoinWsClient } from './private-ws/kucoin.ws-client.ts';
+import { BingxWsClient } from './private-ws/bingx.ws-client.ts';
+import { BitgetFuturesWsClient } from './public-ws/bitget-futures.ws-client.ts';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;

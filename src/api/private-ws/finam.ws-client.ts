@@ -1,9 +1,9 @@
 import { Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { HistoryObject, Timeframe } from 'alor-api';
-import { ResolutionString } from '../assets/charting_library';
+import { ResolutionString } from '../../assets/charting_library';
 
-export class MexcSpotWsClient {
+export class FinamWsClient {
   private ws: Socket | null = null; // Add to class
 
   private subscriptions = new Set<string>(); // хранилище подписок
@@ -22,13 +22,13 @@ export class MexcSpotWsClient {
 
   // Подключение к WebSocket
   private connect() {
-    // this.ws = io(`http://localhost:3000/mexc-spot-ws`, {
-    this.ws = io(`http://176.114.69.4:3000/mexc-spot-ws`, {
+    // this.public-ws = io(`http://localhost:3000/finam-ws`, {
+    this.ws = io(`http://176.114.69.4:3000/finam-ws`, {
       transports: ['websocket'],
     });
 
     this.ws.on('connect', () => {
-      console.log(`Mexc Spot WS connected`);
+      console.log(`Finam WS connected`);
       this.isConnected = true;
       this.reconnectAttempts = 0;
       // Повторная подписка на все события

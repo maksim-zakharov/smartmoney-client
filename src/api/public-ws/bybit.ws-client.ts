@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs';
-import { SubscriptionManager } from './subscription-manager';
+import { SubscriptionManager } from '../subscription-manager.ts';
 
 export class BybitWebsocketClient extends SubscriptionManager {
   constructor() {

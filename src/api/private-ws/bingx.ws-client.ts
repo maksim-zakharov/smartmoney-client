@@ -1,9 +1,9 @@
 import { Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { HistoryObject, Timeframe } from 'alor-api';
-import { ResolutionString } from '../assets/charting_library';
+import { ResolutionString } from '../../assets/charting_library';
 
-export class FinamWsClient {
+export class BingxWsClient {
   private ws: Socket | null = null; // Add to class
 
   private subscriptions = new Set<string>(); // хранилище подписок
@@ -22,13 +22,13 @@ export class FinamWsClient {
 
   // Подключение к WebSocket
   private connect() {
-    // this.ws = io(`http://localhost:3000/finam-ws`, {
-    this.ws = io(`http://176.114.69.4:3000/finam-ws`, {
+    // this.public-ws = io(`http://localhost:3000/bingx-ws`, {
+    this.ws = io(`http://176.114.69.4:3000/bingx-ws`, {
       transports: ['websocket'],
     });
 
     this.ws.on('connect', () => {
-      console.log(`Finam WS connected`);
+      console.log(`Bingx WS connected`);
       this.isConnected = true;
       this.reconnectAttempts = 0;
       // Повторная подписка на все события
@@ -44,7 +44,7 @@ export class FinamWsClient {
 
     this.ws.on('disconnect', () => {
       this.isConnected = false;
-      console.log(`CTrader WS disconnected`);
+      console.log(`Bingx WS disconnected`);
       this.attemptReconnect();
     });
   }
@@ -81,6 +81,13 @@ export class FinamWsClient {
     this.subscriptions.add(JSON.stringify(request));
   }
 
+  protected unsubscribe(request) {
+    if (this.isConnected) {
+      this.ws.emit('unsubscribe_candle', request);
+    }
+    this.subscriptions.add(JSON.stringify(request));
+  }
+
   subscribeCandles(symbol: string, resolution: ResolutionString) {
     const subj = new Subject();
 
@@ -92,6 +99,15 @@ export class FinamWsClient {
     this.subscribe({ symbol, tf });
 
     return subj;
+  }
+
+  unsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    const tf = this.parseTimeframe(resolution) as Timeframe; // Ensure it matches Timeframe enum
+    const key = `${symbol}_${tf}`;
+
+    this.subscribeSubjs.delete(key);
+
+    this.unsubscribe({ symbol, tf });
   }
 
   private parseTimeframe(resolution: ResolutionString): string {
