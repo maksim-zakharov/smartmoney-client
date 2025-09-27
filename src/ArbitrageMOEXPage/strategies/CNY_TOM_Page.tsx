@@ -8,8 +8,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
 import Decimal from 'decimal.js';
-import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
-import { calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
+import { calculateMultiple, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils';
+import { calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs';
 import { fetchSecurityDetails } from '../ArbitrageMOEXPage';
 
 const { RangePicker } = DatePicker;

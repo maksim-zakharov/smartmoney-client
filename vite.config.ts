@@ -17,7 +17,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      ws: resolve(__dirname, 'src/alias/public-ws.js'),
+      ws: resolve(__dirname, 'src/alias/ws.js'),
     },
   },
   plugins: [react(), tailwindcss()],

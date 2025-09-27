@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useAppDispatch, useAppSelector } from '../store.ts';
-import { DataFeed } from '../api/datafeed.ts';
-import { getTimezone } from '../utils.ts';
+import { useAppDispatch, useAppSelector } from '../store';
+import { DataFeed } from '../api/datafeed';
+import { getTimezone } from '../utils';
 import {
   ChartingLibraryFeatureset,
   ChartingLibraryWidgetOptions,

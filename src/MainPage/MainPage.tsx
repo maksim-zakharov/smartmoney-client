@@ -12,7 +12,7 @@ import { StatisticWidgets } from './StatisticWidgets';
 import { MainPageChart } from './MainPageChart';
 import { calculateProdPositionFee } from '../samurai_patterns';
 import { notTradingTime } from '../sm-lib/utils';
-import { useCandlesQuery } from '../api/ctrader.api.ts';
+import { useCandlesQuery } from '../api/ctrader.api';
 
 export const moneyFormat = (
   money: number,

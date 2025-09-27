@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { HistoryObject } from '../sm-lib/models.ts';
-import { baseQueryMexcWithReauth } from './common/baseQueryMexc.ts';
+import { HistoryObject } from '../sm-lib/models';
+import { baseQueryMexcWithReauth } from './common/baseQueryMexc';
 
 export const mexcApi = createApi({
   reducerPath: 'mexcApi',

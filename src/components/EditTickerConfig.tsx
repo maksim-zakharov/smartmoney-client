@@ -6,8 +6,8 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { addPair, updatePair } from '../api/alor.slice.ts';
-import { useAppDispatch, useAppSelector } from '../store.ts';
+import { addPair, updatePair } from '../api/alor.slice';
+import { useAppDispatch, useAppSelector } from '../store';
 
 export const EditTickerConfig = ({ ticker }: { ticker?: string }) => {
   const dispatch = useAppDispatch();

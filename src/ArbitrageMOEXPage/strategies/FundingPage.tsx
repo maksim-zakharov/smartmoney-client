@@ -23,8 +23,8 @@ import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import moment from 'moment/moment';
-import { calculateTruthFuturePrice, createRectangle2, getCommonCandles, getOvernightDays } from '../../utils.ts';
-import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs.ts';
+import { calculateTruthFuturePrice, createRectangle2, getCommonCandles, getOvernightDays } from '../../utils';
+import { calculateBollingerBands, calculateCandle, calculateEMA, symbolFuturePairs } from '../../../symbolFuturePairs';
 import { LineStyle, Time } from 'lightweight-charts';
 import Sider from 'antd/es/layout/Sider';
 import { Content } from 'antd/es/layout/layout';
@@ -34,7 +34,7 @@ import {
   useGetHistoryQuery,
   useGetSecurityByExchangeAndSymbolQuery,
   useGetSecurityDetailsQuery,
-} from '../../api/alor.api.ts';
+} from '../../api/alor.api';
 
 const { RangePicker } = DatePicker;
 

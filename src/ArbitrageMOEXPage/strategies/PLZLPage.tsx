@@ -5,9 +5,9 @@ import { Chart } from '../../Chart';
 import { LineStyle } from 'lightweight-charts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
+import { fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils';
 import moment from 'moment';
-import { calculateCandle } from '../../../symbolFuturePairs.ts';
+import { calculateCandle } from '../../../symbolFuturePairs';
 
 const { RangePicker } = DatePicker;
 

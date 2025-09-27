@@ -11,7 +11,7 @@ import { Content } from 'antd/es/layout/layout';
 import { useGetHistoryQuery } from '../../api/alor.api';
 import { useAppSelector } from '../../store';
 import { TWChart } from '../../components/TWChart';
-import { useCandlesQuery } from '../../api/ctrader.api.ts';
+import { useCandlesQuery } from '../../api/ctrader.api';
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',

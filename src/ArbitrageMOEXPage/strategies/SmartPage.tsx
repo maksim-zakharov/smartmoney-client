@@ -8,9 +8,9 @@ import { TimeframeSelect } from '../../TimeframeSelect.tsx';
 import { DatesPicker } from '../../DatesPicker.tsx';
 import dayjs, { type Dayjs } from 'dayjs';
 import moment from 'moment';
-import { symbolFuturePairs } from '../../../symbolFuturePairs.ts';
+import { symbolFuturePairs } from '../../../symbolFuturePairs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs.tsx';
-import { useAppSelector } from '../../store.ts';
+import { useAppSelector } from '../../store';
 import { TWChart } from '../../components/TWChart.tsx';
 import { TickerSettingsDialog } from '../../components/TickerSettingsDialog.tsx';
 

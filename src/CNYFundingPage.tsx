@@ -4,7 +4,7 @@ import { fetchCandlesFromAlor, fetchRisk, fetchRiskRates, getSecurity, refreshTo
 import { notTradingTime } from './sm-lib/utils';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useSearchParams } from 'react-router-dom';
-import { Security } from './api/api.ts';
+import { Security } from './api/api';
 import { Card, Col, Input, Layout, Row, Statistic, Table } from 'antd';
 import { Content } from 'antd/es/layout/layout';
 import { TickerSelect } from './TickerSelect';
@@ -14,7 +14,7 @@ import { TimeframeSelect } from './TimeframeSelect';
 import moment from 'moment/moment';
 import { moneyFormat } from './MainPage/MainPage';
 import { LineStyle, Time } from 'lightweight-charts';
-import { finishPosition } from './samurai_patterns.ts';
+import { finishPosition } from './samurai_patterns';
 
 const markerColors = {
   bearColor: 'rgb(157, 43, 56)',

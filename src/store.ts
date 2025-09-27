@@ -1,21 +1,21 @@
 import { configureStore, combineReducers, AnyAction, ThunkDispatch } from '@reduxjs/toolkit';
-import { api } from './api/api.ts';
+import { api } from './api/api';
 import { alorApi } from './api/alor.api';
 import { alorSlice } from './api/alor.slice';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import { tinkoffApi } from './api/tinkoff.api.ts';
-import { ctraderApi } from './api/ctrader.api.ts';
-import { mexcApi } from './api/mexc.api.ts';
-import { alertsSlice } from './api/alerts.slice.ts';
-import { bingxApi } from './api/bingx.api.ts';
-import { gateApi } from './api/gate.api.ts';
-import { bybitApi } from './api/bybit.api.ts';
-import { binanceApi } from './api/binance.api.ts';
-import { htxApi } from './api/htx.api.ts';
-import { kucoinApi } from './api/kucoin.api.ts';
-import { coinmarketcapApi } from './api/coinmarketcap.api.ts';
-import { bitgetApi } from './api/bitget.api.ts';
-import { bitstampApi } from './api/bitstamp.api.ts';
+import { tinkoffApi } from './api/tinkoff.api';
+import { ctraderApi } from './api/ctrader.api';
+import { mexcApi } from './api/mexc.api';
+import { alertsSlice } from './api/alerts.slice';
+import { bingxApi } from './api/bingx.api';
+import { gateApi } from './api/gate.api';
+import { bybitApi } from './api/bybit.api';
+import { binanceApi } from './api/binance.api';
+import { htxApi } from './api/htx.api';
+import { kucoinApi } from './api/kucoin.api';
+import { coinmarketcapApi } from './api/coinmarketcap.api';
+import { bitgetApi } from './api/bitget.api';
+import { bitstampApi } from './api/bitstamp.api';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,

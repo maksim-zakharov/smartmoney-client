@@ -4,17 +4,17 @@ import dayjs, { type Dayjs } from 'dayjs';
 // import { Chart } from '../../Chart';
 import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getCommonCandles, getOvernightDays } from '../../utils.ts';
+import { getCommonCandles, getOvernightDays } from '../../utils';
 import moment from 'moment';
-import { HistoryObject } from '../../sm-lib/models.ts';
+import { HistoryObject } from '../../sm-lib/models';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
 import { LineStyle } from 'lightweight-charts';
-import { useGetHistoryQuery, useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
+import { useGetHistoryQuery, useGetSecurityDetailsQuery } from '../../api/alor.api';
 import { Exchange } from 'alor-api';
-import { useAppSelector } from '../../store.ts';
+import { useAppSelector } from '../../store';
 import { DatesPicker } from '../../DatesPicker.tsx';
 import { TWChart } from '../../components/TWChart.tsx';
-import { useCandlesQuery } from '../../api/ctrader.api.ts';
+import { useCandlesQuery } from '../../api/ctrader.api';
 
 export const Triangle_Page = ({ first, second, third, multiple, noExp, onlyChart, height, seriesType = 'Candlestick' }: any) => {
   // 3.21 6.20 9.19 12.18

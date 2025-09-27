@@ -4,13 +4,13 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../SoloTestPage/UpdatedChart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { calculateTruthFuturePrice, getCommonCandles } from '../../utils.ts';
+import { calculateTruthFuturePrice, getCommonCandles } from '../../utils';
 import moment from 'moment';
-import { HistoryObject } from '../../sm-lib/models.ts';
+import { HistoryObject } from '../../sm-lib/models';
 import { calculateBollingerBands, calculateCandle } from '../../../symbolFuturePairs.js';
-import { useGetHistoryQuery, useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
+import { useGetHistoryQuery, useGetSecurityDetailsQuery } from '../../api/alor.api';
 import { Exchange } from 'alor-api';
-import { useAppSelector } from '../../store.ts';
+import { useAppSelector } from '../../store';
 import { DatesPicker } from '../../DatesPicker.tsx';
 import { LineStyle } from 'lightweight-charts';
 

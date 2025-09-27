@@ -4,12 +4,12 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { Chart } from '../../Chart';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { calculateTruthFuturePrice, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils.ts';
+import { calculateTruthFuturePrice, fetchCandlesFromAlor, getCommonCandles, refreshToken } from '../../utils';
 import moment from 'moment';
-import { HistoryObject } from '../../sm-lib/models.ts';
+import { HistoryObject } from '../../sm-lib/models';
 import { calculateCandle } from '../../../symbolFuturePairs.js';
 import { LineStyle } from 'lightweight-charts';
-import { useGetSecurityDetailsQuery } from '../../api/alor.api.ts';
+import { useGetSecurityDetailsQuery } from '../../api/alor.api';
 
 const { RangePicker } = DatePicker;
 

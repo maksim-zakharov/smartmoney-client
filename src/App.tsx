@@ -26,7 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs.t
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
 import { Trash } from 'lucide-react';
 import { Button } from './components/ui/button.tsx';
-import { deleteAlert } from './api/alerts.slice.ts';
+import { deleteAlert } from './api/alerts.slice';
 import { AlertDialog } from './components/AlertDialog.tsx';
 import { TypographyH4 } from './components/ui/typography.tsx';
 

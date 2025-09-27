@@ -14,13 +14,13 @@ import { SegmentedLabeledOption } from 'rc-segmented';
 import { EditTickerConfig } from './EditTickerConfig.tsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table.tsx';
 import { Trash } from 'lucide-react';
-import { deletePair } from '../api/alor.slice.ts';
+import { deletePair } from '../api/alor.slice';
 import { moneyFormat } from '../MainPage/MainPage.tsx';
 import { TypographyParagraph } from './ui/typography.tsx';
-import { cn } from '../lib/utils.ts';
+import { cn } from '../lib/utils';
 import { AlorLabel, FigiLabel, ForexLabel } from '../TestPage.tsx';
-import { useGetRuRateQuery } from '../api/alor.api.ts';
-import { normalizePrice } from '../utils.ts';
+import { useGetRuRateQuery } from '../api/alor.api';
+import { normalizePrice } from '../utils';
 
 export const AlertDialog = () => {
   const alertConfig = useAppSelector((state) => state.alertsSlice.alertConfig);

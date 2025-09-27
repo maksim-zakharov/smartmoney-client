@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryCTraderWithReauth } from './common/baseQueryCTrader.ts';
-import { HistoryObject } from '../sm-lib/models.ts';
+import { baseQueryCTraderWithReauth } from './common/baseQueryCTrader';
+import { HistoryObject } from '../sm-lib/models';
 
 export const ctraderApi = createApi({
   reducerPath: 'ctraderApi',

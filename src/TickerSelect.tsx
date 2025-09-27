@@ -1,7 +1,7 @@
 import React, { FC, useMemo } from 'react';
 import { Select } from 'antd';
 import { symbolFuturePairs } from '../symbolFuturePairs';
-import { useGetSecuritiesQQuery } from './api/alor.api.ts';
+import { useGetSecuritiesQQuery } from './api/alor.api';
 
 interface Props {
   value: string;

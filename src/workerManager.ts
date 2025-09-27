@@ -7,7 +7,7 @@ export class WorkerManager {
   private _results = {};
 
   constructor() {
-    this._worker = new Worker(new URL('/src/worker.ts', import.meta.url), {
+    this._worker = new Worker(new URL('/src/worker', import.meta.url), {
       type: 'module', // Важно для Vite
     });
   }
