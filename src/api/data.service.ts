@@ -3,13 +3,13 @@ import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareRep
 import { PeriodParams, ResolutionString } from '../assets/charting_library';
 import { BybitWebsocketClient } from './bybit.ws-client';
 import { MexcWsClient } from './mexc.ws-client';
-import { GateWsClient } from './gate.ws-client';
+import { GateFuturesWsClient } from './gate.ws-client';
 import { CtraderWsClient } from './ctrader.ws-client';
 import { FinamWsClient } from './finam.ws-client';
-import { MexcSpotWsClient } from './mexc-spot.ws-client.ts';
-import { KucoinWsClient } from './kucoin.ws-client.ts';
-import { BingxWsClient } from './bingx.ws-client.ts';
-import { BitgetFuturesWsClient } from './bitget-futures.ws-client.ts';
+import { MexcSpotWsClient } from './mexc-spot.ws-client';
+import { KucoinWsClient } from './kucoin.ws-client';
+import { BingxWsClient } from './bingx.ws-client';
+import { BitgetFuturesWsClient } from './bitget-futures.ws-client';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -18,7 +18,7 @@ export class DataService {
 
   private readonly bybitWsClient: BybitWebsocketClient;
   private readonly mexcWsClient: MexcWsClient;
-  private readonly gateWsClient: GateWsClient;
+  private readonly gateWsClient: GateFuturesWsClient;
   private readonly ctraderWsClient: CtraderWsClient;
   private readonly finamWsClient: FinamWsClient;
   private readonly mexcSpotWsClient: MexcSpotWsClient;
@@ -32,7 +32,7 @@ export class DataService {
 
     this.bybitWsClient = new BybitWebsocketClient();
     this.mexcWsClient = new MexcWsClient();
-    this.gateWsClient = new GateWsClient();
+    this.gateWsClient = new GateFuturesWsClient();
     this.ctraderWsClient = new CtraderWsClient();
     this.finamWsClient = new FinamWsClient();
     this.bingxWsClient = new BingxWsClient();
