@@ -49,7 +49,7 @@ export class AlertsService {
   }
 
   getAlertsByTicker(ticker: string) {
-    return this.alerts.filter((a) => a.ticker === ticker.toUpperCase());
+    return this.alerts.filter((a) => a.ticker.toUpperCase() === ticker.toUpperCase());
   }
 
   on(ticker: string, callback: (alert: Alert, action: 'add' | 'delete') => void) {

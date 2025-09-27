@@ -1,32 +1,50 @@
+import EventEmitter from 'events';
 import { Subject } from 'rxjs';
+import { WebSocket } from 'ws';
+
+export type BaseEventTypes = 'message' | 'error' | 'connect' | 'disconnect' | 'subscribe';
+
+export type SubscriptionManagerEventTypes = BaseEventTypes | 'candles' | 'orders' | 'trades' | 'account' | 'orderbook';
 
 export class SubscriptionManager {
-  protected ws: WebSocket;
-
   private subscriptions = new Set<string>(); // хранилище подписок
   subscribeSubjs = new Map<string, Subject<any>>([]);
+
+  private readonly eventEmitter: EventEmitter<any> = new EventEmitter<any>();
+
+  protected ws: WebSocket;
+
   private maxReconnectAttempts = 5;
   private reconnectInterval = 1000;
   private reconnectDecay = 500;
   private maxReconnectInterval = 5000;
 
   private isConnected: boolean = false;
+
   private reconnectAttempts = 0;
 
   private _options: {
-    url: string;
+    url?: string;
     name: string;
-    pingObj: any;
-    onMessage?: (ev) => void;
+    loginPromise?: () => Promise<any>;
+    pingRequest?: () => any;
   };
 
-  constructor(options: { url: string; name: string; pingObj: any; onMessage?: (ev) => void }) {
+  constructor(options: { url?: string; name: string; pingRequest?: any; loginPromise?: any }) {
     this._options = options;
 
-    this.connect(options.url);
+    if (this._options.loginPromise) {
+      this._options.loginPromise().then((url) => this.connect(url));
+    } else this.connect(this._options.url);
   }
 
-  protected onMessage(ev) {}
+  on(type: SubscriptionManagerEventTypes, callback: any) {
+    return this.eventEmitter.on(type, callback);
+  }
+
+  protected emit(type: SubscriptionManagerEventTypes, value: any) {
+    return this.eventEmitter.emit(type, value);
+  }
 
   // Подключение к WebSocket
   private connect(url: string) {
@@ -35,36 +53,39 @@ export class SubscriptionManager {
     let spotInterval;
 
     const pingPong = () => {
+      if (!this._options.pingRequest) return;
       if (spotInterval) clearInterval(spotInterval);
 
-      spotInterval = setInterval(() => this.ws.send(JSON.stringify(this._options.pingObj)), 10000);
+      spotInterval = setInterval(() => {
+        const pingRequest = this._options.pingRequest();
+        this.ws.send(JSON.stringify(pingRequest));
+      }, 10000);
     };
 
     this.ws.onopen = () => {
-      console.log(`${this._options.name} WS connected`);
       this.isConnected = true;
       this.reconnectAttempts = 0;
       // Повторная подписка на все события
       this.resubscribe();
       pingPong();
+
+      this.eventEmitter.emit('connect', true);
     };
 
     this.ws.onmessage = (ev) => {
-      this.onMessage(ev);
+      this.eventEmitter.emit('message', ev);
     };
 
     this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      // if (this.options.onError) {
-      //   this.options.onError(error);
-      // }
+      this.eventEmitter.emit('error', error);
     };
 
     this.ws.onclose = () => {
       if (spotInterval) clearInterval(spotInterval);
       this.isConnected = false;
-      console.log(`${this._options.name} WS disconnected`);
       this.attemptReconnect();
+
+      this.eventEmitter.emit('disconnect', true);
     };
   }
 
@@ -80,7 +101,9 @@ export class SubscriptionManager {
     console.log(`Attempting to reconnect in ${delay}ms...`);
     setTimeout(() => {
       this.reconnectAttempts++;
-      this.connect(this._options.url);
+      if (this._options.loginPromise) {
+        this._options.loginPromise().then((url) => this.connect(url));
+      } else this.connect(this._options.url);
     }, delay);
   }
 
@@ -89,7 +112,6 @@ export class SubscriptionManager {
     this.subscriptions.forEach((subscription) => {
       const request = JSON.parse(subscription);
       this.subscribe(request);
-      console.log(`Resubscribed to ${JSON.stringify(request)}`);
     });
   }
 
@@ -98,5 +120,7 @@ export class SubscriptionManager {
       this.ws.send(JSON.stringify(request));
     }
     this.subscriptions.add(JSON.stringify(request));
+
+    this.eventEmitter.emit('subscribe', request);
   }
 }

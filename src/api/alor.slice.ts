@@ -137,7 +137,7 @@ export const alorSlice = createSlice({
     updatePair(state, action: PayloadAction<{ ticker: string; pair: any }>) {
       state.favoritePairs = state.favoritePairs.map((p) => {
         const ticker = [p.first, p.second, p.third].filter(Boolean).join('/');
-        return ticker == action.payload.ticker ? action.payload.pair : p;
+        return ticker.toUpperCase() == action.payload.ticker.toUpperCase() ? action.payload.pair : p;
       });
       localStorage.setItem('favoritePairs', JSON.stringify(state.favoritePairs));
     },

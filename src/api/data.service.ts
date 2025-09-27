@@ -9,6 +9,7 @@ import { FinamWsClient } from './finam.ws-client';
 import { MexcSpotWsClient } from './mexc-spot.ws-client.ts';
 import { KucoinWsClient } from './kucoin.ws-client.ts';
 import { BingxWsClient } from './bingx.ws-client.ts';
+import { BitgetFuturesWsClient } from './bitget-futures.ws-client.ts';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -23,6 +24,7 @@ export class DataService {
   private readonly mexcSpotWsClient: MexcSpotWsClient;
   private readonly kucoinWsClient: KucoinWsClient;
   private readonly bingxWsClient: BingxWsClient;
+  private readonly bitgetFuturesWsClient: BitgetFuturesWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
@@ -36,6 +38,15 @@ export class DataService {
     this.bingxWsClient = new BingxWsClient();
     this.mexcSpotWsClient = new MexcSpotWsClient();
     this.kucoinWsClient = new KucoinWsClient();
+    this.bitgetFuturesWsClient = new BitgetFuturesWsClient();
+  }
+
+  bitgetSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.bitgetFuturesWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  bitgetUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.bitgetFuturesWsClient.unsubscribeCandles(symbol, resolution);
   }
 
   mexcSubscribeCandles(symbol: string, resolution: ResolutionString) {
