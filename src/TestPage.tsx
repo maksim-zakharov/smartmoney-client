@@ -2647,8 +2647,8 @@ export const TestPage = () => {
                   })
                   .map((invoice, index) => (
                     <TableRow
-                      className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `KUCOIN:${invoice.symbol}` && 'rowHover')}
-                      onClick={(e) => setSelected(`KUCOIN:${invoice.symbol}`)}
+                      className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `BITGET:${invoice.symbol}` && 'rowHover')}
+                      onClick={(e) => setSelected(`BITGET:${invoice.symbol}`)}
                     >
                       <TableCell>
                         <a href={`https://www.bitget.com/futures/usdt/${invoice.symbol}`} target="_blank">

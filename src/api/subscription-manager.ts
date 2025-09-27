@@ -1,6 +1,6 @@
-import EventEmitter from 'events';
 import { Subject } from 'rxjs';
 import { WebSocket } from 'ws';
+import { EventEmitter } from './event-emitter';
 
 export type BaseEventTypes = 'message' | 'error' | 'connect' | 'disconnect' | 'subscribe';
 
@@ -10,7 +10,7 @@ export class SubscriptionManager {
   private subscriptions = new Set<string>(); // хранилище подписок
   subscribeSubjs = new Map<string, Subject<any>>([]);
 
-  private readonly eventEmitter: EventEmitter<any> = new EventEmitter<any>();
+  private readonly eventEmitter: EventEmitter = new EventEmitter();
 
   protected ws: WebSocket;
 
