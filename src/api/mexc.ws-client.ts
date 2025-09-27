@@ -1,15 +1,27 @@
 import { Subject } from 'rxjs';
 import { SubscriptionManager } from './subscription-manager';
+import { MexcOrderbook } from './mexc.models';
 
 export class MexcWsClient extends SubscriptionManager {
   constructor() {
     super({
       url: `wss://contract.mexc.com/edge`,
       name: 'Mexc Futures',
-      pingObj: {
+      pingRequest: () => ({
         method: 'ping',
-      },
+      }),
     });
+
+    this.on('connect', () => this.onOpen());
+    this.on('disconnect', () => this.onClose());
+    this.on('message', (m) => this.onMessage(m));
+  }
+  protected onOpen() {
+    console.log(`Mexc Futures Websocket соединение установлено`);
+  }
+
+  protected onClose() {
+    console.log(`Mexc Futures Websocket соединение разорвано`);
   }
 
   onMessage(ev) {
@@ -45,7 +57,7 @@ export class MexcWsClient extends SubscriptionManager {
           price: Number(p[0]),
           value: Number(p[1]),
         })),
-      });
+      } as MexcOrderbook);
     }
   }
 
@@ -65,24 +77,8 @@ export class MexcWsClient extends SubscriptionManager {
     return subj;
   }
 
-  unsubscribeCandles(symbol: string, resolution: string) {
-    const subj = new Subject<any>();
-    const interval = `Min${resolution}`;
-    const key = `${symbol}_${interval}`;
-    this.subscribeSubjs.set(key, subj);
-    this.subscribe({
-      method: 'unsub.kline',
-      param: {
-        symbol,
-        interval,
-      },
-    });
-
-    return subj;
-  }
-
   subscribeOrderbook(symbol: string, depth: number) {
-    const subj = new Subject<any>();
+    const subj = new Subject<MexcOrderbook>();
     const key = `depth_${symbol}`;
     this.subscribeSubjs.set(key, subj);
     this.subscribe({
