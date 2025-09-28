@@ -22,10 +22,10 @@ import { BehaviorSubject, combineLatest, filter } from 'rxjs';
 import { DataService } from './data.service.ts';
 
 const resolveOneSymbol = ({ dataService, symbolName }: { dataService: DataService; symbolName: string }) => {
-  const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);
-  if (exist) {
-    return Promise.resolve(JSON.parse(exist));
-  }
+  // const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);
+  // if (exist) {
+  //   return Promise.resolve(JSON.parse(exist));
+  // }
 
   return dataService.getSymbol(symbolName).then((r) => {
     const precision = getPrecision(r.minstep);
