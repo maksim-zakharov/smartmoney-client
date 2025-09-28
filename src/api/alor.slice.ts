@@ -5,7 +5,7 @@ import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/s
 import { io, Socket } from 'socket.io-client';
 import { tinkoffApi } from './tinkoff.api';
 import { ctraderApi } from './ctrader.api';
-import { DataService } from './data.service';
+import { DataService } from './common/data.service.ts';
 import { mexcApi } from './mexc.api';
 import { Positions } from 'alor-api/dist/models/models';
 

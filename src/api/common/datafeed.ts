@@ -14,12 +14,12 @@ import {
   ServerTimeCallback,
   SubscribeBarsCallback,
   SymbolResolveExtension,
-} from '../assets/charting_library';
+} from '../../assets/charting_library';
 import { AlorApi, Format, HistoryObject } from 'alor-api';
-import { getCommonCandles, getPrecision } from '../utils';
-import { calculateCandle } from '../../symbolFuturePairs';
+import { getCommonCandles, getPrecision } from '../../utils.ts';
+import { calculateCandle } from '../../../symbolFuturePairs.ts';
 import { BehaviorSubject, combineLatest, filter } from 'rxjs';
-import { DataService } from './data.service';
+import { DataService } from './data.service.ts';
 
 const resolveOneSymbol = ({ dataService, symbolName }: { dataService: DataService; symbolName: string }) => {
   const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);
@@ -30,6 +30,13 @@ const resolveOneSymbol = ({ dataService, symbolName }: { dataService: DataServic
   return dataService.getSymbol(symbolName).then((r) => {
     const precision = getPrecision(r.minstep);
     const priceScale = Number((10 ** precision).toFixed(precision));
+
+    let session = '0700-0000,0000-0200:1234567';
+    if (r.symbol.includes('_xp') || r.symbol.includes('FOREX:')) {
+      session = '0100-0000,0000-0100:12345';
+    } else if (!r.symbol.includes('FINAM') && r.symbol.includes(':')) {
+      session = '24x7';
+    }
 
     const resolve: LibrarySymbolInfo = {
       name: r.shortname,
@@ -49,7 +56,7 @@ const resolveOneSymbol = ({ dataService, symbolName }: { dataService: DataServic
       weekly_multipliers: ['1', '2'],
       monthly_multipliers: ['1', '3', '6', '12'],
       timezone: 'Europe/Moscow',
-      session: '0700-0000,0000-0200:1234567',
+      session,
     };
 
     localStorage.setItem(`LibrarySymbolInfo-${symbolName}`, JSON.stringify(resolve));
@@ -165,6 +172,13 @@ export class DataFeed implements IBasicDataFeed {
         const precision = getPrecision(obj.minstep);
         const priceScale = Number((10 ** 5).toFixed(5));
 
+        let session = '0700-0000,0000-0200:1234567';
+        if (obj.ticker.includes('_xp') || obj.ticker.includes('FOREX:')) {
+          session = '0100-0000,0000-0100:12345';
+        } else if (!obj.ticker.includes('FINAM') && obj.ticker.includes(':')) {
+          session = '24x7';
+        }
+
         const resolve: LibrarySymbolInfo = {
           ...obj,
           minmov: 100, // Math.round(obj.minstep * priceScale),
@@ -177,7 +191,7 @@ export class DataFeed implements IBasicDataFeed {
           weekly_multipliers: ['1', '2'],
           monthly_multipliers: ['1', '3', '6', '12'],
           timezone: 'Europe/Moscow',
-          session: '0700-0000,0000-0200:1234567',
+          session,
         };
 
         onResolve(resolve);
