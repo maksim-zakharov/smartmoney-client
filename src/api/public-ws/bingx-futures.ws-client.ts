@@ -5,6 +5,7 @@ import { Alltrade, HistoryObject, Orderbook, OrderbookAsk, OrderStatus, Side } f
 import { OrderbookBid } from 'alor-api/dist/models/models';
 import jsonbig from 'json-bigint';
 import * as CryptoJS from 'crypto-js';
+import { ResolutionString } from '../../assets/charting_library';
 
 const JSONbig = jsonbig({
   strict: true,
@@ -179,8 +180,8 @@ export class BingXFuturesWsClient extends SubscriptionManager {
     }
   }
 
-  subscribeCandles(symbol: string, interval: string) {
-    const key = `${symbol}@kline_${interval}`;
+  subscribeCandles(symbol: string, interval: ResolutionString) {
+    const key = `${symbol}@kline_${interval}m`;
     const subj = this.createOrUpdateSubj(key);
     this.subscribeFuturesChannel(key);
 
@@ -188,7 +189,7 @@ export class BingXFuturesWsClient extends SubscriptionManager {
   }
 
   unsubscribeCandles(symbol: string, interval: string) {
-    const key = `${symbol}@kline_${interval}`;
+    const key = `${symbol}@kline_${interval}m`;
     this.subscribeSubjs.delete(key);
     this.unsubscribeFuturesChannel(key);
   }
