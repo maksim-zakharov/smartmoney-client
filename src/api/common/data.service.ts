@@ -8,8 +8,8 @@ import { CtraderWsClient } from '../private-ws/ctrader.ws-client.ts';
 import { FinamWsClient } from '../private-ws/finam.ws-client.ts';
 import { MexcSpotWsClient } from '../private-ws/mexc-spot.ws-client.ts';
 import { KucoinWsClient } from '../private-ws/kucoin.ws-client.ts';
-import { BingxWsClient } from '../private-ws/bingx.ws-client.ts';
 import { BitgetFuturesWsClient } from '../public-ws/bitget-futures.ws-client.ts';
+import { BingXFuturesWsClient } from '../public-ws/bingx-futures.ws-client.ts';
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -23,7 +23,7 @@ export class DataService {
   private readonly finamWsClient: FinamWsClient;
   private readonly mexcSpotWsClient: MexcSpotWsClient;
   private readonly kucoinWsClient: KucoinWsClient;
-  private readonly bingxWsClient: BingxWsClient;
+  private readonly bingxWsClient: BingXFuturesWsClient;
   private readonly bitgetFuturesWsClient: BitgetFuturesWsClient;
 
   constructor(public readonly alorApi: AlorApi) {
@@ -35,7 +35,7 @@ export class DataService {
     this.gateWsClient = new GateFuturesWsClient();
     this.ctraderWsClient = new CtraderWsClient();
     this.finamWsClient = new FinamWsClient();
-    this.bingxWsClient = new BingxWsClient();
+    this.bingxWsClient = new BingXFuturesWsClient(localStorage.getItem('bingxApiKey'), localStorage.getItem('bingxSecretKey'));
     this.mexcSpotWsClient = new MexcSpotWsClient();
     this.kucoinWsClient = new KucoinWsClient();
     this.bitgetFuturesWsClient = new BitgetFuturesWsClient();

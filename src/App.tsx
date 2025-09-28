@@ -207,6 +207,18 @@ export default function App() {
     localStorage.setItem('tiToken', e.target.value);
   };
 
+  const [bingxApiKey, setbingxApiKey] = useState<string | null>(localStorage.getItem('bingxApiKey'));
+  const handlebingxApiKey = (e) => {
+    setbingxApiKey(e.target.value);
+    localStorage.setItem('bingxApiKey', e.target.value);
+  };
+
+  const [bingxSecretKey, setbingxSecretKey] = useState<string | null>(localStorage.getItem('bingxSecretKey'));
+  const handlebingxSecretKey = (e) => {
+    setbingxSecretKey(e.target.value);
+    localStorage.setItem('bingxSecretKey', e.target.value);
+  };
+
   const [brokerAccountId, setBrokerAccountId] = useState<string | null>(localStorage.getItem('tiBrokerAccountId'));
   const handleEditBrokerAccountId = (e) => {
     setBrokerAccountId(e.target.value);
@@ -308,19 +320,30 @@ export default function App() {
                           <Input id="tToken" value={tiToken} onChange={handleEditToken} />
                         </div>
                         <div className="flex gap-2 flex-col">
-                          <Label htmlFor="alorToken">BrokerAccountId</Label>
-                          <Input id="tBrokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
+                          <Label htmlFor="brokerAccountId">BrokerAccountId</Label>
+                          <Input id="brokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
                         </div>
                       </div>
                       <TypographyH4>Bybit</TypographyH4>
                       <div className="grid grid-cols-2 gap-3 w-full mb-2">
                         <div className="flex gap-2 flex-col">
-                          <Label htmlFor="alorToken">Api Key</Label>
+                          <Label htmlFor="bybitApiKey">Api Key</Label>
                           <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
                         </div>
                         <div className="flex gap-2 flex-col">
-                          <Label htmlFor="alorToken">Secret Key</Label>
+                          <Label htmlFor="bybitSecretKey">Secret Key</Label>
                           <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
+                        </div>
+                      </div>
+                      <TypographyH4>Bingx</TypographyH4>
+                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="bingxApiKey">Api key</Label>
+                          <Input id="bingxApiKey" value={bingxApiKey} onChange={handlebingxApiKey} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="bingxSecretKey">Secret key</Label>
+                          <Input id="bingxSecretKey" value={bingxSecretKey} onChange={handlebingxSecretKey} />
                         </div>
                       </div>
 

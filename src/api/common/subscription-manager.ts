@@ -9,6 +9,15 @@ export class SubscriptionManager {
   private subscriptions = new Set<string>(); // хранилище подписок
   subscribeSubjs = new Map<string, Subject<any>>([]);
 
+  createOrUpdateSubj<T>(key: string) {
+    let exist = this.subscribeSubjs.get(key);
+    if (!exist) {
+      exist = new Subject<T>();
+      this.subscribeSubjs.set(key, exist);
+    }
+    return exist;
+  }
+
   private readonly eventEmitter: EventEmitter = new EventEmitter();
 
   protected ws: WebSocket;
