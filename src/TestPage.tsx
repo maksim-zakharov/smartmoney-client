@@ -170,11 +170,13 @@ export const TestPage = () => {
     cTraderSymbols,
     bybitWallets,
     gateAccounts,
+    bingxBalance,
     MEXCPositions,
   } = useAppSelector((state) => state.alorSlice);
 
   const bybitBalance = Number(bybitWallets[0]?.totalAvailableBalance) || 0;
   const gateBalance = Number(gateAccounts?.available) || 0;
+  const bingBalance = Number(bingxBalance?.find((b) => b.asset === 'USDT')?.balance) || 0;
 
   const { data: mexcTickers = [] } = useGetTickersQuery(
     {},
@@ -654,7 +656,25 @@ export const TestPage = () => {
   return (
     <>
       <Row gutter={[8, 8]}>
-        <Col span={3}>
+        <Col span={2}>
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />
+                Bingx
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  bingBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(bingBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </Col>
+        <Col span={2}>
           <Card>
             <CardHeader>
               <CardDescription className="flex gap-2 items-center">
@@ -672,7 +692,7 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={3}>
+        <Col span={2}>
           <Card>
             <CardHeader>
               <CardDescription className="flex gap-2 items-center">
@@ -690,12 +710,12 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={3}>
+        <Col span={2}>
           <Card>
             <CardHeader>
               <CardDescription className="flex gap-2 items-center">
                 <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/tcs2x160.png")` }}></div>
-                Тинькофф {tinkoffPortfolio?.accountId}
+                Тинькофф
               </CardDescription>
               <CardTitle
                 className={cn(
@@ -708,10 +728,10 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={3}>
+        <Col span={2}>
           <Card>
             <CardHeader>
-              <CardDescription>Алор {localStorage.getItem('aPortfolio')}</CardDescription>
+              <CardDescription>Алор</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
@@ -723,10 +743,10 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={3}>
+        <Col span={2}>
           <Card>
             <CardHeader>
-              <CardDescription>P&L (Тинькофф)</CardDescription>
+              <CardDescription>P&L Тинькофф</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
@@ -738,10 +758,10 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={3}>
+        <Col span={2}>
           <Card>
             <CardHeader>
-              <CardDescription>P&L (Алор)</CardDescription>
+              <CardDescription>P&L Алор</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
@@ -753,7 +773,7 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={3}>
+        <Col span={2}>
           <Card>
             <CardHeader>
               <CardDescription>P&L XPBEE</CardDescription>
@@ -768,7 +788,7 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={3}>
+        <Col span={2}>
           <Card>
             <CardHeader>
               <CardDescription>Общий P&L</CardDescription>

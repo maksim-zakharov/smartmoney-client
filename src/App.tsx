@@ -31,6 +31,7 @@ import { AlertDialog } from './components/AlertDialog.tsx';
 import { TypographyH4 } from './components/ui/typography.tsx';
 import { useGetWalletBalanceQuery } from './api/bybit.api.ts';
 import { useGetAccountsQuery } from './api/gate.api.ts';
+import { useGetBalanceQuery } from './api/bingx.api.ts';
 
 export default function App() {
   const navigate = useNavigate();
@@ -68,6 +69,17 @@ export default function App() {
     {
       pollingInterval: 5000,
       skip: !localStorage.getItem('gateApiKey') || !localStorage.getItem('gateSecretKey'),
+    },
+  );
+
+  useGetBalanceQuery(
+    {
+      apiKey: localStorage.getItem('bingxApiKey'),
+      secretKey: localStorage.getItem('bingxSecretKey'),
+    },
+    {
+      pollingInterval: 5000,
+      skip: !localStorage.getItem('bingxApiKey') || !localStorage.getItem('bingxSecretKey'),
     },
   );
 

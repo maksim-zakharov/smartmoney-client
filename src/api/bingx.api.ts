@@ -21,7 +21,13 @@ export const bingxApi = createApi({
         params,
       }),
     }),
+    getBalance: builder.query<any, { apiKey: string; secretKey: string }>({
+      query: (params) => ({
+        url: '/balance',
+        params,
+      }),
+    }),
   }),
 });
 
-export const { useGetBINGXTickersQuery } = bingxApi;
+export const { useGetBINGXTickersQuery, useGetBalanceQuery } = bingxApi;

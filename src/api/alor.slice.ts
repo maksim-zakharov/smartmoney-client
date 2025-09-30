@@ -10,6 +10,7 @@ import { mexcApi } from './mexc.api';
 import { Positions } from 'alor-api/dist/models/models';
 import { bybitApi } from './bybit.api.ts';
 import { gateApi } from './gate.api.ts';
+import { bingxApi } from './bingx.api.ts';
 
 type Settings = {
   token: string;
@@ -51,6 +52,7 @@ const initialState = {
   bybitWallets: [],
 
   gateAccounts: undefined,
+  bingxBalance: [],
 
   release: undefined,
   apiAuth: false,
@@ -95,6 +97,7 @@ const initialState = {
   bybitWallets: any[];
 
   gateAccounts?: any;
+  bingxBalance: any[];
 
   cTraderAuth?: AppsTokenResponse;
   cTraderAccount?: any;
@@ -233,6 +236,9 @@ export const alorSlice = createSlice({
     });
     builder.addMatcher(gateApi.endpoints.getAccounts.matchFulfilled, (state, { payload }) => {
       state.gateAccounts = payload;
+    });
+    builder.addMatcher(bingxApi.endpoints.getBalance.matchFulfilled, (state, { payload }) => {
+      state.bingxBalance = payload;
     });
     builder.addMatcher(alorApi.endpoints.getOperations.matchFulfilled, (state, { payload }) => {
       state.activeOperations = payload ? payload.filter((o) => ![Status.Overdue, Status.Refused].includes(o.status)) : [];
