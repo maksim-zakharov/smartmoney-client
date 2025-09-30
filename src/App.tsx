@@ -54,13 +54,19 @@ export default function App() {
 
   const tiBrokerAccountId = localStorage.getItem('tiBrokerAccountId');
 
-  useGetWalletBalanceQuery({});
+  useGetWalletBalanceQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
   useGetAccountsQuery(
     {
       apiKey: localStorage.getItem('gateApiKey'),
       secretKey: localStorage.getItem('gateSecretKey'),
     },
     {
+      pollingInterval: 5000,
       skip: !localStorage.getItem('gateApiKey') || !localStorage.getItem('gateSecretKey'),
     },
   );
