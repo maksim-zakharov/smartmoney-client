@@ -29,6 +29,8 @@ import { Button } from './components/ui/button.tsx';
 import { deleteAlert } from './api/alerts.slice';
 import { AlertDialog } from './components/AlertDialog.tsx';
 import { TypographyH4 } from './components/ui/typography.tsx';
+import { useGetWalletBalanceQuery } from './api/bybit.api.ts';
+import { useGetAccountsQuery } from './api/gate.api.ts';
 
 export default function App() {
   const navigate = useNavigate();
@@ -51,6 +53,17 @@ export default function App() {
     process.env.NODE_ENV !== 'production' ? 'http://localhost:5173/' : `https://maksim-zakharov.github.io/smartmoney-client/`;
 
   const tiBrokerAccountId = localStorage.getItem('tiBrokerAccountId');
+
+  useGetWalletBalanceQuery({});
+  useGetAccountsQuery(
+    {
+      apiKey: localStorage.getItem('gateApiKey'),
+      secretKey: localStorage.getItem('gateSecretKey'),
+    },
+    {
+      skip: !localStorage.getItem('gateApiKey') || !localStorage.getItem('gateSecretKey'),
+    },
+  );
 
   useGetPositionsQuery(
     {
@@ -219,6 +232,18 @@ export default function App() {
     localStorage.setItem('bingxSecretKey', e.target.value);
   };
 
+  const [gateApiKey, setgateApiKey] = useState<string | null>(localStorage.getItem('gateApiKey'));
+  const handlegateApiKey = (e) => {
+    setgateApiKey(e.target.value);
+    localStorage.setItem('gateApiKey', e.target.value);
+  };
+
+  const [gateSecretKey, setgateSecretKey] = useState<string | null>(localStorage.getItem('gateSecretKey'));
+  const handlegateSecretKey = (e) => {
+    setgateSecretKey(e.target.value);
+    localStorage.setItem('gateSecretKey', e.target.value);
+  };
+
   const [brokerAccountId, setBrokerAccountId] = useState<string | null>(localStorage.getItem('tiBrokerAccountId'));
   const handleEditBrokerAccountId = (e) => {
     setBrokerAccountId(e.target.value);
@@ -344,6 +369,17 @@ export default function App() {
                         <div className="flex gap-2 flex-col">
                           <Label htmlFor="bingxSecretKey">Secret key</Label>
                           <Input id="bingxSecretKey" value={bingxSecretKey} onChange={handlebingxSecretKey} />
+                        </div>
+                      </div>
+                      <TypographyH4>Gate</TypographyH4>
+                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="gateApiKey">Api key</Label>
+                          <Input id="gateApiKey" value={gateApiKey} onChange={handlegateApiKey} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="gateSecretKey">Secret key</Label>
+                          <Input id="gateSecretKey" value={gateSecretKey} onChange={handlegateSecretKey} />
                         </div>
                       </div>
 

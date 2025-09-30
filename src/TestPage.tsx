@@ -168,8 +168,13 @@ export const TestPage = () => {
     cTraderPositionPnL,
     cTraderAccount,
     cTraderSymbols,
+    bybitWallets,
+    gateAccounts,
     MEXCPositions,
   } = useAppSelector((state) => state.alorSlice);
+
+  const bybitBalance = Number(bybitWallets[0]?.totalAvailableBalance) || 0;
+  const gateBalance = Number(gateAccounts?.available) || 0;
 
   const { data: mexcTickers = [] } = useGetTickersQuery(
     {},
@@ -649,10 +654,49 @@ export const TestPage = () => {
   return (
     <>
       <Row gutter={[8, 8]}>
-        <Col span={4}>
+        <Col span={3}>
           <Card>
             <CardHeader>
-              <CardDescription>Тинькофф Портфель {tinkoffPortfolio?.accountId}</CardDescription>
+              <CardDescription className="flex gap-2 items-center">
+                <img className="h-4 rounded-full" src={exchangeImgMap['BYBIT']} />
+                Bybit
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  bybitBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(bybitBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </Col>
+        <Col span={3}>
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <img className="h-4 rounded-full" src={exchangeImgMap['GATEIO']} />
+                Gate
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  gateBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(gateBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </Col>
+        <Col span={3}>
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/tcs2x160.png")` }}></div>
+                Тинькофф {tinkoffPortfolio?.accountId}
+              </CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
@@ -664,10 +708,10 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={3}>
           <Card>
             <CardHeader>
-              <CardDescription>Алор Портфель {localStorage.getItem('aPortfolio')}</CardDescription>
+              <CardDescription>Алор {localStorage.getItem('aPortfolio')}</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
@@ -679,7 +723,7 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={3}>
           <Card>
             <CardHeader>
               <CardDescription>Текущий финрез (Тинькофф)</CardDescription>
@@ -694,7 +738,7 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={3}>
           <Card>
             <CardHeader>
               <CardDescription>Текущий финрез (Алор)</CardDescription>
@@ -709,7 +753,7 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={3}>
           <Card>
             <CardHeader>
               <CardDescription>Текущий финрез (forex)</CardDescription>
@@ -719,12 +763,12 @@ export const TestPage = () => {
                   totalPnLForex > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(totalPnLForex, 'USD')}
+                {moneyFormat(totalPnLForex, 'USDT')}
               </CardTitle>
             </CardHeader>
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={3}>
           <Card>
             <CardHeader>
               <CardDescription>Текущий финрез (общий)</CardDescription>

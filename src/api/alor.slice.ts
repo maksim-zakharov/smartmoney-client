@@ -8,6 +8,8 @@ import { ctraderApi } from './ctrader.api';
 import { DataService } from './common/data.service.ts';
 import { mexcApi } from './mexc.api';
 import { Positions } from 'alor-api/dist/models/models';
+import { bybitApi } from './bybit.api.ts';
+import { gateApi } from './gate.api.ts';
 
 type Settings = {
   token: string;
@@ -45,6 +47,10 @@ const initialState = {
   activeOperations: [],
   lastWithdrawals: [],
   alorPositions: [],
+
+  bybitWallets: [],
+
+  gateAccounts: undefined,
 
   release: undefined,
   apiAuth: false,
@@ -85,6 +91,10 @@ const initialState = {
   agreementsMap: any;
   activeOperations: GetOperationsResponse[];
   lastWithdrawals: number[];
+
+  bybitWallets: any[];
+
+  gateAccounts?: any;
 
   cTraderAuth?: AppsTokenResponse;
   cTraderAccount?: any;
@@ -217,6 +227,12 @@ export const alorSlice = createSlice({
     });
     builder.addMatcher(alorApi.endpoints.getPositions.matchFulfilled, (state, { payload }) => {
       state.alorPositions = payload;
+    });
+    builder.addMatcher(bybitApi.endpoints.getWalletBalance.matchFulfilled, (state, { payload }) => {
+      state.bybitWallets = payload;
+    });
+    builder.addMatcher(gateApi.endpoints.getAccounts.matchFulfilled, (state, { payload }) => {
+      state.gateAccounts = payload;
     });
     builder.addMatcher(alorApi.endpoints.getOperations.matchFulfilled, (state, { payload }) => {
       state.activeOperations = payload ? payload.filter((o) => ![Status.Overdue, Status.Refused].includes(o.status)) : [];

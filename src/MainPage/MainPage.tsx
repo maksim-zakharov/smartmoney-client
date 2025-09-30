@@ -22,13 +22,18 @@ export const moneyFormat = (
 ) => {
   const options: Intl.NumberFormatOptions = {
     style: 'currency',
-    currency,
+    currency: currency === 'USDT' ? 'USD' : currency,
     minimumFractionDigits,
     maximumFractionDigits,
   };
   const numberFormat = new Intl.NumberFormat('ru-RU', options);
 
-  return numberFormat.format(money);
+  let result = numberFormat.format(money);
+  if (currency === 'USDT') {
+    result = result.replace('$', 'USDT');
+  }
+
+  return result;
 };
 
 export const numberFormat = (money: number, minimumFractionDigits: number = 0, maximumFractionDigits: number = 0) => {

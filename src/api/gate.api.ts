@@ -21,7 +21,13 @@ export const gateApi = createApi({
         params,
       }),
     }),
+    getAccounts: builder.query<any, { apiKey: string; secretKey: string }>({
+      query: (params) => ({
+        url: '/futures-accounts',
+        params,
+      }),
+    }),
   }),
 });
 
-export const { useGetGateTickersQuery } = gateApi;
+export const { useGetGateTickersQuery, useGetAccountsQuery } = gateApi;

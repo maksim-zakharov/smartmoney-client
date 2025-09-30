@@ -23,7 +23,15 @@ export const bybitApi = createApi({
         },
       }),
     }),
+    getWalletBalance: builder.query<any, any>({
+      query: (params) => ({
+        url: '/wallet-balance',
+        params: {
+          accountType: 'UNIFIED',
+        },
+      }),
+    }),
   }),
 });
 
-export const { useGetBYBITTickersQuery } = bybitApi;
+export const { useGetBYBITTickersQuery, useGetWalletBalanceQuery } = bybitApi;
