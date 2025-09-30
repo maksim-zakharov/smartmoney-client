@@ -1,16 +1,15 @@
-import { share, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { SubscriptionManager } from '../common/subscription-manager';
 
-export class BybitWebsocketClient extends SubscriptionManager {
+export class BybitPrivateWsClient extends SubscriptionManager {
   constructor() {
     super({
-      name: 'BingX Futures',
-      url: `wss://stream.bybit.com/v5/public/linear`,
+      name: 'Bybit Private',
+      url: `wss://stream.bybit.com/v5/private`,
       pingRequest: () => ({
         op: 'ping',
       }),
     });
-    // this.bybitWs = new WebSocket(`wss://stream.bybit.com/v5/public/spot`);
 
     this.on('connect', () => this.onOpen());
     this.on('disconnect', () => this.onClose());
@@ -56,7 +55,8 @@ export class BybitWebsocketClient extends SubscriptionManager {
 
   subscribeOrderbook(symbol: string, depth: number) {
     const args = `orderbook.${depth}.${symbol}`;
-    const subj = this.createOrUpdateSubj(args);
+    const subj = new Subject<any>();
+    this.subscribeSubjs.set(args, subj);
     this.subscribe({
       op: 'subscribe',
       args: [args],
@@ -67,21 +67,20 @@ export class BybitWebsocketClient extends SubscriptionManager {
 
   subscribeCandles(symbol: string, resolution: string) {
     const args = `kline.${resolution}.${symbol}`;
-    if (!this.subscribeSubjs.has(args)) {
-      this.subscribe({
-        op: 'subscribe',
-        args: [args],
-      });
-    }
-    const subj = this.createOrUpdateSubj(args);
+    const subj = new Subject<any>();
+    this.subscribeSubjs.set(args, subj);
+    this.subscribe({
+      op: 'subscribe',
+      args: [args],
+    });
 
-    return subj.pipe(share());
+    return subj;
   }
 
   unsubscribeCandles(symbol: string, resolution: string) {
     const args = `kline.${resolution}.${symbol}`;
     const subj = new Subject<any>();
-    this.subscribeSubjs.delete(args);
+    this.subscribeSubjs.set(args, subj);
     this.subscribe({
       op: 'unsubscribe',
       args: [args],
@@ -92,7 +91,8 @@ export class BybitWebsocketClient extends SubscriptionManager {
 
   subscribeQuotes(symbol: string) {
     const args = `tickers.${symbol}`;
-    const subj = this.createOrUpdateSubj(args);
+    const subj = new Subject<{ lastPrice: number }>();
+    this.subscribeSubjs.set(args, subj);
     this.subscribe({
       op: 'subscribe',
       args: [args],

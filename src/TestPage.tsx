@@ -1122,7 +1122,7 @@ export const TestPage = () => {
                   .map((t) => ({ ...t, spread: (Number(t.lowest_ask) / Number(t.highest_bid) - 1) * 100 }))
                   .filter(
                     (t) =>
-                      (!filters['gate-futures-amount24'] || Number(t.volume_24h) >= Number(filters['gate-futures-amount24'])) &&
+                      (!filters['gate-futures-amount24'] || Number(t.volume_24h_quote) >= Number(filters['gate-futures-amount24'])) &&
                       (!filters['gate-futures-spread'] || Number(t.spread) >= Number(filters['gate-futures-spread'])),
                   )
                   .sort((a, b) => {
@@ -1147,11 +1147,11 @@ export const TestPage = () => {
                     }
 
                     if (sorter['amount24'] === 'desc') {
-                      return Number(b.volume_24h) - Number(a.volume_24h);
+                      return Number(b.volume_24h_quote) - Number(a.volume_24h_quote);
                     }
 
                     if (sorter['amount24'] === 'asc') {
-                      return Number(a.volume_24h) - Number(b.volume_24h);
+                      return Number(a.volume_24h_quote) - Number(b.volume_24h_quote);
                     }
 
                     if (sorter['symbol'] === 'desc') {
@@ -1183,7 +1183,7 @@ export const TestPage = () => {
                       >
                         {Number(invoice.change_percentage)}%
                       </TableCell>
-                      <TableCell>{moneyFormatCompact(invoice.volume_24h, 'USD', 0, 0)}</TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.volume_24h_quote, 'USD', 0, 0)}</TableCell>
                       <TableCell>
                         <Exchanges symbol={invoice.contract?.split('_')[0]} />
                       </TableCell>
