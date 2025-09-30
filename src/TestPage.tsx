@@ -726,7 +726,7 @@ export const TestPage = () => {
         <Col span={3}>
           <Card>
             <CardHeader>
-              <CardDescription>Текущий финрез (Тинькофф)</CardDescription>
+              <CardDescription>P&L (Тинькофф)</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
@@ -741,7 +741,7 @@ export const TestPage = () => {
         <Col span={3}>
           <Card>
             <CardHeader>
-              <CardDescription>Текущий финрез (Алор)</CardDescription>
+              <CardDescription>P&L (Алор)</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
@@ -756,7 +756,7 @@ export const TestPage = () => {
         <Col span={3}>
           <Card>
             <CardHeader>
-              <CardDescription>Текущий финрез (forex)</CardDescription>
+              <CardDescription>P&L XPBEE</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
@@ -771,7 +771,7 @@ export const TestPage = () => {
         <Col span={3}>
           <Card>
             <CardHeader>
-              <CardDescription>Текущий финрез (общий)</CardDescription>
+              <CardDescription>Общий P&L</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
