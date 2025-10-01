@@ -383,7 +383,8 @@ export const TestPage = () => {
         return acc;
       }, {}),
       ...cTraderPositionsMapped.reduce((acc, curr) => {
-        acc[curr.tradeData.symbolId] = (curr.PnL || 0) * USDRate;
+        acc[curr.tradeData.symbolId] =
+          ((curr.PnL || 0) + normalizePrice(parseInt(curr.swap || 0, 10), cTraderPositionPnL?.moneyDigits || 1)) * USDRate;
         return acc;
       }, {}),
       ...alorPositions.reduce((acc, curr) => {
@@ -391,7 +392,7 @@ export const TestPage = () => {
         return acc;
       }, {}),
     }),
-    [tinkoffPortfolio?.positions, cTraderPositionsMapped, alorPositions],
+    [tinkoffPortfolio?.positions, cTraderPositionsMapped, alorPositions, cTraderPositionPnL?.moneyDigits, USDRate],
   );
 
   const total = totalTIPnL + totalPnLForex * USDRate + totalAlorPnL;
