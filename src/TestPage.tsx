@@ -764,7 +764,7 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={2} offset={6}>
+        <Col span={2} offset={4}>
           <Card>
             <CardHeader>
               <CardDescription>P&L Тинькофф</CardDescription>
