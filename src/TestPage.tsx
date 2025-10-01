@@ -395,7 +395,7 @@ export const TestPage = () => {
     [tinkoffPortfolio?.positions, cTraderPositionsMapped, alorPositions, cTraderPositionPnL?.moneyDigits, USDRate],
   );
 
-  const total = totalTIPnL + totalPnLForex * USDRate + totalAlorPnL;
+  const total = totalPnLForex * USDRate + totalAlorPnL;
 
   const alorSymbolPositionMap = useMemo(
     () =>
@@ -770,22 +770,7 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         </Col>
-        <Col span={2} offset={4}>
-          <Card>
-            <CardHeader>
-              <CardDescription>P&L Тинькофф</CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  totalTIPnL > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(totalTIPnL)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-        <Col span={2}>
+        <Col span={2} offset={6}>
           <Card>
             <CardHeader>
               <CardDescription>P&L Алор</CardDescription>
