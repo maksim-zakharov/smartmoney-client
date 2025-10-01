@@ -177,7 +177,7 @@ export const TestPage = () => {
 
   const bybitBalance = Number(bybitWallets[0]?.totalAvailableBalance) || 0;
   const gateBalance = Number(gateAccounts?.available) || 0;
-  const bingBalance = Number(bingxBalance?.find((b) => b.asset === 'USDT')?.balance) || 0;
+  const bingBalance = Number(bingxBalance?.find((b) => b.asset === 'USDT')?.equity) || 0;
   const ctraderDigits = useMemo(() => 10 ** (cTraderSummary?.moneyDigits || 1), [cTraderSummary?.moneyDigits]);
 
   const { data: mexcTickers = [] } = useGetTickersQuery(
