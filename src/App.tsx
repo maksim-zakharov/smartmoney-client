@@ -61,6 +61,7 @@ export default function App() {
       ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
     },
     {
+      pollingInterval: 5000,
       skip: !accessToken || !cTraderAccount?.ctidTraderAccountId,
     },
   );
