@@ -57,6 +57,7 @@ const initialState = {
   release: undefined,
   apiAuth: false,
   cTraderAccounts: [],
+  cTraderSummary: undefined,
   ws: ctraderWs,
   darkColors: {
     backgroundColor: 'rgb(30,44,57)',
@@ -105,6 +106,7 @@ const initialState = {
   cTraderPositions?: any;
   cTraderPositionPnL?: any;
   cTraderSymbols?: any;
+  cTraderSummary?: any;
 
   MEXCPositions?: any;
 
@@ -216,6 +218,9 @@ export const alorSlice = createSlice({
     });
     builder.addMatcher(ctraderApi.endpoints.getCTraderSymbols.matchFulfilled, (state, { payload }) => {
       state.cTraderSymbols = payload;
+    });
+    builder.addMatcher(ctraderApi.endpoints.summary.matchFulfilled, (state, { payload }) => {
+      state.cTraderSummary = payload;
     });
     builder.addMatcher(ctraderApi.endpoints.authCode.matchFulfilled, (state, { payload }) => {
       state.cTraderAuth = payload;

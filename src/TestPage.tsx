@@ -172,11 +172,14 @@ export const TestPage = () => {
     gateAccounts,
     bingxBalance,
     MEXCPositions,
+    cTraderSummary,
   } = useAppSelector((state) => state.alorSlice);
 
   const bybitBalance = Number(bybitWallets[0]?.totalAvailableBalance) || 0;
   const gateBalance = Number(gateAccounts?.available) || 0;
   const bingBalance = Number(bingxBalance?.find((b) => b.asset === 'USDT')?.balance) || 0;
+  const ctraderDigits = useMemo(() => 10 ** (cTraderSummary?.moneyDigits || 1), [cTraderSummary?.moneyDigits]);
+  const ctraderBalance = (cTraderSummary?.balance || 0) / ctraderDigits;
 
   const { data: mexcTickers = [] } = useGetTickersQuery(
     {},
@@ -559,7 +562,7 @@ export const TestPage = () => {
         <ForexLabel ticker={map.get(invoice.tradeData.symbolId)?.symbolName} />
       </TableCell>
       <TableCell>Форекс</TableCell>
-      <TableCell>XPBEE</TableCell>
+      <TableCell>{cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}</TableCell>
       <TableCell>{invoice.volume / 10000}</TableCell>
       <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
       <TableCell>-</TableCell>
@@ -656,6 +659,24 @@ export const TestPage = () => {
   return (
     <>
       <Row gutter={[8, 8]}>
+        <Col span={2}>
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                {/*<img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />*/}
+                {cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  ctraderBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(ctraderBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </Col>
         <Col span={2}>
           <Card>
             <CardHeader>
@@ -776,7 +797,7 @@ export const TestPage = () => {
         <Col span={2}>
           <Card>
             <CardHeader>
-              <CardDescription>P&L XPBEE</CardDescription>
+              <CardDescription>P&L {cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}</CardDescription>
               <CardTitle
                 className={cn(
                   'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',

@@ -14,6 +14,7 @@ import {
   useGetCTraderPositionsQuery,
   useGetCTraderSymbolsQuery,
   useSelectAccountQuery,
+  useSummaryQuery,
 } from './api/ctrader.api';
 import { ThemeProvider } from './components/theme-provider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
@@ -54,6 +55,15 @@ export default function App() {
     process.env.NODE_ENV !== 'production' ? 'http://localhost:5173/' : `https://maksim-zakharov.github.io/smartmoney-client/`;
 
   const tiBrokerAccountId = localStorage.getItem('tiBrokerAccountId');
+
+  useSummaryQuery(
+    {
+      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+    },
+    {
+      skip: !accessToken || !cTraderAccount?.ctidTraderAccountId,
+    },
+  );
 
   useGetWalletBalanceQuery(
     {},

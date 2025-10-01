@@ -25,6 +25,12 @@ export const ctraderApi = createApi({
         params,
       }),
     }),
+    summary: builder.query<any, any>({
+      query: (params) => ({
+        url: '/summary',
+        params,
+      }),
+    }),
     selectAccount: builder.query<any, any>({
       query: (params) => ({
         url: '/selectAccount',
@@ -77,6 +83,7 @@ export const {
   useGetCTraderSymbolsQuery,
   useAuthAuthQuery,
   // useGetCTraderSymbolsByIdQuery,
+  useSummaryQuery,
   useGetCTraderPositionPnLQuery,
   useAuthCodeQuery,
   useGetCTraderPositionsQuery,
