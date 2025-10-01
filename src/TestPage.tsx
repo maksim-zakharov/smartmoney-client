@@ -347,10 +347,10 @@ export const TestPage = () => {
   const totalPnLForex = useMemo(
     () =>
       (cTraderPositions?.position || []).reduce(
-        (acc, cur) => acc + pnl.get(cur.positionId) + normalizePrice(parseInt(cur.swap, 10), cTraderPositionPnL.moneyDigits),
+        (acc, cur) => acc + pnl.get(cur.positionId) + normalizePrice(parseInt(cur.swap, 10), cTraderPositionPnL?.moneyDigits || 1),
         0,
       ),
-    [cTraderPositions?.position, pnl],
+    [cTraderPositionPnL?.moneyDigits, cTraderPositions?.position, pnl],
   );
 
   const ctraderBalance = (cTraderSummary?.balance || 0) / ctraderDigits + totalPnLForex;
