@@ -179,7 +179,6 @@ export const TestPage = () => {
   const gateBalance = Number(gateAccounts?.available) || 0;
   const bingBalance = Number(bingxBalance?.find((b) => b.asset === 'USDT')?.balance) || 0;
   const ctraderDigits = useMemo(() => 10 ** (cTraderSummary?.moneyDigits || 1), [cTraderSummary?.moneyDigits]);
-  const ctraderBalance = (cTraderSummary?.balance || 0) / ctraderDigits;
 
   const { data: mexcTickers = [] } = useGetTickersQuery(
     {},
@@ -346,9 +345,15 @@ export const TestPage = () => {
   );
 
   const totalPnLForex = useMemo(
-    () => (cTraderPositions?.position || []).reduce((acc, cur) => acc + pnl.get(cur.positionId), 0),
+    () =>
+      (cTraderPositions?.position || []).reduce(
+        (acc, cur) => acc + pnl.get(cur.positionId) + normalizePrice(parseInt(cur.swap, 10), cTraderPositionPnL.moneyDigits),
+        0,
+      ),
     [cTraderPositions?.position, pnl],
   );
+
+  const ctraderBalance = (cTraderSummary?.balance || 0) / ctraderDigits + totalPnLForex;
 
   const amount = (tinkoffPortfolio?.totalAmountPortfolio || 0) - bondsMargin;
 
