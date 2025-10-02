@@ -34,7 +34,7 @@ export const SmartPage = () => {
   const { cTraderSymbols } = useAppSelector((state) => state.alorSlice);
 
   const stockSymbols = useMemo(
-    () => cTraderSymbols.filter((s) => s.symbolCategoryId === 6 && s.symbolName.includes('_xp')),
+    () => cTraderSymbols?.filter((s) => s.symbolCategoryId === 6 && s.symbolName.includes('_xp')) || [],
     [cTraderSymbols],
   );
 
