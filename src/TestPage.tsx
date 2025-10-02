@@ -96,6 +96,8 @@ export const AlorLabel = ({ symbol }) => {
     PLD: 'Palladium',
     PLT: 'Platinum',
     UCNY: 'USDCNY',
+    CNY: 'CNYRUR',
+    SI: 'USD1',
     ED: 'EURUSD3',
     RUB: 'ruble',
   };
