@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs';
-import * as crypto from 'crypto';
+import crypto from 'crypto';
 import { SubscriptionManager } from '../common/subscription-manager';
 
 enum GateFuturesChannelEnum {

@@ -508,14 +508,11 @@ export default function App() {
             borderRadius: borderRadiusLG,
           }}
         >
-          {!cTraderAccount?.ctidTraderAccountId ||
-            (cTraderSymbols?.length > 0 && (
-              <Routes>
-                {menuItems.map((item) => (
-                  <Route path={item.key} element={item.element} />
-                ))}
-              </Routes>
+          <Routes>
+            {menuItems.map((item) => (
+              <Route path={item.key} element={item.element} />
             ))}
+          </Routes>
           <AlertDialog />
         </Content>
       </Layout>

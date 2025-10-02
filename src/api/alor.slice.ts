@@ -233,6 +233,13 @@ export const alorSlice = createSlice({
       const selectedAccountId = localStorage.getItem('ctidTraderAccountId');
       state.cTraderAccount = state.cTraderAccounts.find((c) => c.ctidTraderAccountId.toString() === selectedAccountId) || payload[0];
     });
+    builder.addMatcher(ctraderApi.endpoints.selectAccount.matchRejected, (state, { payload }) => {
+      if (payload.status === 401) {
+        state.cTraderAuth = undefined;
+        localStorage.removeItem('cTraderAuth');
+      }
+    });
+
     builder.addMatcher(alorApi.endpoints.getPositions.matchFulfilled, (state, { payload }) => {
       state.alorPositions = payload;
     });
