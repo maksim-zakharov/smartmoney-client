@@ -311,7 +311,7 @@ export const alorSlice = createSlice({
       state.gateAccounts = payload;
     });
     builder.addMatcher(bingxApi.endpoints.getBalance.matchFulfilled, (state, { payload }) => {
-      state.bingxBalance = payload;
+      if (Array.isArray(payload)) state.bingxBalance = payload;
     });
     builder.addMatcher(alorApi.endpoints.getOperations.matchFulfilled, (state, { payload }) => {
       state.activeOperations = payload ? payload.filter((o) => ![Status.Overdue, Status.Refused].includes(o.status)) : [];
