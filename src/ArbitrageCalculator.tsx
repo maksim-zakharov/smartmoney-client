@@ -107,13 +107,13 @@ const PairCalculator = ({ group, onUpdate }) => {
   };
 
   return (
-    <Card className="gap-2">
-      <CardHeader>
+    <Card className="gap-1 p-2">
+      <CardHeader className="pl-2 pt-3">
         <CardTitle>
           <TypographyH4>{group.id}</TypographyH4>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2">
         <div className="grid grid-cols-2 gap-4 mb-2">
           {instruments.map((inst, index) => (
             <label key={index}>
@@ -166,13 +166,13 @@ const TripleCalculator = ({ group, onUpdate }) => {
   };
 
   return (
-    <Card className="gap-2">
-      <CardHeader>
+    <Card className="gap-1 p-2">
+      <CardHeader className="pl-2 pt-3">
         <CardTitle>
           <TypographyH4>{group.id}</TypographyH4>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2">
         <div className="grid grid-cols-2 gap-4 mt-2 mb-2">
           {instruments.map((inst, index) => (
             <label key={index}>
