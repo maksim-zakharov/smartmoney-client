@@ -177,7 +177,13 @@ const TripleCalculator = ({ group, onUpdate }) => {
           {instruments.map((inst, index) => (
             <label key={index}>
               {inst.name}:
-              <Input type="number" value={inst.value} onChange={(e) => handleChange(index, e)} min="0" step={index === 0 ? '1' : '0.01'} />
+              <Input
+                type="number"
+                value={inst.value}
+                onChange={(e) => handleChange(index, e.target.value)}
+                min="0"
+                step={index === 0 ? '1' : '0.01'}
+              />
             </label>
           ))}
         </div>
