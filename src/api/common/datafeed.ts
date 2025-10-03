@@ -33,7 +33,7 @@ const resolveOneSymbol = ({ dataService, symbolName }: { dataService: DataServic
 
     let session = '0700-0000,0000-0200:1234567';
     if (r.symbol.includes('_xp') || r.symbol.includes('FOREX:')) {
-      session = '0100-0000,0000-0100:12345';
+      session = '0100-0000,0000-0100:23456';
     } else if (!r.symbol.includes('FINAM') && r.symbol.includes(':')) {
       session = '24x7';
     }
@@ -138,11 +138,11 @@ export class DataFeed implements IBasicDataFeed {
         symbolName,
       }).then(onResolve);
     } else {
-      const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);
-      if (exist) {
-        onResolve(JSON.parse(exist));
-        return;
-      }
+      // const exist = localStorage.getItem(`LibrarySymbolInfo-${symbolName}`);
+      // // if (exist) {
+      // //   onResolve(JSON.parse(exist));
+      // //   return;
+      // // }
       const parts = symbolName.split('/');
       Promise.all(parts.map((part) => this.dataService.getSymbol(part))).then((instruments) => {
         const obj = instruments.reduce(
@@ -174,7 +174,7 @@ export class DataFeed implements IBasicDataFeed {
 
         let session = '0700-0000,0000-0200:1234567';
         if (obj.ticker.includes('_xp') || obj.ticker.includes('FOREX:')) {
-          session = '0100-0000,0000-0100:12345';
+          session = '0100-0000,0000-0100:23456';
         } else if (!obj.ticker.includes('FINAM') && obj.ticker.includes(':')) {
           session = '24x7';
         }
