@@ -3,7 +3,7 @@ import { Layout, Menu, Space, theme } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
-import { useGetPositionsQuery, useGetUserInfoQuery } from './api/alor.api';
+import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
 import { AppsTokenResponse, deletePair, initApi, selectCTraderAccount, setTiToken } from './api/alor.slice';
 import { TestPage } from './TestPage';
@@ -94,17 +94,17 @@ export default function App() {
     },
   );
 
-  useGetPositionsQuery(
-    {
-      format: 'Simple',
-      portfolio: localStorage.getItem('aPortfolio'),
-      exchange: 'MOEX',
-    },
-    {
-      skip: !api || !localStorage.getItem('aPortfolio'),
-      pollingInterval: 5000,
-    },
-  );
+  // useGetPositionsQuery(
+  //   {
+  //     format: 'Simple',
+  //     portfolio: localStorage.getItem('aPortfolio'),
+  //     exchange: 'MOEX',
+  //   },
+  //   {
+  //     skip: !api || !localStorage.getItem('aPortfolio'),
+  //     pollingInterval: 5000,
+  //   },
+  // );
 
   useGetMEXCPositionsQuery(
     {},

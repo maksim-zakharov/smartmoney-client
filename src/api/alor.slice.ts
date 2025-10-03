@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AlorApi, AuthEndpoint, Endpoint, WssEndpoint, WssEndpointBeta } from 'alor-api';
+import { AlorApi, AuthEndpoint, Endpoint, Position, WssEndpoint, WssEndpointBeta } from 'alor-api';
 import { alorApi } from './alor.api';
 import { GetOperationsResponse, Status, UserInfoResponse } from 'alor-api/dist/services/ClientInfoService/ClientInfoService';
 import { io, Socket } from 'socket.io-client';
@@ -11,6 +11,7 @@ import { Positions } from 'alor-api/dist/models/models';
 import { bybitApi } from './bybit.api.ts';
 import { gateApi } from './gate.api.ts';
 import { bingxApi } from './bingx.api.ts';
+import { store } from '../store.ts';
 
 type Settings = {
   token: string;
@@ -118,10 +119,57 @@ const initialState = {
   favoritePairs?: any[];
 };
 
+const dataHandler = (position: Position) => {
+  store.dispatch(updatePosition(position)); // Dispatch instead of direct mutation
+};
+
 export const alorSlice = createSlice({
   name: 'alorSlice',
   initialState,
   reducers: {
+    updatePosition: (state, action: PayloadAction<Position>) => {
+      const position = action.payload;
+      // const updatedPositions = state.alorPositions.filter((p) => p.symbol !== position.symbol);
+      //
+      // if (position.qty && position.qty !== 0) {
+      //   updatedPositions.push(position);
+      // }
+      //
+      // state.alorPositions = updatedPositions;
+
+      // const index = state.alorPositions.findIndex((p) => p.symbol === position.symbol);
+      // if (position.qty === 0) {
+      //   // Если qty равно 0, удаляем позицию
+      //   if (index !== -1) {
+      //     state.alorPositions.splice(index, 1);
+      //   }
+      // } else {
+      //   if (index !== -1) {
+      //     // Обновляем существующую позицию
+      //     state.alorPositions[index] = position;
+      //   } else {
+      //     // Добавляем новую позицию
+      //     state.alorPositions.push(position);
+      //   }
+      // }
+
+      // Создаем новый массив вместо Map
+      // const updatedPositions = state.alorPositions.filter((p) => p.symbol !== position.symbol);
+      //
+      // if (position.qty && position.qty !== 0) {
+      //   updatedPositions.push(position);
+      // }
+      //
+      // state.alorPositions = updatedPositions;
+
+      const symbolPositionsMap = new Map<string, Position>(Array.from(state.alorPositions).map((p) => [p.symbol, p]));
+      if (!position.qty) {
+        symbolPositionsMap.delete(position.symbol);
+      } else {
+        symbolPositionsMap.set(position.symbol, position);
+      }
+      state.alorPositions = Array.from(symbolPositionsMap).map(([key, value]) => value);
+    },
     initApi(state, action: PayloadAction<{ token: string; accessToken?: string; type?: 'lk' | 'dev' }>) {
       // Если API уже создан, не пересоздаем его
       if (!state.api) {
@@ -137,6 +185,19 @@ export const alorSlice = createSlice({
         state.api = _api;
 
         state.dataService = new DataService(_api);
+
+        if (localStorage.getItem('aPortfolio')) {
+          _api.refresh().then((r) =>
+            _api.subscriptions.positions(
+              {
+                exchange: 'MOEX',
+                format: 'Simple',
+                portfolio: localStorage.getItem('aPortfolio'),
+              },
+              dataHandler,
+            ),
+          );
+        }
       }
 
       state.release?.();
@@ -286,4 +347,5 @@ export const {
   acquire,
   setSettings,
   logout,
+  updatePosition,
 } = alorSlice.actions;

@@ -83,7 +83,6 @@ const initialTriples = [
 // Компонент для пары
 const PairCalculator = ({ group, onUpdate }) => {
   const [instruments, setInstruments] = useState(group.instruments);
-  const [baseIndex, setBaseIndex] = useState(0); // Индекс базового инструмента
 
   const handleChange = (index, val) => {
     const value = parseFloat(val);
@@ -91,7 +90,6 @@ const PairCalculator = ({ group, onUpdate }) => {
 
     const newInstruments = [...instruments];
     newInstruments[index].value = value;
-    setBaseIndex(index); // Делаем этот базовым
 
     // Пересчёт остальных относительно базового
     const baseValue = value;
@@ -143,7 +141,6 @@ const PairCalculator = ({ group, onUpdate }) => {
 // Компонент для тройки (аналогично, но для 3 полей)
 const TripleCalculator = ({ group, onUpdate }) => {
   const [instruments, setInstruments] = useState(group.instruments);
-  const [baseIndex, setBaseIndex] = useState(0);
 
   const handleChange = (index, val) => {
     const value = parseFloat(val);
@@ -151,7 +148,6 @@ const TripleCalculator = ({ group, onUpdate }) => {
 
     const newInstruments = [...instruments];
     newInstruments[index].value = value;
-    setBaseIndex(index);
 
     const baseValue = value;
     const baseRatio = newInstruments[index].ratio;
