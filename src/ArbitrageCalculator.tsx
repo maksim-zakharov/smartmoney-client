@@ -185,7 +185,7 @@ export const ArbitrageCalculator = () => {
   return (
     <div className="flex gap-2 flex-col">
       Курсы валют
-      <span>EUR: {moneyFormat(USDRate, 'RUB', 0, 2)}</span>
+      <span>EUR: {moneyFormat(EURRate, 'RUB', 0, 2)}</span>
       <span>USD: {moneyFormat(USDRate, 'RUB', 0, 2)}</span>
       <span>CNY: {moneyFormat(CNYRate, 'RUB', 0, 2)}</span>
       <span>UCNY: {moneyFormat(USDRate / CNYRate, 'CNY', 0, 2)}</span>
