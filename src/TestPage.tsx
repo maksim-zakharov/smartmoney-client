@@ -33,6 +33,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover
 import { Label } from './components/ui/label.tsx';
 import { setFilter } from './api/alor.slice';
 import { useSearchParams } from 'react-router-dom';
+import { ArbitrageCalculator } from './ArbitrageCalculator.tsx';
 
 const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => {
   const { filters } = useAppSelector((state) => state.alorSlice);
@@ -2900,6 +2901,7 @@ export const TestPage = () => {
           </TabsContent>
         </Tabs>
         <div className="col-span-2">{selected && <TWChart ticker={selected} height={480} multiple={1} small />}</div>
+        <ArbitrageCalculator />
         {/*<Table wrapperClassName="pt-2">*/}
         {/*  <TableHeader>*/}
         {/*    <TableRow>*/}
