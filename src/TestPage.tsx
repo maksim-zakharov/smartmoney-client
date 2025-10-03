@@ -2901,7 +2901,9 @@ export const TestPage = () => {
           </TabsContent>
         </Tabs>
         <div className="col-span-2">{selected && <TWChart ticker={selected} height={480} multiple={1} small />}</div>
-        <ArbitrageCalculator />
+        <div className="col-span-3">
+          <ArbitrageCalculator />
+        </div>
         {/*<Table wrapperClassName="pt-2">*/}
         {/*  <TableHeader>*/}
         {/*    <TableRow>*/}

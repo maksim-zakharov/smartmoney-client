@@ -1,7 +1,10 @@
 import { useGetRuRateQuery } from './api/alor.api.ts';
 import { moneyFormat } from './MainPage/MainPage.tsx';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Slider } from './components/ui/slider.tsx';
+import { Input } from './components/ui/input.tsx';
+import { TypographyH4 } from './components/ui/typography.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card.tsx';
 
 // Пример конфигурации: 8 пар и 4 тройки с коэффициентами (замените на реальные)
 const initialPairs = [
@@ -104,23 +107,36 @@ const PairCalculator = ({ group, onUpdate }) => {
   };
 
   return (
-    <div style={{ border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>
-      <h3>Пара: {group.id}</h3>
-      {instruments.map((inst, index) => (
-        <label key={index} style={{ display: 'block', margin: '5px 0' }}>
-          {inst.name}:
-          <input
-            type="number"
-            value={inst.value}
-            onChange={(e) => handleChange(index, e.target.value)}
-            min="0"
-            step={index === 0 ? '1' : '0.01'} // Шаг для контрактов/лотов
-            style={{ marginLeft: '10px', width: '100px' }}
-          />
-        </label>
-      ))}
-      <Slider defaultValue={[instruments[0].value]} onValueChange={(val) => handleChange(0, val)} max={500} step={1} />
-    </div>
+    <Card className="gap-2">
+      <CardHeader>
+        <CardTitle>
+          <TypographyH4>{group.id}</TypographyH4>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4 mb-2">
+          {instruments.map((inst, index) => (
+            <label key={index}>
+              {inst.name}:
+              <Input
+                type="number"
+                value={inst.value}
+                onChange={(e) => handleChange(index, e.target.value)}
+                min="0"
+                step={index === 0 ? '1' : '0.01'} // Шаг для контрактов/лотов
+              />
+            </label>
+          ))}
+        </div>
+        <Slider
+          className="pt-2 pb-2"
+          defaultValue={[instruments[0].value]}
+          onValueChange={(val) => handleChange(0, val)}
+          max={500}
+          step={1}
+        />
+      </CardContent>
+    </Card>
   );
 };
 
@@ -150,23 +166,30 @@ const TripleCalculator = ({ group, onUpdate }) => {
   };
 
   return (
-    <div style={{ border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>
-      <h3>Тройка: {group.id}</h3>
-      {instruments.map((inst, index) => (
-        <label key={index} style={{ display: 'block', margin: '5px 0' }}>
-          {inst.name}:
-          <input
-            type="number"
-            value={inst.value}
-            onChange={(e) => handleChange(index, e)}
-            min="0"
-            step={index === 0 ? '1' : '0.01'}
-            style={{ marginLeft: '10px', width: '100px' }}
-          />
-        </label>
-      ))}
-      <Slider defaultValue={[instruments[0].value]} onValueChange={(val) => handleChange(0, val)} max={500} step={1} />
-    </div>
+    <Card className="gap-2">
+      <CardHeader>
+        <CardTitle>
+          <TypographyH4>{group.id}</TypographyH4>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4 mt-2 mb-2">
+          {instruments.map((inst, index) => (
+            <label key={index}>
+              {inst.name}:
+              <Input type="number" value={inst.value} onChange={(e) => handleChange(index, e)} min="0" step={index === 0 ? '1' : '0.01'} />
+            </label>
+          ))}
+        </div>
+        <Slider
+          className="pt-2 pb-2"
+          defaultValue={[instruments[0].value]}
+          onValueChange={(val) => handleChange(0, val)}
+          max={500}
+          step={1}
+        />
+      </CardContent>
+    </Card>
   );
 };
 
@@ -191,9 +214,8 @@ export const ArbitrageCalculator = () => {
       <span>UCNY: {moneyFormat(USDRate / CNYRate, 'CNY', 0, 2)}</span>
       <span>EURUSD: {moneyFormat(EURRate / USDRate, 'USD', 0, 2)}</span>
       <span>EURCNY: {moneyFormat(EURRate / CNYRate, 'CNY', 0, 2)}</span>
-      <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-        <h1>Калькулятор лотности для арбитража (множественные пары и тройки)</h1>
-
+      <h1>Калькулятор лотности для арбитража</h1>
+      <div className="flex flex-wrap gap-2 flex-row">
         {groups.map((group) => {
           if (group.type === 'pair') {
             return <PairCalculator key={group.id} group={group} onUpdate={updateGroup} />;
