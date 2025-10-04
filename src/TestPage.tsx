@@ -37,12 +37,14 @@ import { ArbitrageCalculator } from './ArbitrageCalculator.tsx';
 
 const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => {
   const { filters } = useAppSelector((state) => state.alorSlice);
-  const [val, setVal] = useState(filters[_key]);
+  const [fromVal, setFromVal] = useState(filters[`${_key}_from`]);
+  const [toVal, setToVal] = useState(filters[`${_key}_to`]);
 
   const dispatch = useAppDispatch();
 
   const handleSubmitFilter = () => {
-    dispatch(setFilter({ key: _key, value: val }));
+    dispatch(setFilter({ key: `${_key}_from`, value: fromVal }));
+    dispatch(setFilter({ key: `${_key}_to`, value: toVal }));
   };
 
   return (
@@ -50,13 +52,18 @@ const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => 
       <PopoverTrigger className="cursor-pointer">
         <Funnel
           size={13}
-          fill={filters[_key] ? 'var(--primary)' : 'transparent'}
-          stroke={filters[_key] ? 'var(--primary)' : 'var(--muted-foreground)'}
+          fill={filters[`${_key}_from`] || filters[`${_key}_to`] ? 'var(--primary)' : 'transparent'}
+          stroke={filters[`${_key}_from`] || filters[`${_key}_to`] ? 'var(--primary)' : 'var(--muted-foreground)'}
         />
       </PopoverTrigger>
       <PopoverContent className="w-[160px] flex flex-col gap-2">
-        <Label htmlFor="amount24Filter">{label}</Label>
-        <Input size="xs" id="amount24Filter" value={val} onChange={(e) => setVal(e.target.value)} />
+        <Label>{label}</Label>
+        <div className="flex items-center gap-2">
+          От <Input size="xs" value={fromVal} onChange={(e) => setFromVal(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-2">
+          До <Input size="xs" value={toVal} onChange={(e) => setToVal(e.target.value)} />
+        </div>
         <Button size="xs" onClick={handleSubmitFilter}>
           Применить
         </Button>
@@ -177,7 +184,6 @@ export const TestPage = () => {
     MEXCPositions,
     cTraderSummary,
   } = useAppSelector((state) => state.alorSlice);
-  console.log(filters);
 
   const bybitBalance = Number(bybitWallets?.[0]?.totalAvailableBalance) || 0;
   const gateBalance = Number(gateAccounts?.available) || 0;
@@ -1545,17 +1551,21 @@ export const TestPage = () => {
                       <TableColumnFilter _key="mexc-spot-spread" label="Спред" />
                     </div>
                   </TableHead>
-                  <TableHead
-                    onClick={() =>
-                      setSorter((prevState) => ({
-                        ...prevState,
-                        riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
-                      }))
-                    }
-                  >
-                    <div className="flex gap-3 items-center cursor-pointer">
-                      {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
-                      {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
+                  <TableHead>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
+                      </span>
+                      <TableColumnFilter _key="mexc-spot-riseFallRate" label="Изм, 1д" />
                     </div>
                   </TableHead>
                   <TableHead>
@@ -1582,12 +1592,18 @@ export const TestPage = () => {
                   .map((t) => ({
                     ...t,
                     spread: (Number(t.askPrice) / Number(t.bidPrice) - 1) * 100,
+                    priceChangePercent: Number(t.priceChangePercent) * 100,
                     // createTime: mexcContractDetailsMap.get(t.symbol)?.createTime,
                   }))
                   .filter(
                     (t) =>
                       t.symbol.endsWith('USDT') &&
-                      (!filters['mexc-spot-amount24'] || Number(t.quoteVolume) >= Number(filters['mexc-spot-amount24'])) &&
+                      (!filters['mexc-spot-amount24_from'] || Number(t.quoteVolume) >= Number(filters['mexc-spot-amount24_from'])) &&
+                      (!filters['mexc-spot-amount24_to'] || Number(t.quoteVolume) <= Number(filters['mexc-spot-amount24_to'])) &&
+                      (!filters['mexc-spot-riseFallRate_from'] ||
+                        Number(t.priceChangePercent) >= Number(filters['mexc-spot-riseFallRate_from'])) &&
+                      (!filters['mexc-spot-riseFallRate_to'] ||
+                        Number(t.priceChangePercent) <= Number(filters['mexc-spot-riseFallRate_to'])) &&
                       (!filters['mexc-spot-spread'] || Number(t.spread) >= Number(filters['mexc-spot-spread'])),
                   )
                   .sort((a, b) => {
@@ -1659,7 +1675,7 @@ export const TestPage = () => {
                           Number(invoice.priceChangePercent) > 0 ? 'profitCell' : Number(invoice.priceChangePercent) < 0 ? 'lossCell' : ''
                         }
                       >
-                        {(Number(invoice.priceChangePercent) * 100).toFixed(2)}%
+                        {Number(invoice.priceChangePercent).toFixed(2)}%
                       </TableCell>
                       <TableCell>{moneyFormatCompact(invoice.quoteVolume, 'USD', 0, 0)}</TableCell>
                       <TableCell>
