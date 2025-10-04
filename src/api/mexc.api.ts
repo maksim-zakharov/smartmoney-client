@@ -31,6 +31,12 @@ export const mexcApi = createApi({
         params,
       }),
     }),
+    getSpotTickers: builder.query<any, any>({
+      query: (params) => ({
+        url: '/spot-ticker',
+        params,
+      }),
+    }),
     getContractDetails: builder.query<any, any>({
       query: (params) => ({
         url: '/contract',
@@ -40,5 +46,11 @@ export const mexcApi = createApi({
   }),
 });
 
-export const { useGetMEXCCandlesQuery, useGetContractDetailsQuery, useGetTickersQuery, useGetMEXCContractQuery, useGetMEXCPositionsQuery } =
-  mexcApi;
+export const {
+  useGetMEXCCandlesQuery,
+  useGetSpotTickersQuery,
+  useGetContractDetailsQuery,
+  useGetTickersQuery,
+  useGetMEXCContractQuery,
+  useGetMEXCPositionsQuery,
+} = mexcApi;
