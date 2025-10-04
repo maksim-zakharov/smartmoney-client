@@ -590,7 +590,7 @@ export const TestPage = () => {
   );
 
   const AlorRow = ({ invoice, index }: { invoice: any; index: number }) => (
-    <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'}>
+    <TableRow key={invoice.invoice} className={index % 2 ? 'rowOdd' : 'rowEven'} onClick={(e) => setSelected(`${invoice.symbol}`)}>
       <TableCell>
         <AlorLabel symbol={invoice.symbol} />
       </TableCell>

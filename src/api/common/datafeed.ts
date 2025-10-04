@@ -59,7 +59,7 @@ const resolveOneSymbol = ({ dataService, symbolName }: { dataService: DataServic
       session,
     };
 
-    localStorage.setItem(`LibrarySymbolInfo-${symbolName}`, JSON.stringify(resolve));
+    // localStorage.setItem(`LibrarySymbolInfo-${symbolName}`, JSON.stringify(resolve));
 
     return resolve;
   });
