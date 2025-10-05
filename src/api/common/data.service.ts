@@ -140,6 +140,26 @@ export class DataService {
     });
   }
 
+  getTrades(ticker: string, limit = 200) {
+    return fetch(`${this.ctraderUrl}/mexc/trades?symbol=${ticker}&limit=${limit}`).then((res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    });
+  }
+
+  getAggTrades(ticker: string, periodParams: PeriodParams) {
+    return fetch(
+      `${this.ctraderUrl}/mexc/agg-trades?from=${Math.max(periodParams.from, 0)}&symbol=${ticker}&to=${Math.max(periodParams.to, 1)}`,
+    ).then((res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
+    });
+  }
+
   getChartData(ticker: string, resolution: ResolutionString, periodParams: PeriodParams) {
     let request$;
 

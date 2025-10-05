@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
 import { DataFeed } from '../api/common/datafeed.ts';
-import { getTimezone } from '../utils';
+import { getTimezone, moneyFormatCompact } from '../utils';
 import {
   ChartingLibraryFeatureset,
   ChartingLibraryWidgetOptions,
@@ -21,11 +21,12 @@ import {
   widget,
 } from '../assets/charting_library';
 import { alertsService, deleteAlert, openAlertDialog } from '../api/alerts.slice';
-import { HistoryObject } from 'alor-api';
+import { HistoryObject, Trade } from 'alor-api';
 
-export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 100, small, onPlusClick }: any) => {
+export const TWChart = ({ ticker, volumeProfileN = 0, height = 400, data, lineSerieses, multiple = 100, small, onPlusClick }: any) => {
   const dispatch = useAppDispatch();
 
+  const chartWidgetRef = useRef<IChartingLibraryWidget>(null);
   const ref = useRef<HTMLDivElement>(null);
   const dataService = useAppSelector((state) => state.alorSlice.dataService);
   const ws = useAppSelector((state) => state.alorSlice.ws);
@@ -60,6 +61,9 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
     });
   }, []);
 
+  // Добавлено: массив для хранения shapes профиля
+  const profileShapes = useRef<IChartingLibraryWidget['chart']['createMultipointShape'][]>([]); // Типизировать как any[] если ошибки
+
   const datafeed = useMemo(
     () =>
       dataService
@@ -74,6 +78,141 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
         : null,
     [onNewCandleHandle, ws, dataService, cTraderAccount?.ctidTraderAccountId, data, multiple],
   );
+
+  // Добавлено: функция для fetch trades (адаптируйте под ваш API, добавьте auth/token)
+  const getTrades = useCallback(
+    async (ticker: string, from: number, to: number): Promise<Trade[]> => {
+      const MAX_INTERVAL = 3600; // 1 час в секундах
+      let allTrades: Trade[] = [];
+      let currentFrom = from;
+
+      while (currentFrom < to) {
+        const currentTo = Math.min(currentFrom + MAX_INTERVAL, to);
+        try {
+          const data = await dataService.getAggTrades(ticker, {
+            from: currentFrom * 1000,
+            to: currentTo * 1000,
+          } as any);
+          // Адаптируйте структуру: assume data is array of {time: ms, price, qty}
+          const trades = data.map((t: any) => ({ time: t.T / 1000, price: Number(t.p), qty: Number(t.q) }));
+          allTrades = allTrades.concat(trades);
+        } catch (error) {
+          console.error(`Error fetching trades from ${currentFrom} to ${currentTo}:`, error);
+          // Опционально: break или continue
+        }
+        currentFrom = currentTo;
+      }
+
+      return allTrades;
+    },
+    [dataService],
+  );
+
+  // Добавлено: функция для обновления Volume Profile
+  const updateVolumeProfile = useCallback(() => {
+    if (volumeProfileN <= 0) return; // Если N=0, отключено
+
+    const chart = chartWidgetRef.current?.chart();
+    if (!chart) return;
+
+    // Очистка предыдущих shapes
+    profileShapes.current.forEach((shape) => chart.removeEntity(shape));
+    profileShapes.current = [];
+
+    const range = chart.getVisibleRange();
+    if (!range) return;
+
+    const from = range.from;
+    const to = range.to;
+
+    // Расчёт from для N периодов (вместо видимого диапазона)
+    // const resolution = chart.resolution(); // текущий интервал, e.g. '5' для 5min
+    // const intervalSeconds = parseInt(resolution) * 60; // предположим минуты; адаптируйте для 'D', 'W' etc.
+    // from = to - volumeProfileN * intervalSeconds; // back N periods
+
+    // Fetch trades
+    getTrades(ticker.split('MEXC:')[1], from, to)
+      .then((trades) => {
+        if (trades.length === 0) return;
+
+        // Min/max price
+        const prices = trades.map((t) => t.price);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+
+        // Min tick from symbol
+        const symbolInfo = datafeed?.resolveSymbol(ticker); // или chart.symbolExt().value().minTick
+        const minTick = symbolInfo?.minmove || 0.01; // fallback
+
+        // Params: rows (бины), можно сделать prop
+        const rows = 70;
+        let binSize = (maxPrice - minPrice) / rows;
+        if (binSize < minTick) binSize = minTick;
+
+        // Аггрегация: Map<binStartPrice, volume>
+        const bins = new Map<number, number>();
+        trades.forEach((t) => {
+          const bin = t.price; // Math.floor((t.price - minPrice) / binSize) * binSize + minPrice;
+          bins.set(bin, (bins.get(bin) || 0) + t.qty);
+        });
+
+        // Max vol для нормализации
+        const maxVol = Math.max(...Array.from(bins.values()));
+
+        // Params для отрисовки
+        const duration = to - from;
+        const maxBarLength = duration * 0.2; // max бар = 20% ширины диапазона
+        const startTime = to + duration * 0.05; // offset справа
+
+        // Отрисовка каждого бина
+        Array.from(bins)
+          .sort((a, b) => a[1] - b[1])
+          .slice(0, 5)
+          .forEach(([binPrice, vol]) => {
+            if (vol === 0) return;
+
+            const barLength = (vol / maxVol) * maxBarLength;
+            const endTime = startTime + barLength;
+            const binCenter = binPrice; // binPrice + binSize / 2;
+
+            // Бар как thick trend_line (горизонтальный сегмент)
+            const barShape = chart.createMultipointShape(
+              [
+                { time: startTime, price: binCenter },
+                { time: endTime, price: binCenter },
+              ],
+              {
+                shape: 'trend_line',
+                lock: false, // или true, чтобы не двигали
+                disableSelection: true,
+                overrides: {
+                  lineColor: '#00FF00', // зелёный, можно по side (buy/sell)
+                  linewidth: 1, // толщина для "solid" бара; адаптируйте
+                  lineStyle: 0, // сплошная
+                },
+              },
+            );
+
+            // Текст с объёмом справа
+            const textShape = chart.createMultipointShape([{ time: endTime, price: binCenter }], {
+              shape: 'text',
+              lock: false,
+              disableSelection: true,
+              text: `${moneyFormatCompact(vol / binCenter, 'USD')} по цене ${binCenter}`,
+              overrides: {
+                color: '#FFFFFF',
+                fontsize: 10,
+                bold: false,
+              },
+            });
+
+            profileShapes.current.push(barShape, textShape);
+          });
+      })
+      .catch((error) => {
+        console.error('Error fetching trades:', error);
+      });
+  }, [volumeProfileN, dataService, ticker, datafeed]);
 
   useEffect(() => {
     if (!ref.current || !datafeed) return;
@@ -186,6 +325,7 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
     };
 
     const chartWidget = new widget(config);
+    chartWidgetRef.current = chartWidget;
     subscribeToChartEvents(chartWidget);
     chartWidget.onChartReady(() => {
       const chart = chartWidget.chart();
@@ -232,8 +372,19 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
       //     .setLineLength(100) // Длина линии (в процентах ширины графика)
       //     .setLineColor('#FFF'); // Цвет линии
       // })
+
+      // Добавлено: начальный вызов и подписка на изменение диапазона
+      if (volumeProfileN > 0) {
+        updateVolumeProfile();
+        const subscription = chart.onVisibleRangeChanged().subscribe(null, () => {
+          updateVolumeProfile();
+        });
+
+        // Cleanup при unmount
+        return () => subscription.unsubscribe();
+      }
     });
-  }, [datafeed, height, lineSerieses, ticker]);
+  }, [datafeed, height, volumeProfileN, updateVolumeProfile, lineSerieses, ticker]);
 
   const subscribeToChartEvents = (widget: IChartingLibraryWidget): void => {
     // subscribeToChartEvent(widget, 'onPlusClick', (params: PlusClickParams) => this.selectPrice(params.price));
@@ -260,7 +411,9 @@ export const TWChart = ({ ticker, height = 400, data, lineSerieses, multiple = 1
 
   const saveChartLayout = (widget: IChartingLibraryWidget): void => {
     widget.save((state) => {
-      localStorage.setItem(`settings-${ticker}`, JSON.stringify(state));
+      try {
+        localStorage.setItem(`settings-${ticker}`, JSON.stringify(state));
+      } catch (e) {}
     });
   };
 
