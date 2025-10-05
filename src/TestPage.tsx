@@ -1604,10 +1604,11 @@ export const TestPage = () => {
                         Number(t.priceChangePercent) >= Number(filters['mexc-spot-riseFallRate_from'])) &&
                       (!filters['mexc-spot-riseFallRate_to'] ||
                         Number(t.priceChangePercent) <= Number(filters['mexc-spot-riseFallRate_to'])) &&
-                      (!filters['mexc-spot-spread'] || Number(t.spread) >= Number(filters['mexc-spot-spread'])),
+                      (!filters['mexc-spot-spread_from'] || Number(t.spread) >= Number(filters['mexc-spot-spread_from'])) &&
+                      (!filters['mexc-spot-spread_to'] || Number(t.spread) <= Number(filters['mexc-spot-spread_to'])),
                   )
                   .sort((a, b) => {
-                    if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
+                    if (!sorter['spread'] && !sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;
                     }
 
