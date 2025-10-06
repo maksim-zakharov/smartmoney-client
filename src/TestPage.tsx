@@ -33,7 +33,6 @@ import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover
 import { Label } from './components/ui/label.tsx';
 import { setFilter } from './api/alor.slice';
 import { useSearchParams } from 'react-router-dom';
-import { ArbitrageCalculator } from './ArbitrageCalculator.tsx';
 
 const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => {
   const { filters } = useAppSelector((state) => state.alorSlice);
@@ -204,7 +203,7 @@ export const TestPage = () => {
     },
   );
 
-  const mexcMap = useMemo(() => new Set<string>(mexcTickers.map((t) => t.symbol.split('_USDT')[0])), [mexcTickers]);
+  const mexcMap = useMemo(() => new Set<string>((mexcTickers || []).map((t) => t.symbol.split('_USDT')[0])), [mexcTickers]);
 
   const { data: bingxTickers = [] } = useGetBINGXTickersQuery(
     {},
@@ -1405,9 +1404,12 @@ export const TestPage = () => {
                   .map((t) => ({ ...t, spread: (Number(t.askPrice) / Number(t.bidPrice) - 1) * 100 }))
                   .filter(
                     (t) =>
-                      (!filters['bingx-futures-amount24'] ||
-                        Number(t.quoteVolume || t.valueF) >= Number(filters['bingx-futures-amount24'])) &&
-                      (!filters['bingx-futures-spread'] || Number(t.spread) >= Number(filters['bingx-futures-spread'])),
+                      (!filters['bingx-futures-amount24_from'] ||
+                        Number(t.quoteVolume || t.valueF) >= Number(filters['bingx-futures-amount24_from'])) &&
+                      (!filters['bingx-futures-amount24_to'] ||
+                        Number(t.quoteVolume || t.valueF) <= Number(filters['bingx-futures-amount24_to'])) &&
+                      (!filters['bingx-futures-spread_from'] || Number(t.spread) >= Number(filters['bingx-futures-spread_from'])) &&
+                      (!filters['bingx-futures-spread_to'] || Number(t.spread) <= Number(filters['bingx-futures-spread_to'])),
                   )
                   .sort((a, b) => {
                     if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
@@ -2327,18 +2329,21 @@ export const TestPage = () => {
                       <TableColumnFilter _key="bybit-futures-spread" label="Спред" />
                     </div>
                   </TableHead>
-                  <TableHead
-                    className="w-[200px]"
-                    onClick={() =>
-                      setSorter((prevState) => ({
-                        ...prevState,
-                        riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
-                      }))
-                    }
-                  >
-                    <div className="flex gap-3 items-center cursor-pointer">
-                      {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
-                      {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
+                  <TableHead className="w-[200px]">
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
+                      </span>
+                      <TableColumnFilter _key="bybit-futures-riseFallRate" label="Изм, 1д" />
                     </div>
                   </TableHead>
                   <TableHead>
@@ -2362,15 +2367,34 @@ export const TestPage = () => {
               </TableHeader>
               <TableBody>
                 {[...bybitTickers]
-                  .map((t) => ({ ...t, spread: (Number(t.ask1Price) / Number(t.bid1Price) - 1) * 100 }))
+                  .map((t) => ({
+                    ...t,
+                    spread: (Number(t.ask1Price) / Number(t.bid1Price) - 1) * 100,
+                    price24hPcnt: Number(t.price24hPcnt) * 100,
+                  }))
                   .filter(
                     (t) =>
-                      (!filters['bybit-futures-amount24'] || Number(t.turnover24h) >= Number(filters['bybit-futures-amount24'])) &&
-                      (!filters['bybit-futures-spread'] || Number(t.spread) >= Number(filters['bybit-futures-spread'])),
+                      (!filters['bybit-futures-amount24_from'] ||
+                        Number(t.turnover24h) >= Number(filters['bybit-futures-amount24_from'])) &&
+                      (!filters['bybit-futures-amount24_to'] || Number(t.turnover24h) <= Number(filters['bybit-futures-amount24_to'])) &&
+                      (!filters['bybit-futures-riseFallRate_from'] ||
+                        Number(t.price24hPcnt) >= Number(filters['bybit-futures-riseFallRate_from'])) &&
+                      (!filters['bybit-futures-riseFallRate_to'] ||
+                        Number(t.price24hPcnt) <= Number(filters['bybit-futures-riseFallRate_to'])) &&
+                      (!filters['bybit-futures-spread_from'] || Number(t.spread) >= Number(filters['bybit-futures-spread_from'])) &&
+                      (!filters['bybit-futures-spread_to'] || Number(t.spread) <= Number(filters['bybit-futures-spread_to'])),
                   )
                   .sort((a, b) => {
-                    if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
+                    if (!sorter['riseFallRate'] && !sorter['spread'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24']) {
                       return 0;
+                    }
+
+                    if (sorter['spread'] === 'desc') {
+                      return b.spread - a.spread;
+                    }
+
+                    if (sorter['spread'] === 'asc') {
+                      return a.spread - b.spread;
                     }
 
                     if (sorter['price'] === 'desc') {
@@ -2422,7 +2446,7 @@ export const TestPage = () => {
                       <TableCell
                         className={Number(invoice.price24hPcnt) > 0 ? 'profitCell' : Number(invoice.price24hPcnt) < 0 ? 'lossCell' : ''}
                       >
-                        {(Number(invoice.price24hPcnt) * 100).toFixed(2)}%
+                        {Number(invoice.price24hPcnt).toFixed(2)}%
                       </TableCell>
                       <TableCell>{moneyFormatCompact(invoice.turnover24h, 'USD', 0, 0)}</TableCell>
                     </TableRow>
@@ -3110,9 +3134,9 @@ export const TestPage = () => {
           </TabsContent>
         </Tabs>
         <div className="col-span-2">{selected && <TWChart ticker={selected} height={480} multiple={1} small />}</div>
-        <div className="col-span-3">
-          <ArbitrageCalculator />
-        </div>
+        {/*<div className="col-span-3">*/}
+        {/*  <ArbitrageCalculator />*/}
+        {/*</div>*/}
         {/*<Table wrapperClassName="pt-2">*/}
         {/*  <TableHeader>*/}
         {/*    <TableRow>*/}

@@ -239,7 +239,7 @@ export const TWChart = ({ ticker, volumeProfileN = 0, height = 400, data, lineSe
       symbol: ticker,
       // width: width || ref.current?.clientWidth,
       height: height || ref.current?.clientHeight,
-      interval: '5' as ResolutionString,
+      interval: '1' as ResolutionString,
       locale: 'ru',
       library_path: process.env.NODE_ENV !== 'production' ? '/assets/charting_library/' : '/smartmoney-client/assets/charting_library/',
       datafeed: datafeed, // this.techChartDatafeedService,
