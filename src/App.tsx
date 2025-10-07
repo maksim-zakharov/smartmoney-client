@@ -66,6 +66,18 @@ export default function App() {
     },
   );
 
+  // useCashflowQuery(
+  //   {
+  //     ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+  //     from: dayjs().add(-1, 'month').unix(),
+  //     to: dayjs().unix(),
+  //   },
+  //   {
+  //     // pollingInterval: 60000,
+  //     skip: !accessToken || !cTraderAccount?.ctidTraderAccountId,
+  //   },
+  // );
+
   useGetWalletBalanceQuery(
     {},
     {
