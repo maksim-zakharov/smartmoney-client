@@ -49,10 +49,10 @@ export class CtraderWsClient {
 
   // Попытка переподключения
   private attemptReconnect() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnect attempts reached');
-      return;
-    }
+    // if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+    //   console.error('Max reconnect attempts reached');
+    //   return;
+    // }
 
     const delay = Math.min(this.reconnectInterval * Math.pow(this.reconnectDecay, this.reconnectAttempts), this.maxReconnectInterval);
 

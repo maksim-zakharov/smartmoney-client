@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { Col, Row } from 'antd';
 import { useAppDispatch, useAppSelector } from './store';
 import { moneyFormat, numberFormat } from './MainPage/MainPage';
 import { moneyFormatCompact, normalizePrice } from './utils';
@@ -9,18 +8,18 @@ import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/ca
 import { TWChart } from './components/TWChart';
 import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from './api/tinkoff.api';
 import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation } from './api/ctrader.api';
-import { Button } from './components/ui/button.tsx';
+import { Button } from './components/ui/button';
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, CirclePlus, CircleX, Funnel } from 'lucide-react';
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
-import { Checkbox } from './components/ui/checkbox.tsx';
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
+import { Checkbox } from './components/ui/checkbox';
 import { useGetContractDetailsQuery, useGetMEXCContractQuery, useGetSpotTickersQuery, useGetTickersQuery } from './api/mexc.api';
-import { TypographyParagraph } from './components/ui/typography.tsx';
+import { TypographyParagraph } from './components/ui/typography';
 import { toast } from 'sonner';
-import { Input } from './components/ui/input.tsx';
+import { Input } from './components/ui/input';
 import { useGetOrderbookMutation, useGetRuRateQuery, useGetSummaryQuery, useSendLimitOrderMutation } from './api/alor.api';
 import { Exchange, Side } from 'alor-api';
 import { useGetBINGXTickersQuery } from './api/bingx.api';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { useGetGateTickersQuery } from './api/gate.api';
 import { useGetBYBITTickersQuery } from './api/bybit.api';
 import { useGetBinanceTickersQuery } from './api/binance.api';
@@ -29,8 +28,8 @@ import { useGetHTXTickersQuery } from './api/htx.api';
 import { useGetKuCoinTickersQuery } from './api/kucoin.api';
 import { useGetBitgetTickersQuery } from './api/bitget.api';
 import { useGetBitstampTickersQuery } from './api/bitstamp.api';
-import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover.tsx';
-import { Label } from './components/ui/label.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover';
+import { Label } from './components/ui/label';
 import { setFilter } from './api/alor.slice';
 import { useSearchParams } from 'react-router-dom';
 
@@ -681,158 +680,140 @@ export const TestPage = () => {
 
   return (
     <>
-      <Row gutter={[8, 8]}>
-        <Col span={2}>
-          <Card>
-            <CardHeader>
-              <CardDescription className="flex gap-2 items-center">
-                {/*<img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />*/}
-                {cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}
-              </CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  ctraderBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(ctraderBalance, 'USDT')}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-        <Col span={2}>
-          <Card>
-            <CardHeader>
-              <CardDescription className="flex gap-2 items-center">
-                <img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />
-                Bingx
-              </CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  bingBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(bingBalance, 'USDT')}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-        <Col span={2}>
-          <Card>
-            <CardHeader>
-              <CardDescription className="flex gap-2 items-center">
-                <img className="h-4 rounded-full" src={exchangeImgMap['BYBIT']} />
-                Bybit
-              </CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  bybitBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(bybitBalance, 'USDT')}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-        <Col span={2}>
-          <Card>
-            <CardHeader>
-              <CardDescription className="flex gap-2 items-center">
-                <img className="h-4 rounded-full" src={exchangeImgMap['GATEIO']} />
-                Gate
-              </CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  gateBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(gateBalance, 'USDT')}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-        <Col span={2}>
-          <Card>
-            <CardHeader>
-              <CardDescription className="flex gap-2 items-center">
-                <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/tcs2x160.png")` }}></div>
-                Тинькофф
-              </CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  amount > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(amount)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-        <Col span={2}>
-          <Card>
-            <CardHeader>
-              <CardDescription>Алор</CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  amount > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(alorSummary?.portfolioLiquidationValue || 0)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-        <Col span={2} offset={6}>
-          <Card>
-            <CardHeader>
-              <CardDescription>P&L Алор</CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  totalAlorPnL > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(totalAlorPnL)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-        <Col span={2}>
-          <Card>
-            <CardHeader>
-              <CardDescription>P&L {cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}</CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  totalPnLForex > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(totalPnLForex, 'USDT')}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-        <Col span={2}>
-          <Card>
-            <CardHeader>
-              <CardDescription>Общий P&L</CardDescription>
-              <CardTitle
-                className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                  total > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-                )}
-              >
-                {moneyFormat(total)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </Col>
-      </Row>
+      <div className="grid grid-cols-12 gap-2">
+        <Card>
+          <CardHeader>
+            <CardDescription className="flex gap-2 items-center">
+              {/*<img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />*/}
+              {cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}
+            </CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                ctraderBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(ctraderBalance, 'USDT')}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription className="flex gap-2 items-center">
+              <img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />
+              Bingx
+            </CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                bingBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(bingBalance, 'USDT')}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription className="flex gap-2 items-center">
+              <img className="h-4 rounded-full" src={exchangeImgMap['BYBIT']} />
+              Bybit
+            </CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                bybitBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(bybitBalance, 'USDT')}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription className="flex gap-2 items-center">
+              <img className="h-4 rounded-full" src={exchangeImgMap['GATEIO']} />
+              Gate
+            </CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                gateBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(gateBalance, 'USDT')}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription className="flex gap-2 items-center">
+              <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/tcs2x160.png")` }}></div>
+              Тинькофф
+            </CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                amount > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(amount)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription>Алор</CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                amount > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(alorSummary?.portfolioLiquidationValue || 0)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardDescription>P&L Алор</CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                totalAlorPnL > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(totalAlorPnL)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription>P&L {cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}</CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                totalPnLForex > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(totalPnLForex, 'USDT')}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardDescription>Общий P&L</CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                total > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(total)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
       <div className="grid grid-cols-3 gap-2 flex-wrap">
         <Table wrapperClassName="pt-2 min-w-[470px]">
           <TableHeader>
