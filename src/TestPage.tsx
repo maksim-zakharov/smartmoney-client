@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { Input } from './components/ui/input';
 import { useGetOrderbookMutation, useGetRuRateQuery, useGetSummaryQuery, useSendLimitOrderMutation } from './api/alor.api';
 import { Exchange, Side } from 'alor-api';
-import { useGetBINGXTickersQuery } from './api/bingx.api';
+import { useGetBINGXFuturesTickersQuery, useGetBINGXSpotTickersQuery } from './api/bingx.api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { useGetGateTickersQuery } from './api/gate.api';
 import { useGetBYBITTickersQuery } from './api/bybit.api';
@@ -205,14 +205,21 @@ export const TestPage = () => {
 
   const mexcMap = useMemo(() => new Set<string>((mexcTickers || []).map((t) => t.symbol.split('_USDT')[0])), [mexcTickers]);
 
-  const { data: bingxTickers = [] } = useGetBINGXTickersQuery(
+  const { data: bingxSpotTickers = [] } = useGetBINGXSpotTickersQuery(
     {},
     {
       pollingInterval: 5000,
     },
   );
 
-  const bingxMap = useMemo(() => new Set<string>(bingxTickers.map((t) => t.symbol.split('-USDT')[0])), [bingxTickers]);
+  const { data: bingxFuturesTickers = [] } = useGetBINGXFuturesTickersQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
+
+  const bingxMap = useMemo(() => new Set<string>(bingxFuturesTickers.map((t) => t.symbol.split('-USDT')[0])), [bingxFuturesTickers]);
 
   const { data: gateTickers = [] } = useGetGateTickersQuery(
     {},
@@ -1370,7 +1377,7 @@ export const TestPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...bingxTickers]
+                {[...bingxFuturesTickers]
                   .map((t) => ({ ...t, spread: (Number(t.askPrice) / Number(t.bidPrice) - 1) * 100 }))
                   .filter(
                     (t) =>
@@ -3110,7 +3117,8 @@ export const TestPage = () => {
             bitstampTickers={bitstampTickers}
             mexcTickers={mexcTickers}
             mexcSpotTickers={mexcSpotTickers}
-            bingxTickers={bingxTickers}
+            bingxSpotTickers={bingxSpotTickers}
+            bingxTickers={bingxFuturesTickers}
             gateTickers={gateTickers}
             bybitTickers={bybitTickers}
             binanceSpotTickers={binanceSpotTickers}

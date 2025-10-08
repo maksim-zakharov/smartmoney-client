@@ -11,7 +11,8 @@ export const ArbitrageTable = ({
   bitstampTickers,
   mexcTickers,
   mexcSpotTickers,
-  bingxTickers,
+  bingxSpotTickers,
+  bingxFuturesTickers,
   gateTickers,
   bybitTickers,
   binanceFuturesTickers,
@@ -65,8 +66,13 @@ export const ArbitrageTable = ({
   );
 
   const bingxSpotMap = useMemo(
-    () => new Map<string, number>(bingxTickers.map((t) => [t.symbol.split('-USDT')[0], Number(t.lastPrice)])),
-    [bingxTickers],
+    () => new Map<string, number>(bingxSpotTickers.map((t) => [t.symbol.split('-USDT')[0], Number(t.lastPrice)])),
+    [bingxSpotTickers],
+  );
+
+  const bingxFuturesMap = useMemo(
+    () => new Map<string, number>(bingxFuturesTickers.map((t) => [t.symbol.split('-USDT')[0], Number(t.lastPrice)])),
+    [bingxFuturesTickers],
   );
 
   const mexcSpotMap = useMemo(
@@ -84,7 +90,7 @@ export const ArbitrageTable = ({
       new Set<string>(
         [
           ...bitstampTickers.map((t) => t.pair.split('/USD-PERP')[0]),
-          ...bingxTickers.map((t) => t.symbol.split('-USDT')[0]),
+          ...bingxFuturesTickers.map((t) => t.symbol.split('-USDT')[0]),
           ...gateTickers.map((t) => t.contract.split('_USDT')[0]),
           ...htxTickers.map((t) => t.contract_code.split('-USDT')[0]),
           ...bybitTickers.map((t) => t.symbol.split('USDT')[0]),
@@ -117,6 +123,7 @@ export const ArbitrageTable = ({
               bitstampMap.get(ticker),
               gateFuturesMap.get(ticker),
               bingxSpotMap.get(ticker),
+              bingxFuturesMap.get(ticker),
               mexcSpotMap.get(ticker),
               mexcFuturesMap.get(ticker),
             ].filter(Boolean),
@@ -142,7 +149,10 @@ export const ArbitrageTable = ({
             Math.abs(htxFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(bitstampMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(gateFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+
             Math.abs(bingxSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(bingxFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+
             Math.abs(mexcSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(mexcFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
           ),
@@ -167,7 +177,10 @@ export const ArbitrageTable = ({
             htxFuturesMap.get(ticker),
             bitstampMap.get(ticker),
             gateFuturesMap.get(ticker),
+
             bingxSpotMap.get(ticker),
+            bingxFuturesMap.get(ticker),
+
             mexcSpotMap.get(ticker),
             mexcFuturesMap.get(ticker),
           ].filter(Boolean).length,
@@ -200,6 +213,12 @@ export const ArbitrageTable = ({
             <div className="flex gap-1 items-center">
               <img className="h-3 rounded-full" src={exchangeImgMap['MEXC']} />
               Mexc Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['BINGX']} />
+              Bingx Spot
             </div>
           </TableHead>
           <TableHead>
@@ -306,6 +325,17 @@ export const ArbitrageTable = ({
                 }
               >
                 {bingxSpotMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  bingxFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : bingxFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {bingxFuturesMap.get(invoice) || '-'}
               </TableCell>
               <TableCell
                 className={

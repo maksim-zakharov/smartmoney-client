@@ -15,9 +15,15 @@ export const bingxApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getBINGXTickers: builder.query<any, any>({
+    getBINGXSpotTickers: builder.query<any, any>({
       query: (params) => ({
-        url: '/stats',
+        url: '/spot-stats',
+        params,
+      }),
+    }),
+    getBINGXFuturesTickers: builder.query<any, any>({
+      query: (params) => ({
+        url: '/futures-stats',
         params,
       }),
     }),
@@ -30,4 +36,4 @@ export const bingxApi = createApi({
   }),
 });
 
-export const { useGetBINGXTickersQuery, useGetBalanceQuery } = bingxApi;
+export const { useGetBINGXSpotTickersQuery, useGetBINGXFuturesTickersQuery, useGetBalanceQuery } = bingxApi;
