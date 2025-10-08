@@ -15,12 +15,17 @@ export const bitgetApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getBitgetTickers: builder.query<any, any>({
+    getBitgetSpotTickers: builder.query<any, any>({
       query: (params) => ({
-        url: '/tickers',
+        url: '/spot-tickers',
+      }),
+    }),
+    getBitgetFutureTickers: builder.query<any, any>({
+      query: (params) => ({
+        url: '/future-tickers',
       }),
     }),
   }),
 });
 
-export const { useGetBitgetTickersQuery } = bitgetApi;
+export const { useGetBitgetSpotTickersQuery, useGetBitgetFutureTickersQuery } = bitgetApi;

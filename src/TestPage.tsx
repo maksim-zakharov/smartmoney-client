@@ -26,7 +26,7 @@ import { useGetBinanceFuturesTickersQuery, useGetBinanceSpotTickersQuery } from 
 import dayjs from 'dayjs';
 import { useGetHTXTickersQuery } from './api/htx.api';
 import { useGetKuCoinTickersQuery } from './api/kucoin.api';
-import { useGetBitgetTickersQuery } from './api/bitget.api';
+import { useGetBitgetFutureTickersQuery, useGetBitgetSpotTickersQuery } from './api/bitget.api';
 import { useGetBitstampTickersQuery } from './api/bitstamp.api';
 import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover';
 import { Label } from './components/ui/label';
@@ -287,14 +287,21 @@ export const TestPage = () => {
 
   const kukoinMap = useMemo(() => new Set<string>(kukoinTickers.map((t) => t.symbol.split('-USDT')[0])), [kukoinTickers]);
 
-  const { data: bitgetTickers = [] } = useGetBitgetTickersQuery(
+  const { data: bitgetSpotTickers = [] } = useGetBitgetSpotTickersQuery(
     {},
     {
       pollingInterval: 5000,
     },
   );
 
-  const bitgetMap = useMemo(() => new Set<string>(bitgetTickers.map((t) => t.symbol.split('USDT')[0])), [bitgetTickers]);
+  const { data: bitgetFutureTickers = [] } = useGetBitgetFutureTickersQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
+
+  const bitgetMap = useMemo(() => new Set<string>(bitgetFutureTickers.map((t) => t.symbol.split('USDT')[0])), [bitgetFutureTickers]);
 
   const { data: bitstampTickers = [] } = useGetBitstampTickersQuery(
     {},
@@ -2903,7 +2910,7 @@ export const TestPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...bitgetTickers]
+                {[...bitgetFutureTickers]
                   .map((t) => ({ ...t, spread: (Number(t.askPr) / Number(t.bidPr) - 1) * 100 }))
                   .filter(
                     (t) =>
@@ -3141,7 +3148,8 @@ export const TestPage = () => {
             binanceFuturesTickers={binanceFuturesTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
             htxTickers={htxTickers.filter((t) => Boolean(t.ask))}
             kukoinTickers={kukoinTickers}
-            bitgetTickers={bitgetTickers}
+            bitgetSpotTickers={bitgetSpotTickers}
+            bitgetFutureTickers={bitgetFutureTickers}
           />
         </div>
         {/*<div className="col-span-3">*/}

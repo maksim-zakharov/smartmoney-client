@@ -21,15 +21,21 @@ export const ArbitrageTable = ({
   binanceSpotTickers,
   htxTickers,
   kukoinTickers,
-  bitgetTickers,
+  bitgetSpotTickers,
+  bitgetFutureTickers,
 }) => {
   const [sorter, setSorter] = useState<any>({
     riseFallRate: 'desc',
   });
 
+  const bitgetSpotMap = useMemo(
+    () => new Map<string, number>(bitgetSpotTickers.map((t) => [t.symbol.split('USDT')[0], Number(t.lastPr)])),
+    [bitgetSpotTickers],
+  );
+
   const bitgetFuturesMap = useMemo(
-    () => new Map<string, number>(bitgetTickers.map((t) => [t.symbol.split('USDT')[0], Number(t.lastPr)])),
-    [bitgetTickers],
+    () => new Map<string, number>(bitgetFutureTickers.map((t) => [t.symbol.split('USDT')[0], Number(t.lastPr)])),
+    [bitgetFutureTickers],
   );
 
   const kukoinFuturesMap = useMemo(
@@ -112,7 +118,8 @@ export const ArbitrageTable = ({
           ...binanceFuturesTickers.map((t) => t.symbol.split('USDT')[0]),
           ...mexcSpotTickers.map((t) => t.symbol.split('USDT')[0]),
           ...mexcTickers.map((t) => t.symbol.split('_USDT')[0]),
-          ...bitgetTickers.map((t) => t.symbol.split('USDT')[0]),
+          ...bitgetSpotTickers.map((t) => t.symbol.split('USDT')[0]),
+          ...bitgetFutureTickers.map((t) => t.symbol.split('USDT')[0]),
           ...kukoinTickers.map((t) => t.symbol.split('-USDT')[0]),
         ].filter((ticker) => !ticker.includes('-')),
       ),
@@ -126,7 +133,9 @@ export const ArbitrageTable = ({
           ticker,
           avg(
             [
+              bitgetSpotMap.get(ticker),
               bitgetFuturesMap.get(ticker),
+
               kukoinFuturesMap.get(ticker),
 
               bybitSpotsMap.get(ticker),
@@ -158,7 +167,9 @@ export const ArbitrageTable = ({
         Array.from(allTickers).map((ticker) => [
           ticker,
           Math.max(
+            Math.abs(bitgetSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(bitgetFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+
             Math.abs(kukoinFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
             Math.abs(bybitSpotsMap.get(ticker) / avgPrices.get(ticker) || 0),
@@ -190,7 +201,9 @@ export const ArbitrageTable = ({
         Array.from(allTickers).map((ticker) => [
           ticker,
           [
+            bitgetSpotMap.get(ticker),
             bitgetFuturesMap.get(ticker),
+
             kukoinFuturesMap.get(ticker),
 
             bybitSpotsMap.get(ticker),
@@ -288,6 +301,12 @@ export const ArbitrageTable = ({
             <div className="flex gap-1 items-center">
               <img className="h-3 rounded-full" src={exchangeImgMap['BINANCE']} />
               Binance Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['BITGET']} />
+              Bitget Spot
             </div>
           </TableHead>
           <TableHead>
@@ -441,6 +460,17 @@ export const ArbitrageTable = ({
                 }
               >
                 {binanceFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+              // className={
+              //   bitgetSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+              //     ? 'profitCell'
+              //     : bitgetSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+              //       ? 'lossCell'
+              //       : ''
+              // }
+              >
+                {bitgetSpotMap.get(invoice) || '-'}
               </TableCell>
               <TableCell
                 className={
