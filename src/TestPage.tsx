@@ -3118,7 +3118,7 @@ export const TestPage = () => {
             mexcTickers={mexcTickers}
             mexcSpotTickers={mexcSpotTickers}
             bingxSpotTickers={bingxSpotTickers}
-            bingxTickers={bingxFuturesTickers}
+            bingxFuturesTickers={bingxFuturesTickers}
             gateTickers={gateTickers}
             bybitTickers={bybitTickers}
             binanceSpotTickers={binanceSpotTickers}
