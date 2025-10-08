@@ -358,13 +358,13 @@ export const ArbitrageTable = ({
                 {bingxFuturesMap.get(invoice) || '-'}
               </TableCell>
               <TableCell
-                className={
-                  gateSpotMap.get(invoice) / avgPrices.get(invoice) > 1
-                    ? 'profitCell'
-                    : gateSpotMap.get(invoice) / avgPrices.get(invoice) < 1
-                      ? 'lossCell'
-                      : ''
-                }
+              // className={
+              //   gateSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+              //     ? 'profitCell'
+              //     : gateSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+              //       ? 'lossCell'
+              //       : ''
+              // }
               >
                 {gateSpotMap.get(invoice) || '-'}
               </TableCell>
