@@ -15,7 +15,13 @@ export const gateApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getGateTickers: builder.query<any, any>({
+    getGateSpotTickers: builder.query<any, any>({
+      query: (params) => ({
+        url: '/sStats',
+        params,
+      }),
+    }),
+    getGateFuturesTickers: builder.query<any, any>({
       query: (params) => ({
         url: '/fStats',
         params,
@@ -30,4 +36,4 @@ export const gateApi = createApi({
   }),
 });
 
-export const { useGetGateTickersQuery, useGetAccountsQuery } = gateApi;
+export const { useGetGateSpotTickersQuery, useGetGateFuturesTickersQuery, useGetAccountsQuery } = gateApi;

@@ -20,7 +20,7 @@ import { useGetOrderbookMutation, useGetRuRateQuery, useGetSummaryQuery, useSend
 import { Exchange, Side } from 'alor-api';
 import { useGetBINGXFuturesTickersQuery, useGetBINGXSpotTickersQuery } from './api/bingx.api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
-import { useGetGateTickersQuery } from './api/gate.api';
+import { useGetGateFuturesTickersQuery, useGetGateSpotTickersQuery } from './api/gate.api';
 import { useGetBYBITTickersQuery } from './api/bybit.api';
 import { useGetBinanceFuturesTickersQuery, useGetBinanceSpotTickersQuery } from './api/binance.api';
 import dayjs from 'dayjs';
@@ -221,14 +221,21 @@ export const TestPage = () => {
 
   const bingxMap = useMemo(() => new Set<string>(bingxFuturesTickers.map((t) => t.symbol.split('-USDT')[0])), [bingxFuturesTickers]);
 
-  const { data: gateTickers = [] } = useGetGateTickersQuery(
+  const { data: gateSpotTickers = [] } = useGetGateSpotTickersQuery(
     {},
     {
       pollingInterval: 5000,
     },
   );
 
-  const gateMap = useMemo(() => new Set<string>(gateTickers.map((t) => t.contract.split('_USDT')[0])), [gateTickers]);
+  const { data: gateFuturesTickers = [] } = useGetGateFuturesTickersQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
+
+  const gateMap = useMemo(() => new Set<string>(gateFuturesTickers.map((t) => t.contract.split('_USDT')[0])), [gateFuturesTickers]);
 
   const { data: bybitTickers = [] } = useGetBYBITTickersQuery(
     {},
@@ -1188,7 +1195,7 @@ export const TestPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...gateTickers]
+                {[...gateFuturesTickers]
                   .map((t) => ({ ...t, spread: (Number(t.lowest_ask) / Number(t.highest_bid) - 1) * 100 }))
                   .filter(
                     (t) =>
@@ -3119,7 +3126,8 @@ export const TestPage = () => {
             mexcSpotTickers={mexcSpotTickers}
             bingxSpotTickers={bingxSpotTickers}
             bingxFuturesTickers={bingxFuturesTickers}
-            gateTickers={gateTickers}
+            gateSpotTickers={gateSpotTickers}
+            gateFuturesTickers={gateFuturesTickers}
             bybitTickers={bybitTickers}
             binanceSpotTickers={binanceSpotTickers}
             binanceFuturesTickers={binanceFuturesTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
