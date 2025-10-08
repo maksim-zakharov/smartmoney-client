@@ -19,7 +19,8 @@ export const ArbitrageTable = ({
   bybitFuturesTickers,
   binanceFuturesTickers,
   binanceSpotTickers,
-  htxTickers,
+  htxSpotTickers,
+  htxFuturesTickers,
   kukoinSpotTickers,
   kukoinFuturesTickers,
   bitgetSpotTickers,
@@ -69,9 +70,14 @@ export const ArbitrageTable = ({
     [binanceFuturesTickers],
   );
 
+  const htxSpotMap = useMemo(
+    () => new Map<string, number>(htxSpotTickers.map((t) => [t.symbol.split('usdt')[0].toUpperCase(), Number(t.close)])),
+    [htxSpotTickers],
+  );
+
   const htxFuturesMap = useMemo(
-    () => new Map<string, number>(htxTickers.map((t) => [t.contract_code.split('-USDT')[0], Number(t.close)])),
-    [htxTickers],
+    () => new Map<string, number>(htxFuturesTickers.map((t) => [t.contract_code.split('-USDT')[0], Number(t.close)])),
+    [htxFuturesTickers],
   );
 
   const bitstampMap = useMemo(
@@ -117,7 +123,8 @@ export const ArbitrageTable = ({
           ...bingxFuturesTickers.map((t) => t.symbol.split('-USDT')[0]),
           ...gateSpotTickers.map((t) => t.currency_pair.split('_USDT')[0]),
           ...gateFuturesTickers.map((t) => t.contract.split('_USDT')[0]),
-          ...htxTickers.map((t) => t.contract_code.split('-USDT')[0]),
+          ...htxSpotTickers.map((t) => t.symbol.split('usdt')[0].toUpperCase()),
+          ...htxFuturesTickers.map((t) => t.contract_code.split('-USDT')[0]),
           ...bybitSpotTickers.map((t) => t.symbol.split('USDT')[0]),
           ...bybitFuturesTickers.map((t) => t.symbol.split('USDT')[0]),
           ...binanceSpotTickers.map((t) => t.symbol.split('USDT')[0]),
@@ -152,7 +159,9 @@ export const ArbitrageTable = ({
               binanceSpotMap.get(ticker),
               binanceFuturesMap.get(ticker),
 
+              htxSpotMap.get(ticker),
               htxFuturesMap.get(ticker),
+
               bitstampMap.get(ticker),
 
               gateSpotMap.get(ticker),
@@ -187,7 +196,9 @@ export const ArbitrageTable = ({
             Math.abs(binanceSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(binanceFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
+            Math.abs(htxSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(htxFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+
             Math.abs(bitstampMap.get(ticker) / avgPrices.get(ticker) || 0),
 
             Math.abs(gateSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
@@ -222,7 +233,9 @@ export const ArbitrageTable = ({
             binanceSpotMap.get(ticker),
             binanceFuturesMap.get(ticker),
 
+            htxSpotMap.get(ticker),
             htxFuturesMap.get(ticker),
+
             bitstampMap.get(ticker),
 
             gateSpotMap.get(ticker),
@@ -335,6 +348,12 @@ export const ArbitrageTable = ({
             <div className="flex gap-1 items-center">
               <img className="h-3 rounded-full" src={exchangeImgMap['KUCOIN']} />
               Kukoin Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['HTX']} />
+              HTX Spot
             </div>
           </TableHead>
           <TableHead>
@@ -520,6 +539,17 @@ export const ArbitrageTable = ({
                 }
               >
                 {kukoinFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+              // className={
+              //   htxSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+              //     ? 'profitCell'
+              //     : htxSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+              //       ? 'lossCell'
+              //       : ''
+              // }
+              >
+                {htxSpotMap.get(invoice) || '-'}
               </TableCell>
               <TableCell
                 className={

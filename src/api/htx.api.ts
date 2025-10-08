@@ -5,7 +5,7 @@ export const htxApi = createApi({
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
     // baseUrl: 'http://localhost:3000/ctrader',
-    baseUrl: 'https://api.hbdm.com',
+    baseUrl: 'https://176.114.69.4/htx',
     paramsSerializer: (params) => {
       return new URLSearchParams(
         Object.entries(params).flatMap(([key, value]) =>
@@ -15,15 +15,17 @@ export const htxApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getHTXTickers: builder.query<any, any>({
+    getHTXSpotTickers: builder.query<any, any>({
       query: (params) => ({
-        url: '/v2/linear-swap-ex/market/detail/batch_merged',
+        url: '/spot-tickers',
       }),
-      transformResponse(baseQueryReturnValue: any): any {
-        return baseQueryReturnValue?.ticks;
-      },
+    }),
+    getHTXFuturesTickers: builder.query<any, any>({
+      query: (params) => ({
+        url: '/futures-tickers',
+      }),
     }),
   }),
 });
 
-export const { useGetHTXTickersQuery } = htxApi;
+export const { useGetHTXSpotTickersQuery, useGetHTXFuturesTickersQuery } = htxApi;

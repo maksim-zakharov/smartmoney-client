@@ -24,7 +24,7 @@ import { useGetGateFuturesTickersQuery, useGetGateSpotTickersQuery } from './api
 import { useGetBYBITFuturesTickersQuery, useGetBYBITSpotTickersQuery } from './api/bybit.api';
 import { useGetBinanceFuturesTickersQuery, useGetBinanceSpotTickersQuery } from './api/binance.api';
 import dayjs from 'dayjs';
-import { useGetHTXTickersQuery } from './api/htx.api';
+import { useGetHTXFuturesTickersQuery, useGetHTXSpotTickersQuery } from './api/htx.api';
 import { useGetKuCoinFutureTickersQuery, useGetKuCoinSpotTickersQuery } from './api/kucoin.api';
 import { useGetBitgetFutureTickersQuery, useGetBitgetSpotTickersQuery } from './api/bitget.api';
 import { useGetBitstampTickersQuery } from './api/bitstamp.api';
@@ -269,14 +269,21 @@ export const TestPage = () => {
 
   const binanceMap = useMemo(() => new Set<string>(binanceFuturesTickers.map((t) => t.symbol.split('USDT')[0])), [binanceFuturesTickers]);
 
-  const { data: htxTickers = [] } = useGetHTXTickersQuery(
+  const { data: htxSpotTickers = [] } = useGetHTXSpotTickersQuery(
     {},
     {
       pollingInterval: 5000,
     },
   );
 
-  const htxMap = useMemo(() => new Set<string>(htxTickers.map((t) => t.contract_code.split('-USDT')[0])), [htxTickers]);
+  const { data: htxFuturesTickers = [] } = useGetHTXFuturesTickersQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
+
+  const htxMap = useMemo(() => new Set<string>(htxFuturesTickers.map((t) => t.contract_code.split('-USDT')[0])), [htxFuturesTickers]);
 
   const { data: kukoinSpotTickers = [] } = useGetKuCoinSpotTickersQuery(
     {},
@@ -2563,7 +2570,7 @@ export const TestPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...htxTickers]
+                {[...htxFuturesTickers]
                   .filter((t) => Boolean(t.ask))
                   .map((t) => ({ ...t, spread: (Number(t.ask?.[0]) / Number(t.bid?.[0]) - 1) * 100 }))
                   .filter(
@@ -3153,7 +3160,8 @@ export const TestPage = () => {
             bybitFuturesTickers={bybitFuturesTickers}
             binanceSpotTickers={binanceSpotTickers}
             binanceFuturesTickers={binanceFuturesTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
-            htxTickers={htxTickers.filter((t) => Boolean(t.ask))}
+            htxSpotTickers={htxSpotTickers}
+            htxFuturesTickers={htxFuturesTickers.filter((t) => Boolean(t.ask))}
             kukoinSpotTickers={kukoinSpotTickers}
             kukoinFuturesTickers={kukoinFuturesTickers}
             bitgetSpotTickers={bitgetSpotTickers}
