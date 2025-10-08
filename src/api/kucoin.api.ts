@@ -15,12 +15,17 @@ export const kucoinApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getKuCoinTickers: builder.query<any, any>({
+    getKuCoinSpotTickers: builder.query<any, any>({
       query: (params) => ({
-        url: '/tickers',
+        url: '/spot-tickers',
+      }),
+    }),
+    getKuCoinFutureTickers: builder.query<any, any>({
+      query: (params) => ({
+        url: '/futures-tickers',
       }),
     }),
   }),
 });
 
-export const { useGetKuCoinTickersQuery } = kucoinApi;
+export const { useGetKuCoinFutureTickersQuery, useGetKuCoinSpotTickersQuery } = kucoinApi;
