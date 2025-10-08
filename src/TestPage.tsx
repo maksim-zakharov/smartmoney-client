@@ -32,6 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover
 import { Label } from './components/ui/label';
 import { setFilter } from './api/alor.slice';
 import { useSearchParams } from 'react-router-dom';
+import { ArbitrageTable } from './ArbitrageTable.tsx';
 
 const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => {
   const { filters } = useAppSelector((state) => state.alorSlice);
@@ -3115,6 +3116,20 @@ export const TestPage = () => {
           </TabsContent>
         </Tabs>
         <div className="col-span-2">{selected && <TWChart ticker={selected} height={480} multiple={1} small />}</div>
+        <div className="col-span-3">
+          <ArbitrageTable
+            bitstampTickers={bitstampTickers}
+            mexcTickers={mexcTickers}
+            mexcSpotTickers={mexcSpotTickers}
+            bingxTickers={bingxTickers}
+            gateTickers={gateTickers}
+            bybitTickers={bybitTickers}
+            binanceTickers={binanceTickers}
+            htxTickers={htxTickers}
+            kukoinTickers={kukoinTickers}
+            bitgetTickers={bitgetTickers}
+          />
+        </div>
         {/*<div className="col-span-3">*/}
         {/*  <ArbitrageCalculator />*/}
         {/*</div>*/}
