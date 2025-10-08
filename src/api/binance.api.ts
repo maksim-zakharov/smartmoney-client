@@ -15,7 +15,15 @@ export const binanceApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getBinanceTickers: builder.query<any, any>({
+    getBinanceSpotTickers: builder.query<any, any>({
+      query: (params) => ({
+        url: '/tickerStats',
+        params: {
+          category: 'linear',
+        },
+      }),
+    }),
+    getBinanceFuturesTickers: builder.query<any, any>({
       query: (params) => ({
         url: '/fTickerStats',
         params: {
@@ -26,4 +34,4 @@ export const binanceApi = createApi({
   }),
 });
 
-export const { useGetBinanceTickersQuery } = binanceApi;
+export const { useGetBinanceSpotTickersQuery, useGetBinanceFuturesTickersQuery } = binanceApi;
