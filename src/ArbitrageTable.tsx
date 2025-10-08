@@ -15,7 +15,8 @@ export const ArbitrageTable = ({
   bingxFuturesTickers,
   gateSpotTickers,
   gateFuturesTickers,
-  bybitTickers,
+  bybitSpotTickers,
+  bybitFuturesTickers,
   binanceFuturesTickers,
   binanceSpotTickers,
   htxTickers,
@@ -36,9 +37,14 @@ export const ArbitrageTable = ({
     [kukoinTickers],
   );
 
+  const bybitSpotsMap = useMemo(
+    () => new Map<string, number>(bybitSpotTickers.map((t) => [t.symbol.split('USDT')[0], Number(t.lastPrice)])),
+    [bybitSpotTickers],
+  );
+
   const bybitFuturesMap = useMemo(
-    () => new Map<string, number>(bybitTickers.map((t) => [t.symbol.split('USDT')[0], Number(t.lastPrice)])),
-    [bybitTickers],
+    () => new Map<string, number>(bybitFuturesTickers.map((t) => [t.symbol.split('USDT')[0], Number(t.lastPrice)])),
+    [bybitFuturesTickers],
   );
 
   const binanceSpotMap = useMemo(
@@ -100,7 +106,8 @@ export const ArbitrageTable = ({
           ...gateSpotTickers.map((t) => t.currency_pair.split('_USDT')[0]),
           ...gateFuturesTickers.map((t) => t.contract.split('_USDT')[0]),
           ...htxTickers.map((t) => t.contract_code.split('-USDT')[0]),
-          ...bybitTickers.map((t) => t.symbol.split('USDT')[0]),
+          ...bybitSpotTickers.map((t) => t.symbol.split('USDT')[0]),
+          ...bybitFuturesTickers.map((t) => t.symbol.split('USDT')[0]),
           ...binanceSpotTickers.map((t) => t.symbol.split('USDT')[0]),
           ...binanceFuturesTickers.map((t) => t.symbol.split('USDT')[0]),
           ...mexcSpotTickers.map((t) => t.symbol.split('USDT')[0]),
@@ -121,6 +128,8 @@ export const ArbitrageTable = ({
             [
               bitgetFuturesMap.get(ticker),
               kukoinFuturesMap.get(ticker),
+
+              bybitSpotsMap.get(ticker),
               bybitFuturesMap.get(ticker),
 
               binanceSpotMap.get(ticker),
@@ -151,6 +160,8 @@ export const ArbitrageTable = ({
           Math.max(
             Math.abs(bitgetFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(kukoinFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+
+            Math.abs(bybitSpotsMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(bybitFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
             Math.abs(binanceSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
@@ -181,6 +192,8 @@ export const ArbitrageTable = ({
           [
             bitgetFuturesMap.get(ticker),
             kukoinFuturesMap.get(ticker),
+
+            bybitSpotsMap.get(ticker),
             bybitFuturesMap.get(ticker),
 
             binanceSpotMap.get(ticker),
@@ -256,6 +269,12 @@ export const ArbitrageTable = ({
           <TableHead>
             <div className="flex gap-1 items-center">
               <img className="h-3 rounded-full" src={exchangeImgMap['BYBIT']} />
+              Bybit Spot
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['BYBIT']} />
               Bybit Futures
             </div>
           </TableHead>
@@ -299,7 +318,7 @@ export const ArbitrageTable = ({
       </TableHeader>
       <TableBody>
         {[...allTickers]
-          .filter((invoice) => tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 6)
+          .filter((invoice) => tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 7)
           .sort((a, b) => {
             const counts = tickersCounts.get(b) - tickersCounts.get(a);
             if (counts) {
@@ -378,6 +397,17 @@ export const ArbitrageTable = ({
                 }
               >
                 {gateFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+              // className={
+              //   bybitSpotsMap.get(invoice) / avgPrices.get(invoice) > 1
+              //     ? 'profitCell'
+              //     : bybitSpotsMap.get(invoice) / avgPrices.get(invoice) < 1
+              //       ? 'lossCell'
+              //       : ''
+              // }
+              >
+                {bybitSpotsMap.get(invoice) || '-'}
               </TableCell>
               <TableCell
                 className={

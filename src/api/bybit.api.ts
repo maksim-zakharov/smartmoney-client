@@ -15,7 +15,15 @@ export const bybitApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getBYBITTickers: builder.query<any, any>({
+    getBYBITSpotTickers: builder.query<any, any>({
+      query: (params) => ({
+        url: '/ticker',
+        params: {
+          category: 'spot',
+        },
+      }),
+    }),
+    getBYBITFuturesTickers: builder.query<any, any>({
       query: (params) => ({
         url: '/ticker',
         params: {
@@ -34,4 +42,4 @@ export const bybitApi = createApi({
   }),
 });
 
-export const { useGetBYBITTickersQuery, useGetWalletBalanceQuery } = bybitApi;
+export const { useGetBYBITSpotTickersQuery, useGetBYBITFuturesTickersQuery, useGetWalletBalanceQuery } = bybitApi;
