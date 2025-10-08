@@ -957,3 +957,22 @@ export const moneyFormatCompact = (
 
   return numberFormat.format(money);
 };
+
+export const exchangeImgMap = {
+  BINANCE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png',
+  BINANCE_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png',
+  HTX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/102.png',
+  MEXC: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png',
+  GATEIO: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/302.png',
+  KUCOIN: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/311.png',
+  BYBIT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png',
+  BYBIT_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png',
+  BITGET: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/513.png',
+  BITGET_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/513.png',
+  COINBASE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/89.png',
+  KRAKEN: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/24.png',
+  OKX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/294.png',
+  BITSTAMP: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/70.png',
+  BITFINEX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/37.png',
+  BINGX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/1064.png',
+};

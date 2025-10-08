@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from './store';
 import { moneyFormat, numberFormat } from './MainPage/MainPage';
-import { moneyFormatCompact, normalizePrice } from './utils';
+import { exchangeImgMap, moneyFormatCompact, normalizePrice } from './utils';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { cn } from './lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
@@ -540,25 +540,6 @@ export const TestPage = () => {
     { label: 'Bitget Фьючерсы', value: 'bitget-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/513.png' },
     { label: 'Bitstamp Фьючерсы', value: 'bitstamp-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/70.png' },
   ];
-
-  const exchangeImgMap = {
-    BINANCE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png',
-    BINANCE_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png',
-    HTX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/102.png',
-    MEXC: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png',
-    GATEIO: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/302.png',
-    KUCOIN: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/311.png',
-    BYBIT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png',
-    BYBIT_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png',
-    BITGET: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/513.png',
-    BITGET_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/513.png',
-    COINBASE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/89.png',
-    KRAKEN: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/24.png',
-    OKX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/294.png',
-    BITSTAMP: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/70.png',
-    BITFINEX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/37.png',
-    BINGX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/1064.png',
-  };
 
   const totalPositions = useMemo(() => {
     const tiPos = [...(tinkoffPortfolio?.positions || [])];
@@ -2541,6 +2522,7 @@ export const TestPage = () => {
               </TableHeader>
               <TableBody>
                 {[...htxTickers]
+                  .filter((t) => Boolean(t.ask))
                   .map((t) => ({ ...t, spread: (Number(t.ask?.[0]) / Number(t.bid?.[0]) - 1) * 100 }))
                   .filter(
                     (t) =>
@@ -3124,8 +3106,8 @@ export const TestPage = () => {
             bingxTickers={bingxTickers}
             gateTickers={gateTickers}
             bybitTickers={bybitTickers}
-            binanceTickers={binanceTickers}
-            htxTickers={htxTickers}
+            binanceTickers={binanceTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
+            htxTickers={htxTickers.filter((t) => Boolean(t.ask))}
             kukoinTickers={kukoinTickers}
             bitgetTickers={bitgetTickers}
           />

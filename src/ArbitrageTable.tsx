@@ -1,6 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
 import { cn } from './lib/utils';
 import React, { useMemo, useState } from 'react';
+import { exchangeImgMap } from './utils.ts';
 
 const avg = (values: number[]) => {
   return values.reduce((accumulator, currentValue) => accumulator + currentValue, 0) / values.length;
@@ -151,16 +152,66 @@ export const ArbitrageTable = ({
           <TableHead>Тикер</TableHead>
           <TableHead>Средняя</TableHead>
           <TableHead>Дельта</TableHead>
-          <TableHead>Mexc Spot</TableHead>
-          <TableHead>Mexc Futures</TableHead>
-          <TableHead>Bingx Futures</TableHead>
-          <TableHead>Gate Futures</TableHead>
-          <TableHead>Bybit Futures</TableHead>
-          <TableHead>Binance Futures</TableHead>
-          <TableHead>Bitget Futures</TableHead>
-          <TableHead>Kukoin Futures</TableHead>
-          <TableHead>HTX Futures</TableHead>
-          <TableHead>Bitstamp</TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['MEXC']} />
+              Mexc Spot
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['MEXC']} />
+              Mexc Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['BINGX']} />
+              Bingx Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['GATEIO']} />
+              Gate Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['BYBIT']} />
+              Bybit Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['BINANCE']} />
+              Binance Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['BITGET']} />
+              Bitget Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['KUCOIN']} />
+              Kukoin Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['HTX']} />
+              HTX Futures
+            </div>
+          </TableHead>
+          <TableHead>
+            <div className="flex gap-1 items-center">
+              <img className="h-3 rounded-full" src={exchangeImgMap['BITSTAMP']} />
+              Bitstamp
+            </div>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -171,16 +222,116 @@ export const ArbitrageTable = ({
               <TableCell>${invoice}</TableCell>
               <TableCell>{avgPrices.get(invoice)}</TableCell>
               <TableCell>{tickersDelta.get(invoice)?.toFixed(4)}</TableCell>
-              <TableCell>{mexcSpotMap.get(invoice) || '-'}</TableCell>
-              <TableCell>{mexcFuturesMap.get(invoice) || '-'}</TableCell>
-              <TableCell>{bingxSpotMap.get(invoice) || '-'}</TableCell>
-              <TableCell>{gateFuturesMap.get(invoice) || '-'}</TableCell>
-              <TableCell>{bybitFuturesMap.get(invoice) || '-'}</TableCell>
-              <TableCell>{binanceFuturesMap.get(invoice) || '-'}</TableCell>
-              <TableCell>{bitgetFuturesMap.get(invoice) || '-'}</TableCell>
-              <TableCell>{kukoinFuturesMap.get(invoice) || '-'}</TableCell>
-              <TableCell>{htxFuturesMap.get(invoice) || '-'}</TableCell>
-              <TableCell>{bitstampMap.get(invoice) || '-'}</TableCell>
+              <TableCell
+                className={
+                  mexcSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : mexcSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {mexcSpotMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  mexcFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : mexcFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {mexcFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  bingxSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : bingxSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {bingxSpotMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  gateFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : gateFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {gateFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  bybitFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : bybitFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {bybitFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  binanceFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : binanceFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {binanceFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  bitgetFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : bitgetFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {bitgetFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  kukoinFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : kukoinFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {kukoinFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  htxFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : htxFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {htxFuturesMap.get(invoice) || '-'}
+              </TableCell>
+              <TableCell
+                className={
+                  bitstampMap.get(invoice) / avgPrices.get(invoice) > 1
+                    ? 'profitCell'
+                    : bitstampMap.get(invoice) / avgPrices.get(invoice) < 1
+                      ? 'lossCell'
+                      : ''
+                }
+              >
+                {bitstampMap.get(invoice) || '-'}
+              </TableCell>
             </TableRow>
           ))}
       </TableBody>
