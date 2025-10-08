@@ -115,6 +115,28 @@ export const ArbitrageTable = ({
     [allTickers],
   );
 
+  const tickersDelta = useMemo(
+    () =>
+      new Map<string, number>(
+        Array.from(allTickers).map((ticker) => [
+          ticker,
+          Math.max(
+            Math.abs(bitgetFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(kukoinFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(bybitFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(binanceFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(htxFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(bitstampMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(gateFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(bingxSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(mexcSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(mexcFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+          ),
+        ]),
+      ),
+    [avgPrices, allTickers],
+  );
+
   return (
     <Table wrapperClassName="pt-2 h-120">
       {/*<TableHeader>*/}
@@ -128,6 +150,7 @@ export const ArbitrageTable = ({
         <TableRow>
           <TableHead>Тикер</TableHead>
           <TableHead>Средняя</TableHead>
+          <TableHead>Дельта</TableHead>
           <TableHead>Mexc Spot</TableHead>
           <TableHead>Mexc Futures</TableHead>
           <TableHead>Bingx Futures</TableHead>
@@ -141,22 +164,25 @@ export const ArbitrageTable = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {[...allTickers].map((invoice, index) => (
-          <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
-            <TableCell>${invoice}</TableCell>
-            <TableCell>{avgPrices.get(invoice)}</TableCell>
-            <TableCell>{mexcSpotMap.get(invoice) || '-'}</TableCell>
-            <TableCell>{mexcFuturesMap.get(invoice) || '-'}</TableCell>
-            <TableCell>{bingxSpotMap.get(invoice) || '-'}</TableCell>
-            <TableCell>{gateFuturesMap.get(invoice) || '-'}</TableCell>
-            <TableCell>{bybitFuturesMap.get(invoice) || '-'}</TableCell>
-            <TableCell>{binanceFuturesMap.get(invoice) || '-'}</TableCell>
-            <TableCell>{bitgetFuturesMap.get(invoice) || '-'}</TableCell>
-            <TableCell>{kukoinFuturesMap.get(invoice) || '-'}</TableCell>
-            <TableCell>{htxFuturesMap.get(invoice) || '-'}</TableCell>
-            <TableCell>{bitstampMap.get(invoice) || '-'}</TableCell>
-          </TableRow>
-        ))}
+        {[...allTickers]
+          .sort((a, b) => tickersDelta.get(b) - tickersDelta.get(a))
+          .map((invoice, index) => (
+            <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
+              <TableCell>${invoice}</TableCell>
+              <TableCell>{avgPrices.get(invoice)}</TableCell>
+              <TableCell>{tickersDelta.get(invoice)?.toFixed(4)}</TableCell>
+              <TableCell>{mexcSpotMap.get(invoice) || '-'}</TableCell>
+              <TableCell>{mexcFuturesMap.get(invoice) || '-'}</TableCell>
+              <TableCell>{bingxSpotMap.get(invoice) || '-'}</TableCell>
+              <TableCell>{gateFuturesMap.get(invoice) || '-'}</TableCell>
+              <TableCell>{bybitFuturesMap.get(invoice) || '-'}</TableCell>
+              <TableCell>{binanceFuturesMap.get(invoice) || '-'}</TableCell>
+              <TableCell>{bitgetFuturesMap.get(invoice) || '-'}</TableCell>
+              <TableCell>{kukoinFuturesMap.get(invoice) || '-'}</TableCell>
+              <TableCell>{htxFuturesMap.get(invoice) || '-'}</TableCell>
+              <TableCell>{bitstampMap.get(invoice) || '-'}</TableCell>
+            </TableRow>
+          ))}
       </TableBody>
     </Table>
   );
