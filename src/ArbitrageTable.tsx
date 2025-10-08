@@ -138,6 +138,28 @@ export const ArbitrageTable = ({
     [avgPrices, allTickers],
   );
 
+  const tickersCounts = useMemo(
+    () =>
+      new Map<string, number>(
+        Array.from(allTickers).map((ticker) => [
+          ticker,
+          [
+            bitgetFuturesMap.get(ticker),
+            kukoinFuturesMap.get(ticker),
+            bybitFuturesMap.get(ticker),
+            binanceFuturesMap.get(ticker),
+            htxFuturesMap.get(ticker),
+            bitstampMap.get(ticker),
+            gateFuturesMap.get(ticker),
+            bingxSpotMap.get(ticker),
+            mexcSpotMap.get(ticker),
+            mexcFuturesMap.get(ticker),
+          ].filter(Boolean).length,
+        ]),
+      ),
+    [avgPrices, allTickers],
+  );
+
   return (
     <Table wrapperClassName="pt-2 h-120">
       {/*<TableHeader>*/}
@@ -216,7 +238,15 @@ export const ArbitrageTable = ({
       </TableHeader>
       <TableBody>
         {[...allTickers]
-          .sort((a, b) => tickersDelta.get(b) - tickersDelta.get(a))
+          .filter((invoice) => tickersDelta.get(invoice) >= 1.05)
+          .sort((a, b) => {
+            const counts = tickersCounts.get(b) - tickersCounts.get(a);
+            if (counts) {
+              return counts;
+            }
+
+            return tickersDelta.get(b) - tickersDelta.get(a);
+          })
           .map((invoice, index) => (
             <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
               <TableCell>${invoice}</TableCell>
