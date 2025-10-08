@@ -299,7 +299,7 @@ export const ArbitrageTable = ({
       </TableHeader>
       <TableBody>
         {[...allTickers]
-          .filter((invoice) => tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 5)
+          .filter((invoice) => tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 6)
           .sort((a, b) => {
             const counts = tickersCounts.get(b) - tickersCounts.get(a);
             if (counts) {
