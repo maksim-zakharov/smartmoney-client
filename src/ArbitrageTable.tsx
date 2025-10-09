@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
 import { cn } from './lib/utils';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { exchangeImgMap } from './utils.ts';
 
 const avg = (values: number[]) => {
@@ -269,8 +269,94 @@ export const ArbitrageTable = ({
     [avgPrices, allTickers],
   );
 
+  const futuresMaps = [
+    mexcFuturesMap,
+    bingxFuturesMap,
+    gateFuturesMap,
+    bybitFuturesMap,
+    binanceFuturesMap,
+    bitgetFuturesMap,
+    kukoinFuturesMap,
+    // htxFuturesMap,
+    // bitstampMap, // Если раскомментировать, добавить сюда
+  ];
+
+  const futuresExchanges = ['MEXC', 'BINGX', 'GATEIO', 'BYBIT', 'BINANCE', 'BITGET', 'KUCOIN'];
+
+  const mixedTickers = useMemo(
+    () =>
+      new Map<string, boolean>(
+        Array.from(allTickers)
+          .filter(
+            (invoice) =>
+              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.1 && tickersCounts.get(invoice) >= 4,
+          )
+          .map((ticker) => {
+            const prices = futuresMaps.map((m) => m.get(ticker)).filter((p) => p !== undefined);
+            const ratios = prices.map((p) => p / avgPrices.get(ticker));
+            const colors = ratios.map((r) => (r > 1 ? 'profit' : r < 1 ? 'loss' : 'neutral'));
+            const nonNeutral = colors.filter((c) => c !== 'neutral');
+            const hasMixed = nonNeutral.length > 1 && new Set(nonNeutral).size > 1;
+            return [ticker, hasMixed];
+          }),
+      ),
+    [allTickers, avgPrices, ...futuresMaps],
+  );
+
+  const [previousMixed, setPreviousMixed] = useState(new Map<string, boolean>());
+
+  useEffect(() => {
+    const newPrevious = new Map(previousMixed);
+    for (const [ticker, isMixed] of mixedTickers) {
+      const prev = previousMixed.get(ticker) ?? false;
+      if (isMixed && !prev) {
+        const prices = futuresMaps.map((m) => m.get(ticker) ?? null);
+        const ratios = prices.map((p, i) => (p ? p / avgPrices.get(ticker) : null));
+        const colors = ratios.map((r) => (r > 1 ? 'profit' : r < 1 ? 'loss' : 'neutral'));
+
+        let countProfit = 0;
+        let countLoss = 0;
+        colors.forEach((c) => {
+          if (c === 'profit') countProfit++;
+          if (c === 'loss') countLoss++;
+        });
+
+        const majority = countProfit > countLoss ? 'profit' : 'loss';
+        const minority = majority === 'profit' ? 'loss' : 'profit';
+
+        let message = `$${ticker} Арбитраж\nСредняя: ${avgPrices.get(ticker).toFixed(4)}\nЦены:\n`;
+        futuresMaps.forEach((m, i) => {
+          const price = prices[i];
+          if (price !== null) {
+            const exch = futuresExchanges[i];
+            const isDiffering = colors[i] === minority;
+            message += `${exch} Futures: ${price.toFixed(4)}${isDiffering ? ' **(отличается)**' : ''}\n`;
+          }
+        });
+
+        // Replace with your Telegram bot API endpoint, bot token, and chat ID
+        fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: localStorage.getItem('telegramUserId'),
+            text: message,
+            parse_mode: 'Markdown',
+          }),
+        })
+          .then(() => console.log(`Telegram message sent for ${ticker}`))
+          .catch((e) => console.error(`Error sending Telegram message for ${ticker}:`, e));
+      }
+      newPrevious.set(ticker, isMixed);
+    }
+    setPreviousMixed(newPrevious);
+  }, [mixedTickers]);
+
   return (
-    <Table wrapperClassName="pt-2 h-270">
+    <Table wrapperClassName="pt-2 h-170">
       {/*<TableHeader>*/}
       {/*  <TableRow>*/}
       {/*    <TableHead className="w-[200px] text-left" colSpan={4}>*/}
@@ -389,7 +475,10 @@ export const ArbitrageTable = ({
       </TableHeader>
       <TableBody>
         {[...allTickers]
-          .filter((invoice) => !['TRUMP'].includes(invoice) && tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 4)
+          .filter(
+            (invoice) =>
+              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.1 && tickersCounts.get(invoice) >= 4,
+          )
           .sort((a, b) => {
             // const counts = tickersCounts.get(b) - tickersCounts.get(a);
             // if (counts) {
@@ -399,29 +488,7 @@ export const ArbitrageTable = ({
             return tickersDelta.get(b) - tickersDelta.get(a);
           })
           .map((invoice, index) => {
-            // Собираем цвета только для фьючерсов (поскольку спот не подсвечиваются в исходном коде)
-            const colors: string[] = [
-              mexcFuturesMap.get(invoice),
-              bingxFuturesMap.get(invoice),
-              gateFuturesMap.get(invoice),
-              bybitFuturesMap.get(invoice),
-              binanceFuturesMap.get(invoice),
-              bitgetFuturesMap.get(invoice),
-              kukoinFuturesMap.get(invoice),
-              // htxFuturesMap.get(invoice),
-            ]
-              .filter((price) => price !== undefined)
-              .map((price) => {
-                const ratio = price / avgPrices.get(invoice);
-                if (ratio > 1) return 'profit';
-                if (ratio < 1) return 'loss';
-                return 'neutral';
-              });
-
-            // Проверяем, все ли цвета одинаковые (игнорируя neutral, если нужно, но по запросу - не все зеленые или не все красные)
-            const nonNeutralColors = colors.filter((c) => c !== 'neutral');
-            const hasMixedColors = nonNeutralColors.length > 1 && new Set(nonNeutralColors).size > 1; // Если больше одного типа цвета
-
+            const hasMixedColors = mixedTickers.get(invoice);
             const rowClass = hasMixedColors ? 'highlightRow' : ''; // Добавьте стиль для .highlightRow в CSS, например background-color: yellow;
             return (
               <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven', rowClass)}>
