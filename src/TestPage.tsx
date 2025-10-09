@@ -709,9 +709,32 @@ export const TestPage = () => {
     );
   };
 
+  const totalBalance = useMemo(() => {
+    const usdtBalance = ctraderBalance + bingBalance + bybitBalance + gateBalance;
+    const rubBalance = alorSummary?.portfolioLiquidationValue || 0;
+
+    return usdtBalance * USDRate + rubBalance;
+  }, [ctraderBalance, bingBalance, bybitBalance, gateBalance, USDRate, alorSummary?.portfolioLiquidationValue]);
+
   return (
     <>
       <div className="grid grid-cols-12 gap-2">
+        <Card>
+          <CardHeader>
+            <CardDescription className="flex gap-2 items-center">
+              {/*<img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />*/}
+              Общий баланс
+            </CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                totalBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(totalBalance, 'RUB')}
+            </CardTitle>
+          </CardHeader>
+        </Card>
         <Card>
           <CardHeader>
             <CardDescription className="flex gap-2 items-center">
@@ -805,7 +828,7 @@ export const TestPage = () => {
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card className="col-span-4">
+        <Card className="col-span-3">
           <CardHeader>
             <CardDescription>P&L Алор</CardDescription>
             <CardTitle
