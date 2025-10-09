@@ -751,70 +751,78 @@ export const TestPage = () => {
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription className="flex gap-2 items-center">
-              <img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />
-              Bingx
-            </CardDescription>
-            <CardTitle
-              className={cn(
-                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                bingBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-              )}
-            >
-              {moneyFormat(bingBalance, 'USDT')}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription className="flex gap-2 items-center">
-              <img className="h-4 rounded-full" src={exchangeImgMap['BYBIT']} />
-              Bybit
-            </CardDescription>
-            <CardTitle
-              className={cn(
-                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                bybitBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-              )}
-            >
-              {moneyFormat(bybitBalance, 'USDT')}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription className="flex gap-2 items-center">
-              <img className="h-4 rounded-full" src={exchangeImgMap['GATEIO']} />
-              Gate
-            </CardDescription>
-            <CardTitle
-              className={cn(
-                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                gateBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-              )}
-            >
-              {moneyFormat(gateBalance, 'USDT')}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription className="flex gap-2 items-center">
-              <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/tcs2x160.png")` }}></div>
-              Тинькофф
-            </CardDescription>
-            <CardTitle
-              className={cn(
-                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                amount > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-              )}
-            >
-              {moneyFormat(amount)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
+        {localStorage.getItem('bingxApiKey') && (
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />
+                Bingx
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  bingBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(bingBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        {localStorage.getItem('bybitApiKey') && (
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <img className="h-4 rounded-full" src={exchangeImgMap['BYBIT']} />
+                Bybit
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  bybitBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(bybitBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        {localStorage.getItem('gateApiKey') && (
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <img className="h-4 rounded-full" src={exchangeImgMap['GATEIO']} />
+                Gate
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  gateBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(gateBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        {localStorage.getItem('tiToken') && (
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/tcs2x160.png")` }}></div>
+                Тинькофф
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  amount > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(amount)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        )}
         <Card>
           <CardHeader>
             <CardDescription>Алор</CardDescription>

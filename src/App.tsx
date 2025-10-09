@@ -261,6 +261,12 @@ export default function App() {
     localStorage.setItem('tiToken', e.target.value);
   };
 
+  const [brokerAccountId, setBrokerAccountId] = useState<string | null>(localStorage.getItem('tiBrokerAccountId'));
+  const handleEditBrokerAccountId = (e) => {
+    setBrokerAccountId(e.target.value);
+    localStorage.setItem('tiBrokerAccountId', e.target.value);
+  };
+
   const [bingxApiKey, setbingxApiKey] = useState<string | null>(localStorage.getItem('bingxApiKey'));
   const handlebingxApiKey = (e) => {
     setbingxApiKey(e.target.value);
@@ -283,12 +289,6 @@ export default function App() {
   const handlegateSecretKey = (e) => {
     setgateSecretKey(e.target.value);
     localStorage.setItem('gateSecretKey', e.target.value);
-  };
-
-  const [brokerAccountId, setBrokerAccountId] = useState<string | null>(localStorage.getItem('tiBrokerAccountId'));
-  const handleEditBrokerAccountId = (e) => {
-    setBrokerAccountId(e.target.value);
-    localStorage.setItem('tiBrokerAccountId', e.target.value);
   };
 
   const [bybitApiKey, setbybitApiKey] = useState<string | null>(localStorage.getItem('bybitApiKey'));
