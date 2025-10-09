@@ -254,7 +254,7 @@ export const ArbitrageTable = ({
   );
 
   return (
-    <Table wrapperClassName="pt-2 h-120">
+    <Table wrapperClassName="pt-2 h-270">
       {/*<TableHeader>*/}
       {/*  <TableRow>*/}
       {/*    <TableHead className="w-[200px] text-left" colSpan={4}>*/}
@@ -373,12 +373,12 @@ export const ArbitrageTable = ({
       </TableHeader>
       <TableBody>
         {[...allTickers]
-          .filter((invoice) => tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 7)
+          .filter((invoice) => tickersDelta.get(invoice) <= 5 && tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 5)
           .sort((a, b) => {
-            const counts = tickersCounts.get(b) - tickersCounts.get(a);
-            if (counts) {
-              return counts;
-            }
+            // const counts = tickersCounts.get(b) - tickersCounts.get(a);
+            // if (counts) {
+            //   return counts;
+            // }
 
             return tickersDelta.get(b) - tickersDelta.get(a);
           })
