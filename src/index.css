@@ -260,6 +260,15 @@ body {
 }
 }
 
+.highlightRow{
+    cursor: pointer;
+    background: rgb(98,161,255, 0.4) !important;
+    &:hover{
+
+        background-color:rgb(98,161,255);
+    }
+}
+
 .rowEven{
     cursor: pointer;
     background-color: rgba(33, 49, 63, 0.4);
