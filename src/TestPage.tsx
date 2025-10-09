@@ -189,7 +189,7 @@ export const TestPage = () => {
   const bingBalance = Number(bingxBalance?.find((b) => b.asset === 'USDT')?.equity) || 0;
   const ctraderDigits = useMemo(() => 10 ** (cTraderSummary?.moneyDigits || 1), [cTraderSummary?.moneyDigits]);
 
-  const { data: mexcTickers = [] } = useGetTickersQuery(
+  const { data: mexcFuturesTickers = [] } = useGetTickersQuery(
     {},
     {
       pollingInterval: 5000,
@@ -203,7 +203,7 @@ export const TestPage = () => {
     },
   );
 
-  const mexcMap = useMemo(() => new Set<string>((mexcTickers || []).map((t) => t.symbol.split('_USDT')[0])), [mexcTickers]);
+  const mexcMap = useMemo(() => new Set<string>((mexcFuturesTickers || []).map((t) => t.symbol.split('_USDT')[0])), [mexcFuturesTickers]);
 
   const { data: bingxSpotTickers = [] } = useGetBINGXSpotTickersQuery(
     {},
@@ -1850,7 +1850,7 @@ export const TestPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...mexcTickers]
+                {[...mexcFuturesTickers]
                   .map((t) => ({
                     ...t,
                     spread: (Number(t.ask1) / Number(t.bid1) - 1) * 100,
@@ -2072,7 +2072,7 @@ export const TestPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...mexcTickers]
+                {[...mexcFuturesTickers]
                   .map((t) => ({
                     ...t,
                     spread: Number(t.ask1) / Number(t.bid1) - 1,
@@ -3181,22 +3181,22 @@ export const TestPage = () => {
         <div className="col-span-3">
           <ArbitrageTable
             bitstampTickers={bitstampTickers}
-            mexcTickers={mexcTickers}
-            mexcSpotTickers={mexcSpotTickers}
+            mexcFuturesTickers={mexcFuturesTickers.filter((t) => dayjs(t.timestamp).isSame(dayjs().startOf('day'), 'day'))}
+            mexcSpotTickers={mexcSpotTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
             bingxSpotTickers={bingxSpotTickers}
             bingxFuturesTickers={bingxFuturesTickers}
             gateSpotTickers={gateSpotTickers}
             gateFuturesTickers={gateFuturesTickers}
             bybitSpotTickers={bybitSpotTickers}
             bybitFuturesTickers={bybitFuturesTickers}
-            binanceSpotTickers={binanceSpotTickers}
+            binanceSpotTickers={binanceSpotTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
             binanceFuturesTickers={binanceFuturesTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
             htxSpotTickers={htxSpotTickers}
             htxFuturesTickers={htxFuturesTickers.filter((t) => Boolean(t.ask))}
             kukoinSpotTickers={kukoinSpotTickers}
             kukoinFuturesTickers={kukoinFuturesTickers}
-            bitgetSpotTickers={bitgetSpotTickers}
-            bitgetFutureTickers={bitgetFutureTickers}
+            bitgetSpotTickers={bitgetSpotTickers.filter((t) => dayjs(Number(t.ts)).isSame(dayjs().startOf('day'), 'day'))}
+            bitgetFutureTickers={bitgetFutureTickers.filter((t) => dayjs(Number(t.ts)).isSame(dayjs().startOf('day'), 'day'))}
           />
         </div>
         {/*<div className="col-span-3">*/}

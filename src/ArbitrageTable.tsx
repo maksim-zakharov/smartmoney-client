@@ -9,7 +9,7 @@ const avg = (values: number[]) => {
 
 export const ArbitrageTable = ({
   bitstampTickers,
-  mexcTickers,
+  mexcFuturesTickers,
   mexcSpotTickers,
   bingxSpotTickers,
   bingxFuturesTickers,
@@ -111,8 +111,8 @@ export const ArbitrageTable = ({
   );
 
   const mexcFuturesMap = useMemo(
-    () => new Map<string, number>(mexcTickers.map((t) => [t.symbol.split('_USDT')[0], Number(t.lastPrice)])),
-    [mexcTickers],
+    () => new Map<string, number>(mexcFuturesTickers.map((t) => [t.symbol.split('_USDT')[0], Number(t.lastPrice)])),
+    [mexcFuturesTickers],
   );
 
   const allTickers = useMemo(
@@ -130,14 +130,14 @@ export const ArbitrageTable = ({
           ...binanceSpotTickers.map((t) => t.symbol.split('USDT')[0]),
           ...binanceFuturesTickers.map((t) => t.symbol.split('USDT')[0]),
           ...mexcSpotTickers.map((t) => t.symbol.split('USDT')[0]),
-          ...mexcTickers.map((t) => t.symbol.split('_USDT')[0]),
+          ...mexcFuturesTickers.map((t) => t.symbol.split('_USDT')[0]),
           ...bitgetSpotTickers.map((t) => t.symbol.split('USDT')[0]),
           ...bitgetFutureTickers.map((t) => t.symbol.split('USDT')[0]),
           ...kukoinSpotTickers.map((t) => t.symbol.split('-USDT')[0]),
           ...kukoinFuturesTickers.map((t) => t.symbol.split('USDTM')[0]),
         ].filter((ticker) => !ticker.includes('-')),
       ),
-    [bitstampTickers, mexcTickers],
+    [bitstampTickers, mexcFuturesTickers],
   );
 
   const avgPrices = useMemo(
@@ -373,7 +373,7 @@ export const ArbitrageTable = ({
       </TableHeader>
       <TableBody>
         {[...allTickers]
-          .filter((invoice) => tickersDelta.get(invoice) <= 5 && tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 5)
+          .filter((invoice) => tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 5)
           .sort((a, b) => {
             // const counts = tickersCounts.get(b) - tickersCounts.get(a);
             // if (counts) {
