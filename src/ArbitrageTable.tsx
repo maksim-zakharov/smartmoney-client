@@ -80,10 +80,10 @@ export const ArbitrageTable = ({
     [htxFuturesTickers],
   );
 
-  const bitstampMap = useMemo(
-    () => new Map<string, number>(bitstampTickers.map((t) => [t.pair.split('/USD-PERP')[0], Number(t.last)])),
-    [bitstampTickers],
-  );
+  // const bitstampMap = useMemo(
+  //   () => new Map<string, number>(bitstampTickers.map((t) => [t.pair.split('/USD-PERP')[0], Number(t.last)])),
+  //   [bitstampTickers],
+  // );
 
   const gateSpotMap = useMemo(
     () => new Map<string, number>(gateSpotTickers.map((t) => [t.currency_pair.split('_USDT')[0], Number(t.last)])),
@@ -119,7 +119,7 @@ export const ArbitrageTable = ({
     () =>
       new Set<string>(
         [
-          ...bitstampTickers.map((t) => t.pair.split('/USD-PERP')[0]),
+          // ...bitstampTickers.map((t) => t.pair.split('/USD-PERP')[0]),
           ...bingxFuturesTickers.map((t) => t.symbol.split('-USDT')[0]),
           ...gateSpotTickers.map((t) => t.currency_pair.split('_USDT')[0]),
           ...gateFuturesTickers.map((t) => t.contract.split('_USDT')[0]),
@@ -162,13 +162,14 @@ export const ArbitrageTable = ({
               htxSpotMap.get(ticker),
               htxFuturesMap.get(ticker),
 
-              bitstampMap.get(ticker),
+              // bitstampMap.get(ticker),
 
               gateSpotMap.get(ticker),
               gateFuturesMap.get(ticker),
 
               bingxSpotMap.get(ticker),
               bingxFuturesMap.get(ticker),
+
               mexcSpotMap.get(ticker),
               mexcFuturesMap.get(ticker),
             ].filter(Boolean),
@@ -199,7 +200,7 @@ export const ArbitrageTable = ({
             Math.abs(htxSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(htxFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
-            Math.abs(bitstampMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(bitstampMap.get(ticker) / avgPrices.get(ticker) || 0),
 
             Math.abs(gateSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(gateFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
@@ -236,7 +237,7 @@ export const ArbitrageTable = ({
             htxSpotMap.get(ticker),
             htxFuturesMap.get(ticker),
 
-            bitstampMap.get(ticker),
+            // bitstampMap.get(ticker),
 
             gateSpotMap.get(ticker),
             gateFuturesMap.get(ticker),
@@ -362,12 +363,12 @@ export const ArbitrageTable = ({
               HTX Futures
             </div>
           </TableHead>
-          <TableHead>
-            <div className="flex gap-1 items-center">
-              <img className="h-3 rounded-full" src={exchangeImgMap['BITSTAMP']} />
-              Bitstamp
-            </div>
-          </TableHead>
+          {/*<TableHead>*/}
+          {/*  <div className="flex gap-1 items-center">*/}
+          {/*    <img className="h-3 rounded-full" src={exchangeImgMap['BITSTAMP']} />*/}
+          {/*    Bitstamp*/}
+          {/*  </div>*/}
+          {/*</TableHead>*/}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -562,17 +563,17 @@ export const ArbitrageTable = ({
               >
                 {htxFuturesMap.get(invoice) || '-'}
               </TableCell>
-              <TableCell
-                className={
-                  bitstampMap.get(invoice) / avgPrices.get(invoice) > 1
-                    ? 'profitCell'
-                    : bitstampMap.get(invoice) / avgPrices.get(invoice) < 1
-                      ? 'lossCell'
-                      : ''
-                }
-              >
-                {bitstampMap.get(invoice) || '-'}
-              </TableCell>
+              {/*<TableCell*/}
+              {/*  className={*/}
+              {/*    bitstampMap.get(invoice) / avgPrices.get(invoice) > 1*/}
+              {/*      ? 'profitCell'*/}
+              {/*      : bitstampMap.get(invoice) / avgPrices.get(invoice) < 1*/}
+              {/*        ? 'lossCell'*/}
+              {/*        : ''*/}
+              {/*  }*/}
+              {/*>*/}
+              {/*  {bitstampMap.get(invoice) || '-'}*/}
+              {/*</TableCell>*/}
             </TableRow>
           ))}
       </TableBody>
