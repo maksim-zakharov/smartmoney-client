@@ -3183,8 +3183,8 @@ export const TestPage = () => {
             bitstampTickers={bitstampTickers}
             mexcFuturesTickers={mexcFuturesTickers.filter((t) => dayjs(t.timestamp).isSame(dayjs().startOf('day'), 'day'))}
             mexcSpotTickers={mexcSpotTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
-            bingxSpotTickers={bingxSpotTickers}
-            bingxFuturesTickers={bingxFuturesTickers}
+            bingxSpotTickers={bingxSpotTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
+            bingxFuturesTickers={bingxFuturesTickers.filter((t) => dayjs(t.closeTime).isSame(dayjs().startOf('day'), 'day'))}
             gateSpotTickers={gateSpotTickers}
             gateFuturesTickers={gateFuturesTickers}
             bybitSpotTickers={bybitSpotTickers}

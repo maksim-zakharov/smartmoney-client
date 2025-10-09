@@ -123,8 +123,8 @@ export const ArbitrageTable = ({
           ...bingxFuturesTickers.map((t) => t.symbol.split('-USDT')[0]),
           ...gateSpotTickers.map((t) => t.currency_pair.split('_USDT')[0]),
           ...gateFuturesTickers.map((t) => t.contract.split('_USDT')[0]),
-          ...htxSpotTickers.map((t) => t.symbol.split('usdt')[0].toUpperCase()),
-          ...htxFuturesTickers.map((t) => t.contract_code.split('-USDT')[0]),
+          // ...htxSpotTickers.map((t) => t.symbol.split('usdt')[0].toUpperCase()),
+          // ...htxFuturesTickers.map((t) => t.contract_code.split('-USDT')[0]),
           ...bybitSpotTickers.map((t) => t.symbol.split('USDT')[0]),
           ...bybitFuturesTickers.map((t) => t.symbol.split('USDT')[0]),
           ...binanceSpotTickers.map((t) => t.symbol.split('USDT')[0]),
@@ -133,8 +133,8 @@ export const ArbitrageTable = ({
           ...mexcFuturesTickers.map((t) => t.symbol.split('_USDT')[0]),
           ...bitgetSpotTickers.map((t) => t.symbol.split('USDT')[0]),
           ...bitgetFutureTickers.map((t) => t.symbol.split('USDT')[0]),
-          ...kukoinSpotTickers.map((t) => t.symbol.split('-USDT')[0]),
-          ...kukoinFuturesTickers.map((t) => t.symbol.split('USDTM')[0]),
+          // ...kukoinSpotTickers.map((t) => t.symbol.split('-USDT')[0]),
+          // ...kukoinFuturesTickers.map((t) => t.symbol.split('USDTM')[0]),
         ].filter((ticker) => !ticker.includes('-')),
       ),
     [
@@ -166,8 +166,8 @@ export const ArbitrageTable = ({
               bitgetSpotMap.get(ticker),
               bitgetFuturesMap.get(ticker),
 
-              kukoinSpotMap.get(ticker),
-              kukoinFuturesMap.get(ticker),
+              // kukoinSpotMap.get(ticker),
+              // kukoinFuturesMap.get(ticker),
 
               bybitSpotsMap.get(ticker),
               bybitFuturesMap.get(ticker),
@@ -183,7 +183,7 @@ export const ArbitrageTable = ({
               gateSpotMap.get(ticker),
               gateFuturesMap.get(ticker),
 
-              bingxSpotMap.get(ticker),
+              // bingxSpotMap.get(ticker),
               bingxFuturesMap.get(ticker),
 
               mexcSpotMap.get(ticker),
@@ -204,8 +204,8 @@ export const ArbitrageTable = ({
             Math.abs(bitgetSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(bitgetFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
-            Math.abs(kukoinSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
-            Math.abs(kukoinFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(kukoinSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(kukoinFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
             Math.abs(bybitSpotsMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(bybitFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
@@ -221,7 +221,7 @@ export const ArbitrageTable = ({
             Math.abs(gateSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(gateFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
-            Math.abs(bingxSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(bingxSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(bingxFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
             Math.abs(mexcSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
@@ -241,8 +241,8 @@ export const ArbitrageTable = ({
             bitgetSpotMap.get(ticker),
             bitgetFuturesMap.get(ticker),
 
-            kukoinSpotMap.get(ticker),
-            kukoinFuturesMap.get(ticker),
+            // kukoinSpotMap.get(ticker),
+            // kukoinFuturesMap.get(ticker),
 
             bybitSpotsMap.get(ticker),
             bybitFuturesMap.get(ticker),
@@ -258,7 +258,7 @@ export const ArbitrageTable = ({
             gateSpotMap.get(ticker),
             gateFuturesMap.get(ticker),
 
-            bingxSpotMap.get(ticker),
+            // bingxSpotMap.get(ticker),
             bingxFuturesMap.get(ticker),
 
             mexcSpotMap.get(ticker),
@@ -276,7 +276,7 @@ export const ArbitrageTable = ({
     bybitFuturesMap,
     binanceFuturesMap,
     bitgetFuturesMap,
-    kukoinFuturesMap,
+    // kukoinFuturesMap,
     // htxFuturesMap,
     // bitstampMap, // Если раскомментировать, добавить сюда
   ];
@@ -289,7 +289,7 @@ export const ArbitrageTable = ({
         Array.from(allTickers)
           .filter(
             (invoice) =>
-              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.1 && tickersCounts.get(invoice) >= 4,
+              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 3,
           )
           .map((ticker) => {
             const prices = futuresMaps.map((m) => m.get(ticker)).filter((p) => p !== undefined);
@@ -324,13 +324,13 @@ export const ArbitrageTable = ({
         const majority = countProfit > countLoss ? 'profit' : 'loss';
         const minority = majority === 'profit' ? 'loss' : 'profit';
 
-        let message = `$${ticker} Арбитраж\nСредняя: ${avgPrices.get(ticker).toFixed(4)}\nЦены:\n`;
+        let message = `$${ticker} Арбитраж\n<strong>Дельта</strong>:${tickersDelta.get(ticker).toFixed(3)}\nСредняя: ${avgPrices.get(ticker).toFixed(6)}\nЦены:\n`;
         futuresMaps.forEach((m, i) => {
           const price = prices[i];
           if (price !== null) {
             const exch = futuresExchanges[i];
             const isDiffering = colors[i] === minority;
-            message += `${exch} Futures: ${price.toFixed(4)}${isDiffering ? ' **(отличается)**' : ''}\n`;
+            message += `${exch} Futures: ${price.toFixed(6)}${isDiffering ? ' **(отличается)**' : ''}\n`;
           }
         });
 
@@ -344,7 +344,7 @@ export const ArbitrageTable = ({
           body: JSON.stringify({
             chat_id: localStorage.getItem('telegramUserId'),
             text: message,
-            parse_mode: 'Markdown',
+            parse_mode: 'HTML',
           }),
         })
           .then(() => console.log(`Telegram message sent for ${ticker}`))
@@ -441,18 +441,18 @@ export const ArbitrageTable = ({
               Bitget Futures
             </div>
           </TableHead>
-          <TableHead>
-            <div className="flex gap-1 items-center">
-              <img className="h-3 rounded-full" src={exchangeImgMap['KUCOIN']} />
-              Kukoin Spot
-            </div>
-          </TableHead>
-          <TableHead>
-            <div className="flex gap-1 items-center">
-              <img className="h-3 rounded-full" src={exchangeImgMap['KUCOIN']} />
-              Kukoin Futures
-            </div>
-          </TableHead>
+          {/*<TableHead>*/}
+          {/*  <div className="flex gap-1 items-center">*/}
+          {/*    <img className="h-3 rounded-full" src={exchangeImgMap['KUCOIN']} />*/}
+          {/*    Kukoin Spot*/}
+          {/*  </div>*/}
+          {/*</TableHead>*/}
+          {/*<TableHead>*/}
+          {/*  <div className="flex gap-1 items-center">*/}
+          {/*    <img className="h-3 rounded-full" src={exchangeImgMap['KUCOIN']} />*/}
+          {/*    Kukoin Futures*/}
+          {/*  </div>*/}
+          {/*</TableHead>*/}
           {/*<TableHead>*/}
           {/*  <div className="flex gap-1 items-center">*/}
           {/*    <img className="h-3 rounded-full" src={exchangeImgMap['HTX']} />*/}
@@ -477,7 +477,7 @@ export const ArbitrageTable = ({
         {[...allTickers]
           .filter(
             (invoice) =>
-              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.1 && tickersCounts.get(invoice) >= 4,
+              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 3,
           )
           .sort((a, b) => {
             // const counts = tickersCounts.get(b) - tickersCounts.get(a);
@@ -627,28 +627,28 @@ export const ArbitrageTable = ({
                 >
                   {bitgetFuturesMap.get(invoice) || '-'}
                 </TableCell>
-                <TableCell
-                // className={
-                //   kukoinSpotMap.get(invoice) / avgPrices.get(invoice) > 1
-                //     ? 'profitCell'
-                //     : kukoinSpotMap.get(invoice) / avgPrices.get(invoice) < 1
-                //       ? 'lossCell'
-                //       : ''
-                // }
-                >
-                  {kukoinSpotMap.get(invoice) || '-'}
-                </TableCell>
-                <TableCell
-                  className={
-                    kukoinFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
-                      ? 'profitCell'
-                      : kukoinFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
-                        ? 'lossCell'
-                        : ''
-                  }
-                >
-                  {kukoinFuturesMap.get(invoice) || '-'}
-                </TableCell>
+                {/*<TableCell*/}
+                {/*// className={*/}
+                {/*//   kukoinSpotMap.get(invoice) / avgPrices.get(invoice) > 1*/}
+                {/*//     ? 'profitCell'*/}
+                {/*//     : kukoinSpotMap.get(invoice) / avgPrices.get(invoice) < 1*/}
+                {/*//       ? 'lossCell'*/}
+                {/*//       : ''*/}
+                {/*// }*/}
+                {/*>*/}
+                {/*  {kukoinSpotMap.get(invoice) || '-'}*/}
+                {/*</TableCell>*/}
+                {/*<TableCell*/}
+                {/*  className={*/}
+                {/*    kukoinFuturesMap.get(invoice) / avgPrices.get(invoice) > 1*/}
+                {/*      ? 'profitCell'*/}
+                {/*      : kukoinFuturesMap.get(invoice) / avgPrices.get(invoice) < 1*/}
+                {/*        ? 'lossCell'*/}
+                {/*        : ''*/}
+                {/*  }*/}
+                {/*>*/}
+                {/*  {kukoinFuturesMap.get(invoice) || '-'}*/}
+                {/*</TableCell>*/}
                 {/*<TableCell*/}
                 {/*// className={*/}
                 {/*//   htxSpotMap.get(invoice) / avgPrices.get(invoice) > 1*/}
