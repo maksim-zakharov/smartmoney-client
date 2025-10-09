@@ -180,13 +180,13 @@ export const ArbitrageTable = ({
 
               // bitstampMap.get(ticker),
 
-              gateSpotMap.get(ticker),
+              // gateSpotMap.get(ticker),
               gateFuturesMap.get(ticker),
 
               // bingxSpotMap.get(ticker),
               bingxFuturesMap.get(ticker),
 
-              mexcSpotMap.get(ticker),
+              // mexcSpotMap.get(ticker),
               mexcFuturesMap.get(ticker),
             ].filter(Boolean),
           ),
@@ -218,13 +218,13 @@ export const ArbitrageTable = ({
 
             // Math.abs(bitstampMap.get(ticker) / avgPrices.get(ticker) || 0),
 
-            Math.abs(gateSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(gateSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(gateFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
             // Math.abs(bingxSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(bingxFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
 
-            Math.abs(mexcSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(mexcSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
             Math.abs(mexcFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
           ),
         ]),
@@ -255,13 +255,13 @@ export const ArbitrageTable = ({
 
             // bitstampMap.get(ticker),
 
-            gateSpotMap.get(ticker),
+            // gateSpotMap.get(ticker),
             gateFuturesMap.get(ticker),
 
             // bingxSpotMap.get(ticker),
             bingxFuturesMap.get(ticker),
 
-            mexcSpotMap.get(ticker),
+            // mexcSpotMap.get(ticker),
             mexcFuturesMap.get(ticker),
           ].filter(Boolean).length,
         ]),
@@ -289,7 +289,7 @@ export const ArbitrageTable = ({
         Array.from(allTickers)
           .filter(
             (invoice) =>
-              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 3,
+              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.03 && tickersCounts.get(invoice) >= 2,
           )
           .map((ticker) => {
             const prices = futuresMaps.map((m) => m.get(ticker)).filter((p) => p !== undefined);
@@ -477,7 +477,7 @@ export const ArbitrageTable = ({
         {[...allTickers]
           .filter(
             (invoice) =>
-              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 3,
+              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.03 && tickersCounts.get(invoice) >= 2,
           )
           .sort((a, b) => {
             // const counts = tickersCounts.get(b) - tickersCounts.get(a);
