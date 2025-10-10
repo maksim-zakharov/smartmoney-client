@@ -289,7 +289,7 @@ export const ArbitrageTable = ({
         Array.from(allTickers)
           .filter(
             (invoice) =>
-              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.03 && tickersCounts.get(invoice) >= 2,
+              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.01 && tickersCounts.get(invoice) >= 2,
           )
           .map((ticker) => {
             const prices = futuresMaps.map((m) => m.get(ticker)).filter((p) => p !== undefined);
@@ -477,7 +477,7 @@ export const ArbitrageTable = ({
         {[...allTickers]
           .filter(
             (invoice) =>
-              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.03 && tickersCounts.get(invoice) >= 2,
+              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.01 && tickersCounts.get(invoice) >= 2,
           )
           .sort((a, b) => {
             // const counts = tickersCounts.get(b) - tickersCounts.get(a);
