@@ -7,6 +7,11 @@ const avg = (values: number[]) => {
   return values.reduce((accumulator, currentValue) => accumulator + currentValue, 0) / values.length;
 };
 
+const IGNORE_LIST = ['TRUMP', 'NEIRO', 'BAKE', 'BTC', 'ETH'];
+
+const tickersFilter = (tickersDelta, tickersCounts) => (invoice) =>
+  !IGNORE_LIST.includes(invoice) && tickersDelta.get(invoice) >= 1.01 && tickersCounts.get(invoice) >= 2;
+
 export const ArbitrageTable = ({
   bitstampTickers,
   mexcFuturesTickers,
@@ -287,10 +292,7 @@ export const ArbitrageTable = ({
     () =>
       new Map<string, boolean>(
         Array.from(allTickers)
-          .filter(
-            (invoice) =>
-              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.01 && tickersCounts.get(invoice) >= 2,
-          )
+          .filter(tickersFilter(tickersDelta, tickersCounts))
           .map((ticker) => {
             const prices = futuresMaps.map((m) => m.get(ticker)).filter((p) => p !== undefined);
             const ratios = prices.map((p) => p / avgPrices.get(ticker));
@@ -475,10 +477,7 @@ export const ArbitrageTable = ({
       </TableHeader>
       <TableBody>
         {[...allTickers]
-          .filter(
-            (invoice) =>
-              !['TRUMP', 'NEIRO', 'BAKE'].includes(invoice) && tickersDelta.get(invoice) >= 1.01 && tickersCounts.get(invoice) >= 2,
-          )
+          .filter(tickersFilter(tickersDelta, tickersCounts))
           .sort((a, b) => {
             // const counts = tickersCounts.get(b) - tickersCounts.get(a);
             // if (counts) {
