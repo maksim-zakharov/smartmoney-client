@@ -332,7 +332,7 @@ export const ArbitrageTable = ({
           if (price !== null) {
             const exch = futuresExchanges[i];
             const isDiffering = colors[i] === minority;
-            message += `${exch} Futures: ${price.toFixed(6)}${isDiffering ? ' **(отличается)**' : ''}\n`;
+            message += `${exch} Futures: ${price.toFixed(6)}${isDiffering ? ` (${prices[i] / avgPrices.get(ticker) - 1})` : ''}\n`;
           }
         });
 
