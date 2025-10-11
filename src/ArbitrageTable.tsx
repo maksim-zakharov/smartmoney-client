@@ -335,7 +335,7 @@ export const ArbitrageTable = ({
 
         const direction = maxDiff > 0 ? 'SHORT' : 'LONG';
 
-        let message = `<code>$${ticker}</code> ${maxExch} ${direction} ${maxDiff}%\n<strong>Дельта</strong>: ${tickersDelta.get(ticker)?.toFixed(2)}%\nИндекс ${mexcIndexMap.get(ticker)?.toFixed(6)}\nЦены:\n`;
+        let message = `<code>$${ticker}</code> ${maxExch} ${direction} ${maxDiff.toFixed(2)}%\n<strong>Дельта</strong>: ${tickersDelta.get(ticker)?.toFixed(2)}%\nИндекс ${mexcIndexMap.get(ticker)?.toFixed(6)}\nЦены:\n`;
         futuresMaps.forEach((m, i) => {
           const price = prices[i];
           if (price !== null) {
