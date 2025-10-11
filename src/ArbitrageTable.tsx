@@ -10,7 +10,7 @@ const avg = (values: number[]) => {
 const IGNORE_LIST = ['TRUMP', 'NEIRO', 'BAKE', 'BTC', 'ETH'];
 
 const tickersFilter = (tickersDelta, tickersCounts, indexMap) => (invoice) =>
-  !IGNORE_LIST.includes(invoice) && indexMap.get(invoice) && Math.abs(tickersDelta.get(invoice)) >= 3 && tickersCounts.get(invoice) >= 2;
+  !IGNORE_LIST.includes(invoice) && indexMap.get(invoice) && Math.abs(tickersDelta.get(invoice)) >= 5 && tickersCounts.get(invoice) >= 2;
 
 export const ArbitrageTable = ({
   bitstampTickers,
