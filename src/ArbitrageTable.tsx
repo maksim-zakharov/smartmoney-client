@@ -166,45 +166,6 @@ export const ArbitrageTable = ({
     ],
   );
 
-  const avgPrices = useMemo(
-    () =>
-      new Map<string, number>(
-        Array.from(allTickers).map((ticker) => [
-          ticker,
-          avg(
-            [
-              bitgetSpotMap.get(ticker),
-              bitgetFuturesMap.get(ticker),
-
-              // kukoinSpotMap.get(ticker),
-              // kukoinFuturesMap.get(ticker),
-
-              bybitSpotsMap.get(ticker),
-              bybitFuturesMap.get(ticker),
-
-              binanceSpotMap.get(ticker),
-              binanceFuturesMap.get(ticker),
-
-              // htxSpotMap.get(ticker),
-              // htxFuturesMap.get(ticker),
-
-              // bitstampMap.get(ticker),
-
-              // gateSpotMap.get(ticker),
-              gateFuturesMap.get(ticker),
-
-              // bingxSpotMap.get(ticker),
-              bingxFuturesMap.get(ticker),
-
-              // mexcSpotMap.get(ticker),
-              mexcFuturesMap.get(ticker),
-            ].filter(Boolean),
-          ),
-        ]),
-      ),
-    [allTickers],
-  );
-
   const tickersDelta = useMemo(
     () =>
       new Map<string, number>(
@@ -278,7 +239,7 @@ export const ArbitrageTable = ({
           ].filter(Boolean).length,
         ]),
       ),
-    [avgPrices, allTickers],
+    [allTickers],
   );
 
   const futuresMaps = [
@@ -302,14 +263,14 @@ export const ArbitrageTable = ({
           .filter(tickersFilter(tickersDelta, tickersCounts, mexcIndexMap))
           .map((ticker) => {
             const prices = futuresMaps.map((m) => m.get(ticker)).filter((p) => p !== undefined);
-            const ratios = prices.map((p) => p / avgPrices.get(ticker));
+            const ratios = prices.map((p) => p / mexcIndexMap.get(ticker));
             const colors = ratios.map((r) => (r > 1 ? 'profit' : r < 1 ? 'loss' : 'neutral'));
             const nonNeutral = colors.filter((c) => c !== 'neutral');
             const hasMixed = nonNeutral.length > 1 && new Set(nonNeutral).size > 1;
             return [ticker, hasMixed];
           }),
       ),
-    [allTickers, avgPrices, ...futuresMaps],
+    [allTickers, mexcIndexMap, ...futuresMaps],
   );
 
   const [previousMixed, setPreviousMixed] = useState(new Map<string, boolean>());
@@ -340,7 +301,7 @@ export const ArbitrageTable = ({
       const prev = previousMixed.get(ticker) ?? false;
       if (isMixed && !prev) {
         const prices = futuresMaps.map((m) => m.get(ticker) ?? null);
-        const ratios = prices.map((p, i) => (p ? p / avgPrices.get(ticker) : null));
+        const ratios = prices.map((p, i) => (p ? p / mexcIndexMap.get(ticker) : null));
         const colors = ratios.map((r) => (r > 1 ? 'profit' : r < 1 ? 'loss' : 'neutral'));
 
         let countProfit = 0;
@@ -396,7 +357,6 @@ export const ArbitrageTable = ({
       <TableHeader className="bg-[rgb(36,52,66)]">
         <TableRow>
           <TableHead>Тикер</TableHead>
-          <TableHead>Средняя</TableHead>
           <TableHead>Индекс</TableHead>
           <TableHead>Дельта</TableHead>
           <TableHead>
@@ -520,14 +480,13 @@ export const ArbitrageTable = ({
             return (
               <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven', rowClass)}>
                 <TableCell>${invoice}</TableCell>
-                <TableCell>{avgPrices.get(invoice)}</TableCell>
                 <TableCell>{mexcIndexMap.get(invoice)}</TableCell>
                 <TableCell>{tickersDelta.get(invoice)?.toFixed(2)}%</TableCell>
                 <TableCell
                 // className={
-                //   mexcSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+                //   mexcSpotMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                 //     ? 'profitCell'
-                //     : mexcSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+                //     : mexcSpotMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                 //       ? 'lossCell'
                 //       : ''
                 // }
@@ -536,9 +495,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                   className={
-                    mexcFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    mexcFuturesMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                       ? 'profitCell'
-                      : mexcFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      : mexcFuturesMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                         ? 'lossCell'
                         : ''
                   }
@@ -547,9 +506,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                 // className={
-                //   bingxSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+                //   bingxSpotMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                 //     ? 'profitCell'
-                //     : bingxSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+                //     : bingxSpotMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                 //       ? 'lossCell'
                 //       : ''
                 // }
@@ -558,9 +517,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                   className={
-                    bingxFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    bingxFuturesMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                       ? 'profitCell'
-                      : bingxFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      : bingxFuturesMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                         ? 'lossCell'
                         : ''
                   }
@@ -569,9 +528,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                 // className={
-                //   gateSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+                //   gateSpotMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                 //     ? 'profitCell'
-                //     : gateSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+                //     : gateSpotMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                 //       ? 'lossCell'
                 //       : ''
                 // }
@@ -580,9 +539,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                   className={
-                    gateFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    gateFuturesMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                       ? 'profitCell'
-                      : gateFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      : gateFuturesMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                         ? 'lossCell'
                         : ''
                   }
@@ -591,9 +550,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                 // className={
-                //   bybitSpotsMap.get(invoice) / avgPrices.get(invoice) > 1
+                //   bybitSpotsMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                 //     ? 'profitCell'
-                //     : bybitSpotsMap.get(invoice) / avgPrices.get(invoice) < 1
+                //     : bybitSpotsMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                 //       ? 'lossCell'
                 //       : ''
                 // }
@@ -602,9 +561,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                   className={
-                    bybitFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    bybitFuturesMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                       ? 'profitCell'
-                      : bybitFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      : bybitFuturesMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                         ? 'lossCell'
                         : ''
                   }
@@ -613,9 +572,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                 // className={
-                //   binanceSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+                //   binanceSpotMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                 //     ? 'profitCell'
-                //     : binanceSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+                //     : binanceSpotMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                 //       ? 'lossCell'
                 //       : ''
                 // }
@@ -624,9 +583,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                   className={
-                    binanceFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    binanceFuturesMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                       ? 'profitCell'
-                      : binanceFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      : binanceFuturesMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                         ? 'lossCell'
                         : ''
                   }
@@ -635,9 +594,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                 // className={
-                //   bitgetSpotMap.get(invoice) / avgPrices.get(invoice) > 1
+                //   bitgetSpotMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                 //     ? 'profitCell'
-                //     : bitgetSpotMap.get(invoice) / avgPrices.get(invoice) < 1
+                //     : bitgetSpotMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                 //       ? 'lossCell'
                 //       : ''
                 // }
@@ -646,9 +605,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 <TableCell
                   className={
-                    bitgetFuturesMap.get(invoice) / avgPrices.get(invoice) > 1
+                    bitgetFuturesMap.get(invoice) / mexcIndexMap.get(invoice) > 1
                       ? 'profitCell'
-                      : bitgetFuturesMap.get(invoice) / avgPrices.get(invoice) < 1
+                      : bitgetFuturesMap.get(invoice) / mexcIndexMap.get(invoice) < 1
                         ? 'lossCell'
                         : ''
                   }
@@ -657,9 +616,9 @@ export const ArbitrageTable = ({
                 </TableCell>
                 {/*<TableCell*/}
                 {/*// className={*/}
-                {/*//   kukoinSpotMap.get(invoice) / avgPrices.get(invoice) > 1*/}
+                {/*//   kukoinSpotMap.get(invoice) / mexcIndexMap.get(invoice) > 1*/}
                 {/*//     ? 'profitCell'*/}
-                {/*//     : kukoinSpotMap.get(invoice) / avgPrices.get(invoice) < 1*/}
+                {/*//     : kukoinSpotMap.get(invoice) / mexcIndexMap.get(invoice) < 1*/}
                 {/*//       ? 'lossCell'*/}
                 {/*//       : ''*/}
                 {/*// }*/}
@@ -668,9 +627,9 @@ export const ArbitrageTable = ({
                 {/*</TableCell>*/}
                 {/*<TableCell*/}
                 {/*  className={*/}
-                {/*    kukoinFuturesMap.get(invoice) / avgPrices.get(invoice) > 1*/}
+                {/*    kukoinFuturesMap.get(invoice) / mexcIndexMap.get(invoice) > 1*/}
                 {/*      ? 'profitCell'*/}
-                {/*      : kukoinFuturesMap.get(invoice) / avgPrices.get(invoice) < 1*/}
+                {/*      : kukoinFuturesMap.get(invoice) / mexcIndexMap.get(invoice) < 1*/}
                 {/*        ? 'lossCell'*/}
                 {/*        : ''*/}
                 {/*  }*/}
@@ -679,9 +638,9 @@ export const ArbitrageTable = ({
                 {/*</TableCell>*/}
                 {/*<TableCell*/}
                 {/*// className={*/}
-                {/*//   htxSpotMap.get(invoice) / avgPrices.get(invoice) > 1*/}
+                {/*//   htxSpotMap.get(invoice) / mexcIndexMap.get(invoice) > 1*/}
                 {/*//     ? 'profitCell'*/}
-                {/*//     : htxSpotMap.get(invoice) / avgPrices.get(invoice) < 1*/}
+                {/*//     : htxSpotMap.get(invoice) / mexcIndexMap.get(invoice) < 1*/}
                 {/*//       ? 'lossCell'*/}
                 {/*//       : ''*/}
                 {/*// }*/}
@@ -690,9 +649,9 @@ export const ArbitrageTable = ({
                 {/*</TableCell>*/}
                 {/*<TableCell*/}
                 {/*  className={*/}
-                {/*    htxFuturesMap.get(invoice) / avgPrices.get(invoice) > 1*/}
+                {/*    htxFuturesMap.get(invoice) / mexcIndexMap.get(invoice) > 1*/}
                 {/*      ? 'profitCell'*/}
-                {/*      : htxFuturesMap.get(invoice) / avgPrices.get(invoice) < 1*/}
+                {/*      : htxFuturesMap.get(invoice) / mexcIndexMap.get(invoice) < 1*/}
                 {/*        ? 'lossCell'*/}
                 {/*        : ''*/}
                 {/*  }*/}
@@ -701,9 +660,9 @@ export const ArbitrageTable = ({
                 {/*</TableCell>*/}
                 {/*<TableCell*/}
                 {/*  className={*/}
-                {/*    bitstampMap.get(invoice) / avgPrices.get(invoice) > 1*/}
+                {/*    bitstampMap.get(invoice) / mexcIndexMap.get(invoice) > 1*/}
                 {/*      ? 'profitCell'*/}
-                {/*      : bitstampMap.get(invoice) / avgPrices.get(invoice) < 1*/}
+                {/*      : bitstampMap.get(invoice) / mexcIndexMap.get(invoice) < 1*/}
                 {/*        ? 'lossCell'*/}
                 {/*        : ''*/}
                 {/*  }*/}
