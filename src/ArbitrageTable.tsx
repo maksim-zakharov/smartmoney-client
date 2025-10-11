@@ -292,7 +292,7 @@ export const ArbitrageTable = ({
       return `<a href="https://www.bitget.com/futures/usdt/${ticker}USDT" target="_blank">${exchange}</a>`;
     }
 
-    return ticker;
+    return exchange;
   };
 
   useEffect(() => {
@@ -314,7 +314,24 @@ export const ArbitrageTable = ({
         const majority = countProfit > countLoss ? 'profit' : 'loss';
         const minority = majority === 'profit' ? 'loss' : 'profit';
 
-        let message = `$${ticker} Арбитраж\n<strong>Дельта</strong>: ${tickersDelta.get(ticker)?.toFixed(2)}%\nИндекс ${mexcIndexMap.get(ticker)?.toFixed(6)}\nЦены:\n`;
+        // Calculate the exchange with the biggest % difference
+        let maxAbsDiff = 0;
+        let maxExch = '';
+        let maxDiff = 0;
+        for (let i = 0; i < ratios.length; i++) {
+          if (ratios[i] !== null) {
+            const diff = (ratios[i] - 1) * 100;
+            if (Math.abs(diff) > maxAbsDiff) {
+              maxAbsDiff = Math.abs(diff);
+              maxExch = futuresExchanges[i];
+              maxDiff = diff;
+            }
+          }
+        }
+
+        const direction = maxDiff > 0 ? 'шорт' : 'лонг';
+
+        let message = `<code>$${ticker}</code> ${direction} ${maxExch}\n<strong>Дельта</strong>: ${tickersDelta.get(ticker)?.toFixed(2)}%\nИндекс ${mexcIndexMap.get(ticker)?.toFixed(6)}\nЦены:\n`;
         futuresMaps.forEach((m, i) => {
           const price = prices[i];
           if (price !== null) {
