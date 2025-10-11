@@ -10,7 +10,7 @@ const avg = (values: number[]) => {
 const IGNORE_LIST = ['TRUMP', 'NEIRO', 'BAKE', 'BTC', 'ETH'];
 
 const tickersFilter = (tickersDelta, tickersCounts) => (invoice) =>
-  !IGNORE_LIST.includes(invoice) && tickersDelta.get(invoice) >= 1.01 && tickersCounts.get(invoice) >= 2;
+  !IGNORE_LIST.includes(invoice) && tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 2;
 
 export const ArbitrageTable = ({
   bitstampTickers,
@@ -332,7 +332,7 @@ export const ArbitrageTable = ({
           if (price !== null) {
             const exch = futuresExchanges[i];
             const isDiffering = colors[i] === minority;
-            message += `${exch} Futures: ${price.toFixed(6)}${isDiffering ? ` (${prices[i] / avgPrices.get(ticker) - 1})` : ''}\n`;
+            message += `${exch} Futures: ${price.toFixed(6)}${isDiffering ? ` (${((price / avgPrices.get(ticker) - 1) * 100).toFixed(2)}%)` : ''}\n`;
           }
         });
 
