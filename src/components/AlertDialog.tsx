@@ -1,7 +1,6 @@
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Form as UIForm, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Input } from 'antd';
 import { Button } from './ui/button';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
@@ -20,6 +19,7 @@ import { cn } from '../lib/utils';
 import { AlorLabel, FigiLabel, ForexLabel } from '../TestPage.tsx';
 import { useGetRuRateQuery } from '../api/alor.api';
 import { moneyFormat, normalizePrice } from '../utils';
+import { Input } from './ui/input.tsx';
 
 export const AlertDialog = () => {
   const alertConfig = useAppSelector((state) => state.alertsSlice.alertConfig);

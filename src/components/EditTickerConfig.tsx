@@ -1,13 +1,13 @@
 import { Button } from './ui/button.tsx';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form.tsx';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group.tsx';
-import { Input } from 'antd';
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { addPair, updatePair } from '../api/alor.slice';
 import { useAppDispatch, useAppSelector } from '../store';
+import { Input } from './ui/input.tsx';
 
 export const EditTickerConfig = ({ ticker }: { ticker?: string }) => {
   const dispatch = useAppDispatch();
