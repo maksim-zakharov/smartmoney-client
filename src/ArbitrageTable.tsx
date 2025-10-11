@@ -10,7 +10,7 @@ const avg = (values: number[]) => {
 const IGNORE_LIST = ['TRUMP', 'NEIRO', 'BAKE', 'BTC', 'ETH'];
 
 const tickersFilter = (tickersDelta, tickersCounts, indexMap) => (invoice) =>
-  !IGNORE_LIST.includes(invoice) && indexMap.get(invoice) && Math.abs(tickersDelta.get(invoice)) >= 5 && tickersCounts.get(invoice) >= 1;
+  !IGNORE_LIST.includes(invoice) && indexMap.get(invoice) && Math.abs(tickersDelta.get(invoice)) >= 2 && tickersCounts.get(invoice) >= 1;
 
 export const ArbitrageTable = ({
   bitstampTickers,
@@ -316,35 +316,19 @@ export const ArbitrageTable = ({
 
   const linksMap = (exchange: string, ticker: string) => {
     if (exchange === 'MEXC') {
-      return (
-        <a href={`https://www.mexc.com/ru-RU/futures/${ticker}_USDT`} target="_blank">
-          ${ticker}_USDT
-        </a>
-      );
+      return `<a href="https://www.mexc.com/ru-RU/futures/${ticker}_USDT" target="_blank">${exchange}</a>`;
     }
 
     if (exchange === 'BINGX') {
-      return (
-        <a href={`https://bingx.com/ru-ru/perpetual/${ticker}-USDT`} target="_blank">
-          ${ticker}_USDT
-        </a>
-      );
+      return `<a href="https://bingx.com/ru-ru/perpetual/${ticker}-USDT" target="_blank">${exchange}</a>`;
     }
 
     if (exchange === 'GATEIO') {
-      return (
-        <a href={`https://www.gate.com/ru/futures/USDT/${ticker}_USDT`} target="_blank">
-          ${ticker}_USDT
-        </a>
-      );
+      return `<a href="https://www.gate.com/ru/futures/USDT/${ticker}_USDT" target="_blank">${exchange}</a>`;
     }
 
     if (exchange === 'BITGET') {
-      return (
-        <a href={`https://www.bitget.com/futures/usdt/${ticker}USDT`} target="_blank">
-          ${ticker}_USDT
-        </a>
-      );
+      return `<a href="https://www.bitget.com/futures/usdt/${ticker}USDT" target="_blank">${exchange}</a>`;
     }
 
     return ticker;
