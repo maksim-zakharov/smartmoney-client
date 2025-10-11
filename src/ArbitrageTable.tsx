@@ -9,8 +9,8 @@ const avg = (values: number[]) => {
 
 const IGNORE_LIST = ['TRUMP', 'NEIRO', 'BAKE', 'BTC', 'ETH'];
 
-const tickersFilter = (tickersDelta, tickersCounts) => (invoice) =>
-  !IGNORE_LIST.includes(invoice) && tickersDelta.get(invoice) >= 1.02 && tickersCounts.get(invoice) >= 2;
+const tickersFilter = (tickersDelta, tickersCounts, indexMap) => (invoice) =>
+  !IGNORE_LIST.includes(invoice) && indexMap.get(invoice) && Math.abs(tickersDelta.get(invoice)) >= 2 && tickersCounts.get(invoice) >= 2;
 
 export const ArbitrageTable = ({
   bitstampTickers,
@@ -210,7 +210,7 @@ export const ArbitrageTable = ({
       new Map<string, number>(
         Array.from(allTickers).map((ticker) => [
           ticker,
-          Math.max(
+          (Math.max(
             // Math.abs(bitgetSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
             Math.abs(bitgetFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
@@ -236,7 +236,9 @@ export const ArbitrageTable = ({
 
             // Math.abs(mexcSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
             Math.abs(mexcFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
-          ),
+          ) -
+            1) *
+            100,
         ]),
       ),
     [mexcIndexMap, allTickers],
@@ -297,7 +299,7 @@ export const ArbitrageTable = ({
     () =>
       new Map<string, boolean>(
         Array.from(allTickers)
-          .filter(tickersFilter(tickersDelta, tickersCounts))
+          .filter(tickersFilter(tickersDelta, tickersCounts, mexcIndexMap))
           .map((ticker) => {
             const prices = futuresMaps.map((m) => m.get(ticker)).filter((p) => p !== undefined);
             const ratios = prices.map((p) => p / avgPrices.get(ticker));
@@ -331,7 +333,7 @@ export const ArbitrageTable = ({
         const majority = countProfit > countLoss ? 'profit' : 'loss';
         const minority = majority === 'profit' ? 'loss' : 'profit';
 
-        let message = `$${ticker} Арбитраж\n<strong>Дельта</strong>:${tickersDelta.get(ticker).toFixed(3)}\nИндекс ${mexcIndexMap.get(ticker).toFixed(6)}\nЦены:\n`;
+        let message = `$${ticker} Арбитраж\n<strong>Дельта</strong>: ${tickersDelta.get(ticker)?.toFixed(2)}%\nИндекс ${mexcIndexMap.get(ticker)?.toFixed(6)}\nЦены:\n`;
         futuresMaps.forEach((m, i) => {
           const price = prices[i];
           if (price !== null) {
@@ -483,7 +485,7 @@ export const ArbitrageTable = ({
       </TableHeader>
       <TableBody>
         {[...allTickers]
-          .filter(tickersFilter(tickersDelta, tickersCounts))
+          .filter(tickersFilter(tickersDelta, tickersCounts, mexcIndexMap))
           .sort((a, b) => {
             // const counts = tickersCounts.get(b) - tickersCounts.get(a);
             // if (counts) {
@@ -500,7 +502,7 @@ export const ArbitrageTable = ({
                 <TableCell>${invoice}</TableCell>
                 <TableCell>{avgPrices.get(invoice)}</TableCell>
                 <TableCell>{mexcIndexMap.get(invoice)}</TableCell>
-                <TableCell>{tickersDelta.get(invoice)?.toFixed(4)}</TableCell>
+                <TableCell>{tickersDelta.get(invoice)?.toFixed(2)}%</TableCell>
                 <TableCell
                 // className={
                 //   mexcSpotMap.get(invoice) / avgPrices.get(invoice) > 1
