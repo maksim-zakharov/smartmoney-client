@@ -45,6 +45,11 @@ export const ArbitrageTable = ({
     [bitgetFutureTickers],
   );
 
+  const bitgetIndexMap = useMemo(
+    () => new Map<string, number>(bitgetFutureTickers.map((t) => [t.symbol.split('USDT')[0], Number(t.indexPrice)])),
+    [bitgetFutureTickers],
+  );
+
   const kukoinSpotMap = useMemo(
     () => new Map<string, number>(kukoinSpotTickers.map((t) => [t.symbol.split('-USDT')[0], Number(t.last)])),
     [kukoinSpotTickers],
@@ -97,6 +102,11 @@ export const ArbitrageTable = ({
 
   const gateFuturesMap = useMemo(
     () => new Map<string, number>(gateFuturesTickers.map((t) => [t.contract.split('_USDT')[0], Number(t.last)])),
+    [gateFuturesTickers],
+  );
+
+  const gateIndexMap = useMemo(
+    () => new Map<string, number>(gateFuturesTickers.map((t) => [t.contract.split('_USDT')[0], Number(t.index_price)])),
     [gateFuturesTickers],
   );
 
@@ -173,7 +183,7 @@ export const ArbitrageTable = ({
           ticker,
           (Math.max(
             // Math.abs(bitgetSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
-            Math.abs(bitgetFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            Math.abs(bitgetFuturesMap.get(ticker) / bitgetIndexMap.get(ticker) || 0),
 
             // Math.abs(kukoinSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
             // Math.abs(kukoinFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
@@ -190,7 +200,7 @@ export const ArbitrageTable = ({
             // Math.abs(bitstampMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
             // Math.abs(gateSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
-            Math.abs(gateFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            Math.abs(gateFuturesMap.get(ticker) / gateIndexMap.get(ticker) || 0),
 
             // Math.abs(bingxSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
             Math.abs(bingxFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
@@ -202,7 +212,7 @@ export const ArbitrageTable = ({
             100,
         ]),
       ),
-    [mexcIndexMap, allTickers],
+    [mexcIndexMap, gateIndexMap, bitgetIndexMap, allTickers],
   );
 
   const tickersCounts = useMemo(
@@ -299,6 +309,12 @@ export const ArbitrageTable = ({
     return exchange;
   };
 
+  const indexMap = {
+    MEXC: mexcIndexMap,
+    GATEIO: gateIndexMap,
+    BITGET: bitgetIndexMap,
+  };
+
   useEffect(() => {
     const newPrevious = new Map(previousMixed);
     for (const [ticker, isMixed] of mixedTickers) {
@@ -341,7 +357,10 @@ export const ArbitrageTable = ({
           if (price !== null) {
             const exch = futuresExchanges[i];
             const isDiffering = colors[i] === minority;
-            message += `${linksMap(exch, ticker)}: ${price.toFixed(6)}${isDiffering ? ` (${((price / mexcIndexMap.get(ticker) - 1) * 100).toFixed(2)}%)` : ''}\n`;
+
+            const index = indexMap[exch] || mexcIndexMap;
+
+            message += `${linksMap(exch, ticker)}: ${price.toFixed(6)}${isDiffering ? ` (${((price / index.get(ticker) - 1) * 100).toFixed(2)}%)` : ''}\n`;
           }
         });
 
