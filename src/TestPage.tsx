@@ -203,6 +203,10 @@ export const TestPage = () => {
     },
   );
 
+  const mexcIndexTickers = mexcFuturesTickers
+    .filter((t) => t.lastPrice)
+    .map((t) => ({ ...t, diff: Math.abs(t.indexPrice / t.lastPrice - 1) * 100 }));
+
   const mexcMap = useMemo(() => new Set<string>((mexcFuturesTickers || []).map((t) => t.symbol.split('_USDT')[0])), [mexcFuturesTickers]);
 
   const { data: bingxSpotTickers = [] } = useGetBINGXSpotTickersQuery(
@@ -578,6 +582,11 @@ export const TestPage = () => {
     {
       label: 'Mexc Фьюч (New)',
       value: 'mexc-futures-new',
+      imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png',
+    },
+    {
+      label: 'Mexc Index',
+      value: 'mexc-index',
       imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png',
     },
     { label: 'Gate Фьючерсы', value: 'gate-futures', imgSrc: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/302.png' },
@@ -2168,6 +2177,202 @@ export const TestPage = () => {
                           0,
                         )}
                       </TableCell>
+                      <TableCell>
+                        {/*<div className="flex gap-1">*/}
+                        {/*  {(mexcContractDetailsMap.get(invoice.symbol)?.indexOrigin || []).map((exchange) =>*/}
+                        {/*    exchangeImgMap[exchange] ? <img className="h-5 rounded-full" src={exchangeImgMap[exchange]} /> : exchange,*/}
+                        {/*  )}*/}
+                        {/*</div>*/}
+                        <Exchanges symbol={invoice.symbol} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TabsContent>
+          <TabsContent value="mexc-index">
+            <Table wrapperClassName="pt-2 h-120">
+              {/*<TableHeader>*/}
+              {/*  <TableRow>*/}
+              {/*    <TableHead className="w-[200px] text-left" colSpan={4}>*/}
+              {/*      Mexc Фьючерсы*/}
+              {/*    </TableHead>*/}
+              {/*  </TableRow>*/}
+              {/*</TableHeader>*/}
+              <TableHeader className="bg-[rgb(36,52,66)]">
+                <TableRow>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        symbol: prevState.symbol === 'desc' ? 'asc' : prevState.symbol === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['symbol'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['symbol'] === 'asc' && <ArrowUpWideNarrow size={13} />} Тикер
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        price: prevState.price === 'desc' ? 'asc' : prevState.price === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['price'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['price'] === 'asc' && <ArrowUpWideNarrow size={13} />} Цена
+                    </div>
+                  </TableHead>
+                  <TableHead>Индекс. цена</TableHead>
+                  <TableHead>Справ. цена</TableHead>
+                  <TableHead>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            diff: prevState.diff === 'desc' ? 'asc' : prevState.diff === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['diff'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['diff'] === 'asc' && <ArrowUpWideNarrow size={13} />} Diff
+                      </span>
+                      <TableColumnFilter _key="mexc-index-diff" label="Diff" />
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        riseFallRate: prevState.riseFallRate === 'desc' ? 'asc' : prevState.riseFallRate === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['riseFallRate'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['riseFallRate'] === 'asc' && <ArrowUpWideNarrow size={13} />} Изм, 1д
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex gap-2 items-center">
+                      <span
+                        className="flex gap-2 items-center cursor-pointer"
+                        onClick={() =>
+                          setSorter((prevState) => ({
+                            ...prevState,
+                            amount24: prevState.amount24 === 'desc' ? 'asc' : prevState.amount24 === 'asc' ? undefined : 'desc',
+                          }))
+                        }
+                      >
+                        {sorter['amount24'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                        {sorter['amount24'] === 'asc' && <ArrowUpWideNarrow size={13} />} Оборот
+                      </span>
+                      <TableColumnFilter _key="mexc-index-amount24" label="Оборот" />
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="w-[750px]"
+                    onClick={() =>
+                      setSorter((prevState) => ({
+                        ...prevState,
+                        exchange: prevState.exchange === 'desc' ? 'asc' : prevState.exchange === 'asc' ? undefined : 'desc',
+                      }))
+                    }
+                  >
+                    <div className="flex gap-3 items-center cursor-pointer">
+                      {sorter['exchange'] === 'desc' && <ArrowDownWideNarrow size={13} />}
+                      {sorter['exchange'] === 'asc' && <ArrowUpWideNarrow size={13} />} Биржи
+                    </div>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...mexcIndexTickers]
+                  .filter(
+                    (t) =>
+                      (!filters['mexc-index-amount24_from'] || Number(t.amount24) >= Number(filters['mexc-index-amount24_from'])) &&
+                      (!filters['mexc-index-amount24_to'] || Number(t.amount24) <= Number(filters['mexc-index-amount24_to'])) &&
+                      (!filters['mexc-index-diff_from'] || Number(t.diff) >= Number(filters['mexc-index-diff_from'])) &&
+                      (!filters['mexc-index-diff_to'] || Number(t.diff) <= Number(filters['mexc-index-diff_to'])),
+                  )
+                  .sort((a, b) => {
+                    if (!sorter['riseFallRate'] && !sorter['price'] && !sorter['symbol'] && !sorter['amount24'] && !sorter['diff']) {
+                      return 0;
+                    }
+
+                    if (sorter['price'] === 'desc') {
+                      return Number(b.lastPrice) - Number(a.lastPrice);
+                    }
+
+                    if (sorter['price'] === 'asc') {
+                      return Number(a.lastPrice) - Number(b.lastPrice);
+                    }
+
+                    if (sorter['diff'] === 'desc') {
+                      return Number(b.diff) - Number(a.diff);
+                    }
+
+                    if (sorter['diff'] === 'asc') {
+                      return Number(a.diff) - Number(b.diff);
+                    }
+
+                    if (sorter['riseFallRate'] === 'desc') {
+                      return Number(b.riseFallRate) - Number(a.riseFallRate);
+                    }
+
+                    if (sorter['riseFallRate'] === 'asc') {
+                      return Number(a.riseFallRate) - Number(b.riseFallRate);
+                    }
+
+                    if (sorter['amount24'] === 'desc') {
+                      return Number(b.amount24) - Number(a.amount24);
+                    }
+
+                    if (sorter['amount24'] === 'asc') {
+                      return Number(a.amount24) - Number(b.amount24);
+                    }
+
+                    if (sorter['symbol'] === 'desc') {
+                      return b.symbol.localeCompare(a.symbol);
+                    }
+
+                    if (sorter['symbol'] === 'asc') {
+                      return a.symbol.localeCompare(b.symbol);
+                    }
+
+                    return 0;
+                  })
+                  .map((invoice, index) => (
+                    <TableRow
+                      className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `MEXC:${invoice.symbol}` && 'rowHover')}
+                      onClick={(e) => setSelected(`MEXC:${invoice.symbol}`)}
+                    >
+                      <TableCell className="w-[200px]">
+                        <div className="flex gap-1">
+                          {mexcContractDetailsMap.get(invoice.symbol)?.baseCoinIconUrl && (
+                            <img className="h-4 rounded-full" src={mexcContractDetailsMap.get(invoice.symbol)?.baseCoinIconUrl} />
+                          )}
+                          <a href={`https://www.mexc.com/ru-RU/futures/${invoice.symbol}`} target="_blank">
+                            ${invoice.symbol}
+                          </a>
+                        </div>
+                      </TableCell>
+                      <TableCell>{invoice.lastPrice}</TableCell>
+                      <TableCell>{invoice.indexPrice}</TableCell>
+                      <TableCell>{invoice.fairPrice}</TableCell>
+                      <TableCell>{invoice.diff.toFixed(2)}%</TableCell>
+                      <TableCell
+                        className={Number(invoice.riseFallRate) > 0 ? 'profitCell' : Number(invoice.riseFallRate) < 0 ? 'lossCell' : ''}
+                      >
+                        {(Number(invoice.riseFallRate) * 100).toFixed(2)}%
+                      </TableCell>
+                      <TableCell>{moneyFormatCompact(invoice.amount24, 'USD', 0, 2)}</TableCell>
                       <TableCell>
                         {/*<div className="flex gap-1">*/}
                         {/*  {(mexcContractDetailsMap.get(invoice.symbol)?.indexOrigin || []).map((exchange) =>*/}
