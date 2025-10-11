@@ -292,6 +292,10 @@ export const ArbitrageTable = ({
       return `<a href="https://www.bitget.com/futures/usdt/${ticker}USDT" target="_blank">${exchange}</a>`;
     }
 
+    if (exchange === 'BYBIT') {
+      return `<a href=" https://www.bybit.com/trade/usdt/${ticker}USDT" target="_blank">${exchange}</a>`;
+    }
+
     return exchange;
   };
 
