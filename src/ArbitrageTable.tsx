@@ -314,6 +314,42 @@ export const ArbitrageTable = ({
 
   const [previousMixed, setPreviousMixed] = useState(new Map<string, boolean>());
 
+  const linksMap = (exchange: string, ticker: string) => {
+    if (exchange === 'MEXC') {
+      return (
+        <a href={`https://www.mexc.com/ru-RU/futures/${ticker}_USDT`} target="_blank">
+          ${ticker}_USDT
+        </a>
+      );
+    }
+
+    if (exchange === 'BINGX') {
+      return (
+        <a href={`https://bingx.com/ru-ru/perpetual/${ticker}-USDT`} target="_blank">
+          ${ticker}_USDT
+        </a>
+      );
+    }
+
+    if (exchange === 'GATEIO') {
+      return (
+        <a href={`https://www.gate.com/ru/futures/USDT/${ticker}_USDT`} target="_blank">
+          ${ticker}_USDT
+        </a>
+      );
+    }
+
+    if (exchange === 'BITGET') {
+      return (
+        <a href={`https://www.bitget.com/futures/usdt/${ticker}USDT`} target="_blank">
+          ${ticker}_USDT
+        </a>
+      );
+    }
+
+    return ticker;
+  };
+
   useEffect(() => {
     const newPrevious = new Map(previousMixed);
     for (const [ticker, isMixed] of mixedTickers) {
@@ -339,7 +375,7 @@ export const ArbitrageTable = ({
           if (price !== null) {
             const exch = futuresExchanges[i];
             const isDiffering = colors[i] === minority;
-            message += `${exch} Futures: ${price.toFixed(6)}${isDiffering ? ` (${((price / mexcIndexMap.get(ticker) - 1) * 100).toFixed(2)}%)` : ''}\n`;
+            message += `${linksMap(exch, ticker)}: ${price.toFixed(6)}${isDiffering ? ` (${((price / mexcIndexMap.get(ticker) - 1) * 100).toFixed(2)}%)` : ''}\n`;
           }
         });
 
