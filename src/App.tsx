@@ -218,9 +218,7 @@ export default function App() {
   }, []);
 
   const menuItems = [
-    // { key: '/', label: 'Главная', element: <MainPage /> },
     { key: '/', label: 'Главная', element: <ArbitrageMOEXPage /> },
-    // { key: '/test', label: 'BOS/IDM', element: <SoloTestPage /> },
     { key: '/arbitrage-moex', label: 'Арбитраж MOEX', element: <ArbitrageMOEXPage /> },
     // { key: '/discrepancy-rating', label: 'Расдвижки', element: <DiscrepancyRatingPage /> },
     // { key: '/testing', label: 'Тестирование', element: <MultiTestPage /> },

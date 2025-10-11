@@ -10,7 +10,7 @@ const avg = (values: number[]) => {
 const IGNORE_LIST = ['TRUMP', 'NEIRO', 'BAKE', 'BTC', 'ETH'];
 
 const tickersFilter = (tickersDelta, tickersCounts, indexMap) => (invoice) =>
-  !IGNORE_LIST.includes(invoice) && indexMap.get(invoice) && Math.abs(tickersDelta.get(invoice)) >= 2 && tickersCounts.get(invoice) >= 2;
+  !IGNORE_LIST.includes(invoice) && indexMap.get(invoice) && Math.abs(tickersDelta.get(invoice)) >= 3 && tickersCounts.get(invoice) >= 2;
 
 export const ArbitrageTable = ({
   bitstampTickers,
@@ -492,7 +492,7 @@ export const ArbitrageTable = ({
             //   return counts;
             // }
 
-            return tickersDelta.get(b) - tickersDelta.get(a);
+            return Math.abs(tickersDelta.get(b)) - Math.abs(tickersDelta.get(a));
           })
           .map((invoice, index) => {
             const hasMixedColors = mixedTickers.get(invoice);

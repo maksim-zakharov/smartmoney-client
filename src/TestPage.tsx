@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from './store';
-import { moneyFormat, numberFormat } from './MainPage/MainPage';
-import { exchangeImgMap, moneyFormatCompact, normalizePrice } from './utils';
+import { exchangeImgMap, moneyFormat, moneyFormatCompact, normalizePrice, numberFormat } from './utils';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { cn } from './lib/utils';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';

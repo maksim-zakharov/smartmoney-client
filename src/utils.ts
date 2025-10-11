@@ -16,7 +16,6 @@ import {
 } from 'lightweight-charts';
 import { Options } from '@vitejs/plugin-react';
 import { Rectangle, RectangleDrawingToolOptions } from './lwc-plugins/rectangle-drawing-tool';
-import { TLineSeries } from './SoloTestPage/UpdatedChart';
 import moment from 'moment';
 import { Cross, HistoryObject, POI, Swing, Trend } from './sm-lib/models';
 import Decimal from 'decimal.js';
@@ -571,7 +570,7 @@ export const bosesToLineSerieses = (boses: Cross[]) =>
         text: marker.text,
       },
     ];
-    return { options, data, markers } as TLineSeries;
+    return { options, data, markers };
   });
 
 export const orderblocksToFVGPrimitives = (orderBlocks: POI[], filter: (ob: POI) => boolean, lastCandle: HistoryObject) =>
@@ -976,3 +975,34 @@ export const exchangeImgMap = {
   BITFINEX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/37.png',
   BINGX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/1064.png',
 };
+export const moneyFormat = (
+  money: number,
+  currency: string = 'RUB',
+  minimumFractionDigits: number = 0,
+  maximumFractionDigits: number = 0,
+) => {
+  const options: Intl.NumberFormatOptions = {
+    style: 'currency',
+    currency: currency === 'USDT' ? 'USD' : currency,
+    minimumFractionDigits,
+    maximumFractionDigits,
+  };
+  const numberFormat = new Intl.NumberFormat('ru-RU', options);
+
+  let result = numberFormat.format(money);
+  if (currency === 'USDT') {
+    result = result.replace('$', 'USDT');
+  }
+
+  return result;
+};
+export const numberFormat = (money: number, minimumFractionDigits: number = 0, maximumFractionDigits: number = 0) => {
+  const options: Intl.NumberFormatOptions = {
+    minimumFractionDigits,
+    maximumFractionDigits,
+  };
+  const numberFormat = new Intl.NumberFormat('ru-RU', options);
+
+  return numberFormat.format(money);
+};
+export const summ = (numbers: number[]) => numbers.reduce((acc, curr) => acc + curr, 0);
