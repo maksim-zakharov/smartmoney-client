@@ -219,7 +219,6 @@ export default function App() {
 
   const menuItems = [
     { key: '/', label: 'Главная', element: <ArbitrageMOEXPage /> },
-    { key: '/arbitrage-moex', label: 'Арбитраж MOEX', element: <ArbitrageMOEXPage /> },
     // { key: '/discrepancy-rating', label: 'Расдвижки', element: <DiscrepancyRatingPage /> },
     // { key: '/testing', label: 'Тестирование', element: <MultiTestPage /> },
     // { key: '/demo', label: 'Обучение', element: <DemoPage /> },
