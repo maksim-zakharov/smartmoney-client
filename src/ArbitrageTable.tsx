@@ -10,7 +10,7 @@ const avg = (values: number[]) => {
 const IGNORE_LIST = ['TRUMP', 'NEIRO', 'BAKE', 'BTC', 'ETH'];
 
 const tickersFilter = (tickersDelta, tickersCounts) => (invoice) =>
-  !IGNORE_LIST.includes(invoice) && tickersDelta.get(invoice) >= 1.05 && tickersCounts.get(invoice) >= 2;
+  !IGNORE_LIST.includes(invoice) && tickersDelta.get(invoice) >= 1.02 && tickersCounts.get(invoice) >= 2;
 
 export const ArbitrageTable = ({
   bitstampTickers,
@@ -120,6 +120,11 @@ export const ArbitrageTable = ({
     [mexcFuturesTickers],
   );
 
+  const mexcIndexMap = useMemo(
+    () => new Map<string, number>(mexcFuturesTickers.map((t) => [t.symbol.split('_USDT')[0], Number(t.indexPrice)])),
+    [mexcFuturesTickers],
+  );
+
   const allTickers = useMemo(
     () =>
       new Set<string>(
@@ -206,35 +211,35 @@ export const ArbitrageTable = ({
         Array.from(allTickers).map((ticker) => [
           ticker,
           Math.max(
-            Math.abs(bitgetSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
-            Math.abs(bitgetFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(bitgetSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            Math.abs(bitgetFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
-            // Math.abs(kukoinSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
-            // Math.abs(kukoinFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(kukoinSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            // Math.abs(kukoinFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
-            Math.abs(bybitSpotsMap.get(ticker) / avgPrices.get(ticker) || 0),
-            Math.abs(bybitFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(bybitSpotsMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            Math.abs(bybitFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
-            Math.abs(binanceSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
-            Math.abs(binanceFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            Math.abs(binanceSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            Math.abs(binanceFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
-            // Math.abs(htxSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
-            // Math.abs(htxFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(htxSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            // Math.abs(htxFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
-            // Math.abs(bitstampMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(bitstampMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
-            // Math.abs(gateSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
-            Math.abs(gateFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(gateSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            Math.abs(gateFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
-            // Math.abs(bingxSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
-            Math.abs(bingxFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(bingxSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            Math.abs(bingxFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
 
-            // Math.abs(mexcSpotMap.get(ticker) / avgPrices.get(ticker) || 0),
-            Math.abs(mexcFuturesMap.get(ticker) / avgPrices.get(ticker) || 0),
+            // Math.abs(mexcSpotMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
+            Math.abs(mexcFuturesMap.get(ticker) / mexcIndexMap.get(ticker) || 0),
           ),
         ]),
       ),
-    [avgPrices, allTickers],
+    [mexcIndexMap, allTickers],
   );
 
   const tickersCounts = useMemo(
@@ -326,13 +331,13 @@ export const ArbitrageTable = ({
         const majority = countProfit > countLoss ? 'profit' : 'loss';
         const minority = majority === 'profit' ? 'loss' : 'profit';
 
-        let message = `$${ticker} Арбитраж\n<strong>Дельта</strong>:${tickersDelta.get(ticker).toFixed(3)}\nСредняя: ${avgPrices.get(ticker).toFixed(6)}\nЦены:\n`;
+        let message = `$${ticker} Арбитраж\n<strong>Дельта</strong>:${tickersDelta.get(ticker).toFixed(3)}\nИндекс ${mexcIndexMap.get(ticker).toFixed(6)}\nЦены:\n`;
         futuresMaps.forEach((m, i) => {
           const price = prices[i];
           if (price !== null) {
             const exch = futuresExchanges[i];
             const isDiffering = colors[i] === minority;
-            message += `${exch} Futures: ${price.toFixed(6)}${isDiffering ? ` (${((price / avgPrices.get(ticker) - 1) * 100).toFixed(2)}%)` : ''}\n`;
+            message += `${exch} Futures: ${price.toFixed(6)}${isDiffering ? ` (${((price / mexcIndexMap.get(ticker) - 1) * 100).toFixed(2)}%)` : ''}\n`;
           }
         });
 
@@ -370,6 +375,7 @@ export const ArbitrageTable = ({
         <TableRow>
           <TableHead>Тикер</TableHead>
           <TableHead>Средняя</TableHead>
+          <TableHead>Индекс</TableHead>
           <TableHead>Дельта</TableHead>
           <TableHead>
             <div className="flex gap-1 items-center">
@@ -493,6 +499,7 @@ export const ArbitrageTable = ({
               <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven', rowClass)}>
                 <TableCell>${invoice}</TableCell>
                 <TableCell>{avgPrices.get(invoice)}</TableCell>
+                <TableCell>{mexcIndexMap.get(invoice)}</TableCell>
                 <TableCell>{tickersDelta.get(invoice)?.toFixed(4)}</TableCell>
                 <TableCell
                 // className={
