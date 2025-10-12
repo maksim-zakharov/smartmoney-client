@@ -196,7 +196,7 @@ export class DataFeed implements IBasicDataFeed {
 
         onResolve(resolve);
 
-        localStorage.setItem(`LibrarySymbolInfo-${symbolName}`, JSON.stringify(resolve));
+        // localStorage.setItem(`LibrarySymbolInfo-${symbolName}`, JSON.stringify(resolve));
       });
     }
   }
