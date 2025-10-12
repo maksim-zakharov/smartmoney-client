@@ -364,6 +364,8 @@ export const ArbitrageTable = ({
           }
         });
 
+        return;
+
         // Replace with your Telegram bot API endpoint, bot token, and chat ID
         fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
           method: 'POST',
