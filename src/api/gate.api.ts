@@ -27,7 +27,13 @@ export const gateApi = createApi({
         params,
       }),
     }),
-    getAccounts: builder.query<any, { apiKey: string; secretKey: string }>({
+    getGateSAccounts: builder.query<any, { apiKey: string; secretKey: string }>({
+      query: (params) => ({
+        url: '/spot-accounts',
+        params,
+      }),
+    }),
+    getGateFAccounts: builder.query<any, { apiKey: string; secretKey: string }>({
       query: (params) => ({
         url: '/futures-accounts',
         params,
@@ -36,4 +42,4 @@ export const gateApi = createApi({
   }),
 });
 
-export const { useGetGateSpotTickersQuery, useGetGateFuturesTickersQuery, useGetAccountsQuery } = gateApi;
+export const { useGetGateSAccountsQuery, useGetGateSpotTickersQuery, useGetGateFuturesTickersQuery, useGetGateFAccountsQuery } = gateApi;

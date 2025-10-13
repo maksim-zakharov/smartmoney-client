@@ -177,14 +177,17 @@ export const TestPage = () => {
     cTraderAccount,
     cTraderSymbols,
     bybitWallets,
-    gateAccounts,
+    gateSAccounts,
+    gateFAccounts,
     bingxBalance,
     MEXCPositions,
     cTraderSummary,
   } = useAppSelector((state) => state.alorSlice);
 
   const bybitBalance = Number(bybitWallets?.[0]?.totalAvailableBalance) || 0;
-  const gateBalance = Number(gateAccounts?.total) || 0;
+  const gateSBalance = Number(gateSAccounts?.find((c) => c.currency === 'USDT')?.available) || 0;
+  const gateFBalance = Number(gateFAccounts?.crossMarginBalance) || 0;
+  const gateBalance = gateFBalance + gateSBalance;
   const bingBalance = Number(bingxBalance?.find((b) => b.asset === 'USDT')?.equity) || 0;
   const ctraderDigits = useMemo(() => 10 ** (cTraderSummary?.moneyDigits || 1), [cTraderSummary?.moneyDigits]);
 

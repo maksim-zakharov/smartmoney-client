@@ -31,7 +31,7 @@ import { deleteAlert } from './api/alerts.slice';
 import { AlertDialog } from './components/AlertDialog.tsx';
 import { TypographyH4 } from './components/ui/typography.tsx';
 import { useGetWalletBalanceQuery } from './api/bybit.api.ts';
-import { useGetAccountsQuery } from './api/gate.api.ts';
+import { useGetGateFAccountsQuery, useGetGateSAccountsQuery } from './api/gate.api.ts';
 import { useGetBalanceQuery } from './api/bingx.api.ts';
 
 export default function App() {
@@ -84,7 +84,19 @@ export default function App() {
       pollingInterval: 5000,
     },
   );
-  useGetAccountsQuery(
+
+  useGetGateSAccountsQuery(
+    {
+      apiKey: localStorage.getItem('gateApiKey'),
+      secretKey: localStorage.getItem('gateSecretKey'),
+    },
+    {
+      pollingInterval: 5000,
+      skip: !localStorage.getItem('gateApiKey') || !localStorage.getItem('gateSecretKey'),
+    },
+  );
+
+  useGetGateFAccountsQuery(
     {
       apiKey: localStorage.getItem('gateApiKey'),
       secretKey: localStorage.getItem('gateSecretKey'),

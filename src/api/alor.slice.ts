@@ -52,7 +52,7 @@ const initialState = {
 
   bybitWallets: [],
 
-  gateAccounts: undefined,
+  gateFAccounts: undefined,
   bingxBalance: [],
 
   release: undefined,
@@ -98,7 +98,9 @@ const initialState = {
 
   bybitWallets: any[];
 
-  gateAccounts?: any;
+  gateSAccounts?: any;
+  gateFAccounts?: any;
+
   bingxBalance: any[];
 
   cTraderAuth?: AppsTokenResponse;
@@ -307,8 +309,11 @@ export const alorSlice = createSlice({
     builder.addMatcher(bybitApi.endpoints.getWalletBalance.matchFulfilled, (state, { payload }) => {
       state.bybitWallets = payload;
     });
-    builder.addMatcher(gateApi.endpoints.getAccounts.matchFulfilled, (state, { payload }) => {
-      state.gateAccounts = payload;
+    builder.addMatcher(gateApi.endpoints.getGateFAccounts.matchFulfilled, (state, { payload }) => {
+      state.gateFAccounts = payload;
+    });
+    builder.addMatcher(gateApi.endpoints.getGateSAccounts.matchFulfilled, (state, { payload }) => {
+      state.gateSAccounts = payload;
     });
     builder.addMatcher(bingxApi.endpoints.getBalance.matchFulfilled, (state, { payload }) => {
       if (Array.isArray(payload)) state.bingxBalance = payload;
