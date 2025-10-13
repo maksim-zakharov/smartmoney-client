@@ -34,10 +34,11 @@ export const bybitApi = createApi({
     getWalletBalance: builder.query<any, any>({
       query: (params) => ({
         url: '/wallet-balance',
-        params: {
-          accountType: 'UNIFIED',
-        },
+        params,
       }),
+      transformResponse(response: any) {
+        return response?.result?.list;
+      },
     }),
   }),
 });

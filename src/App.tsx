@@ -78,8 +78,23 @@ export default function App() {
   //   },
   // );
 
+  // useGetWalletBalanceQuery(
+  //   {
+  //     apiKey: localStorage.getItem('bybitApiKey'),
+  //     apiSecret: localStorage.getItem('bybitSecretKey'),
+  //     accountType: 'CONTRACT',
+  //   },
+  //   {
+  //     pollingInterval: 5000,
+  //   },
+  // );
+
   useGetWalletBalanceQuery(
-    {},
+    {
+      apiKey: localStorage.getItem('bybitApiKey'),
+      apiSecret: localStorage.getItem('bybitSecretKey'),
+      accountType: 'UNIFIED',
+    },
     {
       pollingInterval: 5000,
     },
