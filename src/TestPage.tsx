@@ -178,12 +178,14 @@ export const TestPage = () => {
     cTraderSymbols,
     bybitWallets,
     gateSAccounts,
+    bitgetFAccounts,
     gateFAccounts,
     bingxBalance,
     MEXCPositions,
     cTraderSummary,
   } = useAppSelector((state) => state.alorSlice);
 
+  const bitgetBalance = Number(bitgetFAccounts?.[0]?.usdtEquity) || 0;
   const bybitBalance = Number(bybitWallets?.[0]?.totalAvailableBalance) || 0;
   const gateSBalance = Number(gateSAccounts?.find((c) => c.currency === 'USDT')?.available) || 0;
   const gateFBalance = Number(gateFAccounts?.crossMarginBalance) || 0;
@@ -721,11 +723,11 @@ export const TestPage = () => {
   };
 
   const totalBalance = useMemo(() => {
-    const usdtBalance = ctraderBalance + bingBalance + bybitBalance + gateBalance;
+    const usdtBalance = ctraderBalance + bingBalance + bybitBalance + gateBalance + bitgetBalance;
     const rubBalance = alorSummary?.portfolioLiquidationValue || 0;
 
     return usdtBalance * USDRate + rubBalance;
-  }, [ctraderBalance, bingBalance, bybitBalance, gateBalance, USDRate, alorSummary?.portfolioLiquidationValue]);
+  }, [ctraderBalance, bingBalance, bybitBalance, gateBalance, USDRate, alorSummary?.portfolioLiquidationValue, bitgetBalance]);
 
   return (
     <>
@@ -794,6 +796,24 @@ export const TestPage = () => {
                 )}
               >
                 {moneyFormat(bybitBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        {localStorage.getItem('bitgetApiKey') && (
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <img className="h-4 rounded-full" src={exchangeImgMap['BITGET']} />
+                Bybit
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  bitgetBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(bitgetBalance, 'USDT')}
               </CardTitle>
             </CardHeader>
           </Card>

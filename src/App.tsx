@@ -33,6 +33,7 @@ import { TypographyH4 } from './components/ui/typography.tsx';
 import { useGetWalletBalanceQuery } from './api/bybit.api.ts';
 import { useGetGateFAccountsQuery, useGetGateSAccountsQuery } from './api/gate.api.ts';
 import { useGetBalanceQuery } from './api/bingx.api.ts';
+import { useGetBitgetAccountsQuery } from './api/bitget.api.ts';
 
 export default function App() {
   const navigate = useNavigate();
@@ -88,6 +89,18 @@ export default function App() {
   //     pollingInterval: 5000,
   //   },
   // );
+
+  useGetBitgetAccountsQuery(
+    {
+      apiKey: localStorage.getItem('bitgetApiKey'),
+      secretKey: localStorage.getItem('bitgetSecretKey'),
+      passphrase: localStorage.getItem('bitgetPhrase'),
+    },
+    {
+      pollingInterval: 5000,
+      skip: !localStorage.getItem('bitgetApiKey') || !localStorage.getItem('bitgetSecretKey'),
+    },
+  );
 
   useGetWalletBalanceQuery(
     {

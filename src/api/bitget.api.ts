@@ -25,7 +25,13 @@ export const bitgetApi = createApi({
         url: '/future-tickers',
       }),
     }),
+    getBitgetAccounts: builder.query<any, any>({
+      query: (params) => ({
+        url: '/accounts',
+        params,
+      }),
+    }),
   }),
 });
 
-export const { useGetBitgetSpotTickersQuery, useGetBitgetFutureTickersQuery } = bitgetApi;
+export const { useGetBitgetAccountsQuery, useGetBitgetSpotTickersQuery, useGetBitgetFutureTickersQuery } = bitgetApi;

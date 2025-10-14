@@ -12,6 +12,7 @@ import { bybitApi } from './bybit.api.ts';
 import { gateApi } from './gate.api.ts';
 import { bingxApi } from './bingx.api.ts';
 import { store } from '../store.ts';
+import { bitgetApi } from './bitget.api.ts';
 
 type Settings = {
   token: string;
@@ -100,6 +101,8 @@ const initialState = {
 
   gateSAccounts?: any;
   gateFAccounts?: any;
+
+  bitgetFAccounts?: any;
 
   bingxBalance: any[];
 
@@ -314,6 +317,9 @@ export const alorSlice = createSlice({
     });
     builder.addMatcher(gateApi.endpoints.getGateSAccounts.matchFulfilled, (state, { payload }) => {
       state.gateSAccounts = payload;
+    });
+    builder.addMatcher(bitgetApi.endpoints.getBitgetAccounts.matchFulfilled, (state, { payload }) => {
+      state.bitgetFAccounts = payload.data;
     });
     builder.addMatcher(bingxApi.endpoints.getBalance.matchFulfilled, (state, { payload }) => {
       if (Array.isArray(payload)) state.bingxBalance = payload;
