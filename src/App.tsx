@@ -315,6 +315,24 @@ export default function App() {
     localStorage.setItem('gateSecretKey', e.target.value);
   };
 
+  const [bitgetApiKey, setbitgetApiKey] = useState<string | null>(localStorage.getItem('bitgetApiKey'));
+  const handleEditbitgetApiKey = (e) => {
+    setbitgetApiKey(e.target.value);
+    localStorage.setItem('bitgetApiKey', e.target.value);
+  };
+
+  const [bitgetSecretKey, setbitgetSecretKey] = useState<string | null>(localStorage.getItem('bitgetSecretKey'));
+  const handleEditbitgetSecretKey = (e) => {
+    setbitgetSecretKey(e.target.value);
+    localStorage.setItem('bitgetSecretKey', e.target.value);
+  };
+
+  const [bitgetPhrase, setbitgetPhrase] = useState<string | null>(localStorage.getItem('bitgetPhrase'));
+  const handleEditbitgetPhrase = (e) => {
+    setbitgetPhrase(e.target.value);
+    localStorage.setItem('bitgetPhrase', e.target.value);
+  };
+
   const [bybitApiKey, setbybitApiKey] = useState<string | null>(localStorage.getItem('bybitApiKey'));
   const handleEditbybitApiKey = (e) => {
     setbybitApiKey(e.target.value);
@@ -412,6 +430,21 @@ export default function App() {
                         <div className="flex gap-2 flex-col">
                           <Label htmlFor="brokerAccountId">BrokerAccountId</Label>
                           <Input id="brokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
+                        </div>
+                      </div>
+                      <TypographyH4>Bitget</TypographyH4>
+                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="bitgetApiKey">Api Key</Label>
+                          <Input id="bitgetApiKey" value={bitgetApiKey} onChange={handleEditbitgetApiKey} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="bitgetSecretKey">Secret Key</Label>
+                          <Input id="bitgetSecretKey" value={bitgetSecretKey} onChange={handleEditbitgetSecretKey} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="bitgetPhrase">Phrase</Label>
+                          <Input id="bitgetPhrase" value={bitgetPhrase} onChange={handleEditbitgetPhrase} />
                         </div>
                       </div>
                       <TypographyH4>Bybit</TypographyH4>
