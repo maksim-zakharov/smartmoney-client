@@ -25,6 +25,12 @@ export const mexcApi = createApi({
         params,
       }),
     }),
+    getMEXCBalance: builder.query<any, any>({
+      query: (params) => ({
+        url: '/balance',
+        params,
+      }),
+    }),
     getTickers: builder.query<any, any>({
       query: (params) => ({
         url: '/ticker',
@@ -47,6 +53,7 @@ export const mexcApi = createApi({
 });
 
 export const {
+  useGetMEXCBalanceQuery,
   useGetMEXCCandlesQuery,
   useGetSpotTickersQuery,
   useGetContractDetailsQuery,

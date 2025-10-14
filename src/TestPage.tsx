@@ -181,11 +181,13 @@ export const TestPage = () => {
     bitgetFAccounts,
     gateFAccounts,
     bingxBalance,
+    mexcFAccount,
     MEXCPositions,
     cTraderSummary,
   } = useAppSelector((state) => state.alorSlice);
 
   const bitgetBalance = Number(bitgetFAccounts?.[0]?.usdtEquity) || 0;
+  const mexcBalance = Number(mexcFAccount?.availableBalance) || 0;
   const bybitBalance = Number(bybitWallets?.[0]?.totalAvailableBalance) || 0;
   const gateSBalance = Number(gateSAccounts?.find((c) => c.currency === 'USDT')?.available) || 0;
   const gateFBalance = Number(gateFAccounts?.crossMarginBalance) || 0;
@@ -723,11 +725,11 @@ export const TestPage = () => {
   };
 
   const totalBalance = useMemo(() => {
-    const usdtBalance = ctraderBalance + bingBalance + bybitBalance + gateBalance + bitgetBalance;
+    const usdtBalance = ctraderBalance + bingBalance + bybitBalance + gateBalance + bitgetBalance + mexcBalance;
     const rubBalance = alorSummary?.portfolioLiquidationValue || 0;
 
     return usdtBalance * USDRate + rubBalance;
-  }, [ctraderBalance, bingBalance, bybitBalance, gateBalance, USDRate, alorSummary?.portfolioLiquidationValue, bitgetBalance]);
+  }, [ctraderBalance, bingBalance, bybitBalance, gateBalance, USDRate, alorSummary?.portfolioLiquidationValue, bitgetBalance, mexcBalance]);
 
   return (
     <>
@@ -800,12 +802,30 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         )}
+        {localStorage.getItem('mexcUid') && (
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <img className="h-4 rounded-full" src={exchangeImgMap['MEXC']} />
+                MEXC
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  mexcBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(mexcBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        )}
         {localStorage.getItem('bitgetApiKey') && (
           <Card>
             <CardHeader>
               <CardDescription className="flex gap-2 items-center">
                 <img className="h-4 rounded-full" src={exchangeImgMap['BITGET']} />
-                Bybit
+                Bitget
               </CardDescription>
               <CardTitle
                 className={cn(
@@ -867,7 +887,7 @@ export const TestPage = () => {
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card className="col-span-3">
+        <Card className="col-span-2">
           <CardHeader>
             <CardDescription>P&L Алор</CardDescription>
             <CardTitle

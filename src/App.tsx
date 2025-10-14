@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from './components/ui/label';
 import { Input } from './components/ui/input';
 import { useGetTinkoffAccountsQuery, useGetTinkoffOrdersQuery, useGetTinkoffPortfolioQuery } from './api/tinkoff.api';
-import { useGetMEXCPositionsQuery } from './api/mexc.api';
+import { useGetMEXCBalanceQuery, useGetMEXCPositionsQuery } from './api/mexc.api';
 import { RadioGroup, RadioGroupItem } from './components/ui/radio-group.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
@@ -89,6 +89,18 @@ export default function App() {
   //     pollingInterval: 5000,
   //   },
   // );
+
+  useGetMEXCBalanceQuery(
+    {
+      // apiKey: localStorage.getItem('bitgetApiKey'),
+      // secretKey: localStorage.getItem('bitgetSecretKey'),
+      authToken: localStorage.getItem('mexcUid'),
+    },
+    {
+      pollingInterval: 5000,
+      skip: !localStorage.getItem('mexcUid'),
+    },
+  );
 
   useGetBitgetAccountsQuery(
     {
@@ -328,6 +340,12 @@ export default function App() {
     localStorage.setItem('gateSecretKey', e.target.value);
   };
 
+  const [mexcUid, setmexcUid] = useState<string | null>(localStorage.getItem('mexcUid'));
+  const handleEditmexcUid = (e) => {
+    setmexcUid(e.target.value);
+    localStorage.setItem('mexcUid', e.target.value);
+  };
+
   const [bitgetApiKey, setbitgetApiKey] = useState<string | null>(localStorage.getItem('bitgetApiKey'));
   const handleEditbitgetApiKey = (e) => {
     setbitgetApiKey(e.target.value);
@@ -443,6 +461,22 @@ export default function App() {
                         <div className="flex gap-2 flex-col">
                           <Label htmlFor="brokerAccountId">BrokerAccountId</Label>
                           <Input id="brokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
+                        </div>
+                      </div>
+                      <TypographyH4>Mexc</TypographyH4>
+                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="flex gap-2 flex-col">
+                          {/*  <Label htmlFor="bitgetApiKey">Api Key</Label>*/}
+                          {/*  <Input id="bitgetApiKey" value={bitgetApiKey} onChange={handleEditbitgetApiKey} />*/}
+                          {/*</div>*/}
+                          {/*<div className="flex gap-2 flex-col">*/}
+                          {/*  <Label htmlFor="bitgetSecretKey">Secret Key</Label>*/}
+                          {/*  <Input id="bitgetSecretKey" value={bitgetSecretKey} onChange={handleEditbitgetSecretKey} />*/}
+                          {/*</div>*/}
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="mexcUid">UID</Label>
+                            <Input id="mexcUid" value={mexcUid} onChange={handleEditmexcUid} />
+                          </div>
                         </div>
                       </div>
                       <TypographyH4>Bitget</TypographyH4>
