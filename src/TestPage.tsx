@@ -182,12 +182,15 @@ export const TestPage = () => {
     gateFAccounts,
     bingxBalance,
     mexcFAccount,
+    mexcSAccount,
     MEXCPositions,
     cTraderSummary,
   } = useAppSelector((state) => state.alorSlice);
 
   const bitgetBalance = Number(bitgetFAccounts?.[0]?.usdtEquity) || 0;
-  const mexcBalance = Number(mexcFAccount?.availableBalance) || 0;
+  const mexcSBalance = Number(mexcSAccount?.balances?.find((a) => a.asset === 'USDT')?.free) || 0;
+  const mexcFBalance = Number(mexcFAccount?.availableBalance) || 0;
+  const mexcBalance = mexcFBalance + mexcSBalance;
   const bybitBalance = Number(bybitWallets?.[0]?.totalAvailableBalance) || 0;
   const gateSBalance = Number(gateSAccounts?.find((c) => c.currency === 'USDT')?.available) || 0;
   const gateFBalance = Number(gateFAccounts?.crossMarginBalance) || 0;

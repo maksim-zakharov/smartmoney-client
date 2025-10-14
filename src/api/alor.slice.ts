@@ -114,6 +114,7 @@ const initialState = {
   cTraderSymbols?: any;
   cTraderSummary?: any;
 
+  mexcSAccount?: any;
   mexcFAccount?: any;
   MEXCPositions?: any;
 
@@ -318,6 +319,9 @@ export const alorSlice = createSlice({
     });
     builder.addMatcher(gateApi.endpoints.getGateSAccounts.matchFulfilled, (state, { payload }) => {
       state.gateSAccounts = payload;
+    });
+    builder.addMatcher(mexcApi.endpoints.getMEXCSpotAccount.matchFulfilled, (state, { payload }) => {
+      state.mexcSAccount = payload;
     });
     builder.addMatcher(mexcApi.endpoints.getMEXCBalance.matchFulfilled, (state, { payload }) => {
       state.mexcFAccount = payload;
