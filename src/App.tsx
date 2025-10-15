@@ -34,6 +34,7 @@ import { useGetWalletBalanceQuery } from './api/bybit.api.ts';
 import { useGetGateFAccountsQuery, useGetGateSAccountsQuery } from './api/gate.api.ts';
 import { useGetBalanceQuery } from './api/bingx.api.ts';
 import { useGetBitgetAccountsQuery } from './api/bitget.api.ts';
+import { ScreenersPage } from './ScreenersPage.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -290,6 +291,7 @@ export default function App() {
     // { key: '/screener', label: 'Скринер плотностей', element: <ScreenerPage /> },
     // { key: '/cny-funding', label: 'CNY Funding', element: <CNYFundingPage /> },
     { key: '/test123', label: 'Test', element: <TestPage /> },
+    { key: '/screeners', label: 'Скринеры', element: <ScreenersPage /> },
   ];
 
   const [telegramToken, settelegramToken] = useState<string | null>(localStorage.getItem('telegramToken'));
