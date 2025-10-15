@@ -24,7 +24,7 @@ export const CTraderCard: FC<Props> = ({ ctraderBalance }) => {
     if (alertingLevel >= ctraderBalance) {
       const body = {
         chat_id: localStorage.getItem('telegramUserId'),
-        text: `‼️Баланс ${ctraderBalance.toFixed(2)} ниже ${alertingLevel.toFixed(2)}`,
+        text: `‼️Баланс ${ctraderBalance.toFixed(2)} ниже ${Number(alertingLevel).toFixed(2)}`,
       };
       fetch(`https://api.telegram.org/bot${localStorage.getItem('telegramToken')}/sendMessage`, {
         method: 'POST',
