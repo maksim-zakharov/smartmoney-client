@@ -6,7 +6,7 @@ import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
 import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
 import { AppsTokenResponse, deletePair, initApi, selectCTraderAccount, setTiToken } from './api/alor.slice';
-import { TestPage } from './TestPage';
+import { TestPage } from './TestPage/TestPage.tsx';
 import {
   useAuthAuthQuery,
   useAuthCodeQuery,

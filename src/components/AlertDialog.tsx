@@ -16,7 +16,7 @@ import { Trash } from 'lucide-react';
 import { deletePair } from '../api/alor.slice';
 import { TypographyParagraph } from './ui/typography.tsx';
 import { cn } from '../lib/utils';
-import { AlorLabel, FigiLabel, ForexLabel } from '../TestPage.tsx';
+import { AlorLabel, FigiLabel, ForexLabel } from '../TestPage/TestPage.tsx';
 import { useGetRuRateQuery } from '../api/alor.api';
 import { moneyFormat, normalizePrice } from '../utils';
 import { Input } from './ui/input.tsx';

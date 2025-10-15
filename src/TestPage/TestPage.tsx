@@ -1,37 +1,38 @@
 import React, { useMemo, useState } from 'react';
-import { useAppDispatch, useAppSelector } from './store';
-import { exchangeImgMap, moneyFormat, moneyFormatCompact, normalizePrice, numberFormat } from './utils';
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './components/ui/table';
-import { cn } from './lib/utils';
-import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
-import { TWChart } from './components/TWChart';
-import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from './api/tinkoff.api';
-import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation } from './api/ctrader.api';
-import { Button } from './components/ui/button';
+import { useAppDispatch, useAppSelector } from '../store.ts';
+import { exchangeImgMap, moneyFormat, moneyFormatCompact, normalizePrice, numberFormat } from '../utils.ts';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '../components/ui/table.tsx';
+import { cn } from '../lib/utils.ts';
+import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx';
+import { TWChart } from '../components/TWChart.tsx';
+import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from '../api/tinkoff.api.ts';
+import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation } from '../api/ctrader.api.ts';
+import { Button } from '../components/ui/button.tsx';
 import { ArrowDownWideNarrow, ArrowUpWideNarrow, CirclePlus, CircleX, Funnel } from 'lucide-react';
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
-import { Checkbox } from './components/ui/checkbox';
-import { useGetContractDetailsQuery, useGetMEXCContractQuery, useGetSpotTickersQuery, useGetTickersQuery } from './api/mexc.api';
-import { TypographyParagraph } from './components/ui/typography';
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog.tsx';
+import { Checkbox } from '../components/ui/checkbox.tsx';
+import { useGetContractDetailsQuery, useGetMEXCContractQuery, useGetSpotTickersQuery, useGetTickersQuery } from '../api/mexc.api.ts';
+import { TypographyParagraph } from '../components/ui/typography.tsx';
 import { toast } from 'sonner';
-import { Input } from './components/ui/input';
-import { useGetOrderbookMutation, useGetRuRateQuery, useGetSummaryQuery, useSendLimitOrderMutation } from './api/alor.api';
+import { Input } from '../components/ui/input.tsx';
+import { useGetOrderbookMutation, useGetRuRateQuery, useGetSummaryQuery, useSendLimitOrderMutation } from '../api/alor.api.ts';
 import { Exchange, Side } from 'alor-api';
-import { useGetBINGXFuturesTickersQuery, useGetBINGXSpotTickersQuery } from './api/bingx.api';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
-import { useGetGateFuturesTickersQuery, useGetGateSpotTickersQuery } from './api/gate.api';
-import { useGetBYBITFuturesTickersQuery, useGetBYBITSpotTickersQuery } from './api/bybit.api';
-import { useGetBinanceFuturesTickersQuery, useGetBinanceSpotTickersQuery } from './api/binance.api';
+import { useGetBINGXFuturesTickersQuery, useGetBINGXSpotTickersQuery } from '../api/bingx.api.ts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.tsx';
+import { useGetGateFuturesTickersQuery, useGetGateSpotTickersQuery } from '../api/gate.api.ts';
+import { useGetBYBITFuturesTickersQuery, useGetBYBITSpotTickersQuery } from '../api/bybit.api.ts';
+import { useGetBinanceFuturesTickersQuery, useGetBinanceSpotTickersQuery } from '../api/binance.api.ts';
 import dayjs from 'dayjs';
-import { useGetHTXFuturesTickersQuery, useGetHTXSpotTickersQuery } from './api/htx.api';
-import { useGetKuCoinFutureTickersQuery, useGetKuCoinSpotTickersQuery } from './api/kucoin.api';
-import { useGetBitgetFutureTickersQuery, useGetBitgetSpotTickersQuery } from './api/bitget.api';
-import { useGetBitstampTickersQuery } from './api/bitstamp.api';
-import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover';
-import { Label } from './components/ui/label';
-import { setFilter } from './api/alor.slice';
+import { useGetHTXFuturesTickersQuery, useGetHTXSpotTickersQuery } from '../api/htx.api.ts';
+import { useGetKuCoinFutureTickersQuery, useGetKuCoinSpotTickersQuery } from '../api/kucoin.api.ts';
+import { useGetBitgetFutureTickersQuery, useGetBitgetSpotTickersQuery } from '../api/bitget.api.ts';
+import { useGetBitstampTickersQuery } from '../api/bitstamp.api.ts';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover.tsx';
+import { Label } from '../components/ui/label.tsx';
+import { setFilter } from '../api/alor.slice.ts';
 import { useSearchParams } from 'react-router-dom';
-import { ArbitrageTable } from './ArbitrageTable.tsx';
+import { ArbitrageTable } from '../ArbitrageTable.tsx';
+import { CTraderCard } from './CTraderCard.tsx';
 
 const TableColumnFilter = ({ label, _key }: { _key: string; label: string }) => {
   const { filters } = useAppSelector((state) => state.alorSlice);
@@ -753,22 +754,7 @@ export const TestPage = () => {
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription className="flex gap-2 items-center">
-              {/*<img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />*/}
-              {cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}
-            </CardDescription>
-            <CardTitle
-              className={cn(
-                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                ctraderBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
-              )}
-            >
-              {moneyFormat(ctraderBalance, 'USDT')}
-            </CardTitle>
-          </CardHeader>
-        </Card>
+        <CTraderCard ctraderBalance={ctraderBalance} />
         {localStorage.getItem('bingxApiKey') && (
           <Card>
             <CardHeader>
