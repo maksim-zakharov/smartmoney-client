@@ -134,6 +134,7 @@ export default function App() {
     },
     {
       pollingInterval: 5000,
+      skip: !localStorage.getItem('bybitApiKey') || !localStorage.getItem('bybitSecretKey'),
     },
   );
 
