@@ -65,6 +65,11 @@ export class BingXFuturesWsClient extends SubscriptionManager {
         const url = new URL('https://176.114.69.4/bingx/login');
         url.searchParams.set('apiKey', apiKey);
         url.searchParams.set('secretKey', secretKey);
+
+        if (!apiKey || !secretKey) {
+          return Promise.resolve(`wss://open-api-swap.bingx.com/swap-market`);
+        }
+
         return fetch(url)
           .then((r) => r.json())
           .then(({ listenKey }) => {
