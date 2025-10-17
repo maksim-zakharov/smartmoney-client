@@ -362,7 +362,7 @@ export default function App() {
 
   const [mexcSecretKey, setmexcSecretKey] = useState<string | null>(localStorage.getItem('mexcSecretKey'));
   const handleEditmexcSecretKey = (e) => {
-    setmexcUid(e.target.value);
+    setmexcSecretKey(e.target.value);
     localStorage.setItem('mexcSecretKey', e.target.value);
   };
 

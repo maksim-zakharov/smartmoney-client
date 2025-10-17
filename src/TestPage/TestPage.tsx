@@ -440,12 +440,14 @@ export const TestPage = () => {
     return <FigiLabel uid={invoice} />;
   };
 
+  const totalCrypto = bingBalance + bybitBalance + gateBalance + bitgetBalance + mexcBalance;
+
   const totalBalance = useMemo(() => {
-    const usdtBalance = ctraderBalance + bingBalance + bybitBalance + gateBalance + bitgetBalance + mexcBalance;
+    const usdtBalance = ctraderBalance + totalCrypto;
     const rubBalance = alorSummary?.portfolioLiquidationValue || 0;
 
     return usdtBalance * USDRate + rubBalance;
-  }, [ctraderBalance, bingBalance, bybitBalance, gateBalance, USDRate, alorSummary?.portfolioLiquidationValue, bitgetBalance, mexcBalance]);
+  }, [ctraderBalance, totalCrypto, alorSummary?.portfolioLiquidationValue, USDRate]);
 
   return (
     <>
@@ -466,7 +468,22 @@ export const TestPage = () => {
             </CardTitle>
           </CardHeader>
         </Card>
-        <CTraderCard ctraderBalance={ctraderBalance} />
+        <Card>
+          <CardHeader>
+            <CardDescription className="flex gap-2 items-center">
+              {/*<img className="h-4 rounded-full" src={exchangeImgMap['BINGX']} />*/}
+              Криптобиржи
+            </CardDescription>
+            <CardTitle
+              className={cn(
+                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                totalCrypto > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+              )}
+            >
+              {moneyFormat(totalCrypto, 'USDT')}
+            </CardTitle>
+          </CardHeader>
+        </Card>
         {localStorage.getItem('bingxApiKey') && (
           <Card>
             <CardHeader>
@@ -575,6 +592,7 @@ export const TestPage = () => {
             </CardHeader>
           </Card>
         )}
+        <CTraderCard ctraderBalance={ctraderBalance} />
         <Card>
           <CardHeader>
             <CardDescription>Алор</CardDescription>
