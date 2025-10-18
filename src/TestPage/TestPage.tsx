@@ -606,7 +606,7 @@ export const TestPage = () => {
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card className="col-span-2">
+        <Card>
           <CardHeader>
             <CardDescription>P&L Алор</CardDescription>
             <CardTitle
