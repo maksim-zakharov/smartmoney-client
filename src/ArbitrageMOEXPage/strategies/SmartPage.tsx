@@ -1,13 +1,9 @@
 import { StatArbPage } from './StatArbPage';
 import React, { useMemo } from 'react';
-import { Col, Input, Pagination, Radio, Row, Select, Space } from 'antd';
+import { Col, Pagination, Radio, Row, Space } from 'antd';
 import { Triangle_Page } from './Triangle_Page';
 import { SegmentedLabeledOption } from 'rc-segmented';
 import { useSearchParams } from 'react-router-dom';
-import { TimeframeSelect } from '../../TimeframeSelect.tsx';
-import { DatesPicker } from '../../DatesPicker.tsx';
-import dayjs, { type Dayjs } from 'dayjs';
-import moment from 'moment';
 import { symbolFuturePairs } from '../../../symbolFuturePairs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs.tsx';
 import { useAppSelector } from '../../store';
@@ -18,16 +14,11 @@ export const SmartPage = () => {
   const height = 350;
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('segment') || 'stocks';
-  const tf = searchParams.get('tf') || '900';
-  const fromDate = searchParams.get('fromDate') || moment().add(-30, 'day').unix();
-  const toDate = searchParams.get('toDate') || moment().add(1, 'day').unix();
   const expirationMonth = searchParams.get('expirationMonth') || '9.25';
 
   const span = Number(searchParams.get('span') || 6);
 
   const page = Number(searchParams.get('page') || 1);
-
-  const minProfit = Number(searchParams.get('minProfit') || 0.005);
 
   const favoritePairs = useAppSelector((state) => state.alorSlice.favoritePairs || []);
 
@@ -37,11 +28,6 @@ export const SmartPage = () => {
     () => cTraderSymbols?.filter((s) => s.symbolCategoryId === 6 && s.symbolName.includes('_xp')) || [],
     [cTraderSymbols],
   );
-
-  const setMinProfit = (value) => {
-    searchParams.set('minProfit', value);
-    setSearchParams(searchParams);
-  };
 
   const setSpan = (tab: string) => {
     searchParams.set('span', tab);
@@ -57,34 +43,6 @@ export const SmartPage = () => {
     searchParams.set('page', tab.toString());
     setSearchParams(searchParams);
   };
-
-  const setSize = (tf: string) => {
-    searchParams.set('tf', tf);
-    setSearchParams(searchParams);
-  };
-
-  const onChangeRangeDates = (value: Dayjs[], dateString) => {
-    searchParams.set('fromDate', value[0].unix());
-    searchParams.set('toDate', value[1].unix());
-    setSearchParams(searchParams);
-  };
-
-  const setexpirationMonth = (value) => {
-    searchParams.set('expirationMonth', value);
-    setSearchParams(searchParams);
-  };
-
-  const expirationMonths = useMemo(() => {
-    const startYear = 24;
-    const months = [];
-    for (let i = 0; i < 3; i++) {
-      for (let j = 1; j <= 4; j++) {
-        months.push(`${3 * j}.${startYear + i}`);
-      }
-    }
-
-    return months;
-  }, []);
 
   const options: SegmentedLabeledOption[] = [
     {
@@ -344,15 +302,6 @@ export const SmartPage = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <Space>
-        <TimeframeSelect value={tf} onChange={setSize} />
-        <DatesPicker value={[dayjs(Number(fromDate) * 1000), dayjs(Number(toDate) * 1000)]} onChange={onChangeRangeDates} />
-        <Select
-          value={expirationMonth}
-          onSelect={setexpirationMonth}
-          style={{ width: 100 }}
-          options={expirationMonths.map((v) => ({ label: v, value: v }))}
-        />
-        <Input style={{ width: 80 }} value={minProfit} onChange={(e) => setMinProfit(Number(e.target.value))} />
         <Radio.Group
           block
           options={spanOptions}
