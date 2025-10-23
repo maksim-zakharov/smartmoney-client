@@ -16,6 +16,7 @@ import { kucoinApi } from './api/kucoin.api';
 import { coinmarketcapApi } from './api/coinmarketcap.api';
 import { bitgetApi } from './api/bitget.api';
 import { bitstampApi } from './api/bitstamp.api';
+import { okxApi } from './api/okx.api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -34,6 +35,7 @@ export const reducers = {
   [coinmarketcapApi.reducerPath]: coinmarketcapApi.reducer,
   [bitgetApi.reducerPath]: bitgetApi.reducer,
   [bitstampApi.reducerPath]: bitstampApi.reducer,
+  [okxApi.reducerPath]: okxApi.reducer,
 };
 
 const reducer = combineReducers(reducers);
@@ -58,6 +60,7 @@ export const store = configureStore({
       .concat(coinmarketcapApi.middleware)
       .concat(bitgetApi.middleware)
       .concat(bitstampApi.middleware)
+      .concat(okxApi.middleware)
       .concat(api.middleware) as any,
 });
 

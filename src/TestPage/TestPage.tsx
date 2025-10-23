@@ -132,9 +132,11 @@ export const TestPage = () => {
     mexcFAccount,
     mexcSAccount,
     MEXCPositions,
+    okxAccounts,
     cTraderSummary,
   } = useAppSelector((state) => state.alorSlice);
 
+  const okxBalance = Number(okxAccounts?.[0]?.totalEq) || 0;
   const bitgetBalance = Number(bitgetFAccounts?.[0]?.usdtEquity) || 0;
   const mexcSBalance = Number(mexcSAccount?.balances?.find((a) => a.asset === 'USDT')?.free) || 0;
   const mexcFBalance = Number(mexcFAccount?.availableBalance) || 0;
@@ -440,7 +442,7 @@ export const TestPage = () => {
     return <FigiLabel uid={invoice} />;
   };
 
-  const totalCrypto = bingBalance + bybitBalance + gateBalance + bitgetBalance + mexcBalance;
+  const totalCrypto = bingBalance + bybitBalance + gateBalance + bitgetBalance + mexcBalance + okxBalance;
 
   const totalBalance = useMemo(() => {
     const usdtBalance = ctraderBalance + totalCrypto;
@@ -570,6 +572,24 @@ export const TestPage = () => {
                 )}
               >
                 {moneyFormat(gateBalance, 'USDT')}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        )}
+        {localStorage.getItem('okxApiKey') && (
+          <Card>
+            <CardHeader>
+              <CardDescription className="flex gap-2 items-center">
+                <img className="h-4 rounded-full" src={exchangeImgMap['OKX']} />
+                OKX
+              </CardDescription>
+              <CardTitle
+                className={cn(
+                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  okxBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                )}
+              >
+                {moneyFormat(okxBalance, 'USDT')}
               </CardTitle>
             </CardHeader>
           </Card>

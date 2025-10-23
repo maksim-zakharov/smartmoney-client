@@ -35,6 +35,7 @@ import { useGetGateFAccountsQuery, useGetGateSAccountsQuery } from './api/gate.a
 import { useGetBalanceQuery } from './api/bingx.api.ts';
 import { useGetBitgetAccountsQuery } from './api/bitget.api.ts';
 import { ScreenersPage } from './ScreenersPage.tsx';
+import { useGetOKXBalanceQuery } from './api/okx.api.ts';
 
 export default function App() {
   const navigate = useNavigate();
@@ -90,6 +91,18 @@ export default function App() {
   //     pollingInterval: 5000,
   //   },
   // );
+
+  useGetOKXBalanceQuery(
+    {
+      apiKey: localStorage.getItem('okxApiKey'),
+      apiSecret: localStorage.getItem('okxApiSecret'),
+      apiPhrase: localStorage.getItem('okxApiPhrase'),
+    },
+    {
+      pollingInterval: 5000,
+      skip: !localStorage.getItem('okxApiKey'),
+    },
+  );
 
   useGetMEXCBalanceQuery(
     {
@@ -390,6 +403,24 @@ export default function App() {
     localStorage.setItem('bitgetPhrase', e.target.value);
   };
 
+  const [okxApiKey, setokxApiKey] = useState<string | null>(localStorage.getItem('okxApiKey'));
+  const handleEditokxApiKey = (e) => {
+    setokxApiKey(e.target.value);
+    localStorage.setItem('okxApiKey', e.target.value);
+  };
+
+  const [okxApiSecret, setokxSecretKey] = useState<string | null>(localStorage.getItem('okxApiSecret'));
+  const handleEditokxSecretKey = (e) => {
+    setokxSecretKey(e.target.value);
+    localStorage.setItem('okxApiSecret', e.target.value);
+  };
+
+  const [okxPhrase, setokxPhrase] = useState<string | null>(localStorage.getItem('okxApiPhrase'));
+  const handleEditokxPhrase = (e) => {
+    setokxPhrase(e.target.value);
+    localStorage.setItem('okxApiPhrase', e.target.value);
+  };
+
   const [bybitApiKey, setbybitApiKey] = useState<string | null>(localStorage.getItem('bybitApiKey'));
   const handleEditbybitApiKey = (e) => {
     setbybitApiKey(e.target.value);
@@ -502,6 +533,21 @@ export default function App() {
                         <div className="flex gap-2 flex-col">
                           <Label htmlFor="mexcUid">UID</Label>
                           <Input id="mexcUid" value={mexcUid} onChange={handleEditmexcUid} />
+                        </div>
+                      </div>
+                      <TypographyH4>OKX</TypographyH4>
+                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="okxApiKey">Api Key</Label>
+                          <Input id="okxApiKey" value={okxApiKey} onChange={handleEditokxApiKey} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="okxApiSecret">Secret Key</Label>
+                          <Input id="okxApiSecret" value={okxApiSecret} onChange={handleEditokxSecretKey} />
+                        </div>
+                        <div className="flex gap-2 flex-col">
+                          <Label htmlFor="okxApiPhrase">Phrase</Label>
+                          <Input id="okxApiPhrase" value={okxPhrase} onChange={handleEditokxPhrase} />
                         </div>
                       </div>
                       <TypographyH4>Bitget</TypographyH4>
