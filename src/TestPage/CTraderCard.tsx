@@ -1,7 +1,7 @@
 import React, { FC, useEffect } from 'react';
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx';
 import { cn } from '../lib/utils.ts';
-import { moneyFormat } from '../utils.ts';
+import { moneyFormatCompact } from '../utils.ts';
 import { Bell } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog.tsx';
 import { Button } from '../components/ui/button.tsx';
@@ -43,11 +43,11 @@ export const CTraderCard: FC<Props> = ({ ctraderBalance }) => {
         <CardDescription className="flex gap-2 items-center">XPBEE</CardDescription>
         <CardTitle
           className={cn(
-            'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+            'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-nowrap',
             ctraderBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
           )}
         >
-          {moneyFormat(ctraderBalance, 'USDT')}
+          {moneyFormatCompact(ctraderBalance, 'USDT')}
         </CardTitle>
         <CardAction>
           <Dialog>

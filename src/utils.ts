@@ -948,13 +948,19 @@ export const moneyFormatCompact = (
   const options: Intl.NumberFormatOptions = {
     style: 'currency',
     notation: 'compact',
-    currency,
+    currency: currency === 'USDT' ? 'USD' : currency,
     minimumFractionDigits,
-    maximumFractionDigits,
+    maximumFractionDigits: Math.max(minimumFractionDigits, maximumFractionDigits),
   };
   const numberFormat = new Intl.NumberFormat('en-US', options);
 
-  return numberFormat.format(money);
+  let result = numberFormat.format(money);
+  if (currency === 'USDT') {
+    result = result.replace('$', '');
+    result += ` USDT`;
+  }
+
+  return result;
 };
 
 export const exchangeImgMap = {

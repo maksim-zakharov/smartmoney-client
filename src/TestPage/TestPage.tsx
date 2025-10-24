@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppSelector } from '../store.ts';
-import { exchangeImgMap, moneyFormat, normalizePrice, numberFormat } from '../utils.ts';
+import { exchangeImgMap, moneyFormat, moneyFormatCompact, normalizePrice, numberFormat } from '../utils.ts';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '../components/ui/table.tsx';
 import { cn } from '../lib/utils.ts';
 import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx';
@@ -482,7 +482,7 @@ export const TestPage = () => {
                 totalCrypto > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
               )}
             >
-              {moneyFormat(totalCrypto, 'USDT')}
+              {moneyFormatCompact(totalCrypto, 'USDT', 1)}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -499,7 +499,7 @@ export const TestPage = () => {
                   bingBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(bingBalance, 'USDT')}
+                {moneyFormatCompact(bingBalance, 'USDT', 1)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -517,7 +517,7 @@ export const TestPage = () => {
                   bybitBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(bybitBalance, 'USDT')}
+                {moneyFormatCompact(bybitBalance, 'USDT', 1)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -535,7 +535,7 @@ export const TestPage = () => {
                   mexcBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(mexcBalance, 'USDT')}
+                {moneyFormatCompact(mexcBalance, 'USDT', 1)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -553,7 +553,7 @@ export const TestPage = () => {
                   bitgetBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(bitgetBalance, 'USDT')}
+                {moneyFormatCompact(bitgetBalance, 'USDT', 1)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -571,7 +571,7 @@ export const TestPage = () => {
                   gateBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(gateBalance, 'USDT')}
+                {moneyFormatCompact(gateBalance, 'USDT', 1)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -589,7 +589,7 @@ export const TestPage = () => {
                   okxBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormat(okxBalance, 'USDT')}
+                {moneyFormatCompact(okxBalance, 'USDT', 1)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -619,7 +619,7 @@ export const TestPage = () => {
             <CardTitle
               className={cn(
                 'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
-                amount > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
+                alorSummary?.portfolioLiquidationValue > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
               )}
             >
               {moneyFormat(alorSummary?.portfolioLiquidationValue || 0)}
@@ -648,7 +648,7 @@ export const TestPage = () => {
                 totalPnLForex > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
               )}
             >
-              {moneyFormat(totalPnLForex, 'USDT')}
+              {moneyFormatCompact(totalPnLForex, 'USDT')}
             </CardTitle>
           </CardHeader>
         </Card>
