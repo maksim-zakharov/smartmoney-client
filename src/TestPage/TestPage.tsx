@@ -141,7 +141,7 @@ export const TestPage = () => {
   const mexcSBalance = Number(mexcSAccount?.balances?.find((a) => a.asset === 'USDT')?.free) || 0;
   const mexcFBalance = Number(mexcFAccount?.availableBalance) || 0;
   const mexcBalance = mexcFBalance + mexcSBalance;
-  const bybitBalance = Number(bybitWallets?.[0]?.totalAvailableBalance) || 0;
+  const bybitBalance = Number(bybitWallets?.[0]?.totalEquity) || 0;
   const gateSBalance = Number(gateSAccounts?.find((c) => c.currency === 'USDT')?.available) || 0;
   const gateFBalance = Number(gateFAccounts?.crossMarginBalance) || 0;
   const gateBalance = gateFBalance + gateSBalance;
