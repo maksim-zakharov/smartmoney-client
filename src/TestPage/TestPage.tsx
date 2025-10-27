@@ -424,7 +424,7 @@ export const TestPage = () => {
       </TableCell>
       <TableCell>Форекс</TableCell>
       <TableCell>{cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}</TableCell>
-      <TableCell>{invoice.volume / 10000}</TableCell>
+      <TableCell>{invoice.volume / (map.get(invoice.tradeData.symbolId)?.symbolName?.endsWith('CNH_xp') ? 10000000 : 10000)}</TableCell>
       <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
       <TableCell>-</TableCell>
       <TableCell>-</TableCell>
@@ -991,6 +991,9 @@ export const TestPage = () => {
                 {/*<TableCell>{dayjs(invoice.utcLastUpdateTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>*/}
                 <TableCell>{moneyFormat(invoice.closePositionDetail.entryPrice, 'USDT', 0, 2)}</TableCell>
                 <TableCell>{moneyFormat(invoice.executionPrice, 'USDT', 0, 2)}</TableCell>
+                <TableCell>
+                  {numberFormat(invoice.volume / (map.get(invoice.symbolId)?.symbolName?.endsWith('CNH_xp') ? 10000000 : 10000), 2, 2)}
+                </TableCell>
                 <TableCell
                   className={
                     invoice.closePositionDetail.swap > 0
