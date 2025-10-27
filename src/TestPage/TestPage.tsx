@@ -991,7 +991,15 @@ export const TestPage = () => {
                 {/*<TableCell>{dayjs(invoice.utcLastUpdateTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>*/}
                 <TableCell>{moneyFormat(invoice.closePositionDetail.entryPrice, 'USDT', 0, 2)}</TableCell>
                 <TableCell>{moneyFormat(invoice.executionPrice, 'USDT', 0, 2)}</TableCell>
-                <TableCell>
+                <TableCell
+                  className={
+                    invoice.closePositionDetail.swap > 0
+                      ? 'text-right profitCell'
+                      : invoice.closePositionDetail.swap < 0
+                        ? 'text-right lossCell'
+                        : 'text-right'
+                  }
+                >
                   {moneyFormat(invoice.closePositionDetail.swap / 10 ** invoice.closePositionDetail.moneyDigits, 'USDT', 0, 2)}
                 </TableCell>
                 <TableCell
