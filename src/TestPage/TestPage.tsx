@@ -148,7 +148,7 @@ export const TestPage = () => {
       to: dayjs().endOf('day').unix() * 1000,
     },
     {
-      pollingInterval: 5000,
+      pollingInterval: 15000,
       skip: !accessToken || !cTraderAccount?.ctidTraderAccountId,
     },
   );
