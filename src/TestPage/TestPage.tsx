@@ -144,8 +144,8 @@ export const TestPage = () => {
   const { data: deals = [] } = useGetCTraderDealsQuery(
     {
       ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
-      from: 1758931200000,
-      to: 1761609599000,
+      from: dayjs().startOf('month').unix() * 1000,
+      to: dayjs().endOf('day').unix() * 1000,
     },
     {
       pollingInterval: 5000,
