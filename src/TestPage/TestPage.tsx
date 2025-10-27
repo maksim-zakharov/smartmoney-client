@@ -1042,7 +1042,7 @@ export const TestPage = () => {
                 colSpan={9}
                 className={ctraderDealsTotal > 0 ? 'text-right profitCell' : ctraderDealsTotal < 0 ? 'text-right lossCell' : 'text-right'}
               >
-                Реализовано: {moneyFormat(ctraderDealsTotal, 'USDT', 0, 2)}
+                Реализовано: {moneyFormat(ctraderDealsTotal, 'USDT', 0, 2)} ({moneyFormat(USDRate * ctraderDealsTotal, 'RUB')})
               </TableCell>
             </TableRow>
           </TableFooter>
