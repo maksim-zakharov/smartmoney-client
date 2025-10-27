@@ -986,7 +986,7 @@ export const TestPage = () => {
                 <TableCell>
                   <ForexLabel ticker={map.get(invoice.symbolId)?.symbolName} />
                 </TableCell>
-                <TableCell>{invoice.tradeSide === 1 ? 'Покупка' : 'Продажа'}</TableCell>
+                <TableCell>{invoice.tradeSide === 1 ? 'Продажа' : 'Покупка'}</TableCell>
                 <TableCell>{dayjs(invoice.createTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>
                 {/*<TableCell>{dayjs(invoice.utcLastUpdateTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>*/}
                 <TableCell>{moneyFormat(invoice.closePositionDetail.entryPrice, 'USDT', 0, 2)}</TableCell>
