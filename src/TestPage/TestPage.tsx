@@ -53,6 +53,7 @@ export const AlorLabel = ({ symbol }) => {
     CNY: 'CNYRUR',
     SI: 'USD1',
     ED: 'EURUSD3',
+    EU: 'EUR1',
     RUB: 'ruble',
   };
 
@@ -75,6 +76,7 @@ export const ForexLabel = ({ ticker }) => {
     SPXUSD_xp: 's&p500',
     USDCNH_xp: 'USDCNY',
     EURUSD_xp: 'EURUSD3',
+    EURCNH_xp: 'EUR1',
     CUCUSD_xp: 'Co',
   };
 
