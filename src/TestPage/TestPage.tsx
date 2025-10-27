@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { cn } from '../lib/utils.ts';
 import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx';
 import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from '../api/tinkoff.api.ts';
-import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation } from '../api/ctrader.api.ts';
+import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation, useGetCTraderDealsQuery } from '../api/ctrader.api.ts';
 import { Button } from '../components/ui/button.tsx';
 import { CirclePlus, CircleX } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog.tsx';
@@ -17,6 +17,8 @@ import { Input } from '../components/ui/input.tsx';
 import { useGetOrderbookMutation, useGetRuRateQuery, useGetSummaryQuery, useSendLimitOrderMutation } from '../api/alor.api.ts';
 import { Exchange, Side } from 'alor-api';
 import { CTraderCard } from './CTraderCard.tsx';
+import { AppsTokenResponse } from '../api/alor.slice.ts';
+import dayjs from 'dayjs';
 
 export const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -137,6 +139,21 @@ export const TestPage = () => {
     okxAccounts,
     cTraderSummary,
   } = useAppSelector((state) => state.alorSlice);
+  const { accessToken } = useAppSelector((state) => state.alorSlice.cTraderAuth || ({} as AppsTokenResponse));
+
+  const { data: deals = [] } = useGetCTraderDealsQuery(
+    {
+      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+      from: 1758931200000,
+      to: 1761609599000,
+    },
+    {
+      pollingInterval: 5000,
+      skip: !accessToken || !cTraderAccount?.ctidTraderAccountId,
+    },
+  );
+
+  const closesPositions = deals.filter((d) => Boolean(d.closePositionDetail));
 
   const okxBalance = Number(okxAccounts?.[0]?.totalEq) || 0;
   const bitgetBalance = Number(bitgetFAccounts?.[0]?.usdtEquity) || 0;
@@ -932,6 +949,73 @@ export const TestPage = () => {
                 </TableRow>
               ),
             )}
+          </TableBody>
+        </Table>
+        <Table wrapperClassName="pt-2 col-span-2">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px] text-left" colSpan={10}>
+                Ctrader История позиций
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableHeader className="bg-[rgb(36,52,66)]">
+            <TableRow>
+              <TableHead className="w-[200px]">Инструмент</TableHead>
+              <TableHead className="w-[200px]">Направление</TableHead>
+              <TableHead className="w-[200px]">Время открытия</TableHead>
+              <TableHead className="w-[200px]">Время закрытия</TableHead>
+              <TableHead className="w-[200px]">Цена входа</TableHead>
+              <TableHead className="w-[200px]">Цена закрытия</TableHead>
+              <TableHead className="text-right">Свопы</TableHead>
+              <TableHead className="text-right">Валовая прибыль</TableHead>
+              <TableHead className="text-right">Чистая прибыль</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {closesPositions.map((invoice, index) => (
+              <TableRow key={invoice.invoice} className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
+                <TableCell>
+                  <ForexLabel ticker={map.get(invoice.symbolId)?.symbolName} />
+                </TableCell>
+                <TableCell>{invoice.tradeSide === 1 ? 'Покупка' : 'Продажа'}</TableCell>
+                <TableCell>{dayjs(invoice.createTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>
+                <TableCell>{dayjs(invoice.utcLastUpdateTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>
+                <TableCell>{moneyFormat(invoice.closePositionDetail.entryPrice, 'USDT', 0, 2)}</TableCell>
+                <TableCell>{moneyFormat(invoice.executionPrice, 'USDT', 0, 2)}</TableCell>
+                <TableCell>
+                  {moneyFormat(invoice.closePositionDetail.swap / 10 ** invoice.closePositionDetail.moneyDigits, 'USDT', 0, 2)}
+                </TableCell>
+                <TableCell
+                  className={
+                    invoice.closePositionDetail.grossProfit > 0
+                      ? 'text-right profitCell'
+                      : invoice.closePositionDetail.grossProfit < 0
+                        ? 'text-right lossCell'
+                        : 'text-right'
+                  }
+                >
+                  {moneyFormat(invoice.closePositionDetail.grossProfit / 10 ** invoice.closePositionDetail.moneyDigits, 'USDT', 0, 2)}
+                </TableCell>
+                <TableCell
+                  className={
+                    invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap > 0
+                      ? 'text-right profitCell'
+                      : invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap < 0
+                        ? 'text-right lossCell'
+                        : 'text-right'
+                  }
+                >
+                  {moneyFormat(
+                    (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap) /
+                      10 ** invoice.closePositionDetail.moneyDigits,
+                    'USDT',
+                    0,
+                    2,
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
         {/*<div className="col-span-3">*/}

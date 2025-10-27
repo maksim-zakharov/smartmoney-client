@@ -86,6 +86,12 @@ export const ctraderApi = createApi({
         params,
       }),
     }),
+    getCTraderDeals: builder.query<any, { from: number; to: number; ctidTraderAccountId: string }>({
+      query: (params) => ({
+        url: '/deals',
+        params,
+      }),
+    }),
     getCTraderPositionPnL: builder.query<any, any>({
       query: (params) => ({
         url: '/positionPnL',
@@ -122,6 +128,7 @@ export const ctraderApi = createApi({
 });
 
 export const {
+  useGetCTraderDealsQuery,
   useCandlesQuery,
   useGetCTraderSymbolsQuery,
   useAuthAuthQuery,
