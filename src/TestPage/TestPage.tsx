@@ -972,9 +972,9 @@ export const TestPage = () => {
               <TableHead className="w-[100px]">Инструмент</TableHead>
               <TableHead className="w-[100px]">Направление</TableHead>
               <TableHead className="w-[100px]">Время закрытия</TableHead>
-              {/*<TableHead className="w-[200px]">Время закрытия</TableHead>*/}
               <TableHead className="w-[200px]">Цена входа</TableHead>
               <TableHead className="w-[200px]">Цена закрытия</TableHead>
+              <TableHead className="w-[200px]">Лоты</TableHead>
               <TableHead className="w-[100px] text-right">Свопы</TableHead>
               <TableHead className="text-right">Валовая прибыль</TableHead>
               <TableHead className="text-right">Чистая прибыль</TableHead>
