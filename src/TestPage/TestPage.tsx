@@ -155,6 +155,14 @@ export const TestPage = () => {
 
   const closesPositions = deals.filter((d) => Boolean(d.closePositionDetail));
 
+  const ctraderDealsTotal = useMemo(() => {
+    return closesPositions.reduce(
+      (acc, invoice) =>
+        acc + (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap) / 10 ** invoice.closePositionDetail.moneyDigits,
+      0,
+    );
+  }, [closesPositions]);
+
   const okxBalance = Number(okxAccounts?.[0]?.totalEq) || 0;
   const bitgetBalance = Number(bitgetFAccounts?.[0]?.usdtEquity) || 0;
   const mexcSBalance = Number(mexcSAccount?.balances?.find((a) => a.asset === 'USDT')?.free) || 0;
@@ -961,13 +969,13 @@ export const TestPage = () => {
           </TableHeader>
           <TableHeader className="bg-[rgb(36,52,66)]">
             <TableRow>
-              <TableHead className="w-[200px]">Инструмент</TableHead>
-              <TableHead className="w-[200px]">Направление</TableHead>
-              <TableHead className="w-[200px]">Время открытия</TableHead>
-              <TableHead className="w-[200px]">Время закрытия</TableHead>
+              <TableHead className="w-[100px]">Инструмент</TableHead>
+              <TableHead className="w-[100px]">Направление</TableHead>
+              <TableHead className="w-[100px]">Время открытия</TableHead>
+              {/*<TableHead className="w-[200px]">Время закрытия</TableHead>*/}
               <TableHead className="w-[200px]">Цена входа</TableHead>
               <TableHead className="w-[200px]">Цена закрытия</TableHead>
-              <TableHead className="text-right">Свопы</TableHead>
+              <TableHead className="w-[100px] text-right">Свопы</TableHead>
               <TableHead className="text-right">Валовая прибыль</TableHead>
               <TableHead className="text-right">Чистая прибыль</TableHead>
             </TableRow>
@@ -980,7 +988,7 @@ export const TestPage = () => {
                 </TableCell>
                 <TableCell>{invoice.tradeSide === 1 ? 'Покупка' : 'Продажа'}</TableCell>
                 <TableCell>{dayjs(invoice.createTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>
-                <TableCell>{dayjs(invoice.utcLastUpdateTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>
+                {/*<TableCell>{dayjs(invoice.utcLastUpdateTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>*/}
                 <TableCell>{moneyFormat(invoice.closePositionDetail.entryPrice, 'USDT', 0, 2)}</TableCell>
                 <TableCell>{moneyFormat(invoice.executionPrice, 'USDT', 0, 2)}</TableCell>
                 <TableCell>
@@ -1017,6 +1025,16 @@ export const TestPage = () => {
               </TableRow>
             ))}
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell
+                colSpan={8}
+                className={ctraderDealsTotal > 0 ? 'text-right profitCell' : ctraderDealsTotal < 0 ? 'text-right lossCell' : 'text-right'}
+              >
+                Реализовано: {moneyFormat(ctraderDealsTotal, 'USDT', 0, 2)}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
         </Table>
         {/*<div className="col-span-3">*/}
         {/*  <ArbitrageCalculator />*/}
