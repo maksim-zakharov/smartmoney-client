@@ -1,6 +1,6 @@
 import { StatArbPage } from './StatArbPage';
 import React, { useMemo } from 'react';
-import { Col, Pagination, Radio, Row, Space } from 'antd';
+import { Pagination, Radio, Space } from 'antd';
 import { Triangle_Page } from './Triangle_Page';
 import { SegmentedLabeledOption } from 'rc-segmented';
 import { useSearchParams } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { useAppSelector } from '../../store';
 import { TWChart } from '../../components/TWChart.tsx';
 import { TickerSettingsDialog } from '../../components/TickerSettingsDialog.tsx';
+import { cn } from '../../lib/utils.ts';
 
 export const SmartPage = () => {
   const height = 350;
@@ -88,11 +89,11 @@ export const SmartPage = () => {
   ];
 
   const spanOptions = [
-    { label: 1, value: 24 / 1 },
-    { label: 3, value: 24 / 3 },
-    { label: 4, value: 24 / 4 },
-    { label: 6, value: 24 / 6 },
-    { label: 8, value: 24 / 8 },
+    { label: 1, value: 1 },
+    { label: 3, value: 3 },
+    { label: 4, value: 4 },
+    { label: 6, value: 6 },
+    { label: 8, value: 8 },
   ];
 
   const others = [
@@ -313,7 +314,6 @@ export const SmartPage = () => {
         {tab === 'others' && <Pagination current={page} total={others.length} pageSize={24 / span} onChange={setPage} />}
         <TickerSettingsDialog />
       </Space>
-      {/*<Segmented value={tab} style={{ margin: '8px auto' }} onChange={setTab} options={options} />*/}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList style={{ margin: '4px auto' }}>
           {options.map((o) => (
@@ -321,18 +321,18 @@ export const SmartPage = () => {
           ))}
         </TabsList>
         <TabsContent value="others">
-          <Row>
+          <div className="grid-cols-24 grid">
             {filteredOthers.map((item) => (
-              <Col span={span}>
+              <div className={cn(`col-span-${24 / span}`)}>
                 <StatArbPage tickerStock={item.left} _tickerFuture={item.right} onlyChart height={height} />
-              </Col>
+              </div>
             ))}
-          </Row>
+          </div>
         </TabsContent>
         <TabsContent value="us-stocks">
-          <Row>
+          <div className="grid-cols-24 grid">
             {stockSymbols.map((item) => (
-              <Col span={span}>
+              <div className={cn(`col-span-${24 / span}`)}>
                 <StatArbPage
                   tickerStock={`FOREX:${item.symbolName}`}
                   _tickerFuture={`ITS:${item.symbolName.replace('_xp', '')}`}
@@ -340,14 +340,14 @@ export const SmartPage = () => {
                   onlyChart
                   height={height}
                 />
-              </Col>
+              </div>
             ))}
-          </Row>
+          </div>
         </TabsContent>
         <TabsContent value="favorites">
-          <Row>
+          <div className="grid-cols-24 grid">
             {favoritePairs.map((fp) => (
-              <Col span={span}>
+              <div className={cn(`col-span-${24 / span}`)}>
                 {fp.type === 'solo' && (
                   <div className="relative" style={{ height }}>
                     <TWChart ticker={fp.first} height={height} small multiple={1} />
@@ -369,7 +369,7 @@ export const SmartPage = () => {
                     seriesType="Line"
                   />
                 )}
-              </Col>
+              </div>
             ))}
             {/*<Col span={span}>*/}
             {/*  <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" onlyChart height={height} />*/}
@@ -574,84 +574,84 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-          </Row>
+          </div>
         </TabsContent>
         <TabsContent value="futures-stats">
-          <Row>
+          <div className="grid-cols-24 grid">
             {symbolFuturePairs.map((item) => (
-              <Col span={span}>
+              <div className={cn(`col-span-${24 / span}`)}>
                 <StatArbPage tickerStock={item.stockSymbol} _tickerFuture={`${item.futuresSymbol}-9.25`} onlyChart height={height} />
-              </Col>
+              </div>
             ))}
-          </Row>
+          </div>
         </TabsContent>
         <TabsContent value="stocks">
-          <Row>
-            <Col span={span}>
+          <div className="grid-cols-24 grid">
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="TATN" _tickerFuture="TATNP" onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="RTKM" _tickerFuture="RTKMP" onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="MTLR" _tickerFuture="MTLRP" onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="BANE" _tickerFuture="BANEP" onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="SNGS" _tickerFuture="SNGSP" onlyChart height={height} />
-            </Col>
+            </div>
             {favorites.map((pair) => (
-              <Col span={span}>
+              <div className={cn(`col-span-${24 / span}`)}>
                 <StatArbPage tickerStock={pair[0]} _tickerFuture={pair[1]} onlyChart height={height} />
-              </Col>
+              </div>
             ))}
-          </Row>
+          </div>
         </TabsContent>
         <TabsContent value="forex-local">
-          <Row>
-            <Col span={span}>
+          <div className="grid-cols-24 grid">
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="UCNY-9.25" _tickerFuture="USDCNH_xp" multi={1000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="ED-9.25" _tickerFuture="EURUSD_xp" multi={100} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="GOLD-9.25" _tickerFuture="XAUUSD_xp" multi={100000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="PLD-9.25" _tickerFuture="XPDUSD_xp" multi={100000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="PLT-9.25" _tickerFuture="XPTUSD_xp" multi={100000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="SILV-9.25" _tickerFuture="XAGUSD_xp" multi={10000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="BR-9.25" _tickerFuture="BRNUSD_xp" multi={10000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="NG-9.25" _tickerFuture="NGCUSD_xp" multi={1000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="SPYF-9.25" _tickerFuture="SPXUSD_xp" multi={1000000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="HANG-9.25" _tickerFuture="HSIHKD_xp" multi={1000000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="NASD-9.25" _tickerFuture="NDXUSD_xp" multi={100000} onlyChart height={height} />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage tickerStock="COPPER-9.25" _tickerFuture="CUCUSD_xp" multi={0.0453592} onlyChart height={height} />
-            </Col>
-          </Row>
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="funding">
-          <Row>
-            <Col span={span}>
+          <div className="grid-cols-24 grid">
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage
                 tickerStock="IMOEXF"
                 _tickerFuture={`MIX-${expirationMonth}`}
@@ -660,8 +660,8 @@ export const SmartPage = () => {
                 multi={10000}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage
                 tickerStock="EURRUBF"
                 _tickerFuture={`EU-${expirationMonth}`}
@@ -670,8 +670,8 @@ export const SmartPage = () => {
                 multi={100000}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage
                 tickerStock="USDRUBF"
                 _tickerFuture={`SI-${expirationMonth}`}
@@ -680,8 +680,8 @@ export const SmartPage = () => {
                 multi={100000}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage
                 tickerStock="CNYRUBF"
                 _tickerFuture={`CNY-${expirationMonth}`}
@@ -690,8 +690,8 @@ export const SmartPage = () => {
                 multi={100}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage
                 tickerStock="SBERF"
                 _tickerFuture={`SBRF-${expirationMonth}`}
@@ -700,8 +700,8 @@ export const SmartPage = () => {
                 multi={100}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage
                 tickerStock="GAZPF"
                 _tickerFuture={`GAZR-${expirationMonth}`}
@@ -710,8 +710,8 @@ export const SmartPage = () => {
                 multi={100}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <StatArbPage
                 tickerStock="GLDRUBF"
                 _tickerFuture={`GL-${expirationMonth}`}
@@ -720,12 +720,12 @@ export const SmartPage = () => {
                 onlyChart
                 height={height}
               />
-            </Col>
-          </Row>
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="uc-triangle">
-          <Row>
-            <Col span={span}>
+          <div className="grid-cols-24 grid">
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first="USDRUBF"
                 second="CNYRUBF"
@@ -736,7 +736,7 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
+            </div>
             {/*<Col span={span}>*/}
             {/*  <Triangle_Page*/}
             {/*    second="CNYRUBF"*/}
@@ -750,7 +750,7 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-            <Col span={span}>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 second={`CNY-${expirationMonth}`}
                 first={`USDRUBF`}
@@ -762,8 +762,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 second={`CNY-${expirationMonth}`}
                 first={`SI-${expirationMonth}`}
@@ -775,8 +775,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 second="CNYRUBF"
                 first="USDRUBF"
@@ -787,7 +787,7 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
+            </div>
             {/*<Col span={span}>*/}
             {/*  <Triangle_Page*/}
             {/*    second="CNYRUBF"*/}
@@ -801,7 +801,7 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-            <Col span={span}>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 second={`CNY-${expirationMonth}`}
                 first={`USDRUBF`}
@@ -813,8 +813,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 second={`CNY-${expirationMonth}`}
                 first={`SI-${expirationMonth}`}
@@ -826,12 +826,12 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-          </Row>
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="ed-triangle">
-          <Row>
-            <Col span={span}>
+          <div className="grid-cols-24 grid">
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first="EURRUBF"
                 second="USDRUBF"
@@ -842,8 +842,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first="EURRUBF"
                 second={`SI-${expirationMonth}`}
@@ -855,7 +855,7 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
+            </div>
             {/*<Col span={span}>*/}
             {/*  <Triangle_Page*/}
             {/*    first={`EU-${expirationMonth}`}*/}
@@ -869,7 +869,7 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-            <Col span={span}>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first={`EU-${expirationMonth}`}
                 second={`SI-${expirationMonth}`}
@@ -881,8 +881,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first="EURRUBF"
                 second="USDRUBF"
@@ -893,8 +893,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first="EURRUBF"
                 second={`SI-${expirationMonth}`}
@@ -906,7 +906,7 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
+            </div>
             {/*<Col span={span}>*/}
             {/*  <Triangle_Page*/}
             {/*    first={`EU-${expirationMonth}`}*/}
@@ -920,7 +920,7 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-            <Col span={span}>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first={`EU-${expirationMonth}`}
                 second={`SI-${expirationMonth}`}
@@ -932,8 +932,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first={`EU-${expirationMonth}`}
                 second={`CNY-${expirationMonth}`}
@@ -945,12 +945,12 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-          </Row>
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="gd-triangle">
-          <Row>
-            <Col span={span}>
+          <div className="grid-cols-24 grid">
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first="GLDRUBF"
                 second={`USDRUBF`}
@@ -962,8 +962,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first="GLDRUBF"
                 second={`SI-${expirationMonth}`}
@@ -975,7 +975,7 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
+            </div>
             {/*<Col span={span}>*/}
             {/*  <Triangle_Page*/}
             {/*    first={`GL-${expirationMonth}`}*/}
@@ -989,7 +989,7 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-            <Col span={span}>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first={`GL-${expirationMonth}`}
                 second={`SI-${expirationMonth}`}
@@ -1001,8 +1001,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first="GLDRUBF"
                 second={`USDRUBF`}
@@ -1014,8 +1014,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first="GLDRUBF"
                 second={`SI-${expirationMonth}`}
@@ -1027,7 +1027,7 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
+            </div>
             {/*<Col span={span}>*/}
             {/*  <Triangle_Page*/}
             {/*    first={`GL-${expirationMonth}`}*/}
@@ -1041,7 +1041,7 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-            <Col span={span}>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first={`GL-${expirationMonth}`}
                 second={`SI-${expirationMonth}`}
@@ -1053,8 +1053,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first={`GL-${expirationMonth}`}
                 second={`EU-${expirationMonth}`}
@@ -1066,8 +1066,8 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
-            <Col span={span}>
+            </div>
+            <div className={cn(`col-span-${24 / span}`)}>
               <Triangle_Page
                 first={`SILV-${expirationMonth}`}
                 second={`ED-${expirationMonth}`}
@@ -1079,7 +1079,7 @@ export const SmartPage = () => {
                 height={height}
                 seriesType="Line"
               />
-            </Col>
+            </div>
             {/*<Col span={span}>*/}
             {/*  <Triangle_Page*/}
             {/*    first="GLDRUBF"*/}
@@ -1132,7 +1132,7 @@ export const SmartPage = () => {
             {/*    seriesType="Line"*/}
             {/*  />*/}
             {/*</Col>*/}
-          </Row>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

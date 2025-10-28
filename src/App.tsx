@@ -1,5 +1,3 @@
-import { Content, Header } from 'antd/es/layout/layout';
-import { Layout, Menu, Space, theme } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
@@ -36,6 +34,16 @@ import { useGetBalanceQuery } from './api/bingx.api.ts';
 import { useGetBitgetAccountsQuery } from './api/bitget.api.ts';
 import { ScreenersPage } from './ScreenersPage.tsx';
 import { useGetOKXBalanceQuery } from './api/okx.api.ts';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from './components/ui/sidebar.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -286,10 +294,6 @@ export default function App() {
     },
   );
 
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-
   useEffect(() => {
     if (localStorage.getItem('token'))
       dispatch(initApi({ token: localStorage.getItem('token'), accessToken: localStorage.getItem('accessToken') }));
@@ -433,11 +437,6 @@ export default function App() {
     localStorage.setItem('bybitSecretKey', e.target.value);
   };
 
-  function onClick(params) {
-    console.log(params);
-    navigate(params.key);
-  }
-
   const handleCTraderLogin = () => (window.location.href = `https://176.114.69.4/ctrader?redirect_uri=${encodeURIComponent(redirect_uri)}`);
 
   const handleDeleteAlert = (data) => () => {
@@ -446,263 +445,265 @@ export default function App() {
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <Layout>
-        <Header style={{ display: 'flex', alignItems: 'center' }}>
-          <div className="demo-logo" />
-          <Menu
-            theme="dark"
-            mode="horizontal"
-            defaultSelectedKeys={[location.pathname]}
-            onClick={onClick}
-            items={menuItems}
-            style={{ flex: 1, minWidth: 0 }}
-          />
-          <Space>
-            {cTraderAccount?.ctidTraderAccountId && (
-              <>
-                Аккаунт CTrader:{' '}
-                <div>
-                  {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
-                </div>
-              </>
-            )}
-            {!accessToken && (
-              <Button size="small" onClick={handleCTraderLogin}>
-                Войти в cTrader
-              </Button>
-            )}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline">Настройки</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-xl gap-2">
-                <DialogHeader>
-                  <DialogTitle>Настройки</DialogTitle>
-                </DialogHeader>
-                <Tabs defaultValue="keys">
-                  <TabsList className="px-2">
-                    <TabsTrigger value="keys">Управление API</TabsTrigger>
-                    <TabsTrigger value="alerts">Оповещения</TabsTrigger>
-                    <TabsTrigger value="tickers">Тикеры</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="keys">
-                    <div className="p-3 flex gap-3 flex-col">
-                      <TypographyH4>Telegram</TypographyH4>
-                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="alorToken">Token</Label>
-                          <Input id="alorToken" value={telegramToken} onChange={handletelegramToken} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="alorToken">UserID</Label>
-                          <Input id="alorToken" value={telegramUserId} onChange={handletelegramUserId} />
-                        </div>
-                      </div>
-                      <TypographyH4>Alor</TypographyH4>
-                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="alorToken">Token</Label>
-                          <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="alorToken">Портфель</Label>
-                          <Input id="alorToken" value={aPortfolio} onChange={handleaPortfolio} />
-                        </div>
-                      </div>
-                      <TypographyH4>Тинькофф</TypographyH4>
-                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="alorToken">Token</Label>
-                          <Input id="tToken" value={tiToken} onChange={handleEditToken} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="brokerAccountId">BrokerAccountId</Label>
-                          <Input id="brokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
-                        </div>
-                      </div>
-                      <TypographyH4>Mexc</TypographyH4>
-                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="mexcApiKey">Api Key</Label>
-                          <Input id="mexcApiKey" value={mexcApiKey} onChange={handleEditmexcApiKey} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="mexcSecretKey">Secret Key</Label>
-                          <Input id="mexcSecretKey" value={mexcSecretKey} onChange={handleEditmexcSecretKey} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="mexcUid">UID</Label>
-                          <Input id="mexcUid" value={mexcUid} onChange={handleEditmexcUid} />
-                        </div>
-                      </div>
-                      <TypographyH4>OKX</TypographyH4>
-                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="okxApiKey">Api Key</Label>
-                          <Input id="okxApiKey" value={okxApiKey} onChange={handleEditokxApiKey} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="okxApiSecret">Secret Key</Label>
-                          <Input id="okxApiSecret" value={okxApiSecret} onChange={handleEditokxSecretKey} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="okxApiPhrase">Phrase</Label>
-                          <Input id="okxApiPhrase" value={okxPhrase} onChange={handleEditokxPhrase} />
-                        </div>
-                      </div>
-                      <TypographyH4>Bitget</TypographyH4>
-                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="bitgetApiKey">Api Key</Label>
-                          <Input id="bitgetApiKey" value={bitgetApiKey} onChange={handleEditbitgetApiKey} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="bitgetSecretKey">Secret Key</Label>
-                          <Input id="bitgetSecretKey" value={bitgetSecretKey} onChange={handleEditbitgetSecretKey} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="bitgetPhrase">Phrase</Label>
-                          <Input id="bitgetPhrase" value={bitgetPhrase} onChange={handleEditbitgetPhrase} />
-                        </div>
-                      </div>
-                      <TypographyH4>Bybit</TypographyH4>
-                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="bybitApiKey">Api Key</Label>
-                          <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="bybitSecretKey">Secret Key</Label>
-                          <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
-                        </div>
-                      </div>
-                      <TypographyH4>Bingx</TypographyH4>
-                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="bingxApiKey">Api key</Label>
-                          <Input id="bingxApiKey" value={bingxApiKey} onChange={handlebingxApiKey} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="bingxSecretKey">Secret key</Label>
-                          <Input id="bingxSecretKey" value={bingxSecretKey} onChange={handlebingxSecretKey} />
-                        </div>
-                      </div>
-                      <TypographyH4>Gate</TypographyH4>
-                      <div className="grid grid-cols-2 gap-3 w-full mb-2">
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="gateApiKey">Api key</Label>
-                          <Input id="gateApiKey" value={gateApiKey} onChange={handlegateApiKey} />
-                        </div>
-                        <div className="flex gap-2 flex-col">
-                          <Label htmlFor="gateSecretKey">Secret key</Label>
-                          <Input id="gateSecretKey" value={gateSecretKey} onChange={handlegateSecretKey} />
-                        </div>
-                      </div>
-
-                      <Label htmlFor="bybitSecretKey">cTraderAccount</Label>
-                      <RadioGroup
-                        id="ctidTraderAccountId"
-                        value={cTraderAccount?.ctidTraderAccountId}
-                        onValueChange={(val) => dispatch(selectCTraderAccount(Number(val)))}
-                      >
-                        {cTraderAccounts?.map((cTraderAccount) => (
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value={cTraderAccount?.ctidTraderAccountId} id={cTraderAccount?.ctidTraderAccountId} />
-                            <Label htmlFor={cTraderAccount?.ctidTraderAccountId}>
-                              {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
-                            </Label>
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarContent>
+            {/* We create a SidebarGroup for each parent. */}
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.key}>
+                  <SidebarMenuButton asChild isActive={item.key === location.pathname}>
+                    <a href={item.key}>{item.label}</a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 justify-between">
+            <SidebarTrigger className="-ml-1" />
+            <div className="flex gap-2 items-center">
+              {cTraderAccount?.ctidTraderAccountId && (
+                <>
+                  Аккаунт CTrader:{' '}
+                  <div>
+                    {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
+                  </div>
+                </>
+              )}
+              {!accessToken && (
+                <Button size="small" onClick={handleCTraderLogin}>
+                  Войти в cTrader
+                </Button>
+              )}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Настройки</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-xl gap-2">
+                  <DialogHeader>
+                    <DialogTitle>Настройки</DialogTitle>
+                  </DialogHeader>
+                  <Tabs defaultValue="keys">
+                    <TabsList className="px-2">
+                      <TabsTrigger value="keys">Управление API</TabsTrigger>
+                      <TabsTrigger value="alerts">Оповещения</TabsTrigger>
+                      <TabsTrigger value="tickers">Тикеры</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="keys">
+                      <div className="p-3 flex gap-3 flex-col">
+                        <TypographyH4>Telegram</TypographyH4>
+                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="alorToken">Token</Label>
+                            <Input id="alorToken" value={telegramToken} onChange={handletelegramToken} />
                           </div>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="alerts" className="px-2 pb-2">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[100px]">Тикер</TableHead>
-                          <TableHead>Условие</TableHead>
-                          <TableHead>Цена</TableHead>
-                          <TableHead className="text-right">Триггер</TableHead>
-                          <TableHead className="text-right">Действия</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {alerts.map((invoice, index) => (
-                          <TableRow className={index % 2 ? 'rowOdd' : 'rowEven'}>
-                            <TableCell>{invoice.ticker}</TableCell>
-                            <TableCell>{invoice.condition === 'lessThen' ? 'Меньше' : 'Больше'} чем</TableCell>
-                            <TableCell>{invoice.price.toFixed(5)}</TableCell>
-                            <TableCell className="text-right">{invoice.trigger === 'once' ? 'Один раз' : 'Раз в минуту'}</TableCell>
-                            <TableCell className="text-right">
-                              {/*<Button size="sm" variant="ghost" className="p-0 h-4 w-4">*/}
-                              {/*  <Pencil />*/}
-                              {/*</Button>*/}
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="alorToken">UserID</Label>
+                            <Input id="alorToken" value={telegramUserId} onChange={handletelegramUserId} />
+                          </div>
+                        </div>
+                        <TypographyH4>Alor</TypographyH4>
+                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="alorToken">Token</Label>
+                            <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="alorToken">Портфель</Label>
+                            <Input id="alorToken" value={aPortfolio} onChange={handleaPortfolio} />
+                          </div>
+                        </div>
+                        <TypographyH4>Тинькофф</TypographyH4>
+                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="alorToken">Token</Label>
+                            <Input id="tToken" value={tiToken} onChange={handleEditToken} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="brokerAccountId">BrokerAccountId</Label>
+                            <Input id="brokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
+                          </div>
+                        </div>
+                        <TypographyH4>Mexc</TypographyH4>
+                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="mexcApiKey">Api Key</Label>
+                            <Input id="mexcApiKey" value={mexcApiKey} onChange={handleEditmexcApiKey} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="mexcSecretKey">Secret Key</Label>
+                            <Input id="mexcSecretKey" value={mexcSecretKey} onChange={handleEditmexcSecretKey} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="mexcUid">UID</Label>
+                            <Input id="mexcUid" value={mexcUid} onChange={handleEditmexcUid} />
+                          </div>
+                        </div>
+                        <TypographyH4>OKX</TypographyH4>
+                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="okxApiKey">Api Key</Label>
+                            <Input id="okxApiKey" value={okxApiKey} onChange={handleEditokxApiKey} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="okxApiSecret">Secret Key</Label>
+                            <Input id="okxApiSecret" value={okxApiSecret} onChange={handleEditokxSecretKey} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="okxApiPhrase">Phrase</Label>
+                            <Input id="okxApiPhrase" value={okxPhrase} onChange={handleEditokxPhrase} />
+                          </div>
+                        </div>
+                        <TypographyH4>Bitget</TypographyH4>
+                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="bitgetApiKey">Api Key</Label>
+                            <Input id="bitgetApiKey" value={bitgetApiKey} onChange={handleEditbitgetApiKey} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="bitgetSecretKey">Secret Key</Label>
+                            <Input id="bitgetSecretKey" value={bitgetSecretKey} onChange={handleEditbitgetSecretKey} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="bitgetPhrase">Phrase</Label>
+                            <Input id="bitgetPhrase" value={bitgetPhrase} onChange={handleEditbitgetPhrase} />
+                          </div>
+                        </div>
+                        <TypographyH4>Bybit</TypographyH4>
+                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="bybitApiKey">Api Key</Label>
+                            <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="bybitSecretKey">Secret Key</Label>
+                            <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
+                          </div>
+                        </div>
+                        <TypographyH4>Bingx</TypographyH4>
+                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="bingxApiKey">Api key</Label>
+                            <Input id="bingxApiKey" value={bingxApiKey} onChange={handlebingxApiKey} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="bingxSecretKey">Secret key</Label>
+                            <Input id="bingxSecretKey" value={bingxSecretKey} onChange={handlebingxSecretKey} />
+                          </div>
+                        </div>
+                        <TypographyH4>Gate</TypographyH4>
+                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="gateApiKey">Api key</Label>
+                            <Input id="gateApiKey" value={gateApiKey} onChange={handlegateApiKey} />
+                          </div>
+                          <div className="flex gap-2 flex-col">
+                            <Label htmlFor="gateSecretKey">Secret key</Label>
+                            <Input id="gateSecretKey" value={gateSecretKey} onChange={handlegateSecretKey} />
+                          </div>
+                        </div>
 
-                              <Button size="sm" variant="ghost" className="p-0 h-4 w-4" onClick={handleDeleteAlert(invoice)}>
-                                <Trash />
-                              </Button>
-                            </TableCell>
+                        <Label htmlFor="bybitSecretKey">cTraderAccount</Label>
+                        <RadioGroup
+                          id="ctidTraderAccountId"
+                          value={cTraderAccount?.ctidTraderAccountId}
+                          onValueChange={(val) => dispatch(selectCTraderAccount(Number(val)))}
+                        >
+                          {cTraderAccounts?.map((cTraderAccount) => (
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value={cTraderAccount?.ctidTraderAccountId} id={cTraderAccount?.ctidTraderAccountId} />
+                              <Label htmlFor={cTraderAccount?.ctidTraderAccountId}>
+                                {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="alerts" className="px-2 pb-2">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[100px]">Тикер</TableHead>
+                            <TableHead>Условие</TableHead>
+                            <TableHead>Цена</TableHead>
+                            <TableHead className="text-right">Триггер</TableHead>
+                            <TableHead className="text-right">Действия</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TabsContent>
-                  <TabsContent value="tickers">
-                    <Table className="mb-3">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[100px]">Тикер</TableHead>
-                          <TableHead>Тип</TableHead>
-                          <TableHead>Мультипликатор</TableHead>
-                          <TableHead className="text-right">Действия</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {favoritePairs.map((invoice, index) => (
-                          <TableRow className={index % 2 ? 'rowOdd' : 'rowEven'}>
-                            <TableCell>{[invoice.first, invoice.second, invoice.third].filter(Boolean).join('/')}</TableCell>
-                            <TableCell>{invoice.type}</TableCell>
-                            <TableCell>{invoice.multiple}</TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="p-0 h-4 w-4"
-                                onClick={() =>
-                                  dispatch(deletePair({ ticker: [invoice.first, invoice.second, invoice.third].filter(Boolean).join('/') }))
-                                }
-                              >
-                                <Trash />
-                              </Button>
-                            </TableCell>
+                        </TableHeader>
+                        <TableBody>
+                          {alerts.map((invoice, index) => (
+                            <TableRow className={index % 2 ? 'rowOdd' : 'rowEven'}>
+                              <TableCell>{invoice.ticker}</TableCell>
+                              <TableCell>{invoice.condition === 'lessThen' ? 'Меньше' : 'Больше'} чем</TableCell>
+                              <TableCell>{invoice.price.toFixed(5)}</TableCell>
+                              <TableCell className="text-right">{invoice.trigger === 'once' ? 'Один раз' : 'Раз в минуту'}</TableCell>
+                              <TableCell className="text-right">
+                                {/*<Button size="sm" variant="ghost" className="p-0 h-4 w-4">*/}
+                                {/*  <Pencil />*/}
+                                {/*</Button>*/}
+
+                                <Button size="sm" variant="ghost" className="p-0 h-4 w-4" onClick={handleDeleteAlert(invoice)}>
+                                  <Trash />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TabsContent>
+                    <TabsContent value="tickers">
+                      <Table className="mb-3">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[100px]">Тикер</TableHead>
+                            <TableHead>Тип</TableHead>
+                            <TableHead>Мультипликатор</TableHead>
+                            <TableHead className="text-right">Действия</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TabsContent>
-                </Tabs>
-              </DialogContent>
-            </Dialog>
-          </Space>
-        </Header>
-        <Content
-          style={{
-            padding: 8,
-            margin: 0,
-            minHeight: 280,
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          <Routes>
-            {menuItems.map((item) => (
-              <Route path={item.key} element={item.element} />
-            ))}
-          </Routes>
-          <AlertDialog />
-        </Content>
-      </Layout>
+                        </TableHeader>
+                        <TableBody>
+                          {favoritePairs.map((invoice, index) => (
+                            <TableRow className={index % 2 ? 'rowOdd' : 'rowEven'}>
+                              <TableCell>{[invoice.first, invoice.second, invoice.third].filter(Boolean).join('/')}</TableCell>
+                              <TableCell>{invoice.type}</TableCell>
+                              <TableCell>{invoice.multiple}</TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="p-0 h-4 w-4"
+                                  onClick={() =>
+                                    dispatch(
+                                      deletePair({ ticker: [invoice.first, invoice.second, invoice.third].filter(Boolean).join('/') }),
+                                    )
+                                  }
+                                >
+                                  <Trash />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TabsContent>
+                  </Tabs>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </header>
+          <div className="flex flex-1 flex-col gap-4 p-4">
+            <Routes>
+              {menuItems.map((item) => (
+                <Route path={item.key} element={item.element} />
+              ))}
+            </Routes>
+            <AlertDialog />
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
     </ThemeProvider>
   );
 }

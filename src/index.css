@@ -129,6 +129,15 @@
     }
 }
 
+@layer utilities {
+    .col-span-6{
+        grid-column: span 6 / span 6;
+    }
+    .col-span-8{
+        grid-column: span 8 / span 8;
+    }
+}
+
 body {
     margin: 0;
 }
