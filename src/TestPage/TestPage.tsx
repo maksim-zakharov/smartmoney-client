@@ -962,7 +962,7 @@ export const TestPage = () => {
         <Table wrapperClassName="pt-2 col-span-2">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px] text-left" colSpan={10}>
+              <TableHead className="w-[200px] text-left" colSpan={11}>
                 Ctrader История позиций
               </TableHead>
             </TableRow>
@@ -978,6 +978,7 @@ export const TestPage = () => {
               <TableHead className="w-[100px] text-right">Свопы</TableHead>
               <TableHead className="text-right">Валовая прибыль</TableHead>
               <TableHead className="text-right">Чистая прибыль</TableHead>
+              <TableHead className="text-right">Чистая прибыль RUB</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1031,8 +1032,17 @@ export const TestPage = () => {
                     'USDT',
                     0,
                     2,
-                  )}{' '}
-                  (
+                  )}
+                </TableCell>
+                <TableCell
+                  className={
+                    invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap > 0
+                      ? 'text-right profitCell'
+                      : invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap < 0
+                        ? 'text-right lossCell'
+                        : 'text-right'
+                  }
+                >
                   {moneyFormat(
                     (USDRate * (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap)) /
                       10 ** invoice.closePositionDetail.moneyDigits,
@@ -1040,7 +1050,6 @@ export const TestPage = () => {
                     0,
                     2,
                   )}
-                  )
                 </TableCell>
               </TableRow>
             ))}
@@ -1048,7 +1057,7 @@ export const TestPage = () => {
           <TableFooter>
             <TableRow>
               <TableCell
-                colSpan={9}
+                colSpan={10}
                 className={ctraderDealsTotal > 0 ? 'text-right profitCell' : ctraderDealsTotal < 0 ? 'text-right lossCell' : 'text-right'}
               >
                 Реализовано: {moneyFormat(ctraderDealsTotal, 'USDT', 0, 2)} ({moneyFormat(USDRate * ctraderDealsTotal, 'RUB')})
