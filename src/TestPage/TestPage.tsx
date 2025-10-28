@@ -449,9 +449,9 @@ export const TestPage = () => {
       <TableCell>{invoice.exchange}</TableCell>
       <TableCell>Алор</TableCell>
       <TableCell>{invoice.qty}</TableCell>
-      <TableCell>-</TableCell>
-      <TableCell>{moneyFormat(invoice.avgPrice, 'RUB', 0, 2)}</TableCell>
       <TableCell>{moneyFormat(invoice.currentVolume, 'RUB', 0, 2)}</TableCell>
+      <TableCell>{moneyFormat(invoice.avgPrice, 'RUB', 0, 2)}</TableCell>
+      <TableCell>-</TableCell>
       <TableCell>-</TableCell>
       <TableCell className="text-right">-</TableCell>
       <TableCell
