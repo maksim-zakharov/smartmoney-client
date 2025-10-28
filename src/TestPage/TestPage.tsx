@@ -1031,7 +1031,16 @@ export const TestPage = () => {
                     'USDT',
                     0,
                     2,
+                  )}{' '}
+                  (
+                  {moneyFormat(
+                    (USDRate * (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap)) /
+                      10 ** invoice.closePositionDetail.moneyDigits,
+                    'RUB',
+                    0,
+                    2,
                   )}
+                  )
                 </TableCell>
               </TableRow>
             ))}
