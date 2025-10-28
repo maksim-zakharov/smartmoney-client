@@ -7,7 +7,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/c
 import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from '../api/tinkoff.api.ts';
 import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation, useGetCTraderDealsQuery } from '../api/ctrader.api.ts';
 import { Button } from '../components/ui/button.tsx';
-import { CirclePlus, CircleX } from 'lucide-react';
+import { ChevronDownIcon, CirclePlus, CircleX } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog.tsx';
 import { Checkbox } from '../components/ui/checkbox.tsx';
 import { useGetMEXCContractQuery } from '../api/mexc.api.ts';
@@ -19,6 +19,8 @@ import { Exchange, Side } from 'alor-api';
 import { CTraderCard } from './CTraderCard.tsx';
 import { AppsTokenResponse } from '../api/alor.slice.ts';
 import dayjs from 'dayjs';
+import { Calendar } from '../components/ui/calendar.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover.tsx';
 
 export const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -478,6 +480,9 @@ export const TestPage = () => {
     return usdtBalance * USDRate + rubBalance;
   }, [ctraderBalance, alorSummary?.portfolioLiquidationValue, USDRate]);
 
+  const [open, setOpen] = React.useState(false);
+  const [date, setDate] = React.useState<Date | undefined>(undefined);
+
   return (
     <>
       <div className="grid grid-cols-12 gap-2 pb-2">
@@ -547,11 +552,11 @@ export const TestPage = () => {
             <CardDescription>P&L {cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}</CardDescription>
             <CardTitle
               className={cn(
-                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                'text-2xl font-semibold tabular-nums text-nowrap @[250px]/card:text-3xl',
                 totalPnLForex > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
               )}
             >
-              {moneyFormatCompact(totalPnLForex, 'USDT')}
+              {moneyFormatCompact(totalPnLForex, 'USDT', 2)}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -578,11 +583,11 @@ export const TestPage = () => {
             </CardDescription>
             <CardTitle
               className={cn(
-                'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                'text-2xl font-semibold tabular-nums text-nowrap @[250px]/card:text-3xl',
                 totalCrypto > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
               )}
             >
-              {moneyFormatCompact(totalCrypto, 'USDT', 1)}
+              {moneyFormatCompact(totalCrypto, 'USDT', 2)}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -595,11 +600,11 @@ export const TestPage = () => {
               </CardDescription>
               <CardTitle
                 className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  'text-2xl font-semibold tabular-nums text-nowrap @[250px]/card:text-3xl',
                   bingBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormatCompact(bingBalance, 'USDT', 1)}
+                {moneyFormatCompact(bingBalance, 'USDT', 2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -613,11 +618,11 @@ export const TestPage = () => {
               </CardDescription>
               <CardTitle
                 className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  'text-2xl font-semibold tabular-nums text-nowrap @[250px]/card:text-3xl',
                   bybitBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormatCompact(bybitBalance, 'USDT', 1)}
+                {moneyFormatCompact(bybitBalance, 'USDT', 2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -631,11 +636,11 @@ export const TestPage = () => {
               </CardDescription>
               <CardTitle
                 className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  'text-2xl font-semibold tabular-nums text-nowrap @[250px]/card:text-3xl',
                   mexcBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormatCompact(mexcBalance, 'USDT', 1)}
+                {moneyFormatCompact(mexcBalance, 'USDT', 2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -649,11 +654,11 @@ export const TestPage = () => {
               </CardDescription>
               <CardTitle
                 className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  'text-2xl font-semibold tabular-nums text-nowrap @[250px]/card:text-3xl',
                   bitgetBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormatCompact(bitgetBalance, 'USDT', 1)}
+                {moneyFormatCompact(bitgetBalance, 'USDT', 2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -667,11 +672,11 @@ export const TestPage = () => {
               </CardDescription>
               <CardTitle
                 className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  'text-2xl font-semibold tabular-nums text-nowrap @[250px]/card:text-3xl',
                   gateBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormatCompact(gateBalance, 'USDT', 1)}
+                {moneyFormatCompact(gateBalance, 'USDT', 2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -685,11 +690,11 @@ export const TestPage = () => {
               </CardDescription>
               <CardTitle
                 className={cn(
-                  'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                  'text-2xl font-semibold tabular-nums text-nowrap @[250px]/card:text-3xl',
                   okxBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
                 )}
               >
-                {moneyFormatCompact(okxBalance, 'USDT', 1)}
+                {moneyFormatCompact(okxBalance, 'USDT', 2)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -959,112 +964,135 @@ export const TestPage = () => {
             )}
           </TableBody>
         </Table>
-        <Table wrapperClassName="pt-2 col-span-2">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px] text-left" colSpan={11}>
-                Ctrader История позиций
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableHeader className="bg-[rgb(36,52,66)]">
-            <TableRow>
-              <TableHead className="w-[100px]">Инструмент</TableHead>
-              <TableHead className="w-[100px]">Направление</TableHead>
-              <TableHead className="w-[100px]">Время закрытия</TableHead>
-              <TableHead className="w-[200px]">Цена входа</TableHead>
-              <TableHead className="w-[200px]">Цена закрытия</TableHead>
-              <TableHead className="w-[200px]">Лоты</TableHead>
-              <TableHead className="w-[100px] text-right">Свопы</TableHead>
-              <TableHead className="text-right">Валовая прибыль</TableHead>
-              <TableHead className="text-right">Чистая прибыль</TableHead>
-              <TableHead className="text-right">Чистая прибыль RUB</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {closesPositions.map((invoice, index) => (
-              <TableRow key={invoice.invoice} className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
-                <TableCell>
-                  <ForexLabel ticker={map.get(invoice.symbolId)?.symbolName} />
-                </TableCell>
-                <TableCell>{invoice.tradeSide === 1 ? 'Продажа' : 'Покупка'}</TableCell>
-                <TableCell>{dayjs(invoice.createTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>
-                {/*<TableCell>{dayjs(invoice.utcLastUpdateTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>*/}
-                <TableCell>{moneyFormat(invoice.closePositionDetail.entryPrice, 'USDT', 0, 2)}</TableCell>
-                <TableCell>{moneyFormat(invoice.executionPrice, 'USDT', 0, 2)}</TableCell>
-                <TableCell>
-                  {numberFormat(invoice.volume / (map.get(invoice.symbolId)?.symbolName?.endsWith('CNH_xp') ? 10000000 : 10000), 2, 2)}
-                </TableCell>
+        <div>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" id="date-picker" className="w-32 justify-between font-normal">
+                {/*{date ? date.toLocaleDateString() : "Select date"}*/}
+                <ChevronDownIcon />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+              <Calendar
+                mode="range"
+                numberOfMonths={2}
+                selected={date}
+                captionLayout="dropdown"
+                onSelect={(date) => {
+                  setDate(date);
+                  setOpen(false);
+                }}
+                className="rounded-lg border shadow-sm"
+              />
+            </PopoverContent>
+          </Popover>
+          <Table wrapperClassName="pt-2 col-span-2">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px] text-left" colSpan={11}>
+                  Ctrader История позиций
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableHeader className="bg-[rgb(36,52,66)]">
+              <TableRow>
+                <TableHead className="w-[100px]">Инструмент</TableHead>
+                <TableHead className="w-[100px]">Направление</TableHead>
+                <TableHead className="w-[100px]">Время закрытия</TableHead>
+                <TableHead className="w-[200px]">Цена входа</TableHead>
+                <TableHead className="w-[200px]">Цена закрытия</TableHead>
+                <TableHead className="w-[200px]">Лоты</TableHead>
+                <TableHead className="w-[100px] text-right">Свопы</TableHead>
+                <TableHead className="text-right">Валовая прибыль</TableHead>
+                <TableHead className="text-right">Чистая прибыль</TableHead>
+                <TableHead className="text-right">Чистая прибыль RUB</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {closesPositions.map((invoice, index) => (
+                <TableRow key={invoice.invoice} className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
+                  <TableCell>
+                    <ForexLabel ticker={map.get(invoice.symbolId)?.symbolName} />
+                  </TableCell>
+                  <TableCell>{invoice.tradeSide === 1 ? 'Продажа' : 'Покупка'}</TableCell>
+                  <TableCell>{dayjs(invoice.createTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>
+                  {/*<TableCell>{dayjs(invoice.utcLastUpdateTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>*/}
+                  <TableCell>{moneyFormat(invoice.closePositionDetail.entryPrice, 'USDT', 0, 2)}</TableCell>
+                  <TableCell>{moneyFormat(invoice.executionPrice, 'USDT', 0, 2)}</TableCell>
+                  <TableCell>
+                    {numberFormat(invoice.volume / (map.get(invoice.symbolId)?.symbolName?.endsWith('CNH_xp') ? 10000000 : 10000), 2, 2)}
+                  </TableCell>
+                  <TableCell
+                    className={
+                      invoice.closePositionDetail.swap > 0
+                        ? 'text-right profitCell'
+                        : invoice.closePositionDetail.swap < 0
+                          ? 'text-right lossCell'
+                          : 'text-right'
+                    }
+                  >
+                    {moneyFormat(invoice.closePositionDetail.swap / 10 ** invoice.closePositionDetail.moneyDigits, 'USDT', 0, 2)}
+                  </TableCell>
+                  <TableCell
+                    className={
+                      invoice.closePositionDetail.grossProfit > 0
+                        ? 'text-right profitCell'
+                        : invoice.closePositionDetail.grossProfit < 0
+                          ? 'text-right lossCell'
+                          : 'text-right'
+                    }
+                  >
+                    {moneyFormat(invoice.closePositionDetail.grossProfit / 10 ** invoice.closePositionDetail.moneyDigits, 'USDT', 0, 2)}
+                  </TableCell>
+                  <TableCell
+                    className={
+                      invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap > 0
+                        ? 'text-right profitCell'
+                        : invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap < 0
+                          ? 'text-right lossCell'
+                          : 'text-right'
+                    }
+                  >
+                    {moneyFormat(
+                      (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap) /
+                        10 ** invoice.closePositionDetail.moneyDigits,
+                      'USDT',
+                      0,
+                      2,
+                    )}
+                  </TableCell>
+                  <TableCell
+                    className={
+                      invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap > 0
+                        ? 'text-right profitCell'
+                        : invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap < 0
+                          ? 'text-right lossCell'
+                          : 'text-right'
+                    }
+                  >
+                    {moneyFormat(
+                      (USDRate * (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap)) /
+                        10 ** invoice.closePositionDetail.moneyDigits,
+                      'RUB',
+                      0,
+                      2,
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
                 <TableCell
-                  className={
-                    invoice.closePositionDetail.swap > 0
-                      ? 'text-right profitCell'
-                      : invoice.closePositionDetail.swap < 0
-                        ? 'text-right lossCell'
-                        : 'text-right'
-                  }
+                  colSpan={10}
+                  className={ctraderDealsTotal > 0 ? 'text-right profitCell' : ctraderDealsTotal < 0 ? 'text-right lossCell' : 'text-right'}
                 >
-                  {moneyFormat(invoice.closePositionDetail.swap / 10 ** invoice.closePositionDetail.moneyDigits, 'USDT', 0, 2)}
-                </TableCell>
-                <TableCell
-                  className={
-                    invoice.closePositionDetail.grossProfit > 0
-                      ? 'text-right profitCell'
-                      : invoice.closePositionDetail.grossProfit < 0
-                        ? 'text-right lossCell'
-                        : 'text-right'
-                  }
-                >
-                  {moneyFormat(invoice.closePositionDetail.grossProfit / 10 ** invoice.closePositionDetail.moneyDigits, 'USDT', 0, 2)}
-                </TableCell>
-                <TableCell
-                  className={
-                    invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap > 0
-                      ? 'text-right profitCell'
-                      : invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap < 0
-                        ? 'text-right lossCell'
-                        : 'text-right'
-                  }
-                >
-                  {moneyFormat(
-                    (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap) /
-                      10 ** invoice.closePositionDetail.moneyDigits,
-                    'USDT',
-                    0,
-                    2,
-                  )}
-                </TableCell>
-                <TableCell
-                  className={
-                    invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap > 0
-                      ? 'text-right profitCell'
-                      : invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap < 0
-                        ? 'text-right lossCell'
-                        : 'text-right'
-                  }
-                >
-                  {moneyFormat(
-                    (USDRate * (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap)) /
-                      10 ** invoice.closePositionDetail.moneyDigits,
-                    'RUB',
-                    0,
-                    2,
-                  )}
+                  Реализовано: {moneyFormat(ctraderDealsTotal, 'USDT', 0, 2)} ({moneyFormat(USDRate * ctraderDealsTotal, 'RUB')})
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell
-                colSpan={10}
-                className={ctraderDealsTotal > 0 ? 'text-right profitCell' : ctraderDealsTotal < 0 ? 'text-right lossCell' : 'text-right'}
-              >
-                Реализовано: {moneyFormat(ctraderDealsTotal, 'USDT', 0, 2)} ({moneyFormat(USDRate * ctraderDealsTotal, 'RUB')})
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
+            </TableFooter>
+          </Table>
+        </div>
         {/*<div className="col-span-3">*/}
         {/*  <ArbitrageCalculator />*/}
         {/*</div>*/}

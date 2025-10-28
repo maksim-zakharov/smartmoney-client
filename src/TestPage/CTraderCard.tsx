@@ -47,7 +47,7 @@ export const CTraderCard: FC<Props> = ({ ctraderBalance }) => {
             ctraderBalance > 0 ? 'text-[rgb(44,232,156)]' : 'text-[rgb(255,117,132)]',
           )}
         >
-          {moneyFormatCompact(ctraderBalance, 'USDT')}
+          {moneyFormatCompact(ctraderBalance, 'USDT', 2)}
         </CardTitle>
         <CardAction>
           <Dialog>
