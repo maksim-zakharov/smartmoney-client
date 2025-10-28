@@ -426,7 +426,7 @@ export const TestPage = () => {
       <TableCell>{cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}</TableCell>
       <TableCell>{invoice.volume / (map.get(invoice.tradeData.symbolId)?.symbolName?.endsWith('CNH_xp') ? 10000000 : 10000)}</TableCell>
       <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
-      <TableCell>-</TableCell>
+      <TableCell>{invoice.price}</TableCell>
       <TableCell>-</TableCell>
       <TableCell className={invoice.swap > 0 ? 'text-right profitCell' : invoice.swap < 0 ? 'text-right lossCell' : 'text-right'}>
         {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}
@@ -450,7 +450,7 @@ export const TestPage = () => {
       <TableCell>Алор</TableCell>
       <TableCell>{invoice.qty}</TableCell>
       <TableCell>-</TableCell>
-      <TableCell>{moneyFormat(invoice.volume, 'RUB', 0, 2)}</TableCell>
+      <TableCell>{moneyFormat(invoice.avgPrice, 'RUB', 0, 2)}</TableCell>
       <TableCell>{moneyFormat(invoice.currentVolume, 'RUB', 0, 2)}</TableCell>
       <TableCell>-</TableCell>
       <TableCell className="text-right">-</TableCell>
