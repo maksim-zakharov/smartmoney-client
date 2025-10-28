@@ -21,6 +21,9 @@ import { AppsTokenResponse } from '../api/alor.slice.ts';
 import dayjs from 'dayjs';
 import { Calendar } from '../components/ui/calendar.tsx';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover.tsx';
+import type { DateRange } from 'react-day-picker/dist/cjs/types/shared';
+import { useSearchParams } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select.tsx';
 
 export const FigiLabel = ({ uid }) => {
   const { data } = useGetInstrumentByIdQuery({ uid });
@@ -95,6 +98,53 @@ export const ForexLabel = ({ ticker }) => {
 export const TestPage = () => {
   // const USDRate = 83.071;
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const preset = searchParams.get('preset') || undefined;
+  const setPreset = (preset: string) => {
+    searchParams.set('preset', preset);
+    setSearchParams(searchParams);
+  };
+
+  const setDateRange = (range: DateRange) => {
+    searchParams.set('from', dayjs(range.from).format('YYYY-MM-DD'));
+    searchParams.set('to', dayjs(range.to).format('YYYY-MM-DD'));
+    searchParams.delete('preset');
+    setSearchParams(searchParams);
+  };
+
+  const { from, to } = useMemo(() => {
+    const from = dayjs(searchParams.get('from') || dayjs().startOf('month').format('YYYY-MM-DD')).toDate();
+    const to = dayjs(searchParams.get('to') || dayjs().endOf('month').format('YYYY-MM-DD')).toDate();
+
+    switch (preset) {
+      case 'today':
+        return {
+          from: dayjs().startOf('day').toDate(),
+          to: dayjs().endOf('day').toDate(),
+        };
+      case 'yesterday':
+        return {
+          from: dayjs().add(-1, 'day').startOf('day').toDate(),
+          to: dayjs().add(-1, 'day').endOf('day').toDate(),
+        };
+      case 'week':
+        return {
+          from: dayjs().startOf('week').toDate(),
+          to: dayjs().endOf('week').toDate(),
+        };
+      case 'month':
+        return {
+          from: dayjs().startOf('month').toDate(),
+          to: dayjs().endOf('month').toDate(),
+        };
+      default:
+        return { from, to };
+    }
+  }, [searchParams, preset]);
+
+  const dateRange: DateRange = { from, to };
+
   const { data: rateData } = useGetRuRateQuery();
   const USDRate = rateData?.Valute.USD.Value;
 
@@ -146,8 +196,8 @@ export const TestPage = () => {
   const { data: deals = [] } = useGetCTraderDealsQuery(
     {
       ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
-      from: dayjs().startOf('month').unix() * 1000,
-      to: dayjs().endOf('day').unix() * 1000,
+      from: from.getTime(),
+      to: to.getTime(),
     },
     {
       pollingInterval: 15000,
@@ -481,7 +531,6 @@ export const TestPage = () => {
   }, [ctraderBalance, alorSummary?.portfolioLiquidationValue, USDRate]);
 
   const [open, setOpen] = React.useState(false);
-  const [date, setDate] = React.useState<Date | undefined>(undefined);
 
   return (
     <>
@@ -964,29 +1013,41 @@ export const TestPage = () => {
             )}
           </TableBody>
         </Table>
-        <div>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" id="date-picker" className="w-32 justify-between font-normal">
-                {/*{date ? date.toLocaleDateString() : "Select date"}*/}
-                <ChevronDownIcon />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-              <Calendar
-                mode="range"
-                numberOfMonths={2}
-                selected={date}
-                captionLayout="dropdown"
-                onSelect={(date) => {
-                  setDate(date);
-                  setOpen(false);
-                }}
-                className="rounded-lg border shadow-sm"
-              />
-            </PopoverContent>
-          </Popover>
-          <Table wrapperClassName="pt-2 col-span-2">
+        <div className="col-span-2">
+          <Calendar
+            mode="range"
+            numberOfMonths={2}
+            selected={dateRange}
+            captionLayout="dropdown"
+            onSelect={(date) => {
+              setDateRange(date);
+              setOpen(false);
+            }}
+            className="rounded-lg border shadow-sm"
+          />
+          <div className="flex gap-2">
+            <Select value={preset} onValueChange={setPreset}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Не выбрано" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Сегодня</SelectItem>
+                <SelectItem value="yesterday">Вчера</SelectItem>
+                <SelectItem value="week">Текущая неделя</SelectItem>
+                <SelectItem value="month">Текущий месяц</SelectItem>
+              </SelectContent>
+            </Select>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" id="date-picker" className="justify-between font-normal">
+                  {dateRange ? `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}` : 'Select date'}
+                  <ChevronDownIcon />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto overflow-hidden p-0" align="start"></PopoverContent>
+            </Popover>
+          </div>
+          <Table wrapperClassName="pt-2">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[200px] text-left" colSpan={11}>
