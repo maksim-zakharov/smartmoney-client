@@ -461,7 +461,7 @@ export default function App() {
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 justify-between">
+          <header className="flex h-11 shrink-0 items-center gap-2 border-b px-4 justify-between">
             <SidebarTrigger className="-ml-1" />
             <div className="flex gap-2 items-center">
               {cTraderAccount?.ctidTraderAccountId && (
