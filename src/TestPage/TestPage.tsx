@@ -282,6 +282,10 @@ export const TestPage = () => {
     return pair.reduce((acc, curr) => acc + PnLMap[curr] || 0, 0);
   };
 
+  const PairPrice = (pair) => {
+    return pair.reduce((acc, curr) => (!acc ? PriceMap[curr] : acc / PriceMap[curr] || 0), 0);
+  };
+
   const totalTIPnL = useMemo(
     () =>
       (tinkoffPortfolio?.positions || [])
@@ -350,6 +354,20 @@ export const TestPage = () => {
       .map(([key, value]) => value)
       .sort((a, b) => b.PnL - a.PnL);
   }, [cTraderPositions?.position, pnl]);
+
+  const PriceMap = useMemo(
+    () => ({
+      ...cTraderPositionsMapped.reduce((acc, curr) => {
+        acc[curr.tradeData.symbolId] = curr.avgPrice || 0;
+        return acc;
+      }, {}),
+      ...alorPositions.reduce((acc, curr) => {
+        acc[curr.symbol] = curr.avgPrice || 0;
+        return acc;
+      }, {}),
+    }),
+    [cTraderPositionsMapped, alorPositions],
+  );
 
   const PnLMap = useMemo(
     () => ({
@@ -785,6 +803,7 @@ export const TestPage = () => {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[200px]">Инструмент</TableHead>
+              <TableHead className="text-right">Цена входа</TableHead>
               <TableHead className="text-right">Чистая прибыль RUB</TableHead>
               <TableHead className="text-right">Действия</TableHead>
             </TableRow>
@@ -797,6 +816,7 @@ export const TestPage = () => {
                     <SymbolComp invoice={p} />
                   ))}
                 </TableCell>
+                <TableCell className="text-right">{(PairPrice(invoice) * 100)?.toFixed(2)}</TableCell>
                 <TableCell
                   className={PairPnl(invoice) > 0 ? 'text-right profitCell' : PairPnl(invoice) < 0 ? 'text-right lossCell' : 'text-right'}
                 >
