@@ -308,15 +308,39 @@ export const TestPage = () => {
 
   const amount = (tinkoffPortfolio?.totalAmountPortfolio || 0) - bondsMargin;
 
+  function calculateAveragePrice(entries) {
+    let totalCost = 0;
+    let totalVolume = 0;
+
+    for (const entry of entries) {
+      totalCost += entry.price * entry.volume;
+      totalVolume += entry.volume;
+    }
+
+    if (totalVolume === 0) {
+      throw new Error('Total volume cannot be zero');
+    }
+
+    return totalCost / totalVolume;
+  }
+
   const cTraderPositionsMapped = useMemo<any[]>(() => {
     const positionMap = (cTraderPositions?.position || []).reduce((acc, curr) => {
       if (!acc[curr.tradeData.symbolId]) {
-        acc[curr.tradeData.symbolId] = { ...curr, PnL: pnl.get(curr.positionId), volume: curr.tradeData.volume };
+        acc[curr.tradeData.symbolId] = {
+          ...curr,
+          PnL: pnl.get(curr.positionId),
+          volume: curr.tradeData.volume,
+          avgPrice: curr.price,
+          totalCost: curr.price * curr.tradeData.volume,
+        };
       } else {
         acc[curr.tradeData.symbolId].PnL += pnl.get(curr.positionId);
         acc[curr.tradeData.symbolId].swap += curr.swap;
         acc[curr.tradeData.symbolId].volume += curr.tradeData.volume;
         acc[curr.tradeData.symbolId].usedMargin += curr.usedMargin;
+        acc[curr.tradeData.symbolId].totalCost += curr.price * curr.tradeData.volume;
+        acc[curr.tradeData.symbolId].avgPrice = acc[curr.tradeData.symbolId].totalCost / acc[curr.tradeData.symbolId].volume;
       }
 
       return acc;
@@ -478,7 +502,7 @@ export const TestPage = () => {
       <TableCell>{cTraderSummary?.brokerName?.toUpperCase() || 'XPBEE'}</TableCell>
       <TableCell>{invoice.volume / (map.get(invoice.tradeData.symbolId)?.symbolName?.endsWith('CNH_xp') ? 10000000 : 10000)}</TableCell>
       <TableCell>{moneyFormat(normalizePrice(parseInt(invoice.usedMargin, 10), invoice.moneyDigits), 'USD', 0, 2)}</TableCell>
-      <TableCell>{invoice.price}</TableCell>
+      <TableCell>{invoice.avgPrice?.toFixed(2)}</TableCell>
       <TableCell>-</TableCell>
       <TableCell className={invoice.swap > 0 ? 'text-right profitCell' : invoice.swap < 0 ? 'text-right lossCell' : 'text-right'}>
         {moneyFormat(normalizePrice(parseInt(invoice.swap, 10), invoice.moneyDigits), 'USD', 0, 2)}
@@ -502,7 +526,7 @@ export const TestPage = () => {
       <TableCell>Алор</TableCell>
       <TableCell>{invoice.qty}</TableCell>
       <TableCell>{moneyFormat(invoice.currentVolume, 'RUB', 0, 2)}</TableCell>
-      <TableCell>{moneyFormat(invoice.avgPrice, 'RUB', 0, 2)}</TableCell>
+      <TableCell>{invoice.avgPrice?.toFixed(2)}</TableCell>
       <TableCell>-</TableCell>
       <TableCell>-</TableCell>
       <TableCell className="text-right">-</TableCell>
