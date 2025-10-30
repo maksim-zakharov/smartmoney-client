@@ -5,7 +5,12 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { cn } from '../lib/utils.ts';
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx';
 import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from '../api/tinkoff.api.ts';
-import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation, useGetCTraderDealsQuery } from '../api/ctrader.api.ts';
+import {
+  useCTraderclosePositionMutation,
+  useCTraderPlaceOrderMutation,
+  useGetCTraderCashflowQuery,
+  useGetCTraderDealsQuery,
+} from '../api/ctrader.api.ts';
 import { Button } from '../components/ui/button.tsx';
 import { ChevronDownIcon, CirclePlus, CircleX } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog.tsx';
@@ -194,6 +199,18 @@ export const TestPage = () => {
   const { accessToken } = useAppSelector((state) => state.alorSlice.cTraderAuth || ({} as AppsTokenResponse));
 
   const { data: deals = [] } = useGetCTraderDealsQuery(
+    {
+      ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
+      from: from.getTime(),
+      to: to.getTime(),
+    },
+    {
+      pollingInterval: 15000,
+      skip: !accessToken || !cTraderAccount?.ctidTraderAccountId,
+    },
+  );
+
+  const { data: ctraderCashflow = [] } = useGetCTraderCashflowQuery(
     {
       ctidTraderAccountId: cTraderAccount?.ctidTraderAccountId,
       from: from.getTime(),
@@ -1236,6 +1253,64 @@ export const TestPage = () => {
               </Card>
             ))}
           </div>
+        </div>
+        <div className="col-span-2">
+          <Table wrapperClassName="pt-2">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px] text-left" colSpan={11}>
+                  Ctrader История позиций
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableHeader className="bg-[rgb(36,52,66)]">
+              <TableRow>
+                <TableHead className="w-[100px]">Время</TableHead>
+                <TableHead className="w-[100px]">Тип</TableHead>
+                <TableHead className="w-[100px]">Сумма</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ctraderCashflow
+                // .sort((a, b) => b.changeBalanceTimestamp - a.changeBalanceTimestamp)
+                .map((invoice, index) => (
+                  <TableRow key={invoice.balanceHistoryId} className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
+                    <TableCell>{dayjs(invoice.changeBalanceTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>
+                    <TableCell>{invoice.operationType === 0 ? 'Пополнение счета' : 'Снятие со счета'}</TableCell>
+                    <TableCell className={invoice.operationType === 0 ? 'profitCell' : 'lossCell'}>
+                      {invoice.delta / 10 ** invoice.moneyDigits}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell
+                  colSpan={10}
+                  className={ctraderDealsTotal > 0 ? 'text-right profitCell' : ctraderDealsTotal < 0 ? 'text-right lossCell' : 'text-right'}
+                >
+                  Пополнений:{' '}
+                  {moneyFormat(
+                    ctraderCashflow
+                      .filter((invoice) => !invoice.operationType)
+                      .reduce((acc, curr) => acc + curr.delta / 10 ** curr.moneyDigits, 0),
+                    'USDT',
+                    0,
+                    2,
+                  )}{' '}
+                  Снятий:{' '}
+                  {moneyFormat(
+                    ctraderCashflow
+                      .filter((invoice) => invoice.operationType)
+                      .reduce((acc, curr) => acc + curr.delta / 10 ** curr.moneyDigits, 0),
+                    'USDT',
+                    0,
+                    2,
+                  )}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
         </div>
         {/*<div className="col-span-3">*/}
         {/*  <ArbitrageCalculator />*/}
