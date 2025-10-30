@@ -494,7 +494,7 @@ export default function App() {
                     <TabsContent value="keys">
                       <div className="p-3 flex gap-3 flex-col">
                         <TypographyH4>Telegram</TypographyH4>
-                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="grid grid-cols-3 gap-3 w-full mb-2">
                           <div className="flex gap-2 flex-col">
                             <Label htmlFor="alorToken">Token</Label>
                             <Input id="alorToken" value={telegramToken} onChange={handletelegramToken} />
@@ -505,7 +505,7 @@ export default function App() {
                           </div>
                         </div>
                         <TypographyH4>Alor</TypographyH4>
-                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="grid grid-cols-3 gap-3 w-full mb-2">
                           <div className="flex gap-2 flex-col">
                             <Label htmlFor="alorToken">Token</Label>
                             <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
@@ -516,7 +516,7 @@ export default function App() {
                           </div>
                         </div>
                         <TypographyH4>Тинькофф</TypographyH4>
-                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="grid grid-cols-3 gap-3 w-full mb-2">
                           <div className="flex gap-2 flex-col">
                             <Label htmlFor="alorToken">Token</Label>
                             <Input id="tToken" value={tiToken} onChange={handleEditToken} />
@@ -527,7 +527,7 @@ export default function App() {
                           </div>
                         </div>
                         <TypographyH4>Mexc</TypographyH4>
-                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="grid grid-cols-3 gap-3 w-full mb-2">
                           <div className="flex gap-2 flex-col">
                             <Label htmlFor="mexcApiKey">Api Key</Label>
                             <Input id="mexcApiKey" value={mexcApiKey} onChange={handleEditmexcApiKey} />
@@ -542,7 +542,7 @@ export default function App() {
                           </div>
                         </div>
                         <TypographyH4>OKX</TypographyH4>
-                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="grid grid-cols-3 gap-3 w-full mb-2">
                           <div className="flex gap-2 flex-col">
                             <Label htmlFor="okxApiKey">Api Key</Label>
                             <Input id="okxApiKey" value={okxApiKey} onChange={handleEditokxApiKey} />
@@ -557,7 +557,7 @@ export default function App() {
                           </div>
                         </div>
                         <TypographyH4>Bitget</TypographyH4>
-                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="grid grid-cols-3 gap-3 w-full mb-2">
                           <div className="flex gap-2 flex-col">
                             <Label htmlFor="bitgetApiKey">Api Key</Label>
                             <Input id="bitgetApiKey" value={bitgetApiKey} onChange={handleEditbitgetApiKey} />
@@ -572,7 +572,7 @@ export default function App() {
                           </div>
                         </div>
                         <TypographyH4>Bybit</TypographyH4>
-                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="grid grid-cols-3 gap-3 w-full mb-2">
                           <div className="flex gap-2 flex-col">
                             <Label htmlFor="bybitApiKey">Api Key</Label>
                             <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
@@ -583,7 +583,7 @@ export default function App() {
                           </div>
                         </div>
                         <TypographyH4>Bingx</TypographyH4>
-                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="grid grid-cols-3 gap-3 w-full mb-2">
                           <div className="flex gap-2 flex-col">
                             <Label htmlFor="bingxApiKey">Api key</Label>
                             <Input id="bingxApiKey" value={bingxApiKey} onChange={handlebingxApiKey} />
@@ -594,7 +594,7 @@ export default function App() {
                           </div>
                         </div>
                         <TypographyH4>Gate</TypographyH4>
-                        <div className="grid grid-cols-2 gap-3 w-full mb-2">
+                        <div className="grid grid-cols-3 gap-3 w-full mb-2">
                           <div className="flex gap-2 flex-col">
                             <Label htmlFor="gateApiKey">Api key</Label>
                             <Input id="gateApiKey" value={gateApiKey} onChange={handlegateApiKey} />
