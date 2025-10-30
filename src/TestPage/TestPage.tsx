@@ -3,7 +3,7 @@ import { useAppSelector } from '../store.ts';
 import { exchangeImgMap, moneyFormat, moneyFormatCompact, normalizePrice, numberFormat } from '../utils.ts';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '../components/ui/table.tsx';
 import { cn } from '../lib/utils.ts';
-import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx';
+import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '../components/ui/card.tsx';
 import { useClosePositionMutation, useGetInstrumentByIdQuery, useTinkoffPostOrderMutation } from '../api/tinkoff.api.ts';
 import { useCTraderclosePositionMutation, useCTraderPlaceOrderMutation, useGetCTraderDealsQuery } from '../api/ctrader.api.ts';
 import { Button } from '../components/ui/button.tsx';
@@ -214,6 +214,17 @@ export const TestPage = () => {
       0,
     );
   }, [closesPositions]);
+
+  const symbolPositionsMap = closesPositions.reduce((acc, invoice) => {
+    if (!acc[invoice.symbolId]) {
+      acc[invoice.symbolId] = 0;
+    }
+
+    acc[invoice.symbolId] +=
+      (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap) / 10 ** invoice.closePositionDetail.moneyDigits;
+
+    return acc;
+  }, {});
 
   const okxBalance = Number(okxAccounts?.[0]?.totalEq) || 0;
   const bitgetBalance = Number(bitgetFAccounts?.[0]?.usdtEquity) || 0;
@@ -1197,6 +1208,34 @@ export const TestPage = () => {
               </TableRow>
             </TableFooter>
           </Table>
+        </div>
+        <div>
+          PnL по инструментам
+          <div className="grid grid-cols-3 gap-2 flex-wrap">
+            {Object.entries(symbolPositionsMap).map(([symbolId, value]) => (
+              <Card>
+                <CardHeader>
+                  <CardDescription>
+                    <ForexLabel ticker={map.get(Number(symbolId))?.symbolName} />
+                  </CardDescription>
+                  <CardTitle
+                    className={cn(
+                      value > 0 ? 'profitCell' : value < 0 ? 'lossCell' : '',
+                      'text-2xl font-semibold tabular-nums @[250px]/card:text-3xl',
+                    )}
+                  >
+                    {moneyFormat(value, 'USDT', 0, 2)}
+                  </CardTitle>
+                  <CardAction>
+                    {/*<Badge variant="outline">*/}
+                    {/*  <IconTrendingUp />*/}
+                    {/*  +12.5%*/}
+                    {/*</Badge>*/}
+                  </CardAction>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
         </div>
         {/*<div className="col-span-3">*/}
         {/*  <ArbitrageCalculator />*/}
