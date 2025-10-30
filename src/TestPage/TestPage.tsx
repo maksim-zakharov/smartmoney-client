@@ -88,7 +88,7 @@ export const ForexLabel = ({ ticker }) => {
   };
 
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1 items-center">
       <div className="img" style={{ backgroundImage: `url("//invest-brands.cdn-tinkoff.ru/${map[ticker]}x160.png")` }}></div>
       {ticker}
     </div>
