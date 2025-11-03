@@ -310,6 +310,12 @@ export const TestPage = () => {
     return pair.reduce((acc, curr) => acc + PnLMap[curr] || 0, 0);
   };
 
+  const PairMoexAvgVolume = (pair) => {
+    const onlyFutures = pair.filter((p) => p.toString().includes('-'));
+    if (!onlyFutures.length) return 0;
+    return onlyFutures.reduce((acc, curr) => acc + volumeMap[curr] || 0, 0) / onlyFutures.length;
+  };
+
   const PairPrice = (pair) => {
     return pair.reduce((acc, curr) => (!acc ? PriceMap[curr] : acc / PriceMap[curr] || 0), 0);
   };
@@ -410,6 +416,16 @@ export const TestPage = () => {
       }, {}),
       ...alorPositions.reduce((acc, curr) => {
         acc[curr.symbol] = curr.unrealisedPl || 0;
+        return acc;
+      }, {}),
+    }),
+    [tinkoffPortfolio?.positions, cTraderPositionsMapped, alorPositions, cTraderPositionPnL?.moneyDigits, USDRate],
+  );
+
+  const volumeMap = useMemo(
+    () => ({
+      ...alorPositions.reduce((acc, curr) => {
+        acc[curr.symbol] = Math.abs(curr.currentVolume) || 0;
         return acc;
       }, {}),
     }),
@@ -833,6 +849,7 @@ export const TestPage = () => {
               <TableHead className="w-[200px]">Инструмент</TableHead>
               <TableHead className="text-right">Цена входа</TableHead>
               <TableHead className="text-right">Чистая прибыль RUB</TableHead>
+              <TableHead className="text-right">Ожидаемая прибыль RUB</TableHead>
               <TableHead className="text-right">Действия</TableHead>
             </TableRow>
           </TableHeader>
@@ -849,6 +866,9 @@ export const TestPage = () => {
                   className={PairPnl(invoice) > 0 ? 'text-right profitCell' : PairPnl(invoice) < 0 ? 'text-right lossCell' : 'text-right'}
                 >
                   {moneyFormat(PairPnl(invoice))}
+                </TableCell>
+                <TableCell className={'text-right profitCell'}>
+                  {!PairMoexAvgVolume(invoice) ? 0 : moneyFormat(PairMoexAvgVolume(invoice) * Math.abs(PairPrice(invoice) - 1))}
                 </TableCell>
                 <TableCell className="text-right gap-2 flex justify-end">
                   {invoice.some((i) => !tinkoffInstrumentUidPositionMap[i] || !cTraderPositionsMapped[i] || !alorSymbolPositionMap[i]) && (
@@ -958,7 +978,7 @@ export const TestPage = () => {
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={4} className="text-center">
+              <TableCell colSpan={5} className="text-center">
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button size="sm" variant="ghost">
