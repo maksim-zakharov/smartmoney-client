@@ -246,7 +246,7 @@ export const TestPage = () => {
   const okxBalance = Number(okxAccounts?.[0]?.totalEq) || 0;
   const bitgetBalance = Number(bitgetFAccounts?.[0]?.usdtEquity) || 0;
   const mexcSBalance = Number(mexcSAccount?.balances?.find((a) => a.asset === 'USDT')?.free) || 0;
-  const mexcFBalance = Number(mexcFAccount?.availableBalance) || 0;
+  const mexcFBalance = Number(mexcFAccount?.equity) || 0;
   const mexcBalance = mexcFBalance + mexcSBalance;
   const bybitBalance = Number(bybitWallets?.[0]?.totalEquity) || 0;
   const gateSBalance = Number(gateSAccounts?.find((c) => c.currency === 'USDT')?.available) || 0;
