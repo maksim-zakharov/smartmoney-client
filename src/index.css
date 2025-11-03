@@ -130,11 +130,20 @@
 }
 
 @layer utilities {
+    .col-span-4{
+        grid-column: span 4 / span 4;
+    }
     .col-span-6{
         grid-column: span 6 / span 6;
     }
     .col-span-8{
         grid-column: span 8 / span 8;
+    }
+    .col-span-12{
+        grid-column: span 12 / span 12;
+    }
+    .col-span-24{
+        grid-column: span 24 / span 24;
     }
 }
 
