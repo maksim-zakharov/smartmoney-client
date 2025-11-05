@@ -22,6 +22,9 @@ export class CtraderWsClient {
 
   // Подключение к WebSocket
   private connect() {
+    // this.ws = io(`http://localhost:3000/ctrader-ws`, {
+    //   transports: ['websocket'],
+    // });
     this.ws = io(`http://176.114.69.4:3000/ctrader-ws`, {
       transports: ['websocket'],
     });
