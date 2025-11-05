@@ -11,6 +11,9 @@ import { TWChart } from '../../components/TWChart.tsx';
 import { TickerSettingsDialog } from '../../components/TickerSettingsDialog.tsx';
 import { cn } from '../../lib/utils.ts';
 import GridSizeSelector from '../../components/GridSizeSelector.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover.tsx';
+import { Grid3x3 } from 'lucide-react';
+import { Button } from '../../components/ui/button.tsx';
 
 export const SmartPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -320,7 +323,16 @@ export const SmartPage = () => {
       <Space>
         {tab === 'others' && <Pagination current={page} total={others.length} pageSize={24 / span} onChange={setPage} />}
 
-        <GridSizeSelector value={{ cols: span, rows: rows }} onSelect={handleSelect} maxRows={4} maxCols={8} />
+        <Popover>
+          <PopoverTrigger>
+            <Button variant="outline" className="justify-between font-normal">
+              <Grid3x3 />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+            <GridSizeSelector value={{ cols: span, rows: rows }} onSelect={handleSelect} maxRows={4} maxCols={8} />
+          </PopoverContent>
+        </Popover>
         <TickerSettingsDialog />
       </Space>
       <Tabs value={tab} onValueChange={setTab}>
