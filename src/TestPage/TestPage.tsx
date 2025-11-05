@@ -888,7 +888,9 @@ export const TestPage = () => {
                   {moneyFormat(PairPnl(invoice) + PairSwap(invoice) * USDRate)}
                 </TableCell>
                 <TableCell className={'text-right profitCell'}>
-                  {!PairMoexAvgVolume(invoice) ? 0 : moneyFormat(PairMoexAvgVolume(invoice) * Math.abs(PairPrice(invoice) - 1))}
+                  {!PairMoexAvgVolume(invoice)
+                    ? 0
+                    : moneyFormat(PairMoexAvgVolume(invoice) * Math.abs(PairPrice(invoice) - 1) + PairSwap(invoice) * USDRate)}
                 </TableCell>
                 <TableCell className="text-right gap-2 flex justify-end">
                   {invoice.some((i) => !tinkoffInstrumentUidPositionMap[i] || !cTraderPositionsMapped[i] || !alorSymbolPositionMap[i]) && (
