@@ -22,7 +22,7 @@ const GridSizeSelector: React.FC<GridSizeSelectorProps> = ({ value, onSelect, ma
 
   return (
     <TooltipProvider>
-      <div className="p-4 bg-gray-100 rounded-lg">
+      <div className="p-4 bg-card rounded-lg">
         <div className="mb-2 text-center font-medium">{hovered ? `${hovered.rows} x ${hovered.cols}` : 'Hover to select grid size'}</div>
         <div
           className="grid gap-1"
@@ -43,8 +43,8 @@ const GridSizeSelector: React.FC<GridSizeSelectorProps> = ({ value, onSelect, ma
                 <Tooltip key={`${rowIndex}-${colIndex}`}>
                   <TooltipTrigger asChild>
                     <div
-                      className={`w-8 h-8 border border-gray-300 cursor-pointer transition-colors ${
-                        isSelected ? 'bg-blue-400' : isHovered ? 'bg-blue-200' : 'bg-white'
+                      className={`w-8 h-8 border dark:border-input cursor-pointer transition-colors ${
+                        isSelected ? 'bg-primary' : isHovered ? 'bg-primary' : 'bg-input'
                       }`}
                       onMouseEnter={() => setHovered({ rows: rowIndex + 1, cols: colIndex + 1 })}
                       onClick={() => {
