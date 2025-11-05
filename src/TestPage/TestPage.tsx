@@ -316,6 +316,10 @@ export const TestPage = () => {
     return onlyFutures.reduce((acc, curr) => acc + volumeMap[curr] || 0, 0) / onlyFutures.length;
   };
 
+  const PairSwap = (pair) => {
+    return pair.reduce((acc, curr) => acc + SwapMap[curr] || 0, 0);
+  };
+
   const PairPrice = (pair) => {
     return pair.reduce((acc, curr) => (!acc ? PriceMap[curr] : acc / PriceMap[curr] || 0), 0);
   };
@@ -397,6 +401,16 @@ export const TestPage = () => {
       }, {}),
       ...alorPositions.reduce((acc, curr) => {
         acc[curr.symbol] = curr.avgPrice || 0;
+        return acc;
+      }, {}),
+    }),
+    [cTraderPositionsMapped, alorPositions],
+  );
+
+  const SwapMap = useMemo(
+    () => ({
+      ...cTraderPositionsMapped.reduce((acc, curr) => {
+        acc[curr.tradeData.symbolId] = normalizePrice(parseInt(curr.swap, 10), curr.moneyDigits) || 0;
         return acc;
       }, {}),
     }),
@@ -863,9 +877,15 @@ export const TestPage = () => {
                 </TableCell>
                 <TableCell className="text-right">{(PairPrice(invoice) * 100)?.toFixed(2)}</TableCell>
                 <TableCell
-                  className={PairPnl(invoice) > 0 ? 'text-right profitCell' : PairPnl(invoice) < 0 ? 'text-right lossCell' : 'text-right'}
+                  className={
+                    PairPnl(invoice) + PairSwap(invoice) * USDRate > 0
+                      ? 'text-right profitCell'
+                      : PairPnl(invoice) + PairSwap(invoice) * USDRate < 0
+                        ? 'text-right lossCell'
+                        : 'text-right'
+                  }
                 >
-                  {moneyFormat(PairPnl(invoice))}
+                  {moneyFormat(PairPnl(invoice) + PairSwap(invoice) * USDRate)}
                 </TableCell>
                 <TableCell className={'text-right profitCell'}>
                   {!PairMoexAvgVolume(invoice) ? 0 : moneyFormat(PairMoexAvgVolume(invoice) * Math.abs(PairPrice(invoice) - 1))}
