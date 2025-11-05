@@ -21,7 +21,7 @@ export const SmartPage = () => {
   const expirationMonth = searchParams.get('expirationMonth') || '9.25';
 
   const rows = Number(searchParams.get('rows') || 1);
-  const height = 760 / rows;
+  const height = 940 / rows;
 
   const span = Number(searchParams.get('span') || 6);
 
