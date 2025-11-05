@@ -1106,17 +1106,6 @@ export const TestPage = () => {
           </TableBody>
         </Table>
         <div className="col-span-2">
-          <Calendar
-            mode="range"
-            numberOfMonths={2}
-            selected={dateRange}
-            captionLayout="dropdown"
-            onSelect={(date) => {
-              setDateRange(date);
-              setOpen(false);
-            }}
-            className="rounded-lg border shadow-sm"
-          />
           <div className="flex gap-2">
             <Select value={preset} onValueChange={setPreset}>
               <SelectTrigger className="w-[180px]">
@@ -1129,14 +1118,27 @@ export const TestPage = () => {
                 <SelectItem value="month">Текущий месяц</SelectItem>
               </SelectContent>
             </Select>
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" id="date-picker" className="justify-between font-normal">
+
+            <Popover>
+              <PopoverTrigger>
+                <Button variant="outline" className="justify-between font-normal">
                   {dateRange ? `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}` : 'Select date'}
                   <ChevronDownIcon />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto overflow-hidden p-0" align="start"></PopoverContent>
+              <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                <Calendar
+                  mode="range"
+                  numberOfMonths={2}
+                  selected={dateRange}
+                  captionLayout="dropdown"
+                  onSelect={(date) => {
+                    setDateRange(date);
+                    setOpen(false);
+                  }}
+                  className="rounded-lg border shadow-sm"
+                />
+              </PopoverContent>
             </Popover>
           </div>
           <Table wrapperClassName="pt-2">
