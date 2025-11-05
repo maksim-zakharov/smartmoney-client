@@ -35,8 +35,8 @@ export class CtraderWsClient {
     });
 
     // Listen for updates
-    this.ws.on('candle', (data: { symbol: string; tf: string; candle: HistoryObject }) => {
-      const key = `${data.symbol}_${data.tf}`;
+    this.ws.on('candle', (data: { symbolId: number; tf: string; candle: HistoryObject }) => {
+      const key = `${data.symbolId}_${data.tf}`;
       this.subscribeSubjs.get(key)?.next(data.candle);
     });
 
@@ -79,15 +79,15 @@ export class CtraderWsClient {
     this.subscriptions.add(JSON.stringify(request));
   }
 
-  subscribeCandles(symbol: string, resolution: ResolutionString) {
+  subscribeCandles(symbolId: number, resolution: ResolutionString) {
     const subj = new Subject();
 
     const tf = this.parseTimeframe(resolution) as Timeframe; // Ensure it matches Timeframe enum
-    const key = `${symbol}_${tf}`;
+    const key = `${symbolId}_${tf}`;
 
     this.subscribeSubjs.set(key, subj);
 
-    this.subscribe({ symbol, tf });
+    this.subscribe({ symbolId, tf });
 
     return subj;
   }

@@ -299,6 +299,9 @@ export const alorSlice = createSlice({
         localStorage.setItem('cTraderAuth', JSON.stringify(state.cTraderAuth));
       }
     });
+    builder.addMatcher(ctraderApi.endpoints.getCTraderSymbols.matchFulfilled, (state, { payload }) => {
+      state.dataService?.setSymbols(payload);
+    });
     builder.addMatcher(ctraderApi.endpoints.selectAccount.matchFulfilled, (state, { payload }) => {
       state.cTraderAccounts = payload;
       const selectedAccountId = localStorage.getItem('ctidTraderAccountId');

@@ -26,6 +26,8 @@ export class DataService {
   private readonly bingxWsClient: BingXFuturesWsClient;
   private readonly bitgetFuturesWsClient: BitgetFuturesWsClient;
 
+  private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
+
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
     this.ctraderUrl = 'https://176.114.69.4';
@@ -39,6 +41,10 @@ export class DataService {
     this.mexcSpotWsClient = new MexcSpotWsClient();
     this.kucoinWsClient = new KucoinWsClient();
     this.bitgetFuturesWsClient = new BitgetFuturesWsClient();
+  }
+
+  setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
+    this.symbols = symbols;
   }
 
   bitgetSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -56,7 +62,7 @@ export class DataService {
   }
 
   mexcUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
-    if (symbol.includes('_')) return this.mexcWsClient.unsubscribeCandles(symbol, resolution);
+    // if (symbol.includes('_')) return this.mexcWsClient.unsubscribeCandles(symbol, resolution);
 
     return Promise.resolve(); //  this.mexcSpotWsClient.subscribeCandles(symbol, resolution);
   }
@@ -66,7 +72,7 @@ export class DataService {
   }
 
   gateUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
-    return this.gateWsClient.unsubscribeCandles(symbol, resolution);
+    // return this.gateWsClient.unsubscribeCandles(symbol, resolution);
   }
 
   bingxSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -86,7 +92,9 @@ export class DataService {
   }
 
   ctraderSubscribeCandles(symbol: string, resolution: ResolutionString) {
-    return this.ctraderWsClient.subscribeCandles(symbol, resolution);
+    const s = this.symbols.find((s) => s.symbolName === symbol);
+
+    return this.ctraderWsClient.subscribeCandles(s?.symbolId, resolution);
   }
 
   finamSubscribeCandles(symbol: string, resolution: ResolutionString) {
