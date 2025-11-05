@@ -1,6 +1,6 @@
 import { StatArbPage } from './StatArbPage';
 import React, { useMemo } from 'react';
-import { Pagination, Radio, Space } from 'antd';
+import { Pagination, Space } from 'antd';
 import { Triangle_Page } from './Triangle_Page';
 import { SegmentedLabeledOption } from 'rc-segmented';
 import { useSearchParams } from 'react-router-dom';
@@ -10,12 +10,15 @@ import { useAppSelector } from '../../store';
 import { TWChart } from '../../components/TWChart.tsx';
 import { TickerSettingsDialog } from '../../components/TickerSettingsDialog.tsx';
 import { cn } from '../../lib/utils.ts';
+import GridSizeSelector from '../../components/GridSizeSelector.tsx';
 
 export const SmartPage = () => {
-  const height = 350;
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('segment') || 'stocks';
   const expirationMonth = searchParams.get('expirationMonth') || '9.25';
+
+  const rows = Number(searchParams.get('rows') || 1);
+  const height = 760 / rows;
 
   const span = Number(searchParams.get('span') || 6);
 
@@ -29,6 +32,11 @@ export const SmartPage = () => {
     () => cTraderSymbols?.filter((s) => s.symbolCategoryId === 6 && s.symbolName.includes('_xp')) || [],
     [cTraderSymbols],
   );
+
+  const setRows = (tab: string) => {
+    searchParams.set('rows', tab);
+    setSearchParams(searchParams);
+  };
 
   const setSpan = (tab: string) => {
     searchParams.set('span', tab);
@@ -301,18 +309,18 @@ export const SmartPage = () => {
 
   const filteredOthers = others.slice(offset, offset + limit);
 
+  const handleSelect = (size: { rows: number; cols: number }) => {
+    setSpan(size.cols.toString());
+    setRows(size.rows.toString());
+    // You can use this to update your app state, e.g., create a grid of that size
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <Space>
-        <Radio.Group
-          block
-          options={spanOptions}
-          onChange={(e) => setSpan(e.target.value)}
-          value={span}
-          optionType="button"
-          buttonStyle="solid"
-        />
         {tab === 'others' && <Pagination current={page} total={others.length} pageSize={24 / span} onChange={setPage} />}
+
+        <GridSizeSelector value={{ cols: span, rows: rows }} onSelect={handleSelect} maxRows={4} maxCols={8} />
         <TickerSettingsDialog />
       </Space>
       <Tabs value={tab} onValueChange={setTab}>
