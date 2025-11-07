@@ -23,8 +23,19 @@ export const CryptoArbs = () => {
         acc[key] = Number(funding.fundingRate);
 
         return acc;
-      });
+      }, {});
   }, [tickers]);
+
+  const sumFunding = (a) => {
+    const leftFunding = fundingMap[`${a.ticker}_${a.left.exchange}`];
+    const rightFunding = fundingMap[`${a.ticker}_${a.right.exchange}`];
+
+    if (!rightFunding || !leftFunding) {
+      return -Infinity;
+    }
+
+    return a.ratio > 1 ? leftFunding - rightFunding : rightFunding - leftFunding;
+  };
 
   return (
     <>
@@ -47,7 +58,14 @@ export const CryptoArbs = () => {
           {tickers
             .map(([ticker, invoice], index) => invoice.arbs.map((a) => ({ ...a, ticker })))
             .flat()
-            .sort((a, b) => Math.abs(b.ratio - 1) - Math.abs(a.ratio - 1))
+            // .sort((a, b) => Math.abs(b.ratio - 1) - Math.abs(a.ratio - 1))
+            .filter((b) => Math.abs(b.ratio - 1) * 100 > 1)
+            .sort((a, b) => {
+              const aPart = sumFunding(a);
+              const bPart = sumFunding(b);
+
+              return bPart - aPart;
+            })
             .map((a, index) => (
               <TableRow className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
                 <TableCell>{a.ticker}</TableCell>
@@ -68,7 +86,7 @@ export const CryptoArbs = () => {
                 <TableCell>
                   {a.left.exchange}: {fundingMap[`${a.ticker}_${a.left.exchange}`]} - {a.right.exchange}:{' '}
                   {fundingMap[`${a.ticker}_${a.right.exchange}`]} =
-                  {fundingMap[`${a.ticker}_${a.left.exchange}`] - fundingMap[`${a.ticker}_${a.right.exchange}`]}
+                  {(Number(fundingMap[`${a.ticker}_${a.left.exchange}`] - fundingMap[`${a.ticker}_${a.right.exchange}`]) * 100).toFixed(4)}%
                 </TableCell>
               </TableRow>
             ))}
