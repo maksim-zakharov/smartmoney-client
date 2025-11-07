@@ -1,7 +1,7 @@
 import { useGetPumpTickersQuery } from './api/pump-api.ts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
 import { cn } from './lib/utils.ts';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { exchangeImgMap } from './utils.ts';
 
 export const CryptoArbs = () => {
@@ -13,6 +13,18 @@ export const CryptoArbs = () => {
   );
 
   const tickers = Object.entries(tickersMap);
+
+  const fundingMap = useMemo(() => {
+    return tickers
+      .map(([ticker, invoice], index) => invoice.funding.map((a) => ({ ...a, ticker })))
+      .flat()
+      .reduce((acc, funding) => {
+        const key = `${funding.ticker}_${funding.exchange}`;
+        acc[key] = Number(funding.fundingRate);
+
+        return acc;
+      });
+  }, [tickers]);
 
   return (
     <>
@@ -28,6 +40,7 @@ export const CryptoArbs = () => {
           <TableRow>
             <TableHead className="w-[100px]">Инструмент</TableHead>
             <TableHead className="w-[100px]">Арба</TableHead>
+            <TableHead className="w-[100px]">Фандинг</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -51,6 +64,11 @@ export const CryptoArbs = () => {
                     </div>
                     <div>{((a.ratio - 1) * 100).toFixed(2)}%</div>
                   </div>
+                </TableCell>
+                <TableCell>
+                  {a.left.exchange}: {fundingMap[`${a.ticker}_${a.left.exchange}`]} - {a.right.exchange}:{' '}
+                  {fundingMap[`${a.ticker}_${a.right.exchange}`]} =
+                  {fundingMap[`${a.ticker}_${a.left.exchange}`] - fundingMap[`${a.ticker}_${a.right.exchange}`]}
                 </TableCell>
               </TableRow>
             ))}
