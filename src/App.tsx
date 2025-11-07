@@ -44,6 +44,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from './components/ui/sidebar.tsx';
+import { CryptoArbs } from './CryptoArbs.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -310,6 +311,7 @@ export default function App() {
     // { key: '/cny-funding', label: 'CNY Funding', element: <CNYFundingPage /> },
     { key: '/test123', label: 'Test', element: <TestPage /> },
     { key: '/screeners', label: 'Скринеры', element: <ScreenersPage /> },
+    { key: '/arbs', label: 'Арбитражи', element: <CryptoArbs /> },
   ];
 
   const [telegramToken, settelegramToken] = useState<string | null>(localStorage.getItem('telegramToken'));

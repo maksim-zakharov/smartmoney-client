@@ -17,9 +17,11 @@ import { coinmarketcapApi } from './api/coinmarketcap.api';
 import { bitgetApi } from './api/bitget.api';
 import { bitstampApi } from './api/bitstamp.api';
 import { okxApi } from './api/okx.api.ts';
+import { pumpApi } from './api/pump-api.ts';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
+  [pumpApi.reducerPath]: pumpApi.reducer,
   [alorApi.reducerPath]: alorApi.reducer,
   [tinkoffApi.reducerPath]: tinkoffApi.reducer,
   [alorSlice.name]: alorSlice.reducer,
@@ -61,6 +63,7 @@ export const store = configureStore({
       .concat(bitgetApi.middleware)
       .concat(bitstampApi.middleware)
       .concat(okxApi.middleware)
+      .concat(pumpApi.middleware)
       .concat(api.middleware) as any,
 });
 
