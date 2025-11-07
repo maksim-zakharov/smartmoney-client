@@ -43,7 +43,7 @@ export const CryptoArbs = () => {
         <TableHeader>
           <TableRow>
             <TableHead className="w-[200px] text-left" colSpan={11}>
-              Ctrader История позиций
+              Crypto Funding
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -59,7 +59,11 @@ export const CryptoArbs = () => {
             .map(([ticker, invoice], index) => invoice.arbs.map((a) => ({ ...a, ticker })))
             .flat()
             // .sort((a, b) => Math.abs(b.ratio - 1) - Math.abs(a.ratio - 1))
-            .filter((b) => Math.abs(b.ratio - 1) * 100 > 1)
+            .filter(
+              (b) =>
+                Math.abs(b.ratio - 1) * 100 > 1 &&
+                Number(fundingMap[`${b.ticker}_${b.left.exchange}`] - fundingMap[`${b.ticker}_${b.right.exchange}`]) * 100 > 0.5,
+            )
             .sort((a, b) => {
               const aPart = sumFunding(a);
               const bPart = sumFunding(b);
