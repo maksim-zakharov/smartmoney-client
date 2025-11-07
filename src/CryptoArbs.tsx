@@ -59,11 +59,7 @@ export const CryptoArbs = () => {
             .map(([ticker, invoice], index) => invoice.arbs.map((a) => ({ ...a, ticker })))
             .flat()
             // .sort((a, b) => Math.abs(b.ratio - 1) - Math.abs(a.ratio - 1))
-            .filter(
-              (b) =>
-                Math.abs(b.ratio - 1) * 100 > 1 &&
-                Number(fundingMap[`${b.ticker}_${b.left.exchange}`] - fundingMap[`${b.ticker}_${b.right.exchange}`]) * 100 > 0.5,
-            )
+            .filter((b) => Math.abs(b.ratio - 1) * 100 > 1 && sumFunding(b) * 100 > 0.3)
             .sort((a, b) => {
               const aPart = sumFunding(a);
               const bPart = sumFunding(b);
@@ -89,8 +85,7 @@ export const CryptoArbs = () => {
                 </TableCell>
                 <TableCell>
                   {a.left.exchange}: {fundingMap[`${a.ticker}_${a.left.exchange}`]} - {a.right.exchange}:{' '}
-                  {fundingMap[`${a.ticker}_${a.right.exchange}`]} =
-                  {(Number(fundingMap[`${a.ticker}_${a.left.exchange}`] - fundingMap[`${a.ticker}_${a.right.exchange}`]) * 100).toFixed(4)}%
+                  {fundingMap[`${a.ticker}_${a.right.exchange}`]} ={(sumFunding(a) * 100).toFixed(4)}%
                 </TableCell>
               </TableRow>
             ))}
