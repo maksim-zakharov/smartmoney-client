@@ -3,6 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { cn } from './lib/utils.ts';
 import React, { useMemo } from 'react';
 import { exchangeImgMap } from './utils.ts';
+import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card.tsx';
+import { TypographyH4 } from './components/ui/typography.tsx';
 
 export const CryptoArbs = () => {
   const { data: tickersMap = {} } = useGetPumpTickersQuery(
@@ -39,6 +41,87 @@ export const CryptoArbs = () => {
 
   return (
     <>
+      {tickers
+        .map(([ticker, invoice], index) => invoice.arbs.map((a) => ({ ...a, ticker })))
+        .flat()
+        // .sort((a, b) => Math.abs(b.ratio - 1) - Math.abs(a.ratio - 1))
+        .filter((b) => Math.abs(b.ratio - 1) * 100 > 1 && sumFunding(b) * 100 > 0.3)
+        .sort((a, b) => {
+          const aPart = sumFunding(a);
+          const bPart = sumFunding(b);
+
+          return bPart - aPart;
+        })
+        .map((a, index) => (
+          <Card>
+            <CardHeader>
+              <CardTitle className={cn('text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-nowrap')}>
+                {a.ticker}, фандинг {(sumFunding(a) * 100).toFixed(4)}%
+              </CardTitle>
+              <CardDescription className="flex gap-2">
+                <div className="flex flex-col">
+                  <TypographyH4>Продаем</TypographyH4>
+                  {a.right.last > a.left.last && (
+                    <div>
+                      <div className="flex">
+                        <img className="h-3 rounded-full" src={exchangeImgMap[a.right.exchange]} />
+                        {a.right.exchange}: {a.right.last}
+                      </div>
+                      <div className="flex">Фандинг: {fundingMap[`${a.ticker}_${a.right.exchange}`]?.toFixed(5)}</div>
+                    </div>
+                  )}
+                  {a.right.last < a.left.last && (
+                    <div>
+                      <div className="flex">
+                        <img className="h-3 rounded-full" src={exchangeImgMap[a.left.exchange]} />
+                        {a.left.exchange}: {a.left.last}
+                      </div>
+                      <div className="flex">Фандинг: {fundingMap[`${a.ticker}_${a.left.exchange}`]?.toFixed(5)}</div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <TypographyH4>Покупаем</TypographyH4>
+                  {a.right.last < a.left.last && (
+                    <div>
+                      <div className="flex">
+                        <img className="h-3 rounded-full" src={exchangeImgMap[a.right.exchange]} />
+                        {a.right.exchange}: {a.right.last}
+                      </div>
+                      <div className="flex">Фандинг: {fundingMap[`${a.ticker}_${a.right.exchange}`]?.toFixed(5)}</div>
+                    </div>
+                  )}
+                  {a.right.last > a.left.last && (
+                    <div>
+                      <div className="flex">
+                        <img className="h-3 rounded-full" src={exchangeImgMap[a.left.exchange]} />
+                        {a.left.exchange}: {a.left.last}
+                      </div>
+                      <div className="flex">Фандинг: {fundingMap[`${a.ticker}_${a.left.exchange}`]?.toFixed(5)}</div>
+                    </div>
+                  )}
+                </div>
+              </CardDescription>
+              {/*<CardDescription className="flex gap-2 items-center">*/}
+              {/*  <div className="flex gap-2">*/}
+              {/*    <div className="flex gap-1 items-center">*/}
+              {/*      <img className="h-3 rounded-full" src={exchangeImgMap[a.left.exchange]} />*/}
+              {/*      {a.left.exchange}: {a.left.last}*/}
+              {/*    </div>*/}
+              {/*    /*/}
+              {/*    <div className="flex gap-1 items-center">*/}
+              {/*      <img className="h-3 rounded-full" src={exchangeImgMap[a.right.exchange]} />*/}
+              {/*      {a.right.exchange}: {a.right.last}*/}
+              {/*    </div>*/}
+              {/*    <div>{((a.ratio - 1) * 100).toFixed(2)}%</div>*/}
+              {/*  </div>*/}
+              {/*  {a.left.exchange}: {fundingMap[`${a.ticker}_${a.left.exchange}`]} - {a.right.exchange}:{' '}*/}
+              {/*  /!*{fundingMap[`${a.ticker}_${a.right.exchange}`]} ={(sumFunding(a) * 100).toFixed(4)}%*!/*/}
+              {/*</CardDescription>*/}
+            </CardHeader>
+          </Card>
+        ))}
+
       <Table wrapperClassName="pt-2">
         <TableHeader>
           <TableRow>
@@ -89,35 +172,6 @@ export const CryptoArbs = () => {
                 </TableCell>
               </TableRow>
             ))}
-          {/*{tickers*/}
-          {/*  .sort(*/}
-          {/*    (a, b) => Math.max(...b[1].arbs.map((a) => Math.abs(a.ratio - 1))) - Math.max(...a[1].arbs.map((a) => Math.abs(a.ratio - 1))),*/}
-          {/*  )*/}
-          {/*  .map(([ticker, invoice], index) => (*/}
-          {/*    <TableRow key={ticker} className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>*/}
-          {/*      <TableCell>{ticker}</TableCell>*/}
-          {/*      <TableCell>*/}
-          {/*        {invoice.arbs*/}
-          {/*          // .sort((a, b) => Math.abs(b.ratio - 1) - Math.abs(a.ratio - 1))*/}
-          {/*          .map((a) => (*/}
-          {/*            <div className="flex gap-2">*/}
-          {/*              <div className="flex gap-1 items-center">*/}
-          {/*                <img className="h-3 rounded-full" src={exchangeImgMap[a.left.exchange]} />*/}
-          {/*                {a.left.exchange}: {a.left.last}*/}
-          {/*              </div>*/}
-          {/*              /*/}
-          {/*              <div className="flex gap-1 items-center">*/}
-          {/*                <img className="h-3 rounded-full" src={exchangeImgMap[a.right.exchange]} />*/}
-          {/*                {a.right.exchange}: {a.right.last}*/}
-          {/*              </div>*/}
-          {/*              <div>{((a.ratio - 1) * 100).toFixed(2)}%</div>*/}
-          {/*            </div>*/}
-          {/*          ))}*/}
-          {/*      </TableCell>*/}
-          {/*      <TableCell>{ticker}</TableCell>*/}
-          {/*      <TableCell>{ticker}</TableCell>*/}
-          {/*    </TableRow>*/}
-          {/*  ))}*/}
         </TableBody>
       </Table>
     </>
