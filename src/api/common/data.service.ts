@@ -91,6 +91,14 @@ export class DataService {
     return this.bybitWsClient.unsubscribeCandles(symbol, resolution);
   }
 
+  okxSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.bybitWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  okxUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.bybitWsClient.unsubscribeCandles(symbol, resolution);
+  }
+
   ctraderSubscribeCandles(symbol: string, resolution: ResolutionString) {
     const s = this.symbols.find((s) => s.symbolName === symbol);
 
@@ -355,11 +363,11 @@ export class DataService {
         map((r) => ({ history: r })),
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
-    } else if (ticker.includes('BINGX:')) {
-      const _ticker = ticker.split('BINGX:')[1];
+    } else if (ticker.includes('OKX:')) {
+      const _ticker = ticker.split('OKX:')[1];
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/bingx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.ctraderUrl}/okx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
