@@ -45,6 +45,7 @@ import {
   SidebarTrigger,
 } from './components/ui/sidebar.tsx';
 import { CryptoArbs } from './CryptoArbs.tsx';
+import { Multicharts } from './Multicharts.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -312,6 +313,7 @@ export default function App() {
     { key: '/test123', label: 'Test', element: <TestPage /> },
     { key: '/screeners', label: 'Скринеры', element: <ScreenersPage /> },
     { key: '/arbs', label: 'Арбитражи', element: <CryptoArbs /> },
+    { key: '/multicharts', label: 'Мульти-графики', element: <Multicharts /> },
   ];
 
   const [telegramToken, settelegramToken] = useState<string | null>(localStorage.getItem('telegramToken'));
