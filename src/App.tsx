@@ -46,6 +46,7 @@ import {
 } from './components/ui/sidebar.tsx';
 import { CryptoArbs } from './CryptoArbs.tsx';
 import { Multicharts } from './Multicharts.tsx';
+import { CTraderHistory } from './CTraderHistoryPage.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -314,6 +315,7 @@ export default function App() {
     { key: '/screeners', label: 'Скринеры', element: <ScreenersPage /> },
     { key: '/arbs', label: 'Арбитражи', element: <CryptoArbs /> },
     { key: '/multicharts', label: 'Мульти-графики', element: <Multicharts /> },
+    { key: '/ctrader', label: 'Ctrader', element: <CTraderHistory /> },
   ];
 
   const [telegramToken, settelegramToken] = useState<string | null>(localStorage.getItem('telegramToken'));
