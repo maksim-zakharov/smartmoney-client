@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAppSelector } from './store';
-import { moneyFormat } from './utils';
+import { moneyFormat, numberFormat } from './utils';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 import { useGetCTraderCashflowQuery, useGetCTraderDealsQuery } from './api/ctrader.api';
@@ -17,8 +17,11 @@ import { ForexLabel } from './TestPage/TestPage'; // Импорт ForexLabel и�
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from './components/ui/chart'; // Предполагаем, что shadcn chart компоненты доступны
 import { Line, LineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { AppsTokenResponse } from './api/alor.slice';
+import { useGetRuRateQuery } from './api/alor.api.ts';
 
 export const CTraderHistory = () => {
+  const { data: rateData } = useGetRuRateQuery();
+  const USDRate = rateData?.Valute.USD.Value;
   const [searchParams, setSearchParams] = useSearchParams();
 
   const preset = searchParams.get('preset') || undefined;
@@ -238,6 +241,135 @@ export const CTraderHistory = () => {
         </ChartContainer>
       </Card>
 
+      {/* Карточки с группировкой PnL по символам */}
+      <div>
+        <h2 className="text-xl font-semibold mb-2">PnL по инструментам</h2>
+        <div className="grid grid-cols-6 gap-2">
+          {Object.entries(symbolPositionsMap).map(([symbolId, value]) => (
+            <Card key={symbolId}>
+              <CardHeader>
+                <CardDescription>
+                  <ForexLabel ticker={map.get(Number(symbolId))?.symbolName} />
+                </CardDescription>
+                <CardTitle className={cn(value > 0 ? 'profitCell' : value < 0 ? 'lossCell' : '', 'text-2xl font-semibold tabular-nums')}>
+                  {moneyFormat(value as number, 'USDT', 0, 2)}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Таблица ввода/вывода с селектором */}
+      <div className="mb-4">
+        <Table wrapperClassName="pt-2">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[200px] text-left" colSpan={11}>
+                Ctrader История позиций
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableHeader className="bg-[rgb(36,52,66)]">
+            <TableRow>
+              <TableHead className="w-[100px]">Инструмент</TableHead>
+              <TableHead className="w-[100px]">Направление</TableHead>
+              <TableHead className="w-[100px]">Время закрытия</TableHead>
+              <TableHead className="w-[200px]">Цена входа</TableHead>
+              <TableHead className="w-[200px]">Цена закрытия</TableHead>
+              <TableHead className="w-[200px]">Лоты</TableHead>
+              <TableHead className="w-[100px] text-right">Свопы</TableHead>
+              <TableHead className="text-right">Валовая прибыль</TableHead>
+              <TableHead className="text-right">Чистая прибыль</TableHead>
+              <TableHead className="text-right">Чистая прибыль RUB</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {closesPositions.map((invoice, index) => (
+              <TableRow key={invoice.invoice} className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
+                <TableCell>
+                  <ForexLabel ticker={map.get(invoice.symbolId)?.symbolName} />
+                </TableCell>
+                <TableCell>{invoice.tradeSide === 1 ? 'Продажа' : 'Покупка'}</TableCell>
+                <TableCell>{dayjs(invoice.createTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>
+                {/*<TableCell>{dayjs(invoice.utcLastUpdateTimestamp).format('DD-MM-YYYY HH:mm')}</TableCell>*/}
+                <TableCell>{moneyFormat(invoice.closePositionDetail.entryPrice, 'USDT', 0, 2)}</TableCell>
+                <TableCell>{moneyFormat(invoice.executionPrice, 'USDT', 0, 2)}</TableCell>
+                <TableCell>
+                  {numberFormat(invoice.volume / (map.get(invoice.symbolId)?.symbolName?.endsWith('CNH_xp') ? 10000000 : 10000), 2, 2)}
+                </TableCell>
+                <TableCell
+                  className={
+                    invoice.closePositionDetail.swap > 0
+                      ? 'text-right profitCell'
+                      : invoice.closePositionDetail.swap < 0
+                        ? 'text-right lossCell'
+                        : 'text-right'
+                  }
+                >
+                  {moneyFormat(invoice.closePositionDetail.swap / 10 ** invoice.closePositionDetail.moneyDigits, 'USDT', 0, 2)}
+                </TableCell>
+                <TableCell
+                  className={
+                    invoice.closePositionDetail.grossProfit > 0
+                      ? 'text-right profitCell'
+                      : invoice.closePositionDetail.grossProfit < 0
+                        ? 'text-right lossCell'
+                        : 'text-right'
+                  }
+                >
+                  {moneyFormat(invoice.closePositionDetail.grossProfit / 10 ** invoice.closePositionDetail.moneyDigits, 'USDT', 0, 2)}
+                </TableCell>
+                <TableCell
+                  className={
+                    invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap > 0
+                      ? 'text-right profitCell'
+                      : invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap < 0
+                        ? 'text-right lossCell'
+                        : 'text-right'
+                  }
+                >
+                  {moneyFormat(
+                    (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap) /
+                      10 ** invoice.closePositionDetail.moneyDigits,
+                    'USDT',
+                    0,
+                    2,
+                  )}
+                </TableCell>
+                <TableCell
+                  className={
+                    invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap > 0
+                      ? 'text-right profitCell'
+                      : invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap < 0
+                        ? 'text-right lossCell'
+                        : 'text-right'
+                  }
+                >
+                  {moneyFormat(
+                    (USDRate * (invoice.closePositionDetail.grossProfit + invoice.closePositionDetail.swap)) /
+                      10 ** invoice.closePositionDetail.moneyDigits,
+                    'RUB',
+                    0,
+                    2,
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell
+                colSpan={10}
+                className={ctraderDealsTotal > 0 ? 'text-right profitCell' : ctraderDealsTotal < 0 ? 'text-right lossCell' : 'text-right'}
+              >
+                Реализовано: {moneyFormat(ctraderDealsTotal, 'USDT', 0, 2)} ({moneyFormat(USDRate * ctraderDealsTotal, 'RUB')})
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </div>
+
       {/* Таблица ввода/вывода с селектором */}
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
@@ -272,53 +404,7 @@ export const CTraderHistory = () => {
               </TableRow>
             ))}
           </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell
-                colSpan={10}
-                className={ctraderDealsTotal > 0 ? 'text-right profitCell' : ctraderDealsTotal < 0 ? 'text-right lossCell' : 'text-right'}
-              >
-                Пополнений:{' '}
-                {moneyFormat(
-                  ctraderCashflow
-                    .filter((invoice) => !invoice.operationType)
-                    .reduce((acc, curr) => acc + curr.delta / 10 ** curr.moneyDigits, 0),
-                  'USDT',
-                  0,
-                  2,
-                )}{' '}
-                Снятий:{' '}
-                {moneyFormat(
-                  ctraderCashflow
-                    .filter((invoice) => invoice.operationType)
-                    .reduce((acc, curr) => acc + curr.delta / 10 ** curr.moneyDigits, 0),
-                  'USDT',
-                  0,
-                  2,
-                )}
-              </TableCell>
-            </TableRow>
-          </TableFooter>
         </Table>
-      </div>
-
-      {/* Карточки с группировкой PnL по символам */}
-      <div>
-        <h2 className="text-xl font-semibold mb-2">PnL по инструментам</h2>
-        <div className="grid grid-cols-3 gap-2">
-          {Object.entries(symbolPositionsMap).map(([symbolId, value]) => (
-            <Card key={symbolId}>
-              <CardHeader>
-                <CardDescription>
-                  <ForexLabel ticker={map.get(Number(symbolId))?.symbolName} />
-                </CardDescription>
-                <CardTitle className={cn(value > 0 ? 'profitCell' : value < 0 ? 'lossCell' : '', 'text-2xl font-semibold tabular-nums')}>
-                  {moneyFormat(value as number, 'USDT', 0, 2)}
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
       </div>
     </div>
   );

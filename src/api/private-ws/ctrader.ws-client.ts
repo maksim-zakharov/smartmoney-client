@@ -26,7 +26,7 @@ export class CtraderWsClient {
     //   transports: ['websocket'],
     // });
     this.ws = io(`http://176.114.69.4:3000/ctrader-ws`, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
     });
 
     this.ws.on('connect', () => {
