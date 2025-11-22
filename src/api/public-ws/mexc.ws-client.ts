@@ -38,6 +38,13 @@ export class MexcWsClient extends SubscriptionManager {
         timestamp: ts,
       });
     }
+    if (channel === 'push.fair.price') {
+      const key = `${symbol}_fair`;
+      const { price } = data;
+      this.subscribeSubjs.get(key)?.next({
+        close: price,
+      });
+    }
     if (channel === 'push.tickers') {
       data.forEach(({ symbol, lastPrice }) => {
         const key = `sub.tickers_${symbol}`;
@@ -59,6 +66,20 @@ export class MexcWsClient extends SubscriptionManager {
         })),
       } as MexcOrderbook);
     }
+  }
+
+  subscribeFairPrice(symbol: string) {
+    const subj = new Subject<any>();
+    const key = `${symbol}_fair`;
+    this.subscribeSubjs.set(key, subj);
+    this.subscribe({
+      method: 'sub.fair.price',
+      param: {
+        symbol,
+      },
+    });
+
+    return subj;
   }
 
   subscribeCandles(symbol: string, resolution: string) {

@@ -10,6 +10,20 @@ import { MexcSpotWsClient } from '../private-ws/mexc-spot.ws-client.ts';
 import { KucoinWsClient } from '../private-ws/kucoin.ws-client.ts';
 import { BitgetFuturesWsClient } from '../public-ws/bitget-futures.ws-client.ts';
 import { BingXFuturesWsClient } from '../public-ws/bingx-futures.ws-client.ts';
+import dayjs from 'dayjs';
+
+function roundToMinutesSimple(date = dayjs(), interval = 1) {
+  const current = dayjs(date);
+  const timeMs = current.valueOf();
+
+  const ONE_MINUTE = 60_000;
+
+  const diff = timeMs % (ONE_MINUTE * interval);
+
+  const roundedMs = timeMs - diff;
+
+  return roundedMs;
+}
 
 export class DataService {
   private serverTimeCache$: Observable<any>;
@@ -56,7 +70,17 @@ export class DataService {
   }
 
   mexcSubscribeCandles(symbol: string, resolution: ResolutionString) {
-    if (symbol.includes('_')) return this.mexcWsClient.subscribeCandles(symbol, resolution);
+    if (symbol.includes('_')) {
+      if (symbol.includes('_fair')) {
+        return this.mexcWsClient.subscribeFairPrice(symbol.split('_fair')[0]).pipe(
+          map((candle) => {
+            const time = roundToMinutesSimple(dayjs(), Number(resolution)) / 1000;
+            return { ...candle, time };
+          }),
+        );
+      }
+      return this.mexcWsClient.subscribeCandles(symbol, resolution);
+    }
 
     return this.mexcSpotWsClient.subscribeCandles(symbol, resolution);
   }
