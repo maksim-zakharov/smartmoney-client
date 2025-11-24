@@ -1,19 +1,19 @@
 import { StatArbPage } from './StatArbPage';
 import React, { useMemo } from 'react';
-import { Pagination, Space } from 'antd';
+import { Pagination } from '../../components/ui/pagination';
 import { Triangle_Page } from './Triangle_Page';
 import { SegmentedLabeledOption } from 'rc-segmented';
 import { useSearchParams } from 'react-router-dom';
 import { symbolFuturePairs } from '../../../symbolFuturePairs';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { useAppSelector } from '../../store';
-import { TWChart } from '../../components/TWChart.tsx';
-import { TickerSettingsDialog } from '../../components/TickerSettingsDialog.tsx';
-import { cn } from '../../lib/utils.ts';
-import GridSizeSelector from '../../components/GridSizeSelector.tsx';
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover.tsx';
+import { TWChart } from '../../components/TWChart';
+import { TickerSettingsDialog } from '../../components/TickerSettingsDialog';
+import { cn } from '../../lib/utils';
+import GridSizeSelector from '../../components/GridSizeSelector';
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 import { Grid3x3 } from 'lucide-react';
-import { Button } from '../../components/ui/button.tsx';
+import { Button } from '../../components/ui/button';
 
 export const SmartPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -320,8 +320,15 @@ export const SmartPage = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <Space>
-        {tab === 'others' && <Pagination current={page} total={others.length} pageSize={24 / span} onChange={setPage} />}
+      <div className="flex gap-2 items-center">
+        {tab === 'others' && (
+          <Pagination
+            current={page}
+            total={others.length}
+            pageSize={24 / span}
+            onChange={(newPage) => setPage(newPage.toString())}
+          />
+        )}
 
         <Popover>
           <PopoverTrigger>
@@ -334,7 +341,7 @@ export const SmartPage = () => {
           </PopoverContent>
         </Popover>
         <TickerSettingsDialog />
-      </Space>
+      </div>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList style={{ margin: '4px auto' }}>
           {options.map((o) => (
