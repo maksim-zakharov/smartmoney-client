@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArbitrageMOEXPage } from './ArbitrageMOEXPage/ArbitrageMOEXPage';
 import { useGetUserInfoQuery } from './api/alor.api';
 import { useAppDispatch, useAppSelector } from './store';
@@ -459,7 +459,7 @@ export default function App() {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.key}>
                   <SidebarMenuButton asChild isActive={item.key === location.pathname}>
-                    <a href={item.key}>{item.label}</a>
+                    <Link to={item.key}>{item.label}</Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
