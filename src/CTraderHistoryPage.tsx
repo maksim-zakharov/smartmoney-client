@@ -124,15 +124,26 @@ export const CTraderHistory = () => {
   // Данные для графика чистого дохода (кумулятивный PnL от закрытых позиций)
   const purePnLData = useMemo(() => {
     const sortedCloses = [...closesPositions].sort((a, b) => a.createTimestamp - b.createTimestamp);
-    let cumulative = 0;
-    return sortedCloses.map((item) => {
+    
+    // Группируем по дате и суммируем PnL за день
+    const dailyPnL = new Map<string, number>();
+    sortedCloses.forEach((item) => {
+      const date = dayjs(item.createTimestamp).format('YYYY-MM-DD');
       const profit = (item.closePositionDetail.grossProfit + item.closePositionDetail.swap) / 10 ** item.closePositionDetail.moneyDigits;
-      cumulative += profit;
-      return {
-        date: dayjs(item.createTimestamp).format('YYYY-MM-DD'),
-        pnl: cumulative,
-      };
+      dailyPnL.set(date, (dailyPnL.get(date) || 0) + profit);
     });
+    
+    // Создаем кумулятивный массив
+    let cumulative = 0;
+    return Array.from(dailyPnL.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, profit]) => {
+        cumulative += profit;
+        return {
+          date,
+          pnl: cumulative,
+        };
+      });
   }, [closesPositions]);
 
   // Данные для графика дохода с учетом пополнений/выводов (баланс со временем)
@@ -150,24 +161,35 @@ export const CTraderHistory = () => {
       })),
     ].sort((a, b) => a.timestamp - b.timestamp);
 
-    let cumulative = 0;
-    return allEvents.map((event) => {
-      cumulative += event.type === 'withdrawal' ? -event.amount : event.amount;
-      return {
-        date: dayjs(event.timestamp).format('YYYY-MM-DD'),
-        balance: cumulative,
-      };
+    // Группируем по дате и суммируем изменения за день
+    const dailyChanges = new Map<string, number>();
+    allEvents.forEach((event) => {
+      const date = dayjs(event.timestamp).format('YYYY-MM-DD');
+      const change = event.type === 'withdrawal' ? -event.amount : event.amount;
+      dailyChanges.set(date, (dailyChanges.get(date) || 0) + change);
     });
+
+    // Создаем кумулятивный массив
+    let cumulative = 0;
+    return Array.from(dailyChanges.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, change]) => {
+        cumulative += change;
+        return {
+          date,
+          balance: cumulative,
+        };
+      });
   }, [closesPositions, ctraderCashflow]);
 
   const chartConfig: ChartConfig = {
     pnl: {
       label: 'PnL',
-      color: 'hsl(var(--chart-1))',
+      color: 'hsl(220, 70%, 50%)',
     },
     balance: {
       label: 'Balance',
-      color: 'hsl(var(--chart-2))',
+      color: 'hsl(142, 76%, 36%)',
     },
   };
 
@@ -209,37 +231,72 @@ export const CTraderHistory = () => {
         </div>
       </div>
 
-      {/* График чистого дохода */}
-      <Card className="mb-4">
-        <CardHeader>
-          <CardTitle>Чистый доход</CardTitle>
-        </CardHeader>
-        <ChartContainer config={chartConfig}>
-          <LineChart data={purePnLData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Line type="monotone" dataKey="pnl" stroke={chartConfig.pnl.color} />
-          </LineChart>
-        </ChartContainer>
-      </Card>
+      {/* Графики */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Чистый доход</CardTitle>
+          </CardHeader>
+          <ChartContainer config={chartConfig} className="h-[500px]">
+            <LineChart 
+              data={purePnLData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: 'currentColor' }}
+              />
+              <YAxis 
+                tick={{ fill: 'currentColor' }}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Line 
+                type="monotone" 
+                dataKey="pnl" 
+                stroke="#3b82f6"
+                strokeWidth={2}
+                dot={{ r: 4, fill: "#3b82f6", strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: "#3b82f6" }}
+                connectNulls={true}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ChartContainer>
+        </Card>
 
-      {/* График дохода с учетом пополнений и вывода */}
-      <Card className="mb-4">
-        <CardHeader>
-          <CardTitle>Доход с учетом пополнений и вывода</CardTitle>
-        </CardHeader>
-        <ChartContainer config={chartConfig}>
-          <LineChart data={balanceData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <Line type="monotone" dataKey="balance" stroke={chartConfig.balance.color} />
-          </LineChart>
-        </ChartContainer>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Доход с учетом пополнений и вывода</CardTitle>
+          </CardHeader>
+          <ChartContainer config={chartConfig} className="h-[500px]">
+            <LineChart 
+              data={balanceData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: 'currentColor' }}
+              />
+              <YAxis 
+                tick={{ fill: 'currentColor' }}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Line 
+                type="monotone" 
+                dataKey="balance" 
+                stroke="#3b82f6"
+                strokeWidth={2}
+                dot={{ r: 4, fill: "#3b82f6", strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: "#3b82f6" }}
+                connectNulls={true}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ChartContainer>
+        </Card>
+      </div>
 
       {/* Карточки с группировкой PnL по символам */}
       <div>
