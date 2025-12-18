@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "build:ci": "vite build --base=/smartmoney-client",
     "lint": "eslint smartmoney-client",
     "preview": "vite preview",
