@@ -29,6 +29,7 @@ export class DataService {
   private serverTimeCache$: Observable<any>;
 
   private readonly ctraderUrl: string;
+  private readonly cryptoUrl: string;
 
   private readonly bybitWsClient: BybitWebsocketClient;
   private readonly mexcWsClient: MexcWsClient;
@@ -44,7 +45,8 @@ export class DataService {
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://5.35.13.149';
-    this.ctraderUrl = 'https://176.114.69.4';
+    this.ctraderUrl = 'http://176.114.69.4';
+    this.cryptoUrl = 'http://5.35.13.149';
 
     this.bybitWsClient = new BybitWebsocketClient();
     this.mexcWsClient = new MexcWsClient();
@@ -181,7 +183,7 @@ export class DataService {
   }
 
   getTrades(ticker: string, limit = 200) {
-    return fetch(`${this.ctraderUrl}/mexc/trades?symbol=${ticker}&limit=${limit}`).then((res) => {
+    return fetch(`${this.cryptoUrl}/mexc/trades?symbol=${ticker}&limit=${limit}`).then((res) => {
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
@@ -191,7 +193,7 @@ export class DataService {
 
   getAggTrades(ticker: string, periodParams: PeriodParams) {
     return fetch(
-      `${this.ctraderUrl}/mexc/agg-trades?from=${Math.max(periodParams.from, 0)}&symbol=${ticker}&to=${Math.max(periodParams.to, 1)}`,
+      `${this.cryptoUrl}/mexc/agg-trades?from=${Math.max(periodParams.from, 0)}&symbol=${ticker}&to=${Math.max(periodParams.to, 1)}`,
     ).then((res) => {
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
@@ -229,7 +231,7 @@ export class DataService {
       const _ticker = ticker.split('GATEIO:')[1];
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/gate/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.cryptoUrl}/gate/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -244,7 +246,7 @@ export class DataService {
       const _ticker = ticker.split('BITGET:')[1];
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/bitget/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.cryptoUrl}/bitget/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -286,7 +288,7 @@ export class DataService {
       const _ticker = ticker.split('BYBIT:')[1];
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/bybit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.cryptoUrl}/bybit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -301,7 +303,7 @@ export class DataService {
       const _ticker = ticker.split('BINANCE:')[1];
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/binance/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.cryptoUrl}/binance/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -334,7 +336,7 @@ export class DataService {
         _ticker = _ticker.split('_fair')[0];
         request$ = from(
           fetch(
-            `${this.ctraderUrl}/mexc/f-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+            `${this.cryptoUrl}/mexc/f-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);
@@ -348,7 +350,7 @@ export class DataService {
       } else {
         request$ = from(
           fetch(
-            `${this.ctraderUrl}/mexc/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+            `${this.cryptoUrl}/mexc/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);
@@ -379,7 +381,7 @@ export class DataService {
       const _ticker = ticker.split('BINGX:')[1];
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/bingx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.cryptoUrl}/bingx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -394,7 +396,7 @@ export class DataService {
       const _ticker = ticker.split('KUCOIN:')[1];
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/kucoin/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.cryptoUrl}/kucoin/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -409,7 +411,7 @@ export class DataService {
       const _ticker = ticker.split('OKX:')[1];
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/okx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.cryptoUrl}/okx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
