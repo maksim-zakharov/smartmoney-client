@@ -103,10 +103,10 @@ export const CryptoArbs = () => {
     };
   }, [selectedArb]);
 
-  return (
-    <div className="flex gap-4 h-[calc(100vh-200px)]">
-      {/* Левая колонка: список карточек */}
-      <div className="flex-1 overflow-y-auto pr-2">
+        return (
+          <div className="flex gap-4 h-[calc(100vh-200px)]">
+            {/* Левая колонка: список карточек (1/4 ширины) */}
+            <div className="flex-[1] overflow-y-auto pr-2">
         <div className="space-y-4">
           {filteredArbs.map((a, index) => (
             <Card
@@ -178,8 +178,8 @@ export const CryptoArbs = () => {
         </div>
       </div>
 
-      {/* Правая колонка: график спреда */}
-      <div className="flex-1 flex flex-col min-h-0">
+            {/* Правая колонка: график спреда (3/4 ширины) */}
+            <div className="flex-[3] flex flex-col min-h-0">
         {selectedArb ? (
           <>
             <div className="mb-4">
