@@ -23,7 +23,7 @@ export class BingxWsClient {
   // Подключение к WebSocket
   private connect() {
     // this.public-ws = io(`http://localhost:3000/bingx-ws`, {
-    this.ws = io(`http://176.114.69.4:3000/bingx-ws`, {
+    this.ws = io(`http://5.35.13.149:3000/bingx-ws`, {
       transports: ['websocket'],
     });
 

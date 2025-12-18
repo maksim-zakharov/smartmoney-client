@@ -43,7 +43,7 @@ export class DataService {
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
   constructor(public readonly alorApi: AlorApi) {
-    // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
+    // this.ctraderUrl = 'http://localhost:3000'; //  'http://5.35.13.149';
     this.ctraderUrl = 'https://176.114.69.4';
 
     this.bybitWsClient = new BybitWebsocketClient();
@@ -225,8 +225,8 @@ export class DataService {
         map((r) => ({ history: r })),
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
-    } else if (ticker.includes('GATE:')) {
-      const _ticker = ticker.split('GATE:')[1];
+    } else if (ticker.includes('GATEIO:')) {
+      const _ticker = ticker.split('GATEIO:')[1];
       request$ = from(
         fetch(
           `${this.ctraderUrl}/gate/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,

@@ -5,7 +5,7 @@ export const bingxApi = createApi({
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
     // baseUrl: 'http://localhost:3000/ctrader',
-    baseUrl: 'https://176.114.69.4/bingx',
+    baseUrl: 'https://5.35.13.149/bingx',
     paramsSerializer: (params) => {
       return new URLSearchParams(
         Object.entries(params).flatMap(([key, value]) =>

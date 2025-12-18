@@ -461,7 +461,7 @@ export const ScreenersPage = () => {
                 .map((invoice, index) => (
                   <TableRow
                     className={cn(index % 2 ? 'rowOdd' : 'rowEven', selected === `GATE:${invoice.contract}` && 'rowHover')}
-                    onClick={(e) => setSelected(`GATE:${invoice.contract}`)}
+                    onClick={(e) => setSelected(`GATEIO:${invoice.contract}`)}
                   >
                     <TableCell>
                       <a href={`https://www.gate.com/ru/futures/USDT/${invoice.contract}`} target="_blank">

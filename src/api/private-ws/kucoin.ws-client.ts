@@ -9,7 +9,7 @@ export class KucoinWsClient {
   }
 
   private async connect() {
-    fetch('https://176.114.69.4/kucoin/futures-auth-ws', {
+      fetch('https://5.35.13.149/kucoin/futures-auth-ws', {
       method: 'GET',
     })
       .then((r) => r.json())

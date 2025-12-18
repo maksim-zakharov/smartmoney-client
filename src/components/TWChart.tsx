@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
-import { DataFeed } from '../api/common/datafeed.ts';
+import { DataFeed } from '../api/common/datafeed';
 import { getTimezone, moneyFormatCompact } from '../utils';
 import {
   ChartingLibraryFeatureset,

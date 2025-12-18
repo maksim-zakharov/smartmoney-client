@@ -5,7 +5,7 @@ export const bitgetApi = createApi({
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
     // baseUrl: 'http://localhost:3000/ctrader',
-    baseUrl: 'https://176.114.69.4/bitget',
+    baseUrl: 'https://5.35.13.149/bitget',
     paramsSerializer: (params) => {
       return new URLSearchParams(
         Object.entries(params).flatMap(([key, value]) =>

@@ -298,8 +298,8 @@ export default function App() {
   );
 
   useEffect(() => {
-    if (localStorage.getItem('token'))
-      dispatch(initApi({ token: localStorage.getItem('token'), accessToken: localStorage.getItem('accessToken') }));
+    // if (localStorage.getItem('token'))
+    dispatch(initApi({ token: localStorage.getItem('token'), accessToken: localStorage.getItem('accessToken') }));
   }, []);
 
   const menuItems = [

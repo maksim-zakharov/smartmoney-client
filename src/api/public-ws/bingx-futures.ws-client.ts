@@ -62,7 +62,7 @@ export class BingXFuturesWsClient extends SubscriptionManager {
       name: 'BingX Futures',
       loginPromise: () => {
         console.log('🔐 Login request sent');
-        const url = new URL('https://176.114.69.4/bingx/login');
+        const url = new URL('https://5.35.13.149/bingx/login');
         url.searchParams.set('apiKey', apiKey);
         url.searchParams.set('secretKey', secretKey);
 

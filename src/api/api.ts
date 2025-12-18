@@ -38,8 +38,8 @@ export const api = createApi({
   reducerPath: 'api',
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
-    // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://176.114.69.4:3000' : undefined,
-    baseUrl: 'https://176.114.69.4',
+    // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://5.35.13.149:3000' : undefined,
+    baseUrl: 'https://5.35.13.149',
     // baseUrl: 'http://localhost:3000',
     // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://localhost:3000' : undefined,
     paramsSerializer: (params) => {

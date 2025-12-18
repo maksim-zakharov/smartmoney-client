@@ -5,7 +5,7 @@ export const htxApi = createApi({
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
     // baseUrl: 'http://localhost:3000/ctrader',
-    baseUrl: 'https://176.114.69.4/htx',
+    baseUrl: 'https://5.35.13.149/htx',
     paramsSerializer: (params) => {
       return new URLSearchParams(
         Object.entries(params).flatMap(([key, value]) =>

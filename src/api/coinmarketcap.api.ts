@@ -4,7 +4,7 @@ export const coinmarketcapApi = createApi({
   reducerPath: 'coinmarketcapApi',
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
-    baseUrl: 'https://176.114.69.4/coinmarketcap',
+    baseUrl: 'https://5.35.13.149/coinmarketcap',
     paramsSerializer: (params) => {
       return new URLSearchParams(
         Object.entries(params).flatMap(([key, value]) =>

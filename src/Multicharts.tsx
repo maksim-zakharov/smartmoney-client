@@ -50,7 +50,7 @@ export const Multicharts = () => {
       ticker: `${ticker}_USDT`,
     },
     {
-      exchange: 'GATE',
+      exchange: 'GATEIO',
       ticker: `${ticker}_USDT`,
     },
     {

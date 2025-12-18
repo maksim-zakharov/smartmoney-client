@@ -92,7 +92,7 @@ export class DataFeed implements IBasicDataFeed {
 
     this.onNewCandle = options.onNewCandle;
 
-    // this.ctraderUrl = 'http://localhost:3000'; //  'http://176.114.69.4';
+    // this.ctraderUrl = 'http://localhost:3000'; //  'http://5.35.13.149';
     this.ctraderUrl = 'https://176.114.69.4';
   }
 
@@ -311,12 +311,12 @@ export class DataFeed implements IBasicDataFeed {
         });
 
         return () => this.dataService.bingxUnsubscribeCandles(symbol.split('BINGX:')[1], resolution);
-      } else if (symbol.includes('GATE')) {
-        this.dataService.gateSubscribeCandles(symbol.split('GATE:')[1], resolution).subscribe((data) => {
+      } else if (symbol.includes('GATEIO')) {
+        this.dataService.gateSubscribeCandles(symbol.split('GATEIO:')[1], resolution).subscribe((data) => {
           callback(data);
         });
 
-        return () => this.dataService.gateUnsubscribeCandles(symbol.split('GATE:')[1], resolution);
+        return () => this.dataService.gateUnsubscribeCandles(symbol.split('GATEIO:')[1], resolution);
         // TODO Сделать отписки для спота
       } else if (symbol.includes('MEXC')) {
         this.dataService.mexcSubscribeCandles(symbol.split('MEXC:')[1], resolution).subscribe((data) => {
