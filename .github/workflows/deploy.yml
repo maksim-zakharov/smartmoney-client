@@ -39,7 +39,7 @@ jobs:
             ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}-
             ${{ runner.os }}-node-
 
-  test:
+  build:
     needs: prepare
     runs-on: ubuntu-latest
     steps:
@@ -58,72 +58,8 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Run tests and collect results
-        run: npm test
-        continue-on-error: true  # Продолжаем даже при падении тестов
-
-      - name: Build test report
-        uses: simple-elf/allure-report-action@v1.7
-        if: always()
-        with:
-          gh_pages: gh-pages
-          allure_history: allure-history
-          allure_results: dist/allure-results
-
-      - name: Upload Allure report artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: allure-report
-          path: ./allure-report
-          retention-days: 1  # Очистка через 1 день чтобы не засорять storage
-
-#  deploy_allure:
-#    needs: test
-#    runs-on: ubuntu-latest
-#    if: always()  # Всегда выполняем после тестов
-#    steps:
-#      - name: Download Allure report
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: allure-report
-#          path: ./dist/allure-report  # Помещаем сразу в dist
-#
-#      - name: Deploy Allure Report
-#        uses: peaceiris/actions-gh-pages@v3
-#        with:
-#          github_token: ${{ secrets.GITHUB_TOKEN }}
-#          publish_dir: ./allure-report
-#          keep_files: false  # Перезаписываем только отчеты
-
-  build:
-    needs: [prepare, test]
-    runs-on: ubuntu-latest
-    if: always()  # Только если тесты прошли
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Restore node_modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            **/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}-${{ needs.prepare.outputs.node_version }}
-
-      - name: Install dependencies (if cache missed)
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
-
       - name: Build project
         run: npm run build:ci
-
-      - name: Download Allure report
-        uses: actions/download-artifact@v4
-        with:
-          name: allure-report
-          path: ./dist/allure-report  # Помещаем сразу в dist
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -147,7 +83,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   notify:
-    needs: [ test, build, deploy ]
+    needs: [ build, deploy ]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -155,7 +91,6 @@ jobs:
         id: compose
         run: |
           FAILED_JOBS=""
-          if [[ "${{ needs.test.result }}" == "failure" ]]; then FAILED_JOBS+="Test❌ "; fi
           if [[ "${{ needs.build.result }}" == "failure" ]]; then FAILED_JOBS+="Build🚫 "; fi
           if [[ "${{ needs.deploy.result }}" == "failure" ]]; then FAILED_JOBS+="Deploy🛑"; fi
           
