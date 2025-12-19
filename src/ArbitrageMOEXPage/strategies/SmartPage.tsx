@@ -18,7 +18,7 @@ import { Button } from '../../components/ui/button';
 export const SmartPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('segment') || 'stocks';
-  const expirationMonth = searchParams.get('expirationMonth') || '9.25';
+  const expirationMonth = searchParams.get('expirationMonth') || '3.26';
 
   const rows = Number(searchParams.get('rows') || 1);
   const height = 940 / rows;
@@ -322,12 +322,7 @@ export const SmartPage = () => {
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="flex gap-2 items-center">
         {tab === 'others' && (
-          <Pagination
-            current={page}
-            total={others.length}
-            pageSize={24 / span}
-            onChange={(newPage) => setPage(newPage.toString())}
-          />
+          <Pagination current={page} total={others.length} pageSize={24 / span} onChange={(newPage) => setPage(newPage.toString())} />
         )}
 
         <Popover>
@@ -420,40 +415,40 @@ export const SmartPage = () => {
             {/*  </Col>*/}
             {/*))}*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="UCNY-9.25" _tickerFuture="USDCNH_xp" multi={1000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="UCNY-3.26" _tickerFuture="USDCNH_xp" multi={1000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="ED-9.25" _tickerFuture="EURUSD_xp" multi={100} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="ED-3.26" _tickerFuture="EURUSD_xp" multi={100} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="GOLD-9.25" _tickerFuture="XAUUSD_xp" multi={100000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="GOLD-3.26" _tickerFuture="XAUUSD_xp" multi={100000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="PLD-9.25" _tickerFuture="XPDUSD_xp" multi={100000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="PLD-3.26" _tickerFuture="XPDUSD_xp" multi={100000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="PLT-9.25" _tickerFuture="XPTUSD_xp" multi={100000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="PLT-3.26" _tickerFuture="XPTUSD_xp" multi={100000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="SILV-9.25" _tickerFuture="XAGUSD_xp" multi={10000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="SILV-3.26" _tickerFuture="XAGUSD_xp" multi={10000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="BR-9.25" _tickerFuture="BRNUSD_xp" multi={10000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="BR-3.26" _tickerFuture="BRNUSD_xp" multi={10000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="NG-9.25" _tickerFuture="NGCUSD_xp" multi={1000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="NG-3.26" _tickerFuture="NGCUSD_xp" multi={1000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="SPYF-9.25" _tickerFuture="SPXUSD_xp" multi={1000000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="SPYF-3.26" _tickerFuture="SPXUSD_xp" multi={1000000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="HANG-9.25" _tickerFuture="HSIHKD_xp" multi={1000000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="HANG-3.26" _tickerFuture="HSIHKD_xp" multi={1000000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="NASD-9.25" _tickerFuture="NDXUSD_xp" multi={100000} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="NASD-3.26" _tickerFuture="NDXUSD_xp" multi={100000} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
-            {/*  <StatArbPage tickerStock="COPPER-9.25" _tickerFuture="CUCUSD_xp" multi={0.0453592} onlyChart height={height} />*/}
+            {/*  <StatArbPage tickerStock="COPPER-3.26" _tickerFuture="CUCUSD_xp" multi={0.0453592} onlyChart height={height} />*/}
             {/*</Col>*/}
             {/*<Col span={span}>*/}
             {/*  <StatArbPage*/}
@@ -608,7 +603,7 @@ export const SmartPage = () => {
           <div className="grid-cols-24 grid">
             {symbolFuturePairs.map((item) => (
               <div className={cn(`col-span-${24 / span}`)}>
-                <StatArbPage tickerStock={item.stockSymbol} _tickerFuture={`${item.futuresSymbol}-9.25`} onlyChart height={height} />
+                <StatArbPage tickerStock={item.stockSymbol} _tickerFuture={`${item.futuresSymbol}-3.26`} onlyChart height={height} />
               </div>
             ))}
           </div>
@@ -640,40 +635,40 @@ export const SmartPage = () => {
         <TabsContent value="forex-local">
           <div className="grid-cols-24 grid">
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="UCNY-9.25" _tickerFuture="USDCNH_xp" multi={1000} onlyChart height={height} />
+              <StatArbPage tickerStock="UCNY-3.26" _tickerFuture="USDCNH_xp" multi={1000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="ED-9.25" _tickerFuture="EURUSD_xp" multi={100} onlyChart height={height} />
+              <StatArbPage tickerStock="ED-3.26" _tickerFuture="EURUSD_xp" multi={100} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="GOLD-9.25" _tickerFuture="XAUUSD_xp" multi={100000} onlyChart height={height} />
+              <StatArbPage tickerStock="GOLD-3.26" _tickerFuture="XAUUSD_xp" multi={100000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="PLD-9.25" _tickerFuture="XPDUSD_xp" multi={100000} onlyChart height={height} />
+              <StatArbPage tickerStock="PLD-3.26" _tickerFuture="XPDUSD_xp" multi={100000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="PLT-9.25" _tickerFuture="XPTUSD_xp" multi={100000} onlyChart height={height} />
+              <StatArbPage tickerStock="PLT-3.26" _tickerFuture="XPTUSD_xp" multi={100000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="SILV-9.25" _tickerFuture="XAGUSD_xp" multi={10000} onlyChart height={height} />
+              <StatArbPage tickerStock="SILV-3.26" _tickerFuture="XAGUSD_xp" multi={10000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="BR-9.25" _tickerFuture="BRNUSD_xp" multi={10000} onlyChart height={height} />
+              <StatArbPage tickerStock="BR-3.26" _tickerFuture="BRNUSD_xp" multi={10000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="NG-9.25" _tickerFuture="NGCUSD_xp" multi={1000} onlyChart height={height} />
+              <StatArbPage tickerStock="NG-3.26" _tickerFuture="NGCUSD_xp" multi={1000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="SPYF-9.25" _tickerFuture="SPXUSD_xp" multi={1000000} onlyChart height={height} />
+              <StatArbPage tickerStock="SPYF-3.26" _tickerFuture="SPXUSD_xp" multi={1000000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="HANG-9.25" _tickerFuture="HSIHKD_xp" multi={1000000} onlyChart height={height} />
+              <StatArbPage tickerStock="HANG-3.26" _tickerFuture="HSIHKD_xp" multi={1000000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="NASD-9.25" _tickerFuture="NDXUSD_xp" multi={100000} onlyChart height={height} />
+              <StatArbPage tickerStock="NASD-3.26" _tickerFuture="NDXUSD_xp" multi={100000} onlyChart height={height} />
             </div>
             <div className={cn(`col-span-${24 / span}`)}>
-              <StatArbPage tickerStock="COPPER-9.25" _tickerFuture="CUCUSD_xp" multi={0.0453592} onlyChart height={height} />
+              <StatArbPage tickerStock="COPPER-3.26" _tickerFuture="CUCUSD_xp" multi={0.0453592} onlyChart height={height} />
             </div>
           </div>
         </TabsContent>
