@@ -45,7 +45,7 @@ export class DataService {
 
   constructor(public readonly alorApi: AlorApi) {
     // this.ctraderUrl = 'http://localhost:3000'; //  'http://5.35.13.149';
-    this.ctraderUrl = 'http://176.114.69.4';
+    this.ctraderUrl = 'http://176.114.69.4:3000';
     this.cryptoUrl = 'http://5.35.13.149';
 
     this.bybitWsClient = new BybitWebsocketClient();
