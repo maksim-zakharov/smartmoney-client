@@ -301,7 +301,7 @@ export const CryptoArbs = () => {
   }, [selectedArb]);
 
         return (
-          <div className="flex gap-4 h-[calc(100vh-200px)]">
+          <div className="flex gap-4 h-[calc(100vh-76px)]">
             {/* Левая колонка: список карточек (фиксированная ширина) */}
             <div className="w-[400px] flex flex-col overflow-hidden">
               {/* Табы для сортировки */}
