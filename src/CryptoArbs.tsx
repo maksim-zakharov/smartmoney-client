@@ -378,7 +378,7 @@ export const CryptoArbs = () => {
                       >
                         <CardHeader className="pb-2 pt-2 px-3">
                           {/* Заголовок с тикером и общим фандингом */}
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center justify-between mb-1.5">
                             <div className="flex items-center gap-2">
                               <CardTitle className="text-xl font-bold tabular-nums">
                                 {a.ticker}
@@ -411,7 +411,7 @@ export const CryptoArbs = () => {
                           </div>
 
                           {/* Основная информация: Продаем и Покупаем */}
-                          <div className="grid grid-cols-2 gap-2 mb-2">
+                          <div className="grid grid-cols-2 gap-2 mb-1.5">
                             {/* Продаем */}
                             <div className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
                               <div className="flex items-center gap-1.5 mb-1">
