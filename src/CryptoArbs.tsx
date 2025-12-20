@@ -369,7 +369,7 @@ export const CryptoArbs = () => {
             <Card
               key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
               className={cn(
-                          'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-3 w-full',
+                          'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full',
                           a.isSelected
                             ? 'ring-2 ring-primary shadow-lg border-primary'
                             : 'border-muted-foreground/20',
@@ -378,7 +378,7 @@ export const CryptoArbs = () => {
                       >
                         <CardHeader className="pb-2 pt-2 px-3">
                           {/* Заголовок с тикером и общим фандингом */}
-                          <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <CardTitle className="text-xl font-bold tabular-nums">
                                 {a.ticker}
@@ -411,7 +411,7 @@ export const CryptoArbs = () => {
                           </div>
 
                           {/* Основная информация: Продаем и Покупаем */}
-                          <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div className="grid grid-cols-2 gap-2 mb-2">
                             {/* Продаем */}
                             <div className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
                               <div className="flex items-center gap-1.5 mb-1">
@@ -500,7 +500,7 @@ export const CryptoArbs = () => {
                   </div>
 
                           {/* Спред */}
-                          <div className="flex items-center justify-between pt-2 border-t border-muted-foreground/20">
+                          <div className="flex items-center justify-between pt-1.5 border-t border-muted-foreground/20">
                             <span className="text-sm font-semibold">Спред</span>
                             <span className={cn(
                               "text-sm font-bold tabular-nums",

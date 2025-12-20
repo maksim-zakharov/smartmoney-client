@@ -10,6 +10,7 @@ import { MexcSpotWsClient } from '../private-ws/mexc-spot.ws-client.ts';
 import { KucoinWsClient } from '../private-ws/kucoin.ws-client.ts';
 import { BitgetFuturesWsClient } from '../public-ws/bitget-futures.ws-client.ts';
 import { BingXFuturesWsClient } from '../public-ws/bingx-futures.ws-client.ts';
+import { OurbitWsClient } from '../public-ws/ourbit.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -40,6 +41,7 @@ export class DataService {
   private readonly kucoinWsClient: KucoinWsClient;
   private readonly bingxWsClient: BingXFuturesWsClient;
   private readonly bitgetFuturesWsClient: BitgetFuturesWsClient;
+  private readonly ourbitWsClient: OurbitWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -57,6 +59,7 @@ export class DataService {
     this.mexcSpotWsClient = new MexcSpotWsClient();
     this.kucoinWsClient = new KucoinWsClient();
     this.bitgetFuturesWsClient = new BitgetFuturesWsClient();
+    this.ourbitWsClient = new OurbitWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -91,6 +94,28 @@ export class DataService {
     // if (symbol.includes('_')) return this.mexcWsClient.unsubscribeCandles(symbol, resolution);
 
     return Promise.resolve(); //  this.mexcSpotWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  ourbitSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_')) {
+      if (symbol.includes('_fair')) {
+        return this.ourbitWsClient.subscribeFairPrice(symbol.split('_fair')[0]).pipe(
+          map((candle) => {
+            const time = roundToMinutesSimple(dayjs(), Number(resolution)) / 1000;
+            return { ...candle, time };
+          }),
+        );
+      }
+      return this.ourbitWsClient.subscribeCandles(symbol, resolution);
+    }
+
+    // Для OURBIT нет спота, только фьючерсы
+    return this.ourbitWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  ourbitUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // TODO: реализовать отписку для OURBIT если нужно
+    return Promise.resolve();
   }
 
   gateSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -351,6 +376,39 @@ export class DataService {
         request$ = from(
           fetch(
             `${this.cryptoUrl}/mexc/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
+    } else if (ticker.includes('OURBIT:')) {
+      let _ticker = ticker.split('OURBIT:')[1];
+
+      if (_ticker.includes('_fair')) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/ourbit/f-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/ourbit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);

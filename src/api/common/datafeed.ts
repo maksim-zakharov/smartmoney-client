@@ -325,6 +325,13 @@ export class DataFeed implements IBasicDataFeed {
 
         return () => this.dataService.mexcUnsubscribeCandles(symbol.split('MEXC:')[1], resolution);
         // TODO Сделать отписки
+      } else if (symbol.includes('OURBIT')) {
+        this.dataService.ourbitSubscribeCandles(symbol.split('OURBIT:')[1], resolution).subscribe((data) => {
+          callback(data);
+        });
+
+        return () => this.dataService.ourbitUnsubscribeCandles(symbol.split('OURBIT:')[1], resolution);
+        // TODO Сделать отписки
       } else if (symbol.includes('FINAM')) {
         return this.dataService.finamSubscribeCandles(symbol.split('FINAM:')[1], resolution).subscribe((data) => {
           callback(data);
