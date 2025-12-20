@@ -1,11 +1,13 @@
 import { useGetPumpTickersQuery } from './api/pump-api.ts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
 import { cn } from './lib/utils.ts';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { exchangeImgMap } from './utils.ts';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card.tsx';
 import { TypographyH4 } from './components/ui/typography.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
+import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 
 interface ArbPair {
   ticker: string;
@@ -43,7 +45,16 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
   }
 };
 
+enum SortType {
+  Funding = 'funding',
+  Spread = 'spread',
+}
+
 export const CryptoArbs = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sortType = (searchParams.get('sort') as SortType) || SortType.Funding;
+  const selectedPairKey = searchParams.get('pair');
+
   const [selectedArb, setSelectedArb] = useState<ArbPair | null>(null);
   const { data: tickersMap = {} } = useGetPumpTickersQuery(
     {},
@@ -78,16 +89,74 @@ export const CryptoArbs = () => {
   };
 
   const filteredArbs = useMemo(() => {
-    return tickers
+    const arbs = tickers
       .map(([ticker, invoice], index) => invoice.arbs.map((a) => ({ ...a, ticker })))
       .flat()
-      .filter((b) => Math.abs(b.ratio - 1) * 100 > 1 && sumFunding(b) * 100 > 0.3)
-      .sort((a, b) => {
+      .filter((b) => Math.abs(b.ratio - 1) * 100 > 1 && sumFunding(b) * 100 > 0.3);
+
+    // Сортировка в зависимости от выбранного типа
+    if (sortType === SortType.Spread) {
+      return arbs.sort((a, b) => {
+        const aSpread = Math.abs(a.ratio - 1) * 100;
+        const bSpread = Math.abs(b.ratio - 1) * 100;
+        return bSpread - aSpread;
+      });
+    } else {
+      // Сортировка по фандингу (по умолчанию)
+      return arbs.sort((a, b) => {
         const aPart = sumFunding(a);
         const bPart = sumFunding(b);
         return bPart - aPart;
       });
-  }, [tickers, fundingMap]);
+    }
+  }, [tickers, fundingMap, sortType]);
+
+  // Восстанавливаем выбранную пару из query параметров при загрузке
+  useEffect(() => {
+    if (selectedPairKey && filteredArbs.length > 0) {
+      // Поддерживаем оба формата для обратной совместимости
+      const separator = selectedPairKey.includes('|') ? '|' : '_';
+      const parts = selectedPairKey.split(separator);
+      
+      if (parts.length >= 3) {
+        const ticker = parts[0];
+        const leftExchange = parts[1];
+        // Для формата с подчеркиванием берем все остальное, для формата с | - только третий элемент
+        const rightExchange = separator === '|' ? parts[2] : parts.slice(2).join('_');
+        
+        const foundArb = filteredArbs.find(
+          (a) => a.ticker === ticker && a.left.exchange === leftExchange && a.right.exchange === rightExchange,
+        );
+        if (foundArb) {
+          // Обновляем только если пара отличается от текущей выбранной
+          setSelectedArb((current) => {
+            if (!current || 
+              current.ticker !== foundArb.ticker || 
+              current.left.exchange !== foundArb.left.exchange || 
+              current.right.exchange !== foundArb.right.exchange) {
+              return foundArb;
+            }
+            return current;
+          });
+        }
+      }
+    }
+  }, [selectedPairKey, filteredArbs]);
+
+  // Обработчик изменения типа сортировки
+  const handleSortChange = (value: string) => {
+    searchParams.set('sort', value);
+    setSearchParams(searchParams);
+  };
+
+  // Обработчик выбора пары
+  const handleArbSelect = (arb: ArbPair) => {
+    setSelectedArb(arb);
+    // Используем формат: ticker|leftExchange|rightExchange для избежания конфликтов с подчеркиваниями
+    const pairKey = `${arb.ticker}|${arb.left.exchange}|${arb.right.exchange}`;
+    searchParams.set('pair', pairKey);
+    setSearchParams(searchParams);
+  };
 
   // Формируем тикеры с префиксами бирж и правильными суффиксами для графика спреда
   const getSpreadTickers = useMemo(() => {
@@ -106,21 +175,36 @@ export const CryptoArbs = () => {
         return (
           <div className="flex gap-4 h-[calc(100vh-200px)]">
             {/* Левая колонка: список карточек (1/4 ширины) */}
-            <div className="flex-[1] overflow-y-auto pr-2">
-        <div className="space-y-4">
-          {filteredArbs.map((a, index) => (
-            <Card
-              key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
-              className={cn(
-                'cursor-pointer transition-all hover:shadow-lg',
-                selectedArb?.ticker === a.ticker &&
-                  selectedArb?.left.exchange === a.left.exchange &&
-                  selectedArb?.right.exchange === a.right.exchange
-                  ? 'ring-2 ring-blue-500 shadow-lg'
-                  : '',
-              )}
-              onClick={() => setSelectedArb(a)}
-            >
+            <div className="flex-[1] flex flex-col overflow-hidden">
+              {/* Табы для сортировки */}
+              <div className="mb-4">
+                <Tabs value={sortType} onValueChange={handleSortChange}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value={SortType.Funding} className="flex-1">
+                      По фандингу
+                    </TabsTrigger>
+                    <TabsTrigger value={SortType.Spread} className="flex-1">
+                      По спреду
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              {/* Список карточек */}
+              <div className="flex-1 overflow-y-auto pr-2">
+                <div className="space-y-4">
+                  {filteredArbs.map((a, index) => (
+                    <Card
+                      key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
+                      className={cn(
+                        'cursor-pointer transition-all hover:shadow-lg',
+                        selectedArb?.ticker === a.ticker &&
+                          selectedArb?.left.exchange === a.left.exchange &&
+                          selectedArb?.right.exchange === a.right.exchange
+                          ? 'ring-2 ring-blue-500 shadow-lg'
+                          : '',
+                      )}
+                      onClick={() => handleArbSelect(a)}
+                    >
               <CardHeader>
                 <CardTitle className={cn('text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-nowrap')}>
                   {a.ticker}, фандинг {(sumFunding(a) * 100).toFixed(4)}%
@@ -173,10 +257,11 @@ export const CryptoArbs = () => {
                   Спред: {((a.ratio - 1) * 100).toFixed(2)}%
                 </div>
               </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* Правая колонка: график спреда (3/4 ширины) */}
             <div className="flex-[3] flex flex-col min-h-0">
