@@ -363,7 +363,7 @@ export const CryptoArbs = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2 pb-1">
                     {enrichedArbs.map((a, index) => {
                     return (
             <Card
