@@ -413,7 +413,7 @@ export const CryptoArbs = () => {
                           {/* Основная информация: Продаем и Покупаем */}
                           <div className="grid grid-cols-2 gap-2 mb-1.5">
                             {/* Продаем */}
-                            <div className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                            <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
                               <div className="flex items-center gap-1.5 mb-1">
                                 <ArrowDown className="h-3.5 w-3.5 text-red-400" />
                                 <span className="text-xs font-medium text-red-400">Продаем</span>
@@ -456,7 +456,7 @@ export const CryptoArbs = () => {
                         </div>
 
                             {/* Покупаем */}
-                            <div className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20">
+                            <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-green-500/10 border border-green-500/20">
                               <div className="flex items-center gap-1.5 mb-1">
                                 <ArrowUp className="h-3.5 w-3.5 text-green-400" />
                                 <span className="text-xs font-medium text-green-400">Покупаем</span>
@@ -522,15 +522,15 @@ export const CryptoArbs = () => {
             <div className="flex-[3] flex flex-col min-h-0">
         {selectedEnriched ? (
           <>
-            <div className="mb-3">
+            <div className="mb-2">
                 {/* Информация о выбранной паре в компактном горизонтальном формате */}
                 <div 
-                  className="bg-card rounded-lg px-4 py-2 selected-arb-header"
+                  className="bg-card rounded-lg px-3 py-1.5 selected-arb-header"
                   style={{ 
                     border: '1px solid rgba(166, 189, 213, 0.2)'
                   }}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {/* Тикер */}
                     <span className="text-lg font-bold">{selectedEnriched.ticker}</span>
                     
