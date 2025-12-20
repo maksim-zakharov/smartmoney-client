@@ -980,6 +980,7 @@ export const exchangeImgMap = {
   BITSTAMP: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/70.png',
   BITFINEX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/37.png',
   BINGX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/1064.png',
+  OURBIT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/10153.png',
 };
 export const moneyFormat = (
   money: number,
