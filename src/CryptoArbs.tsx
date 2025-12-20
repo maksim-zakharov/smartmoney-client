@@ -4,12 +4,13 @@ import { cn } from './lib/utils.ts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { exchangeImgMap } from './utils.ts';
+import dayjs from 'dayjs';
 import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card.tsx';
 import { TypographyH4 } from './components/ui/typography.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
-import { ArrowDown, ArrowUp, TrendingUp, Copy } from 'lucide-react';
+import { ArrowDown, ArrowUp, TrendingUp, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ArbPair {
@@ -48,6 +49,35 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
   }
 };
 
+// Функция для генерации URL биржи с тикером (фьючерсы) с реферальными кодами
+const getExchangeUrl = (exchange: string, ticker: string): string => {
+  const exchangeUpper = exchange.toUpperCase();
+  
+  switch (exchangeUpper) {
+    case 'GATEIO':
+    case 'GATE':
+      return `https://www.gate.com/ru/futures/USDT/${ticker}_USDT?ref=BFQWBFs`;
+    case 'BYBIT':
+      return `https://www.bybit.com/trade/usdt/${ticker}USDT?ref=1WG1366`;
+    case 'BINGX':
+      return `https://bingx.com/ru-ru/perpetual/${ticker}-USDT?ref=QWIF2Z`;
+    case 'MEXC':
+      return `https://www.mexc.com/ru-RU/futures/${ticker}_USDT?type=linear_swap&shareCode=mexc-2Yy26`;
+    case 'OKX':
+      return `https://www.okx.com/ru/trade-swap/${ticker.toLowerCase()}-usdt-swap?channelid=37578249`;
+    case 'BITGET':
+      return `https://www.bitget.com/futures/usdt/${ticker}USDT`;
+    case 'KUCOIN':
+      return `https://www.kucoin.com/trade/futures/${ticker}USDTM?ref=CX8XF1EA`;
+    case 'BINANCE':
+      return `https://www.binance.com/en/futures/${ticker}USDT?ref=13375376`;
+    case 'OURBIT':
+      return `https://futures.ourbit.com/ru-RU/exchange/${ticker}_USDT?inviteCode=U587UV`;
+    default:
+      return '#';
+  }
+};
+
 enum SortType {
   Funding = 'funding',
   Spread = 'spread',
@@ -74,7 +104,10 @@ export const CryptoArbs = () => {
       .flat()
       .reduce((acc, funding) => {
         const key = `${funding.ticker}_${funding.exchange}`;
-        acc[key] = Number(funding.fundingRate);
+        acc[key] = {
+          rate: Number(funding.fundingRate),
+          nextFundingTime: funding.fundingNextTime || null,
+        };
 
         return acc;
       }, {});
@@ -88,7 +121,71 @@ export const CryptoArbs = () => {
       return -Infinity;
     }
 
-    return a.ratio > 1 ? leftFunding - rightFunding : rightFunding - leftFunding;
+    return a.ratio > 1 ? leftFunding.rate - rightFunding.rate : rightFunding.rate - leftFunding.rate;
+  };
+
+  // Функция для форматирования времени фандинга
+  const formatFundingTime = (timeString: string | null | undefined): string => {
+    if (!timeString) return 'N/A';
+    try {
+      // Время приходит в формате "HH:mm" (например, "20:00", "00:00")
+      // Фандинг происходит каждые 8 часов: 00:00, 08:00, 16:00
+      const [hours, minutes] = timeString.split(':').map(Number);
+      
+      if (isNaN(hours) || isNaN(minutes)) {
+        return timeString;
+      }
+      
+      const now = dayjs();
+      
+      // Создаем дату с этим временем на сегодня
+      const todayFundingTime = dayjs().set('hour', hours).set('minute', minutes).set('second', 0).set('millisecond', 0);
+      
+      // Вычисляем разницу для сегодняшнего времени
+      let diffMinutesToday = todayFundingTime.diff(now, 'minute', true);
+      
+      let fundingTime = todayFundingTime;
+      
+      // Если время уже прошло сегодня, проверяем ближайшее время фандинга
+      if (diffMinutesToday < 0) {
+        // Проверяем следующее время фандинга (через 8 часов)
+        const nextFundingTime = todayFundingTime.add(8, 'hour');
+        const diffNext = nextFundingTime.diff(now, 'minute', true);
+        
+        // Если следующее время фандинга сегодня ближе, чем завтрашнее, используем его
+        if (diffNext > 0 && diffNext < 480) { // 480 минут = 8 часов
+          fundingTime = nextFundingTime;
+          diffMinutesToday = diffNext;
+        } else {
+          // Иначе берем завтрашнее время
+          fundingTime = todayFundingTime.add(1, 'day');
+          diffMinutesToday = fundingTime.diff(now, 'minute', true);
+        }
+      }
+      
+      // Если разница очень маленькая (менее 1 минуты), показываем "сейчас"
+      if (diffMinutesToday >= 0 && diffMinutesToday < 1) {
+        return 'сейчас';
+      }
+      
+      // Если разница отрицательная или очень большая (больше суток), показываем просто время
+      if (diffMinutesToday < 0 || diffMinutesToday > 1440) {
+        return timeString;
+      }
+      
+      if (diffMinutesToday < 60) {
+        const roundedMinutes = Math.max(0, Math.round(diffMinutesToday));
+        return `через ${roundedMinutes}м`;
+      }
+      const diffHours = fundingTime.diff(now, 'hour', true);
+      if (diffHours < 24) {
+        const roundedHours = Math.max(0, Math.round(diffHours));
+        return `через ${roundedHours}ч`;
+      }
+      return timeString;
+    } catch (e) {
+      return timeString || 'N/A';
+    }
   };
 
   const filteredArbs = useMemo(() => {
@@ -168,8 +265,8 @@ export const CryptoArbs = () => {
       const funding = sumFunding(a) * 100;
       const sellExchange = a.right.last > a.left.last ? a.right : a.left;
       const buyExchange = a.right.last < a.left.last ? a.right : a.left;
-      const sellFunding = fundingMap[`${a.ticker}_${sellExchange.exchange}`];
-      const buyFunding = fundingMap[`${a.ticker}_${buyExchange.exchange}`];
+      const sellFundingData = fundingMap[`${a.ticker}_${sellExchange.exchange}`];
+      const buyFundingData = fundingMap[`${a.ticker}_${buyExchange.exchange}`];
       const isSelected = selectedArb?.ticker === a.ticker &&
         selectedArb?.left.exchange === a.left.exchange &&
         selectedArb?.right.exchange === a.right.exchange;
@@ -180,8 +277,10 @@ export const CryptoArbs = () => {
         funding,
         sellExchange,
         buyExchange,
-        sellFunding,
-        buyFunding,
+        sellFunding: sellFundingData?.rate,
+        sellFundingTime: sellFundingData?.nextFundingTime,
+        buyFunding: buyFundingData?.rate,
+        buyFundingTime: buyFundingData?.nextFundingTime,
         isSelected,
       };
     });
@@ -204,7 +303,7 @@ export const CryptoArbs = () => {
         return (
           <div className="flex gap-4 h-[calc(100vh-200px)]">
             {/* Левая колонка: список карточек (фиксированная ширина) */}
-            <div className="w-[320px] flex flex-col overflow-hidden">
+            <div className="w-[400px] flex flex-col overflow-hidden">
               {/* Табы для сортировки */}
               <div className="mb-4">
                 <Tabs value={sortType} onValueChange={handleSortChange}>
@@ -284,12 +383,31 @@ export const CryptoArbs = () => {
                                 <span className="text-xs font-semibold text-muted-foreground">
                                   {a.sellExchange.exchange}
                                 </span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <a
+                                      href={getExchangeUrl(a.sellExchange.exchange, a.ticker)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-muted-foreground hover:text-primary transition-colors"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </a>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Перейти на {a.sellExchange.exchange}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                               </div>
                               <div className="text-base font-bold tabular-nums">
                                 {a.sellExchange.last.toFixed(6)}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 Фандинг: <span className="font-mono">{a.sellFunding?.toFixed(5) ?? 'N/A'}</span>
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Время: {formatFundingTime(a.sellFundingTime)}
                               </div>
                             </div>
 
@@ -308,12 +426,31 @@ export const CryptoArbs = () => {
                                 <span className="text-xs font-semibold text-muted-foreground">
                                   {a.buyExchange.exchange}
                                 </span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <a
+                                      href={getExchangeUrl(a.buyExchange.exchange, a.ticker)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-muted-foreground hover:text-primary transition-colors"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </a>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Перейти на {a.buyExchange.exchange}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                               </div>
                               <div className="text-base font-bold tabular-nums">
                                 {a.buyExchange.last.toFixed(6)}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 Фандинг: <span className="font-mono">{a.buyFunding?.toFixed(5) ?? 'N/A'}</span>
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Время: {formatFundingTime(a.buyFundingTime)}
                               </div>
                             </div>
                           </div>
