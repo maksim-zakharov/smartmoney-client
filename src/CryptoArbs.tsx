@@ -300,6 +300,43 @@ export const CryptoArbs = () => {
     };
   }, [selectedArb]);
 
+  // Обогащаем выбранный арбитраж для отображения (даже если его нет в списке)
+  const selectedEnriched = useMemo(() => {
+    if (!selectedArb) return null;
+    
+    // Сначала пытаемся найти в enrichedArbs
+    const found = enrichedArbs.find(
+      (a) => a.ticker === selectedArb.ticker &&
+        a.left.exchange === selectedArb.left.exchange &&
+        a.right.exchange === selectedArb.right.exchange
+    );
+    
+    if (found) {
+      return found;
+    }
+    
+    // Если не найден (например, список пуст), формируем из selectedArb
+    const spread = (selectedArb.ratio - 1) * 100;
+    const funding = sumFunding(selectedArb) * 100;
+    const sellExchange = selectedArb.right.last > selectedArb.left.last ? selectedArb.right : selectedArb.left;
+    const buyExchange = selectedArb.right.last < selectedArb.left.last ? selectedArb.right : selectedArb.left;
+    const sellFundingData = fundingMap[`${selectedArb.ticker}_${sellExchange.exchange}`];
+    const buyFundingData = fundingMap[`${selectedArb.ticker}_${buyExchange.exchange}`];
+    
+    return {
+      ...selectedArb,
+      spread,
+      funding,
+      sellExchange,
+      buyExchange,
+      sellFunding: sellFundingData?.rate,
+      sellFundingTime: sellFundingData?.nextFundingTime,
+      buyFunding: buyFundingData?.rate,
+      buyFundingTime: buyFundingData?.nextFundingTime,
+      isSelected: true,
+    };
+  }, [selectedArb, enrichedArbs, fundingMap]);
+
         return (
           <div className="flex gap-4 h-[calc(100vh-76px)]">
             {/* Левая колонка: список карточек (фиксированная ширина) */}
@@ -483,22 +520,7 @@ export const CryptoArbs = () => {
 
             {/* Правая колонка: график спреда (3/4 ширины) */}
             <div className="flex-[3] flex flex-col min-h-0">
-        {selectedArb ? (() => {
-          const selectedEnriched = enrichedArbs.find(
-            (a) => a.ticker === selectedArb.ticker &&
-              a.left.exchange === selectedArb.left.exchange &&
-              a.right.exchange === selectedArb.right.exchange
-          );
-          
-          if (!selectedEnriched) {
-            return (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Выберите пару арбитража для отображения графика спреда
-              </div>
-            );
-          }
-          
-          return (
+        {selectedEnriched ? (
           <>
             <div className="mb-3">
                 {/* Информация о выбранной паре в компактном горизонтальном формате */}
@@ -626,8 +648,7 @@ export const CryptoArbs = () => {
               />
             </div>
           </>
-          );
-        })() : (
+        ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             Выберите пару арбитража для отображения графика спреда
           </div>
