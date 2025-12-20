@@ -1,112 +1,190 @@
-import { Subject } from 'rxjs';
-import { Alltrade, HistoryObject, Orderbook, OrderbookAsk, Side } from 'alor-api';
-import { OrderbookBid } from 'alor-api/dist/models/models';
 import { SubscriptionManager } from '../common/subscription-manager';
+import { ResolutionString } from '../../assets/charting_library';
+import { BitgetTimeframe, BitgetWSFTicker, BitgetWSTrade } from './bitget.models';
+import { HistoryObject, Orderbook, OrderbookAsk, OrderbookBid, Alltrade, Side } from 'alor-api';
 
 export class BitgetFuturesWsClient extends SubscriptionManager {
-  private readonly apiKey: string;
-  private readonly secretKey: string;
+  private pingInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor(apiKey?: string, secretKey?: string) {
+  constructor() {
     super({
       name: 'Bitget Futures',
       url: 'wss://ws.bitget.com/v2/ws/public',
     });
 
-    this.apiKey = apiKey;
-    this.secretKey = secretKey;
-
     this.on('connect', () => this.onOpen());
     this.on('disconnect', () => this.onClose());
     this.on('message', (m) => this.onMessage(m));
+    this.on('error', (m) => this.onError(m));
   }
 
   protected onOpen() {
     console.log(`Bitget Futures Websocket соединение установлено`);
+    this.startPing();
   }
 
   protected onClose() {
     console.log(`Bitget Futures Websocket соединение разорвано`);
+    this.stopPing();
+  }
+
+  /**
+   * Запускает отправку ping каждые 30 секунд согласно API Bitget
+   */
+  private startPing() {
+    this.stopPing(); // Останавливаем предыдущий интервал, если есть
+
+    this.pingInterval = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        // Для Bitget отправляем просто строку "ping", а не JSON
+        this.ws.send('ping');
+      }
+    }, 30000); // 30 секунд согласно документации Bitget
+  }
+
+  /**
+   * Останавливает отправку ping
+   */
+  private stopPing() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
+  protected onError(error) {
+    console.error('Bitget WebSocket error:', error);
   }
 
   onMessage(ev) {
+    // Обработка ответа "pong" на ping
+    if (ev.data === 'pong') {
+      return;
+    }
+
     const json = JSON.parse(ev.data as any);
     const { op, arg, action, event, data } = json;
-    console.log(json);
     const key = JSON.stringify(arg);
+    
     // Подписались
     if (event === 'subscribe') {
+      // Можно добавить логирование успешной подписки
     }
-    // Даннные
-    else if (action === 'snapshot') {
+    // Данные: snapshot (первая пачка) или update (обновления)
+    else if (action === 'update') {
       if (arg.channel.includes('candle')) {
         this.emit('candles', json);
-        data.forEach(([time, open, high, low, close, volume]) =>
+        data.forEach(([time, open, high, low, close, volume, amount]) =>
           this.subscribeSubjs.get(key)?.next({
             open: Number(open),
             high: Number(high),
             low: Number(low),
             close: Number(close),
             volume: Number(volume),
+            volumeUSDT: Number(amount),
             time: Number(time) / 1000,
           } as HistoryObject),
         );
+      } else if (arg.channel.includes('ticker')) {
+        this.subscribeSubjs.get(key)?.next(data[0]);
+      } else if (arg.channel.includes('account')) {
+        this.emit('account', json);
+        this.subscribeSubjs.get(key)?.next(data);
+      } else if (arg.channel.includes('orders')) {
+        this.emit('orders', json);
+        this.subscribeSubjs.get(key)?.next(data);
+      } else if (arg.channel.includes('positions')) {
+        this.emit('positions', json);
+        this.subscribeSubjs.get(key)?.next(data);
       } else if (arg.channel.includes('books')) {
         this.emit('orderbook', json);
         data.forEach((orderbook) =>
           this.subscribeSubjs.get(key)?.next({
-            bids: orderbook.bids.map(([p, v]) => ({ price: Number(p), volume: Number(v) }) as OrderbookBid),
-            asks: orderbook.asks.map(([p, v]) => ({ price: Number(p), volume: Number(v) }) as OrderbookAsk),
+            bids: orderbook.bids.map(([p, v]) => ({
+              price: Number(p),
+              volume: Number(v),
+            }) as OrderbookBid),
+            asks: orderbook.asks.map(([p, v]) => ({
+              price: Number(p),
+              volume: Number(v),
+            }) as OrderbookAsk),
           } as Orderbook),
         );
       } else if (arg.channel.includes('trade')) {
         this.emit('trades', json);
-        data.forEach((d) =>
-          this.subscribeSubjs.get(key)?.next({
-            price: Number(d.price),
-            qty: Number(d.size),
-            timestamp: Number(d.ts),
-            side: d.side === 'sell' ? Side.Sell : Side.Buy,
-          } as Alltrade),
-        );
+        // Обрабатываем как snapshot, так и update для trades
+        this.subscribeSubjs.get(key)?.next(data);
       }
     }
   }
 
-  subscribeCandles(symbol: string, interval: string) {
-    const subj = new Subject<HistoryObject>();
+  /**
+   * Маппинг ResolutionString на BitgetTimeframe
+   */
+  private parseResolutionToBitgetTimeframe(resolution: ResolutionString): BitgetTimeframe {
+    const map: Record<string, BitgetTimeframe> = {
+      '1': BitgetTimeframe.Min1,
+      '5': BitgetTimeframe.Min5,
+      '15': BitgetTimeframe.Min15,
+      '30': BitgetTimeframe.Min30,
+      '1H': BitgetTimeframe.Hour1,
+      '4H': BitgetTimeframe.Hour4,
+      '4h': BitgetTimeframe.Hour4,
+      '6H': BitgetTimeframe.Hour6,
+      '12H': BitgetTimeframe.Hour12,
+      '1D': BitgetTimeframe.Day,
+      '1W': BitgetTimeframe.Week,
+    };
+    return map[resolution] || BitgetTimeframe.Min1;
+  }
+
+  subscribeTickers(symbol: string) {
     const arg = {
       instType: 'USDT-FUTURES',
-      channel: `candle${interval}m`,
+      channel: `ticker`,
       instId: symbol,
     };
     const key = JSON.stringify(arg);
-    this.subscribeSubjs.set(key, subj);
+    const subj = this.createOrUpdateSubj<BitgetWSFTicker>(key);
     this.subscribeFuturesChannel(arg);
 
     return subj;
   }
 
-  unsubscribeCandles(symbol: string, interval: string) {
+  subscribeCandles(symbol: string, resolution: ResolutionString) {
+    const bitgetTf = this.parseResolutionToBitgetTimeframe(resolution);
     const arg = {
       instType: 'USDT-FUTURES',
-      channel: `candle${interval}m`,
+      channel: `candle${bitgetTf}`,
       instId: symbol,
     };
     const key = JSON.stringify(arg);
-    this.subscribeSubjs.delete(key);
-    this.unsubscribeFuturesChannel(key);
+    const subj = this.createOrUpdateSubj<HistoryObject>(key);
+    this.subscribeFuturesChannel(arg);
+
+    return subj;
+  }
+
+  unsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    const bitgetTf = this.parseResolutionToBitgetTimeframe(resolution);
+    const arg = {
+      instType: 'USDT-FUTURES',
+      channel: `candle${bitgetTf}`,
+      instId: symbol,
+    };
+    const key = JSON.stringify(arg);
+    this.removeSubj(key);
+    this.unsubscribeFuturesChannel(arg);
   }
 
   subscribeOrderbook(symbol: string, depth: 1 | 5 | 15) {
-    const subj = new Subject<Orderbook>();
     const arg = {
       instType: 'USDT-FUTURES',
       channel: `books${depth}`,
       instId: symbol,
     };
     const key = JSON.stringify(arg);
-    this.subscribeSubjs.set(key, subj);
+    const subj = this.createOrUpdateSubj<Orderbook>(key);
     this.subscribeFuturesChannel(arg);
 
     return subj;
@@ -119,19 +197,18 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
       instId: symbol,
     };
     const key = JSON.stringify(arg);
-    this.subscribeSubjs.delete(key);
-    this.unsubscribeFuturesChannel(key);
+    this.removeSubj(key);
+    this.unsubscribeFuturesChannel(arg);
   }
 
   subscribeTrades(symbol: string) {
-    const subj = new Subject<Alltrade>();
     const arg = {
       instType: 'USDT-FUTURES',
       channel: `trade`,
       instId: symbol,
     };
     const key = JSON.stringify(arg);
-    this.subscribeSubjs.set(key, subj);
+    const subj = this.createOrUpdateSubj<BitgetWSTrade[]>(key);
     this.subscribeFuturesChannel(arg);
 
     return subj;
@@ -144,8 +221,8 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
       instId: symbol,
     };
     const key = JSON.stringify(arg);
-    this.subscribeSubjs.delete(key);
-    this.unsubscribeFuturesChannel(key);
+    this.removeSubj(key);
+    this.unsubscribeFuturesChannel(arg);
   }
 
   private subscribeFuturesChannel(arg: any) {

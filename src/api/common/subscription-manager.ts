@@ -3,7 +3,7 @@ import { EventEmitter } from './event-emitter';
 
 export type BaseEventTypes = 'message' | 'error' | 'connect' | 'disconnect' | 'subscribe';
 
-export type SubscriptionManagerEventTypes = BaseEventTypes | 'candles' | 'orders' | 'trades' | 'account' | 'orderbook';
+export type SubscriptionManagerEventTypes = BaseEventTypes | 'candles' | 'orders' | 'trades' | 'account' | 'orderbook' | 'positions';
 
 export class SubscriptionManager {
   private subscriptions = new Set<string>(); // хранилище подписок
@@ -15,7 +15,16 @@ export class SubscriptionManager {
       exist = new Subject<T>();
       this.subscribeSubjs.set(key, exist);
     }
-    return exist;
+    return exist as Subject<T>;
+  }
+
+  protected removeSubj(key: string) {
+    const subj = this.subscribeSubjs.get(key);
+    if (!subj) {
+      return;
+    }
+    subj.complete();
+    this.subscribeSubjs.delete(key);
   }
 
   private readonly eventEmitter: EventEmitter = new EventEmitter();
@@ -119,16 +128,45 @@ export class SubscriptionManager {
   private resubscribe() {
     this.subscriptions.forEach((subscription) => {
       const request = JSON.parse(subscription);
-      this.subscribe(request);
+      this.subscribe(request, true); // force resubscribe
     });
   }
 
-  protected subscribe(request) {
-    if (this.isConnected) {
-      this.ws.send(JSON.stringify(request));
+  protected subscribe(request, force: boolean = false) {
+    const requestKey = JSON.stringify(request);
+
+    // Check if already subscribed to avoid duplicate subscriptions
+    // But allow resubscribe when force=true (e.g., after reconnection)
+    if (!force && this.subscriptions.has(requestKey)) {
+      return; // Already subscribed, skip
     }
-    this.subscriptions.add(JSON.stringify(request));
+
+    if (this.isConnected) {
+      this.ws.send(requestKey);
+    }
+
+    // Add to subscriptions set (Set prevents duplicates automatically)
+    this.subscriptions.add(requestKey);
 
     this.eventEmitter.emit('subscribe', request);
+  }
+
+  protected unsubscribe(request) {
+    const requestKey = JSON.stringify(request);
+
+    if (!this.subscriptions.has(requestKey)) {
+      return;
+    }
+
+    if (this.isConnected) {
+      this.ws.send(requestKey);
+    }
+
+    // Удаляем из хранилища подписок; формирование payload делается на уровне конкретной биржи
+    this.subscriptions.delete(requestKey);
+  }
+
+  getSubscriptions(): Set<string> {
+    return new Set(this.subscriptions);
   }
 }
