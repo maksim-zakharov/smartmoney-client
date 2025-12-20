@@ -8,6 +8,9 @@ import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/ca
 import { TypographyH4 } from './components/ui/typography.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
+import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
+import { ArrowDown, ArrowUp, TrendingUp, Copy } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ArbPair {
   ticker: string;
@@ -158,6 +161,32 @@ export const CryptoArbs = () => {
     setSearchParams(searchParams);
   };
 
+  // Обогащаем данные арбитражей для отображения
+  const enrichedArbs = useMemo(() => {
+    return filteredArbs.map((a) => {
+      const spread = (a.ratio - 1) * 100;
+      const funding = sumFunding(a) * 100;
+      const sellExchange = a.right.last > a.left.last ? a.right : a.left;
+      const buyExchange = a.right.last < a.left.last ? a.right : a.left;
+      const sellFunding = fundingMap[`${a.ticker}_${sellExchange.exchange}`];
+      const buyFunding = fundingMap[`${a.ticker}_${buyExchange.exchange}`];
+      const isSelected = selectedArb?.ticker === a.ticker &&
+        selectedArb?.left.exchange === a.left.exchange &&
+        selectedArb?.right.exchange === a.right.exchange;
+
+      return {
+        ...a,
+        spread,
+        funding,
+        sellExchange,
+        buyExchange,
+        sellFunding,
+        buyFunding,
+        isSelected,
+      };
+    });
+  }, [filteredArbs, fundingMap, selectedArb]);
+
   // Формируем тикеры с префиксами бирж и правильными суффиксами для графика спреда
   const getSpreadTickers = useMemo(() => {
     if (!selectedArb) return { tickerStock: '', _tickerFuture: '' };
@@ -174,8 +203,8 @@ export const CryptoArbs = () => {
 
         return (
           <div className="flex gap-4 h-[calc(100vh-200px)]">
-            {/* Левая колонка: список карточек (1/4 ширины) */}
-            <div className="flex-[1] flex flex-col overflow-hidden">
+            {/* Левая колонка: список карточек (фиксированная ширина) */}
+            <div className="w-[320px] flex flex-col overflow-hidden">
               {/* Табы для сортировки */}
               <div className="mb-4">
                 <Tabs value={sortType} onValueChange={handleSortChange}>
@@ -192,73 +221,117 @@ export const CryptoArbs = () => {
               {/* Список карточек */}
               <div className="flex-1 overflow-y-auto pr-2">
                 <div className="space-y-4">
-                  {filteredArbs.map((a, index) => (
-                    <Card
-                      key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
-                      className={cn(
-                        'cursor-pointer transition-all hover:shadow-lg',
-                        selectedArb?.ticker === a.ticker &&
-                          selectedArb?.left.exchange === a.left.exchange &&
-                          selectedArb?.right.exchange === a.right.exchange
-                          ? 'ring-2 ring-blue-500 shadow-lg'
-                          : '',
-                      )}
-                      onClick={() => handleArbSelect(a)}
-                    >
-              <CardHeader>
-                <CardTitle className={cn('text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-nowrap')}>
-                  {a.ticker}, фандинг {(sumFunding(a) * 100).toFixed(4)}%
-                </CardTitle>
-                <CardDescription className="flex gap-2">
-                  <div className="flex flex-col">
-                    <TypographyH4>Продаем</TypographyH4>
-                    {a.right.last > a.left.last && (
-                      <div>
-                        <div className="flex">
-                          <img className="h-3 rounded-full" src={exchangeImgMap[a.right.exchange]} />
-                          {a.right.exchange}: {a.right.last}
-                        </div>
-                        <div className="flex">Фандинг: {fundingMap[`${a.ticker}_${a.right.exchange}`]?.toFixed(5)}</div>
-                      </div>
-                    )}
-                    {a.right.last < a.left.last && (
-                      <div>
-                        <div className="flex">
-                          <img className="h-3 rounded-full" src={exchangeImgMap[a.left.exchange]} />
-                          {a.left.exchange}: {a.left.last}
-                        </div>
-                        <div className="flex">Фандинг: {fundingMap[`${a.ticker}_${a.left.exchange}`]?.toFixed(5)}</div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <TypographyH4>Покупаем</TypographyH4>
-                    {a.right.last < a.left.last && (
-                      <div>
-                        <div className="flex">
-                          <img className="h-3 rounded-full" src={exchangeImgMap[a.right.exchange]} />
-                          {a.right.exchange}: {a.right.last}
-                        </div>
-                        <div className="flex">Фандинг: {fundingMap[`${a.ticker}_${a.right.exchange}`]?.toFixed(5)}</div>
-                      </div>
-                    )}
-                    {a.right.last > a.left.last && (
-                      <div>
-                        <div className="flex">
-                          <img className="h-3 rounded-full" src={exchangeImgMap[a.left.exchange]} />
-                          {a.left.exchange}: {a.left.last}
-                        </div>
-                        <div className="flex">Фандинг: {fundingMap[`${a.ticker}_${a.left.exchange}`]?.toFixed(5)}</div>
-                      </div>
-                    )}
-                  </div>
-                </CardDescription>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  Спред: {((a.ratio - 1) * 100).toFixed(2)}%
-                </div>
-              </CardHeader>
-                    </Card>
-                  ))}
+                  {enrichedArbs.map((a, index) => {
+                    return (
+                      <Card
+                        key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
+                        className={cn(
+                          'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-3 w-full',
+                          a.isSelected
+                            ? 'ring-2 ring-primary shadow-lg border-primary'
+                            : 'border-border',
+                        )}
+                        onClick={() => handleArbSelect(a)}
+                      >
+                        <CardHeader className="pb-2 pt-2 px-3">
+                          {/* Заголовок с тикером и общим фандингом */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-xl font-bold tabular-nums">
+                                {a.ticker}
+                              </CardTitle>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Copy 
+                                    className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(a.ticker).then(() => {
+                                        toast.success(`Тикер ${a.ticker} скопирован`);
+                                      }).catch(() => {
+                                        toast.error('Не удалось скопировать тикер');
+                                      });
+                                    }}
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Копировать</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="h-4 w-4 text-green-500" />
+                              <span className="text-sm font-semibold text-green-500 tabular-nums">
+                                {a.funding.toFixed(4)}%
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Основная информация: Продаем и Покупаем */}
+                          <div className="grid grid-cols-2 gap-4 mb-3">
+                            {/* Продаем */}
+                            <div className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <ArrowDown className="h-3.5 w-3.5 text-red-400" />
+                                <span className="text-xs font-medium text-red-400">Продаем</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <img 
+                                  className="h-4 w-4 rounded-full" 
+                                  src={exchangeImgMap[a.sellExchange.exchange]} 
+                                  alt={a.sellExchange.exchange}
+                                />
+                                <span className="text-xs font-semibold text-muted-foreground">
+                                  {a.sellExchange.exchange}
+                                </span>
+                              </div>
+                              <div className="text-base font-bold tabular-nums">
+                                {a.sellExchange.last.toFixed(6)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Фандинг: <span className="font-mono">{a.sellFunding?.toFixed(5) ?? 'N/A'}</span>
+                              </div>
+                            </div>
+
+                            {/* Покупаем */}
+                            <div className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20">
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <ArrowUp className="h-3.5 w-3.5 text-green-400" />
+                                <span className="text-xs font-medium text-green-400">Покупаем</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <img 
+                                  className="h-4 w-4 rounded-full" 
+                                  src={exchangeImgMap[a.buyExchange.exchange]} 
+                                  alt={a.buyExchange.exchange}
+                                />
+                                <span className="text-xs font-semibold text-muted-foreground">
+                                  {a.buyExchange.exchange}
+                                </span>
+                              </div>
+                              <div className="text-base font-bold tabular-nums">
+                                {a.buyExchange.last.toFixed(6)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Фандинг: <span className="font-mono">{a.buyFunding?.toFixed(5) ?? 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Спред */}
+                          <div className="flex items-center justify-between pt-2 border-t">
+                            <span className="text-sm font-semibold">Спред</span>
+                            <span className={cn(
+                              "text-sm font-bold tabular-nums",
+                              a.spread > 0 ? "text-green-500" : "text-red-500"
+                            )}>
+                              {a.spread > 0 ? '+' : ''}{a.spread.toFixed(2)}%
+                            </span>
+                          </div>
+                        </CardHeader>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             </div>

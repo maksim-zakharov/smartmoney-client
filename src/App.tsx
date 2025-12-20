@@ -47,6 +47,7 @@ import {
 import { CryptoArbs } from './CryptoArbs.tsx';
 import { Multicharts } from './Multicharts.tsx';
 import { CTraderHistory } from './CTraderHistoryPage.tsx';
+import { Toaster } from './components/ui/sonner.tsx';
 
 export default function App() {
   const navigate = useNavigate();
@@ -710,6 +711,7 @@ export default function App() {
           </div>
         </SidebarInset>
       </SidebarProvider>
+      <Toaster position="top-center" />
     </ThemeProvider>
   );
 }
