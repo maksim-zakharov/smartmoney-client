@@ -340,7 +340,7 @@ export const CryptoArbs = () => {
         return (
           <div className="flex gap-4 h-[calc(100vh-76px)]">
             {/* Левая колонка: список карточек (фиксированная ширина) */}
-            <div className="w-[360px] flex flex-col overflow-hidden">
+            <div className="w-[320px] flex-shrink-0 flex flex-col overflow-hidden">
               {/* Табы для сортировки */}
               <div className="mb-4">
                 <Tabs value={sortType} onValueChange={handleSortChange}>
@@ -530,7 +530,7 @@ export const CryptoArbs = () => {
                     border: '1px solid rgba(166, 189, 213, 0.2)'
                   }}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {/* Тикер */}
                     <span className="text-lg font-bold">{selectedEnriched.ticker}</span>
                     
