@@ -303,7 +303,7 @@ export const CryptoArbs = () => {
         return (
           <div className="flex gap-4 h-[calc(100vh-76px)]">
             {/* Левая колонка: список карточек (фиксированная ширина) */}
-            <div className="w-[400px] flex flex-col overflow-hidden">
+            <div className="w-[360px] flex flex-col overflow-hidden">
               {/* Табы для сортировки */}
               <div className="mb-4">
                 <Tabs value={sortType} onValueChange={handleSortChange}>
@@ -318,9 +318,16 @@ export const CryptoArbs = () => {
                 </Tabs>
               </div>
               {/* Список карточек */}
-              <div className="flex-1 overflow-y-auto pr-2">
-                <div className="space-y-4">
-                  {enrichedArbs.map((a, index) => {
+              <div className="flex-1 overflow-y-auto px-1 pt-1">
+                {enrichedArbs.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <div className="text-center">
+                      <p className="text-sm">Арбитражные возможности не найдены</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {enrichedArbs.map((a, index) => {
                     return (
                       <Card
                         key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
@@ -468,8 +475,9 @@ export const CryptoArbs = () => {
                         </CardHeader>
                       </Card>
                     );
-                  })}
-                </div>
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
