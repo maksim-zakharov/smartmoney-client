@@ -123,6 +123,7 @@
 @layer base {
     * {
         @apply border-border outline-ring/50;
+        --tw-border-style: solid;
     }
     body {
         @apply bg-background text-foreground;
@@ -320,6 +321,9 @@ a{
     color: rgb(255, 255, 255) !important;
     border: 1px solid rgb(44, 60, 75) !important;
     border-radius: 0.5rem !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    min-height: auto !important;
 }
 
 [data-sonner-toast][data-type="success"] {
@@ -330,6 +334,13 @@ a{
 
 [data-sonner-toast][data-type="success"] [data-icon] {
     color: rgb(44, 232, 156) !important;
+    width: 1rem !important;
+    height: 1rem !important;
+}
+
+[data-sonner-toast] [data-icon] {
+    width: 1rem !important;
+    height: 1rem !important;
 }
 
 [data-sonner-toast][data-type="error"] {
@@ -340,6 +351,14 @@ a{
 
 [data-sonner-toast] [data-description] {
     color: rgb(166, 189, 213) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+    margin: 0 !important;
+}
+
+/* Border для шапки выбранного спреда */
+.selected-arb-header {
+    border: 1px solid rgba(166, 189, 213, 0.2) !important;
 }
 
 /* macOS-style scrollbar */

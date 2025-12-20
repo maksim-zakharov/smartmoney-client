@@ -329,13 +329,13 @@ export const CryptoArbs = () => {
                   <div className="space-y-2">
                     {enrichedArbs.map((a, index) => {
                     return (
-                      <Card
-                        key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
-                        className={cn(
+            <Card
+              key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
+              className={cn(
                           'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-3 w-full',
                           a.isSelected
                             ? 'ring-2 ring-primary shadow-lg border-primary'
-                            : 'border-border',
+                            : 'border-muted-foreground/20',
                         )}
                         onClick={() => handleArbSelect(a)}
                       >
@@ -345,7 +345,7 @@ export const CryptoArbs = () => {
                             <div className="flex items-center gap-2">
                               <CardTitle className="text-xl font-bold tabular-nums">
                                 {a.ticker}
-                              </CardTitle>
+                </CardTitle>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Copy 
@@ -412,18 +412,18 @@ export const CryptoArbs = () => {
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 Фандинг: <span className="font-mono">{a.sellFunding?.toFixed(5) ?? 'N/A'}</span>
-                              </div>
+                        </div>
                               <div className="text-xs text-muted-foreground">
                                 Время: {formatFundingTime(a.sellFundingTime)}
-                              </div>
-                            </div>
+                      </div>
+                        </div>
 
                             {/* Покупаем */}
                             <div className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20">
                               <div className="flex items-center gap-1.5 mb-1">
                                 <ArrowUp className="h-3.5 w-3.5 text-green-400" />
                                 <span className="text-xs font-medium text-green-400">Покупаем</span>
-                              </div>
+                      </div>
                               <div className="flex items-center gap-2">
                                 <img 
                                   className="h-4 w-4 rounded-full" 
@@ -449,21 +449,21 @@ export const CryptoArbs = () => {
                                     <p>Перейти на {a.buyExchange.exchange}</p>
                                   </TooltipContent>
                                 </Tooltip>
-                              </div>
+                  </div>
                               <div className="text-base font-bold tabular-nums">
                                 {a.buyExchange.last.toFixed(6)}
-                              </div>
+                        </div>
                               <div className="text-xs text-muted-foreground">
                                 Фандинг: <span className="font-mono">{a.buyFunding?.toFixed(5) ?? 'N/A'}</span>
-                              </div>
+                      </div>
                               <div className="text-xs text-muted-foreground">
                                 Время: {formatFundingTime(a.buyFundingTime)}
-                              </div>
-                            </div>
-                          </div>
+                        </div>
+                      </div>
+                  </div>
 
                           {/* Спред */}
-                          <div className="flex items-center justify-between pt-2 border-t">
+                          <div className="flex items-center justify-between pt-2 border-t border-muted-foreground/20">
                             <span className="text-sm font-semibold">Спред</span>
                             <span className={cn(
                               "text-sm font-bold tabular-nums",
@@ -471,27 +471,150 @@ export const CryptoArbs = () => {
                             )}>
                               {a.spread > 0 ? '+' : ''}{a.spread.toFixed(2)}%
                             </span>
-                          </div>
-                        </CardHeader>
-                      </Card>
+                </div>
+              </CardHeader>
+            </Card>
                     );
                     })}
                   </div>
                 )}
-              </div>
-            </div>
+        </div>
+      </div>
 
             {/* Правая колонка: график спреда (3/4 ширины) */}
             <div className="flex-[3] flex flex-col min-h-0">
-        {selectedArb ? (
-          <>
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold mb-2">
-                График спреда: {selectedArb.ticker}
-              </h2>
-              <div className="text-sm text-muted-foreground">
-                {selectedArb.left.exchange} / {selectedArb.right.exchange} | Ratio: {selectedArb.ratio.toFixed(6)}
+        {selectedArb ? (() => {
+          const selectedEnriched = enrichedArbs.find(
+            (a) => a.ticker === selectedArb.ticker &&
+              a.left.exchange === selectedArb.left.exchange &&
+              a.right.exchange === selectedArb.right.exchange
+          );
+          
+          if (!selectedEnriched) {
+            return (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                Выберите пару арбитража для отображения графика спреда
               </div>
+            );
+          }
+          
+          return (
+          <>
+            <div className="mb-3">
+                {/* Информация о выбранной паре в компактном горизонтальном формате */}
+                <div 
+                  className="bg-card rounded-lg px-4 py-2 selected-arb-header"
+                  style={{ 
+                    border: '1px solid rgba(166, 189, 213, 0.2)'
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Тикер */}
+                    <span className="text-lg font-bold">{selectedEnriched.ticker}</span>
+                    
+                    {/* Разделитель */}
+                    <div className="h-4 w-px bg-muted-foreground/30" />
+                    
+                    {/* Фандинг и спред */}
+                    <div className="flex items-center gap-1.5">
+                      <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+                      <span className="text-sm font-semibold text-green-500 tabular-nums">
+                        {selectedEnriched.funding.toFixed(4)}%
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-muted-foreground">Спред</span>
+                      <span className={cn(
+                        "text-sm font-bold tabular-nums",
+                        selectedEnriched.spread > 0 ? "text-green-500" : "text-red-500"
+                      )}>
+                        {selectedEnriched.spread > 0 ? '+' : ''}{selectedEnriched.spread.toFixed(2)}%
+                      </span>
+                    </div>
+                    
+                    {/* Разделитель */}
+                    <div className="h-4 w-px bg-muted-foreground/30" />
+                    
+                    {/* Продаем */}
+                    <div className="flex items-center gap-2">
+                      <ArrowDown className="h-3.5 w-3.5 text-red-400" />
+                      <img 
+                        className="h-3.5 w-3.5 rounded-full" 
+                        src={exchangeImgMap[selectedEnriched.sellExchange.exchange]} 
+                        alt={selectedEnriched.sellExchange.exchange}
+                      />
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {selectedEnriched.sellExchange.exchange}
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a
+                            href={getExchangeUrl(selectedEnriched.sellExchange.exchange, selectedEnriched.ticker)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Перейти на {selectedEnriched.sellExchange.exchange}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <span className="text-sm font-bold tabular-nums">
+                        {selectedEnriched.sellExchange.last.toFixed(6)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Ф: {selectedEnriched.sellFunding?.toFixed(5) ?? 'N/A'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatFundingTime(selectedEnriched.sellFundingTime)}
+                      </span>
+                    </div>
+
+                    {/* Разделитель */}
+                    <div className="h-4 w-px bg-muted-foreground/30" />
+                    
+                    {/* Покупаем */}
+                    <div className="flex items-center gap-2">
+                      <ArrowUp className="h-3.5 w-3.5 text-green-400" />
+                      <img 
+                        className="h-3.5 w-3.5 rounded-full" 
+                        src={exchangeImgMap[selectedEnriched.buyExchange.exchange]} 
+                        alt={selectedEnriched.buyExchange.exchange}
+                      />
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {selectedEnriched.buyExchange.exchange}
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a
+                            href={getExchangeUrl(selectedEnriched.buyExchange.exchange, selectedEnriched.ticker)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Перейти на {selectedEnriched.buyExchange.exchange}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <span className="text-sm font-bold tabular-nums">
+                        {selectedEnriched.buyExchange.last.toFixed(6)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Ф: {selectedEnriched.buyFunding?.toFixed(5) ?? 'N/A'}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatFundingTime(selectedEnriched.buyFundingTime)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
             </div>
             <div className="flex-1 min-h-0">
               <StatArbPage
@@ -503,7 +626,8 @@ export const CryptoArbs = () => {
               />
             </div>
           </>
-        ) : (
+          );
+        })() : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             Выберите пару арбитража для отображения графика спреда
           </div>
