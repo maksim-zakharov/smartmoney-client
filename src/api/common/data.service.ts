@@ -424,7 +424,7 @@ export class DataService {
       const _ticker = ticker.split('Aster:')[1];
       request$ = from(
         fetch(
-          `${this.ctraderUrl}/aster/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.cryptoUrl}/aster/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
