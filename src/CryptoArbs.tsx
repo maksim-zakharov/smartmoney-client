@@ -14,6 +14,8 @@ import { ArrowDown, ArrowUp, TrendingUp, Copy, ExternalLink, Settings } from 'lu
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Button } from './components/ui/button.tsx';
+import { Input } from './components/ui/input.tsx';
+import { Label } from './components/ui/label.tsx';
 
 interface ArbPair {
   ticker: string;
@@ -186,6 +188,26 @@ export const CryptoArbs = () => {
     }
   }, [allExchanges, showAll]);
 
+  // Состояние для минимального спреда (по умолчанию 1%)
+  const [minSpread, setMinSpread] = useState<number>(() => {
+    const saved = localStorage.getItem('crypto-arbs-min-spread');
+    if (saved !== null) {
+      const parsed = parseFloat(saved);
+      return !isNaN(parsed) ? parsed : 1;
+    }
+    return 1; // По умолчанию 1%
+  });
+
+  // Состояние для минимального фандинга (по умолчанию 0.3%)
+  const [minFunding, setMinFunding] = useState<number>(() => {
+    const saved = localStorage.getItem('crypto-arbs-min-funding');
+    if (saved !== null) {
+      const parsed = parseFloat(saved);
+      return !isNaN(parsed) ? parsed : 0.3;
+    }
+    return 0.3; // По умолчанию 0.3%
+  });
+
   // Сохраняем состояние в localStorage
   useEffect(() => {
     localStorage.setItem('crypto-arbs-show-all', JSON.stringify(showAll));
@@ -193,6 +215,15 @@ export const CryptoArbs = () => {
       localStorage.setItem('crypto-arbs-enabled-exchanges', JSON.stringify(Array.from(enabledExchanges)));
     }
   }, [showAll, enabledExchanges]);
+
+  // Сохраняем фильтры в localStorage
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-min-spread', minSpread.toString());
+  }, [minSpread]);
+
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-min-funding', minFunding.toString());
+  }, [minFunding]);
 
   const fundingMap = useMemo(() => {
     return tickers
@@ -297,7 +328,9 @@ export const CryptoArbs = () => {
           }
         }
         // Остальные фильтры
-        return Math.abs(b.ratio - 1) * 100 > 1 && sumFunding(b) * 100 > 0.3;
+        const spread = Math.abs(b.ratio - 1) * 100;
+        const funding = sumFunding(b) * 100;
+        return spread > minSpread && funding > minFunding;
       });
 
     // Сортировка в зависимости от выбранного типа
@@ -315,7 +348,7 @@ export const CryptoArbs = () => {
         return bPart - aPart;
       });
     }
-  }, [tickers, fundingMap, sortType, enabledExchanges, showAll]);
+  }, [tickers, fundingMap, sortType, enabledExchanges, showAll, minSpread, minFunding]);
 
   // Восстанавливаем выбранную пару из query параметров при загрузке
   useEffect(() => {
@@ -511,6 +544,46 @@ export const CryptoArbs = () => {
                             {exchange}
                           </Button>
                         ))}
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="min-spread" className="text-sm font-semibold mb-2 block">
+                          Минимальный спред (%)
+                        </Label>
+                        <Input
+                          id="min-spread"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={minSpread}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value) && value >= 0) {
+                              setMinSpread(value);
+                            }
+                          }}
+                          className="h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="min-funding" className="text-sm font-semibold mb-2 block">
+                          Минимальный фандинг (%)
+                        </Label>
+                        <Input
+                          id="min-funding"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={minFunding}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value) && value >= 0) {
+                              setMinFunding(value);
+                            }
+                          }}
+                          className="h-8"
+                        />
                       </div>
                     </div>
                   </div>
