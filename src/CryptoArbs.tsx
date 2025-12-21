@@ -10,12 +10,13 @@ import { TypographyH4 } from './components/ui/typography.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
-import { ArrowDown, ArrowUp, TrendingUp, Copy, ExternalLink, Settings } from 'lucide-react';
+import { ArrowDown, ArrowUp, TrendingUp, Copy, ExternalLink, Settings, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Button } from './components/ui/button.tsx';
 import { Input } from './components/ui/input.tsx';
 import { Label } from './components/ui/label.tsx';
+import { Checkbox } from './components/ui/checkbox.tsx';
 
 interface ArbPair {
   ticker: string;
@@ -89,6 +90,40 @@ const getExchangeUrl = (exchange: string, ticker: string): string => {
     default:
       return '#';
   }
+};
+
+// Функция для генерации URL TradingView для спреда
+const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, ticker: string): string => {
+  const sellExchangeUpper = sellExchange.toUpperCase();
+  const buyExchangeUpper = buyExchange.toUpperCase();
+  
+  // Маппинг бирж на символы TradingView
+  const exchangeMap: Record<string, string> = {
+    'BINANCE': 'BINANCE',
+    'BYBIT': 'BYBIT',
+    'OKX': 'OKX',
+    'BITGET': 'BITGET',
+    'MEXC': 'MEXC',
+    'GATE': 'GATEIO',
+    'GATEIO': 'GATEIO',
+    'KUCOIN': 'KUCOIN',
+    'BINGX': 'BINGX',
+    'OURBIT': 'OURBIT',
+    'HYPERLIQUID': 'HYPERLIQUID',
+    'ASTER': 'ASTER',
+  };
+  
+  const sellTvExchange = exchangeMap[sellExchangeUpper] || sellExchangeUpper;
+  const buyTvExchange = exchangeMap[buyExchangeUpper] || buyExchangeUpper;
+  
+  // Добавляем .P для фьючерсов в TradingView
+  const sellSymbol = `${sellTvExchange}:${ticker}USDT.P`;
+  const buySymbol = `${buyTvExchange}:${ticker}USDT.P`;
+  
+  // Формат спреда в TradingView: SYMBOL1!SYMBOL2
+  const spreadSymbol = `${sellSymbol}/${buySymbol}`;
+  
+  return `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(spreadSymbol)}`;
 };
 
 enum SortType {
@@ -208,6 +243,15 @@ export const CryptoArbs = () => {
     return 0.3; // По умолчанию 0.3%
   });
 
+  // Состояние для фильтра "Фандинг в одно время"
+  const [sameFundingTime, setSameFundingTime] = useState<boolean>(() => {
+    const saved = localStorage.getItem('crypto-arbs-same-funding-time');
+    if (saved !== null) {
+      return saved === 'true';
+    }
+    return false; // По умолчанию выключено
+  });
+
   // Сохраняем состояние в localStorage
   useEffect(() => {
     localStorage.setItem('crypto-arbs-show-all', JSON.stringify(showAll));
@@ -224,6 +268,10 @@ export const CryptoArbs = () => {
   useEffect(() => {
     localStorage.setItem('crypto-arbs-min-funding', minFunding.toString());
   }, [minFunding]);
+
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-same-funding-time', sameFundingTime.toString());
+  }, [sameFundingTime]);
 
   const fundingMap = useMemo(() => {
     return tickers
@@ -327,6 +375,21 @@ export const CryptoArbs = () => {
             return false;
           }
         }
+        // Фильтр по времени фандинга
+        if (sameFundingTime) {
+          const leftFunding = fundingMap[`${b.ticker}_${b.left.exchange}`];
+          const rightFunding = fundingMap[`${b.ticker}_${b.right.exchange}`];
+          if (!leftFunding || !rightFunding) {
+            return false; // Если нет данных о фандинге, исключаем
+          }
+          // Сравниваем время фандинга (может быть null или строка)
+          const leftTime = leftFunding.nextFundingTime;
+          const rightTime = rightFunding.nextFundingTime;
+          // Если оба null или оба имеют одинаковое значение
+          if (leftTime !== rightTime) {
+            return false;
+          }
+        }
         // Остальные фильтры
         const spread = Math.abs(b.ratio - 1) * 100;
         const funding = sumFunding(b) * 100;
@@ -348,7 +411,7 @@ export const CryptoArbs = () => {
         return bPart - aPart;
       });
     }
-  }, [tickers, fundingMap, sortType, enabledExchanges, showAll, minSpread, minFunding]);
+  }, [tickers, fundingMap, sortType, enabledExchanges, showAll, minSpread, minFunding, sameFundingTime]);
 
   // Восстанавливаем выбранную пару из query параметров при загрузке
   useEffect(() => {
@@ -584,6 +647,16 @@ export const CryptoArbs = () => {
                           }}
                           className="h-8"
                         />
+                      </div>
+                      <div className="flex items-center space-x-2 pt-2">
+                        <Checkbox
+                          id="same-funding-time"
+                          checked={sameFundingTime}
+                          onCheckedChange={(checked) => setSameFundingTime(checked === true)}
+                        />
+                        <Label htmlFor="same-funding-time" className="text-sm font-semibold cursor-pointer">
+                          Фандинг в одно время
+                        </Label>
                       </div>
                     </div>
                   </div>
@@ -881,6 +954,32 @@ export const CryptoArbs = () => {
                         {formatFundingTime(selectedEnriched.buyFundingTime)}
                       </span>
                     </div>
+
+                    {/* Разделитель */}
+                    <div className="h-4 w-px bg-muted-foreground/30" />
+                    
+                    {/* Ссылка на TradingView */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <a
+                          href={getTradingViewSpreadUrl(
+                            selectedArb.left.exchange,
+                            selectedArb.right.exchange,
+                            selectedEnriched.ticker
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          <BarChart3 className="h-3.5 w-3.5" />
+                          <span>Перейти в TV</span>
+                        </a>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Открыть график спреда в TradingView</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
             </div>
