@@ -43,6 +43,11 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
       return `${ticker}USDTM`;
     case 'OURBIT':
       return `${ticker}_USDT`;
+    case 'HYPERLIQUID':
+      // Hyperliquid использует тикер без суффикса
+      return ticker;
+    case 'ASTER':
+      return `${ticker}USDT`;
     default:
       // По умолчанию используем формат MEXC
       return `${ticker}_USDT`;
@@ -73,6 +78,10 @@ const getExchangeUrl = (exchange: string, ticker: string): string => {
       return `https://www.binance.com/en/futures/${ticker}USDT?ref=13375376`;
     case 'OURBIT':
       return `https://futures.ourbit.com/ru-RU/exchange/${ticker}_USDT?inviteCode=U587UV`;
+    case 'HYPERLIQUID':
+      return `https://app.hyperliquid.xyz/trade/${ticker}`;
+    case 'ASTER':
+      return `https://www.asterdex.com/en/futures/v1/${ticker}USDT?ref=59E067`;
     default:
       return '#';
   }
