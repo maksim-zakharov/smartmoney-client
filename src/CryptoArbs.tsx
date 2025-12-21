@@ -321,9 +321,9 @@ export const CryptoArbs = () => {
       .flat()
       .filter((b) => {
         // Фильтрация по биржам (только если showAll = false и есть выбранные биржи)
-        // Показываем спред, если хотя бы одна из бирж выбрана
+        // Показываем спред, если обе биржи из пары выбраны
         if (!showAll && enabledExchanges.size > 0) {
-          if (!enabledExchanges.has(b.left.exchange) && !enabledExchanges.has(b.right.exchange)) {
+          if (!enabledExchanges.has(b.left.exchange) || !enabledExchanges.has(b.right.exchange)) {
             return false;
           }
         }
