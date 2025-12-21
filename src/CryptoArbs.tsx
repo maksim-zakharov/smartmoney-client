@@ -10,8 +10,10 @@ import { TypographyH4 } from './components/ui/typography.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
-import { ArrowDown, ArrowUp, TrendingUp, Copy, ExternalLink } from 'lucide-react';
+import { ArrowDown, ArrowUp, TrendingUp, Copy, ExternalLink, Settings } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
+import { Button } from './components/ui/button.tsx';
 
 interface ArbPair {
   ticker: string;
@@ -98,6 +100,7 @@ export const CryptoArbs = () => {
   const selectedPairKey = searchParams.get('pair');
 
   const [selectedArb, setSelectedArb] = useState<ArbPair | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { data: tickersMap = {} } = useGetPumpTickersQuery(
     {},
     {
@@ -106,6 +109,90 @@ export const CryptoArbs = () => {
   );
 
   const tickers = Object.entries(tickersMap);
+
+  // Получаем список всех уникальных бирж из данных
+  const allExchanges = useMemo(() => {
+    const exchanges = new Set<string>();
+    tickers.forEach(([ticker, invoice]) => {
+      invoice.arbs?.forEach((arb) => {
+        exchanges.add(arb.left.exchange);
+        exchanges.add(arb.right.exchange);
+      });
+    });
+    
+    // Порядок бирж для отображения
+    const exchangeOrder = ['MEXC', 'GATEIO', 'GATE', 'BYBIT', 'BITGET', 'BINGX', 'OKX', 'OURBIT', 'Hyperliquid', 'Aster', 'Lighter'];
+    
+    // Сортируем биржи по заданному порядку
+    const sorted = Array.from(exchanges).sort((a, b) => {
+      const indexA = exchangeOrder.indexOf(a);
+      const indexB = exchangeOrder.indexOf(b);
+      
+      // Если обе биржи в списке порядка, сортируем по индексу
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+      }
+      // Если только одна в списке, она идет первой
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      // Если обе не в списке, сортируем по алфавиту
+      return a.localeCompare(b);
+    });
+    
+    return sorted;
+  }, [tickers]);
+
+  // Состояние для режима "Все" (по умолчанию включен - фильтрация отсутствует)
+  const [showAll, setShowAll] = useState<boolean>(() => {
+    const saved = localStorage.getItem('crypto-arbs-show-all');
+    if (saved !== null) {
+      return JSON.parse(saved);
+    }
+    return true; // По умолчанию показываем все
+  });
+
+  // Состояние для выбранных бирж (используется только когда showAll = false)
+  const [enabledExchanges, setEnabledExchanges] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('crypto-arbs-enabled-exchanges');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.length > 0 ? new Set(parsed) : new Set();
+      } catch {
+        return new Set();
+      }
+    }
+    return new Set();
+  });
+
+  // Синхронизируем enabledExchanges с allExchanges при изменении списка бирж
+  // Только удаляем биржи, которых больше нет, но не добавляем новые автоматически
+  useEffect(() => {
+    if (allExchanges.length > 0 && !showAll) {
+      setEnabledExchanges((prev) => {
+        const updated = new Set(prev);
+        // Удаляем только биржи, которых больше нет в данных
+        Array.from(updated).forEach((ex) => {
+          if (!allExchanges.includes(ex)) {
+            updated.delete(ex);
+          }
+        });
+        // Если после удаления не осталось выбранных бирж, включаем режим "Все"
+        if (updated.size === 0) {
+          setShowAll(true);
+        }
+        return updated;
+      });
+    }
+  }, [allExchanges, showAll]);
+
+  // Сохраняем состояние в localStorage
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-show-all', JSON.stringify(showAll));
+    if (!showAll && enabledExchanges.size > 0) {
+      localStorage.setItem('crypto-arbs-enabled-exchanges', JSON.stringify(Array.from(enabledExchanges)));
+    }
+  }, [showAll, enabledExchanges]);
 
   const fundingMap = useMemo(() => {
     return tickers
@@ -201,7 +288,17 @@ export const CryptoArbs = () => {
     const arbs = tickers
       .map(([ticker, invoice], index) => invoice.arbs.map((a) => ({ ...a, ticker })))
       .flat()
-      .filter((b) => Math.abs(b.ratio - 1) * 100 > 1 && sumFunding(b) * 100 > 0.3);
+      .filter((b) => {
+        // Фильтрация по биржам (только если showAll = false и есть выбранные биржи)
+        // Показываем спред, если хотя бы одна из бирж выбрана
+        if (!showAll && enabledExchanges.size > 0) {
+          if (!enabledExchanges.has(b.left.exchange) && !enabledExchanges.has(b.right.exchange)) {
+            return false;
+          }
+        }
+        // Остальные фильтры
+        return Math.abs(b.ratio - 1) * 100 > 1 && sumFunding(b) * 100 > 0.3;
+      });
 
     // Сортировка в зависимости от выбранного типа
     if (sortType === SortType.Spread) {
@@ -218,7 +315,7 @@ export const CryptoArbs = () => {
         return bPart - aPart;
       });
     }
-  }, [tickers, fundingMap, sortType]);
+  }, [tickers, fundingMap, sortType, enabledExchanges, showAll]);
 
   // Восстанавливаем выбранную пару из query параметров при загрузке
   useEffect(() => {
@@ -350,19 +447,86 @@ export const CryptoArbs = () => {
           <div className="flex gap-4 h-[calc(100vh-76px)]">
             {/* Левая колонка: список карточек (фиксированная ширина) */}
             <div className="w-[320px] flex-shrink-0 flex flex-col overflow-hidden">
-              {/* Табы для сортировки */}
-              <div className="mb-4">
-                <Tabs value={sortType} onValueChange={handleSortChange}>
-                  <TabsList className="w-full">
-                    <TabsTrigger value={SortType.Funding} className="flex-1">
-                      По фандингу
-                    </TabsTrigger>
-                    <TabsTrigger value={SortType.Spread} className="flex-1">
-                      По спреду
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
+            {/* Табы для сортировки и настройки */}
+            <div className="mb-4 flex items-center gap-2">
+              <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 px-2 flex-shrink-0">
+                    <Settings className="h-3.5 w-3.5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Настройки</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3 px-3 pb-3">
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Биржи</h3>
+                      <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
+                        {/* Чипс "Все" */}
+                        <Button
+                          variant={showAll ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            setShowAll(true);
+                            // При выборе "Все" очищаем выбор конкретных бирж
+                            setEnabledExchanges(new Set());
+                          }}
+                          className="h-7 px-2 text-xs"
+                        >
+                          Все
+                        </Button>
+                        {/* Чипсы для каждой биржи */}
+                        {allExchanges.map((exchange) => (
+                          <Button
+                            key={exchange}
+                            variant={!showAll && enabledExchanges.has(exchange) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              // При клике на конкретную биржу отключаем режим "Все"
+                              setShowAll(false);
+                              setEnabledExchanges((prev) => {
+                                const updated = new Set(prev);
+                                if (updated.has(exchange)) {
+                                  updated.delete(exchange);
+                                  // Если все биржи сняты, включаем режим "Все"
+                                  if (updated.size === 0) {
+                                    setShowAll(true);
+                                  }
+                                } else {
+                                  updated.add(exchange);
+                                }
+                                return updated;
+                              });
+                            }}
+                            className="h-7 px-2 text-xs flex items-center gap-1.5"
+                          >
+                            {exchangeImgMap[exchange] && (
+                              <img
+                                src={exchangeImgMap[exchange]}
+                                alt={exchange}
+                                className="h-3.5 w-3.5 rounded-full"
+                              />
+                            )}
+                            {exchange}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <Tabs value={sortType} onValueChange={handleSortChange} className="flex-1">
+                <TabsList className="w-full">
+                  <TabsTrigger value={SortType.Funding} className="flex-1">
+                    По фандингу
+                  </TabsTrigger>
+                  <TabsTrigger value={SortType.Spread} className="flex-1">
+                    По спреду
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
               {/* Список карточек */}
               <div className="flex-1 overflow-y-auto px-1 pt-1">
                 {enrichedArbs.length === 0 ? (
