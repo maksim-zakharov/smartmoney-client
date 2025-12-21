@@ -341,6 +341,18 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.kucoinUnsubscribeCandles(symbol.split('KUCOIN:')[1], resolution);
+      } else if (symbol.includes('ASTER') || symbol.includes('Aster:')) {
+        const _symbol = symbol.split('ASTER:')[1] || symbol.split('Aster:')[1];
+        this.dataService.asterSubscribeCandles(_symbol, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.asterUnsubscribeCandles(_symbol, resolution);
+      } else if (symbol.includes('HYPERLIQUID') || symbol.includes('Hyperliquid:')) {
+        const _symbol = symbol.split('HYPERLIQUID:')[1] || symbol.split('Hyperliquid:')[1];
+        this.dataService.hyperliquidSubscribeCandles(_symbol, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.hyperliquidUnsubscribeCandles(_symbol, resolution);
       } else {
         return this.api.subscriptions.candles(
           {

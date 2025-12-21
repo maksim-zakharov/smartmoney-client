@@ -11,6 +11,8 @@ import { KucoinWsClient } from '../private-ws/kucoin.ws-client.ts';
 import { BitgetFuturesWsClient } from '../public-ws/bitget-futures.ws-client.ts';
 import { BingXFuturesWsClient } from '../public-ws/bingx-futures.ws-client.ts';
 import { OurbitWsClient } from '../public-ws/ourbit.ws-client.ts';
+import { AsterWsClient } from '../public-ws/aster.ws-client.ts';
+import { HyperliquidWsClient } from '../public-ws/hyperliquid.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -42,6 +44,8 @@ export class DataService {
   private readonly bingxWsClient: BingXFuturesWsClient;
   private readonly bitgetFuturesWsClient: BitgetFuturesWsClient;
   private readonly ourbitWsClient: OurbitWsClient;
+  private readonly asterWsClient: AsterWsClient;
+  private readonly hyperliquidWsClient: HyperliquidWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -60,6 +64,8 @@ export class DataService {
     this.kucoinWsClient = new KucoinWsClient();
     this.bitgetFuturesWsClient = new BitgetFuturesWsClient();
     this.ourbitWsClient = new OurbitWsClient();
+    this.asterWsClient = new AsterWsClient();
+    this.hyperliquidWsClient = new HyperliquidWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -166,6 +172,22 @@ export class DataService {
 
   kucoinUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.kucoinWsClient.unsubscribeCandles(symbol, resolution);
+  }
+
+  asterSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.asterWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  asterUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.asterWsClient.unsubscribeCandles(symbol, resolution);
+  }
+
+  hyperliquidSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.hyperliquidWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  hyperliquidUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.hyperliquidWsClient.unsubscribeCandles(symbol, resolution);
   }
 
   get serverTime$() {
