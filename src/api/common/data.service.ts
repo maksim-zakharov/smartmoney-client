@@ -435,6 +435,36 @@ export class DataService {
         map((r) => ({ history: r })),
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
+    } else if (ticker.includes('Hyperliquid:') || ticker.includes('HYPERLIQUID:')) {
+      const _ticker = ticker.split('Hyperliquid:')[1] || ticker.split('HYPERLIQUID:')[1];
+      request$ = from(
+        fetch(
+          `${this.cryptoUrl}/hyperliquid/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
+    } else if (ticker.includes('Lighter:') || ticker.includes('LIGHTER:')) {
+      const _ticker = ticker.split('Lighter:')[1] || ticker.split('LIGHTER:')[1];
+      request$ = from(
+        fetch(
+          `${this.cryptoUrl}/lighter/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
     } else if (ticker.includes('GMGN:')) {
       const _ticker = ticker.split('GMGN:')[1];
       request$ = from(
