@@ -83,12 +83,31 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     };
   }, [dataService, exchange, symbol, compression]);
 
-  // Передаем canvas в менеджер при изменении
+  // Передаем canvas в менеджер при изменении и обновляем dimensions
   useEffect(() => {
-    if (orderbookManagerRef.current && canvasRef.current) {
+    if (orderbookManagerRef.current && canvasRef.current && scrollContainerRef.current) {
       orderbookManagerRef.current.setCanvas(canvasRef.current);
+      
+      // Обновляем dimensions после установки canvas с небольшой задержкой
+      const updateDimensions = () => {
+        if (scrollContainerRef.current) {
+          const rect = scrollContainerRef.current.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            const newDimensions = { width: rect.width, height: rect.height };
+            setDimensions(newDimensions);
+            if (orderbookManagerRef.current) {
+              orderbookManagerRef.current.setDimensions(newDimensions.width, newDimensions.height);
+            }
+          }
+        }
+      };
+      
+      // Используем requestAnimationFrame для гарантии, что DOM обновлен
+      requestAnimationFrame(() => {
+        requestAnimationFrame(updateDimensions);
+      });
     }
-  }, [canvasRef.current]);
+  }, [canvasRef.current, hasData]);
 
   // Константы для виртуального скролла
   const ROW_HEIGHT = 20;
@@ -141,20 +160,33 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     const updateDimensions = () => {
       if (scrollContainerRef.current) {
         const rect = scrollContainerRef.current.getBoundingClientRect();
-        const newDimensions = { width: rect.width, height: rect.height };
-        setDimensions(newDimensions);
-        if (orderbookManagerRef.current) {
-          orderbookManagerRef.current.setDimensions(newDimensions.width, newDimensions.height);
+        if (rect.width > 0 && rect.height > 0) {
+          const newDimensions = { width: rect.width, height: rect.height };
+          setDimensions(newDimensions);
+          if (orderbookManagerRef.current) {
+            orderbookManagerRef.current.setDimensions(newDimensions.width, newDimensions.height);
+          }
         }
       }
     };
 
-    updateDimensions();
-    const resizeObserver = new ResizeObserver(updateDimensions);
+    // Используем requestAnimationFrame для отложенного обновления после рендера
+    requestAnimationFrame(() => {
+      updateDimensions();
+    });
+
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(updateDimensions);
+    });
+    
     if (scrollContainerRef.current) {
       resizeObserver.observe(scrollContainerRef.current);
     }
-    window.addEventListener('resize', updateDimensions);
+    
+    window.addEventListener('resize', () => {
+      requestAnimationFrame(updateDimensions);
+    });
+    
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener('resize', updateDimensions);
