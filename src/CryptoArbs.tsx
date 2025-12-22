@@ -647,22 +647,22 @@ export const CryptoArbs = () => {
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label htmlFor="min-funding" className="text-sm font-semibold mb-2 block">
+                      <div>
+                        <Label htmlFor="min-funding" className="text-sm font-semibold mb-2 block">
                             Фандинг от (%)
-                          </Label>
-                          <Input
-                            id="min-funding"
-                            type="number"
-                            step="0.1"
+                        </Label>
+                        <Input
+                          id="min-funding"
+                          type="number"
+                          step="0.1"
                             value={minFunding === -Infinity ? '' : minFunding}
-                            onChange={(e) => {
+                          onChange={(e) => {
                               const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
                               if (e.target.value === '' || !isNaN(value)) {
-                                setMinFunding(value);
-                              }
-                            }}
-                            className="h-8"
+                              setMinFunding(value);
+                            }
+                          }}
+                          className="h-8"
                             placeholder="Без ограничения"
                           />
                         </div>
@@ -683,7 +683,7 @@ export const CryptoArbs = () => {
                             }}
                             className="h-8"
                             placeholder="Без ограничения"
-                          />
+                        />
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 pt-2">
@@ -761,7 +761,7 @@ export const CryptoArbs = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               {a.funding >= 0 ? (
-                                <TrendingUp className="h-4 w-4 text-green-500" />
+                              <TrendingUp className="h-4 w-4 text-green-500" />
                               ) : (
                                 <TrendingDown className="h-4 w-4 text-red-500" />
                               )}
@@ -905,7 +905,7 @@ export const CryptoArbs = () => {
                     {/* Фандинг и спред */}
                     <div className="flex items-center gap-1.5">
                       {selectedEnriched.funding >= 0 ? (
-                        <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+                      <TrendingUp className="h-3.5 w-3.5 text-green-500" />
                       ) : (
                         <TrendingDown className="h-3.5 w-3.5 text-red-500" />
                       )}

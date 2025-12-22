@@ -361,7 +361,9 @@ a{
     border: 1px solid rgba(166, 189, 213, 0.2) !important;
 }
 
-/* macOS-style scrollbar */
+/* Единые настройки скроллбара для всего проекта */
+/* Скроллбар поверх контента (overlay) для всех элементов с overflow */
+/* Webkit scrollbar стили */
 *::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -385,10 +387,30 @@ a{
     background: rgba(166, 189, 213, 0.7);
 }
 
-/* Firefox scrollbar */
+/* Firefox scrollbar - скроллбар поверх контента */
+.overflow-y-auto,
+.overflow-y-scroll,
+.overflow-auto,
+.overflow-x-auto,
+.overflow-x-scroll,
+.overflow {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(166, 189, 213, 0.3) transparent;
+    scrollbar-gutter: auto;
+}
+
+/* Для webkit браузеров используем overlay для скроллбара поверх контента */
 .overflow-y-auto,
 .overflow-y-scroll,
 .overflow-auto {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(166, 189, 213, 0.3) transparent;
+    overflow-y: overlay;
+}
+
+/* Fallback для браузеров без поддержки overlay */
+@supports not (overflow: overlay) {
+    .overflow-y-auto,
+    .overflow-y-scroll,
+    .overflow-auto {
+        overflow-y: auto;
+    }
 }

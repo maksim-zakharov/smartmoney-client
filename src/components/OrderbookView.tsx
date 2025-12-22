@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import { useAppSelector } from '../store';
 import { DataService } from '../api/common/data.service';
 import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
@@ -28,7 +28,12 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   const dataService = useAppSelector((state) => state.alorSlice.dataService) as DataService | null;
   const [orderbook, setOrderbook] = useState<Orderbook | MexcOrderbook | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [scrollTop, setScrollTop] = useState(0);
+  
+  // Кэш для хранения всех уровней цен (обновляется только пришедшими данными)
+  const [priceCache, setPriceCache] = useState<Map<number, { type: 'ask' | 'bid'; volume: number }>>(new Map());
   const [tickSize, setTickSize] = useState(0.0001); // Шаг цены по умолчанию
   const [centerPrice, setCenterPrice] = useState<number | null>(null);
   // Загружаем compression из localStorage при инициализации
@@ -140,44 +145,56 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     }
   }, [bestAsk, bestBid]);
 
-  // Создаем карту цен для быстрого доступа к данным с учетом compression
-  const priceDataMap = useMemo(() => {
-    const map = new Map<number, { type: 'ask' | 'bid'; volume: number }>();
+  // Обновляем кэш только пришедшими данными из вебсокета
+  useEffect(() => {
+    if (!orderbook) return;
+    
     const compressionTickSize = tickSize * compression;
     
-    // Агрегируем asks
-    asks.forEach(ask => {
-      const price = Math.round(ask.price / compressionTickSize) * compressionTickSize;
-      const volume = (ask as any).value ?? (ask as any).volume ?? 0;
-      const existing = map.get(price);
-      if (existing && existing.type === 'ask') {
-        map.set(price, { type: 'ask', volume: existing.volume + volume });
-      } else if (!existing) {
-        map.set(price, { type: 'ask', volume });
-      }
+    setPriceCache((prevCache) => {
+      const newCache = new Map(prevCache);
+      
+      // Обновляем только те уровни, которые пришли в новом обновлении
+      // Для asks - заменяем объем (вебсокет присылает полные данные, а не дельты)
+      asks.forEach(ask => {
+        const price = Math.round(ask.price / compressionTickSize) * compressionTickSize;
+        const volume = (ask as any).value ?? (ask as any).volume ?? 0;
+        
+        if (volume > 0) {
+          // Заменяем объем для этого уровня (не суммируем)
+          newCache.set(price, { type: 'ask', volume });
+        } else {
+          // Если объем 0, удаляем уровень из кэша
+          newCache.delete(price);
+        }
+      });
+      
+      // Для bids - заменяем объем (вебсокет присылает полные данные, а не дельты)
+      bids.forEach(bid => {
+        const price = Math.round(bid.price / compressionTickSize) * compressionTickSize;
+        const volume = (bid as any).value ?? (bid as any).volume ?? 0;
+        
+        if (volume > 0) {
+          // Заменяем объем для этого уровня (не суммируем)
+          newCache.set(price, { type: 'bid', volume });
+        } else {
+          // Если объем 0, удаляем уровень из кэша
+          newCache.delete(price);
+        }
+      });
+      
+      return newCache;
     });
-    
-    // Агрегируем bids
-    bids.forEach(bid => {
-      const price = Math.round(bid.price / compressionTickSize) * compressionTickSize;
-      const volume = (bid as any).value ?? (bid as any).volume ?? 0;
-      const existing = map.get(price);
-      if (existing && existing.type === 'bid') {
-        map.set(price, { type: 'bid', volume: existing.volume + volume });
-      } else if (!existing) {
-        map.set(price, { type: 'bid', volume });
-      }
-    });
-    
-    return map;
-  }, [asks, bids, tickSize, compression]);
+  }, [orderbook, asks, bids, tickSize, compression]);
 
-  // Находим максимальный объем для нормализации ширины
-  const maxVolume = useMemo(() => Math.max(
-    ...asks.map((a) => (a as any).value ?? (a as any).volume ?? 0),
-    ...bids.map((b) => (b as any).value ?? (b as any).volume ?? 0),
-    1,
-  ), [asks, bids]);
+  // Используем кэш для отображения данных
+  const priceDataMap = priceCache;
+
+  // Находим максимальный объем для нормализации ширины из кэша
+  const maxVolume = useMemo(() => {
+    const volumes = Array.from(priceCache.values()).map(v => v.volume);
+    return Math.max(...volumes, 1);
+  }, [priceCache]);
 
   // Константы для виртуального скролла
   const ROW_HEIGHT = 20;
@@ -242,9 +259,132 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   const visibleStart = Math.floor(scrollTop / ROW_HEIGHT);
   const visibleEnd = Math.min(
     TOTAL_ROWS,
-    Math.ceil((scrollTop + (scrollContainerRef.current?.clientHeight || 0)) / ROW_HEIGHT)
+    Math.ceil((scrollTop + (dimensions.height || 0)) / ROW_HEIGHT)
   );
   const visibleRows = Math.min(visibleEnd - visibleStart, 100); // Ограничиваем для производительности
+
+  // Определяем размеры canvas
+  useLayoutEffect(() => {
+    const updateDimensions = () => {
+      if (scrollContainerRef.current) {
+        const rect = scrollContainerRef.current.getBoundingClientRect();
+        setDimensions({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateDimensions();
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    if (scrollContainerRef.current) {
+      resizeObserver.observe(scrollContainerRef.current);
+    }
+    window.addEventListener('resize', updateDimensions);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, []);
+
+  // Отрисовка на canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !orderbook || dimensions.width === 0 || dimensions.height === 0) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Устанавливаем размеры canvas с учетом devicePixelRatio для четкости
+    const dpr = window.devicePixelRatio || 1;
+    const displayWidth = dimensions.width;
+    const displayHeight = dimensions.height;
+    
+    // Устанавливаем внутренние размеры canvas
+    if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
+      canvas.width = displayWidth * dpr;
+      canvas.height = displayHeight * dpr;
+      ctx.scale(dpr, dpr);
+    }
+
+    // Заливаем canvas фоном проекта из CSS переменной --background
+    const root = document.documentElement;
+    const backgroundValue = getComputedStyle(root).getPropertyValue('--background').trim();
+    let backgroundColor = 'rgb(23, 35, 46)'; // дефолтный темный фон из .dark
+    
+    if (backgroundValue) {
+      if (backgroundValue.startsWith('rgb')) {
+        backgroundColor = backgroundValue;
+      } else if (backgroundValue.startsWith('oklch')) {
+        // Для oklch используем дефолтный цвет
+        backgroundColor = 'rgb(23, 35, 46)';
+      }
+    }
+    
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+    // Настройки для текста
+    ctx.font = '11px monospace';
+    ctx.textBaseline = 'middle';
+
+    const paddingX = 8;
+    const volumeWidth = dimensions.width * 0.4; // 40% для объема
+
+    // Отрисовываем видимые строки
+    for (let i = 0; i < visibleRows; i++) {
+      const rowIndex = visibleStart + i;
+      if (rowIndex < 0 || rowIndex >= TOTAL_ROWS) continue;
+
+      const price = getPriceForRow(rowIndex);
+      const roundedPrice = Math.round(price / compressionTickSize) * compressionTickSize;
+      const data = priceDataMap.get(roundedPrice);
+      const isAsk = data?.type === 'ask';
+      const isBid = data?.type === 'bid';
+      const volume = data?.volume ?? 0;
+      const widthPercent = maxVolume > 0 ? (volume / maxVolume) * 100 : 0;
+      const isBestLevel = (bestAsk && Math.abs(roundedPrice - bestAsk.price) < compressionTickSize / 2) ||
+                         (bestBid && Math.abs(roundedPrice - bestBid.price) < compressionTickSize / 2);
+
+      const y = rowIndex * ROW_HEIGHT - scrollTop;
+      if (y < -ROW_HEIGHT || y > dimensions.height) continue;
+
+      // Фон для лучшего уровня
+      if (isBestLevel) {
+        ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
+        ctx.fillRect(0, y, dimensions.width, ROW_HEIGHT);
+      }
+
+      // Фон для asks/bids - используем те же цвета, что в спреде (green-500 и red-500), но более прозрачные
+      if (isAsk) {
+        // red-500: rgb(239, 68, 68) с меньшей прозрачностью
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+        ctx.fillRect(0, y, dimensions.width, ROW_HEIGHT);
+      } else if (isBid) {
+        // green-500: rgb(34, 197, 94) с меньшей прозрачностью
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.15)';
+        ctx.fillRect(0, y, dimensions.width, ROW_HEIGHT);
+      }
+
+      // Линия заполнения объема (золотая)
+      if (volume > 0) {
+        const fillWidth = (widthPercent / 100) * volumeWidth;
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.3)';
+        ctx.fillRect(paddingX, y, fillWidth, ROW_HEIGHT);
+      }
+
+      // Текст объема (слева) - рисуем поверх всего
+      if (volume > 0) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)'; // белый
+        ctx.textAlign = 'left';
+        const volumeText = formatCompact(volume);
+        ctx.fillText(volumeText, paddingX, y + ROW_HEIGHT / 2);
+      }
+
+      // Текст цены (справа) - рисуем поверх всего
+      const priceText = roundedPrice.toFixed(priceDecimals);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = 'rgba(255, 255, 255, 1)'; // белый
+      ctx.fillText(priceText, dimensions.width - paddingX, y + ROW_HEIGHT / 2);
+    }
+  }, [scrollTop, dimensions, centerPrice, priceDataMap, maxVolume, compressionTickSize, bestAsk, bestBid, getPriceForRow, totalHeight, orderbook, visibleStart, visibleRows, priceDecimals]);
 
   // Обработчик изменения compression
   const handleCompressionChange = (value: string) => {
@@ -274,7 +414,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
 
   if (!orderbook) {
     return (
-      <Card className="h-full flex flex-col">
+      <Card className="h-full flex flex-col pb-0 border-muted-foreground/20 overflow-hidden gap-0">
         <CardHeader className="pb-0 pt-0.5 px-3">
           <CardTitle className="text-sm font-semibold">{exchange}</CardTitle>
         </CardHeader>
@@ -286,8 +426,8 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-0 pt-0.5 px-3">
+    <Card className="h-full flex flex-col pb-0 border-muted-foreground/20 overflow-hidden gap-0">
+      <CardHeader className="pb-0 pt-0.5 px-3 border-b border-muted-foreground/20">
         <div className="flex items-center justify-between gap-1">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             {exchangeImgMap[exchange.toUpperCase()] && (
@@ -339,63 +479,22 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
       </CardHeader>
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-2 pb-1 min-h-0"
+        className="flex-1 min-h-0 relative overflow-y-auto"
         onScroll={handleScroll}
       >
-        <div style={{ height: `${totalHeight}px`, position: 'relative' }}>
-          {/* Виртуальный рендеринг - отображаем только видимые строки */}
-          {Array.from({ length: visibleRows }, (_, i) => {
-            const rowIndex = visibleStart + i;
-            if (rowIndex < 0 || rowIndex >= TOTAL_ROWS) return null;
-            
-            const price = getPriceForRow(rowIndex);
-            const roundedPrice = Math.round(price / compressionTickSize) * compressionTickSize;
-            const data = priceDataMap.get(roundedPrice);
-            const isAsk = data?.type === 'ask';
-            const isBid = data?.type === 'bid';
-            const volume = data?.volume ?? 0;
-            const widthPercent = maxVolume > 0 ? (volume / maxVolume) * 100 : 0;
-            const isBestLevel = (bestAsk && Math.abs(roundedPrice - bestAsk.price) < compressionTickSize / 2) ||
-                               (bestBid && Math.abs(roundedPrice - bestBid.price) < compressionTickSize / 2);
-            
-            return (
-              <div
-                key={rowIndex}
-                style={{
-                  position: 'absolute',
-                  top: `${rowIndex * ROW_HEIGHT}px`,
-                  left: 0,
-                  right: 0,
-                  height: `${ROW_HEIGHT}px`,
-                }}
-                className={cn(
-                  "relative text-xs",
-                  isBestLevel && "bg-muted/30"
-                )}
-              >
-                <div className="flex justify-between items-center relative z-10 px-1 h-full">
-                  <span className="text-muted-foreground font-mono">
-                    {volume > 0 ? formatCompact(volume) : ''}
-                  </span>
-                  <span className={cn(
-                    "font-mono",
-                    isAsk ? "text-red-400" : isBid ? "text-green-400" : "text-muted-foreground"
-                  )}>
-                    {roundedPrice.toFixed(priceDecimals)}
-                  </span>
-                </div>
-                {volume > 0 && (
-                  <div
-                    className={cn(
-                      "absolute top-0 right-0 h-full opacity-30",
-                      isAsk ? "bg-red-500/20" : "bg-green-500/20"
-                    )}
-                    style={{ width: `${widthPercent}%` }}
-                  />
-                )}
-              </div>
-            );
-          })}
+        <div style={{ height: `${totalHeight}px`, position: 'relative', width: '100%' }}>
+          <canvas
+            ref={canvasRef}
+            style={{
+              position: 'sticky',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: dimensions.height || '100%',
+              display: 'block',
+              pointerEvents: 'none',
+            }}
+          />
         </div>
       </div>
     </Card>
