@@ -4,6 +4,7 @@ import { DataService } from '../api/common/data.service';
 import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
 import { MexcOrderbook } from '../api/mexc.models';
 import { cn } from '../lib/utils';
+import { exchangeImgMap } from '../utils';
 import { Card, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
@@ -33,11 +34,11 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   // Загружаем compression из localStorage при инициализации
   const [compression, setCompression] = useState(() => {
     const saved = localStorage.getItem('orderbook_compression');
-    return saved ? parseInt(saved, 10) : 1;
+    return saved ? parseInt(saved, 10) : 100;
   });
   const [compressionInput, setCompressionInput] = useState(() => {
     const saved = localStorage.getItem('orderbook_compression');
-    return saved || '1';
+    return saved || '100';
   });
   const [isCustomCompression, setIsCustomCompression] = useState(false);
 
@@ -274,7 +275,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   if (!orderbook) {
     return (
       <Card className="h-full flex flex-col">
-        <CardHeader className="pb-0 pt-0.5">
+        <CardHeader className="pb-0 pt-0.5 px-3">
           <CardTitle className="text-sm font-semibold">{exchange}</CardTitle>
         </CardHeader>
         <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm">
@@ -286,11 +287,19 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="pb-0 pt-0.5">
+      <CardHeader className="pb-0 pt-0.5 px-3">
         <div className="flex items-center justify-between gap-1">
-          <CardTitle className="text-sm font-semibold">{exchange}</CardTitle>
+          <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+            {exchangeImgMap[exchange.toUpperCase()] && (
+              <img
+                src={exchangeImgMap[exchange.toUpperCase()]}
+                alt={exchange}
+                className="h-3.5 w-3.5 rounded-full"
+              />
+            )}
+            {exchange}
+          </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Сжатие:</span>
             {isCustomCompression ? (
               <Input
                 type="number"
@@ -301,15 +310,15 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
                   const numValue = parseInt(compressionInput, 10);
                   if (isNaN(numValue) || numValue <= 0) {
                     setIsCustomCompression(false);
-                    setCompression(1);
-                    setCompressionInput('1');
-                    localStorage.setItem('orderbook_compression', '1');
+                    setCompression(100);
+                    setCompressionInput('100');
+                    localStorage.setItem('orderbook_compression', '100');
                   } else {
                     localStorage.setItem('orderbook_compression', compressionInput);
                   }
                 }}
                 className="h-7 w-20 text-xs"
-                placeholder="1"
+                placeholder="100"
               />
             ) : (
               <Select value={compression.toString()} onValueChange={handleCompressionChange}>
@@ -365,14 +374,14 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
                 )}
               >
                 <div className="flex justify-between items-center relative z-10 px-1 h-full">
+                  <span className="text-muted-foreground font-mono">
+                    {volume > 0 ? formatCompact(volume) : ''}
+                  </span>
                   <span className={cn(
                     "font-mono",
                     isAsk ? "text-red-400" : isBid ? "text-green-400" : "text-muted-foreground"
                   )}>
                     {roundedPrice.toFixed(priceDecimals)}
-                  </span>
-                  <span className="text-muted-foreground font-mono">
-                    {volume > 0 ? formatCompact(volume) : ''}
                   </span>
                 </div>
                 {volume > 0 && (

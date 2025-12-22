@@ -557,7 +557,7 @@ export const CryptoArbs = () => {
   }, [selectedArb, enrichedArbs, fundingMap]);
 
         return (
-          <div className="flex gap-4 h-[calc(100vh-76px)]">
+          <div className="flex gap-2 h-[calc(100vh-76px)]">
             {/* Левая колонка: список карточек (фиксированная ширина) */}
             <div className="w-[320px] flex-shrink-0 flex flex-col overflow-hidden">
             {/* Табы для сортировки и настройки */}
@@ -1047,7 +1047,7 @@ export const CryptoArbs = () => {
             </div>
             </div>
             {/* Стаканы для обеих бирж */}
-            <div className="flex-[1] flex flex-col min-h-0 h-full w-[140px] flex-shrink-0">
+            <div className="flex-[1] flex flex-col min-h-0 h-full w-[80px] flex-shrink-0">
               <div className="flex-1 min-h-0">
                 <OrderbookView
                   exchange={selectedEnriched.sellExchange.exchange}
