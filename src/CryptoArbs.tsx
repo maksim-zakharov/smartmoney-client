@@ -470,13 +470,16 @@ export const CryptoArbs = () => {
   };
 
   // Обработчик выбора пары
-  const handleArbSelect = (arb: ArbPair) => {
+  const handleArbSelect = useCallback((arb: ArbPair) => {
     setSelectedArb(arb);
     // Используем формат: ticker|leftExchange|rightExchange для избежания конфликтов с подчеркиваниями
     const pairKey = `${arb.ticker}|${arb.left.exchange}|${arb.right.exchange}`;
-    searchParams.set('pair', pairKey);
-    setSearchParams(searchParams);
-  };
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('pair', pairKey);
+      return newParams;
+    });
+  }, [setSearchParams]);
 
   // Обогащаем данные арбитражей для отображения
   const enrichedArbs = useMemo(() => {
@@ -584,18 +587,35 @@ export const CryptoArbs = () => {
     const a = enrichedArbs[index];
     if (!a) return null;
 
-                    return (
-      <div style={style} {...ariaAttributes}>
-            <Card
-              key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
-              className={cn(
-                          'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full',
-                          a.isSelected
-                            ? 'ring-2 ring-primary shadow-lg border-primary'
-                            : 'border-muted-foreground/20',
-                        )}
-                        onClick={() => handleArbSelect(a)}
-                      >
+    const handleCardClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleArbSelect({
+        ticker: a.ticker,
+        left: a.left,
+        right: a.right,
+        ratio: a.ratio,
+      });
+    };
+
+    return (
+      <div 
+        style={{ ...style, pointerEvents: 'auto' }} 
+        {...ariaAttributes}
+        onClick={handleCardClick}
+        onMouseDown={handleCardClick}
+      >
+        <Card
+          key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}_${index}`}
+          className={cn(
+            'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full',
+            a.isSelected
+              ? 'ring-2 ring-primary shadow-lg border-primary'
+              : 'border-muted-foreground/20',
+          )}
+          onClick={handleCardClick}
+          onMouseDown={handleCardClick}
+        >
                         <CardHeader className="pb-2 pt-2 px-3">
                           <div className="flex items-center justify-between mb-1.5">
                             <div className="flex items-center gap-2">
