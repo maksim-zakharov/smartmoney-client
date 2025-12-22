@@ -64,15 +64,25 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
 
     const json = JSON.parse(ev.data as any);
     const { op, arg, action, event, data } = json;
-    const key = JSON.stringify(arg);
+    
+    // Для orderbook arg может быть в массиве args
+    const orderbookArg = arg || (json.args && json.args[0]);
+    const key = JSON.stringify(orderbookArg || arg);
     
     // Подписались
     if (event === 'subscribe') {
       // Можно добавить логирование успешной подписки
+      return;
     }
-    // Данные: snapshot (первая пачка) или update (обновления)
-    else if (action === 'update') {
-      if (arg.channel.includes('candle')) {
+    
+    // Данные: snapshot (первоначальный снимок) или update (обновления)
+    if (action === 'snapshot' || action === 'update') {
+      const channelArg = orderbookArg || arg;
+      if (!channelArg || !channelArg.channel) {
+        return;
+      }
+      
+      if (channelArg.channel.includes('candle')) {
         this.emit('candles', json);
         data.forEach(([time, open, high, low, close, volume, amount]) =>
           this.subscribeSubjs.get(key)?.next({
@@ -85,32 +95,36 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
             time: Number(time) / 1000,
           } as HistoryObject),
         );
-      } else if (arg.channel.includes('ticker')) {
+      } else if (channelArg.channel.includes('ticker')) {
         this.subscribeSubjs.get(key)?.next(data[0]);
-      } else if (arg.channel.includes('account')) {
+      } else if (channelArg.channel.includes('account')) {
         this.emit('account', json);
         this.subscribeSubjs.get(key)?.next(data);
-      } else if (arg.channel.includes('orders')) {
+      } else if (channelArg.channel.includes('orders')) {
         this.emit('orders', json);
         this.subscribeSubjs.get(key)?.next(data);
-      } else if (arg.channel.includes('positions')) {
+      } else if (channelArg.channel.includes('positions')) {
         this.emit('positions', json);
         this.subscribeSubjs.get(key)?.next(data);
-      } else if (arg.channel.includes('books')) {
+      } else if (channelArg.channel.includes('books')) {
         this.emit('orderbook', json);
-        data.forEach((orderbook) =>
-          this.subscribeSubjs.get(key)?.next({
-            bids: orderbook.bids.map(([p, v]) => ({
-              price: Number(p),
-              volume: Number(v),
-            }) as OrderbookBid),
-            asks: orderbook.asks.map(([p, v]) => ({
-              price: Number(p),
-              volume: Number(v),
-            }) as OrderbookAsk),
-          } as Orderbook),
-        );
-      } else if (arg.channel.includes('trade')) {
+        // data может быть массивом или объектом
+        const orderbooks = Array.isArray(data) ? data : [data];
+        orderbooks.forEach((orderbook) => {
+          if (orderbook && orderbook.bids && orderbook.asks) {
+            this.subscribeSubjs.get(key)?.next({
+              bids: orderbook.bids.map(([p, v]) => ({
+                price: Number(p),
+                volume: Number(v),
+              }) as OrderbookBid),
+              asks: orderbook.asks.map(([p, v]) => ({
+                price: Number(p),
+                volume: Number(v),
+              }) as OrderbookAsk),
+            } as Orderbook);
+          }
+        });
+      } else if (channelArg.channel.includes('trade')) {
         this.emit('trades', json);
         // Обрабатываем как snapshot, так и update для trades
         this.subscribeSubjs.get(key)?.next(data);
