@@ -233,14 +233,24 @@ export const CryptoArbs = () => {
     return 1; // По умолчанию 1%
   });
 
-  // Состояние для минимального фандинга (по умолчанию 0.3%)
+  // Состояние для минимального фандинга (по умолчанию -Infinity - без ограничения)
   const [minFunding, setMinFunding] = useState<number>(() => {
     const saved = localStorage.getItem('crypto-arbs-min-funding');
-    if (saved !== null) {
+    if (saved !== null && saved !== '') {
       const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : 0.3;
+      return !isNaN(parsed) ? parsed : -Infinity;
     }
-    return 0.3; // По умолчанию 0.3%
+    return -Infinity; // По умолчанию без ограничения
+  });
+
+  // Состояние для максимального фандинга (по умолчанию Infinity - без ограничения)
+  const [maxFunding, setMaxFunding] = useState<number>(() => {
+    const saved = localStorage.getItem('crypto-arbs-max-funding');
+    if (saved !== null && saved !== '') {
+      const parsed = parseFloat(saved);
+      return !isNaN(parsed) ? parsed : Infinity;
+    }
+    return Infinity; // По умолчанию без ограничения
   });
 
   // Состояние для фильтра "Фандинг в одно время"
@@ -266,8 +276,12 @@ export const CryptoArbs = () => {
   }, [minSpread]);
 
   useEffect(() => {
-    localStorage.setItem('crypto-arbs-min-funding', minFunding.toString());
+    localStorage.setItem('crypto-arbs-min-funding', minFunding === -Infinity ? '' : minFunding.toString());
   }, [minFunding]);
+
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-max-funding', maxFunding === Infinity ? '' : maxFunding.toString());
+  }, [maxFunding]);
 
   useEffect(() => {
     localStorage.setItem('crypto-arbs-same-funding-time', sameFundingTime.toString());
@@ -393,7 +407,9 @@ export const CryptoArbs = () => {
         // Остальные фильтры
         const spread = Math.abs(b.ratio - 1) * 100;
         const funding = sumFunding(b) * 100;
-        return spread > minSpread && funding > minFunding;
+        const minFundingCheck = minFunding === -Infinity ? true : funding >= minFunding;
+        const maxFundingCheck = maxFunding === Infinity ? true : funding <= maxFunding;
+        return spread > minSpread && minFundingCheck && maxFundingCheck;
       });
 
     // Сортировка в зависимости от выбранного типа
@@ -411,7 +427,7 @@ export const CryptoArbs = () => {
         return bPart - aPart;
       });
     }
-  }, [tickers, fundingMap, sortType, enabledExchanges, showAll, minSpread, minFunding, sameFundingTime]);
+  }, [tickers, fundingMap, sortType, enabledExchanges, showAll, minSpread, minFunding, maxFunding, sameFundingTime]);
 
   // Восстанавливаем выбранную пару из query параметров при загрузке
   useEffect(() => {
@@ -629,24 +645,45 @@ export const CryptoArbs = () => {
                           className="h-8"
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="min-funding" className="text-sm font-semibold mb-2 block">
-                          Минимальный фандинг (%)
-                        </Label>
-                        <Input
-                          id="min-funding"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          value={minFunding}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value);
-                            if (!isNaN(value) && value >= 0) {
-                              setMinFunding(value);
-                            }
-                          }}
-                          className="h-8"
-                        />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="min-funding" className="text-sm font-semibold mb-2 block">
+                            Фандинг от (%)
+                          </Label>
+                          <Input
+                            id="min-funding"
+                            type="number"
+                            step="0.1"
+                            value={minFunding === -Infinity ? '' : minFunding}
+                            onChange={(e) => {
+                              const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
+                              if (e.target.value === '' || !isNaN(value)) {
+                                setMinFunding(value);
+                              }
+                            }}
+                            className="h-8"
+                            placeholder="Без ограничения"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="max-funding" className="text-sm font-semibold mb-2 block">
+                            Фандинг до (%)
+                          </Label>
+                          <Input
+                            id="max-funding"
+                            type="number"
+                            step="0.1"
+                            value={maxFunding === Infinity ? '' : maxFunding}
+                            onChange={(e) => {
+                              const value = e.target.value === '' ? Infinity : parseFloat(e.target.value);
+                              if (e.target.value === '' || !isNaN(value)) {
+                                setMaxFunding(value);
+                              }
+                            }}
+                            className="h-8"
+                            placeholder="Без ограничения"
+                          />
+                        </div>
                       </div>
                       <div className="flex items-center space-x-2 pt-2">
                         <Checkbox
