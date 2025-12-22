@@ -123,6 +123,9 @@ export class OrderbookManager {
         case 'OKX':
           this.wsSubscription = this.dataService.okxSubscribeOrderbook(this.symbol, 200);
           break;
+        case 'OURBIT':
+          this.wsSubscription = this.dataService.ourbitSubscribeOrderbook(this.symbol, 200);
+          break;
         default:
           return;
       }

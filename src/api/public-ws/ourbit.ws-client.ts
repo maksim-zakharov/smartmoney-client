@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 import { SubscriptionManager } from '../common/subscription-manager';
+import { MexcOrderbook } from '../mexc.models';
 
 export interface OurbitWSFTicker {
   amount24: number;
@@ -91,6 +92,21 @@ export class OurbitWsClient extends SubscriptionManager {
         const key = `sub.deal.${message.symbol}`;
         this.subscribeSubjs.get(key)?.next(message.data);
       }
+
+      // Обработка стакана (orderbook) - аналогично MEXC
+      if (message.channel === 'push.depth') {
+        const key = `depth_${message.symbol}`;
+        this.subscribeSubjs.get(key)?.next({
+          bids: message.data.bids.map((p) => ({
+            price: Number(p[0]),
+            value: Number(p[1]),
+          })),
+          asks: message.data.asks.map((p) => ({
+            price: Number(p[0]),
+            value: Number(p[1]),
+          })),
+        } as MexcOrderbook);
+      }
     } catch (error) {
       console.error(`Ошибка обработки сообщения: ${error.message}`, error);
     }
@@ -149,6 +165,21 @@ export class OurbitWsClient extends SubscriptionManager {
   subscribeFairPrice(symbol: string) {
     // OURBIT не имеет fair price API, возвращаем заглушку
     const subj = new Subject<any>();
+    return subj;
+  }
+
+  subscribeOrderbook(symbol: string, depth: number) {
+    const subj = new Subject<MexcOrderbook>();
+    const key = `depth_${symbol}`;
+    this.subscribeSubjs.set(key, subj);
+    this.subscribe({
+      method: 'sub.depth',
+      param: {
+        symbol,
+        limit: depth,
+      },
+    });
+
     return subj;
   }
 }

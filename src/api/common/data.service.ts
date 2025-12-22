@@ -249,6 +249,15 @@ export class DataService {
     return Promise.resolve();
   }
 
+  ourbitSubscribeOrderbook(symbol: string, depth: number = 200) {
+    return this.ourbitWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  ourbitUnsubscribeOrderbook(symbol: string, depth: number = 200) {
+    // TODO: добавить метод unsubscribe в ourbit.ws-client.ts если нужно
+    return Promise.resolve();
+  }
+
   get serverTime$() {
     if (!this.serverTimeCache$) {
       this.serverTimeCache$ = from(this.alorApi.http.get(`https://api.alor.ru/md/v2/time`)).pipe(
