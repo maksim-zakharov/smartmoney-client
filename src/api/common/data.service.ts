@@ -190,6 +190,65 @@ export class DataService {
     return this.hyperliquidWsClient.unsubscribeCandles(symbol, resolution);
   }
 
+  // Методы для подписки на стаканы
+  mexcSubscribeOrderbook(symbol: string, depth: number = 20) {
+    if (symbol.includes('_')) {
+      return this.mexcWsClient.subscribeOrderbook(symbol, depth);
+    }
+    // Для спота нужно добавить поддержку в mexc-spot.ws-client.ts
+    return this.mexcWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  bybitSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.bybitWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  bitgetSubscribeOrderbook(symbol: string, depth: 1 | 5 | 15 = 15) {
+    return this.bitgetFuturesWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  gateSubscribeOrderbook(symbol: string, depth: 50 | 400 = 50) {
+    return this.gateWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  bingxSubscribeOrderbook(symbol: string, depth: 5 | 10 | 20 | 50 | 100 = 20) {
+    return this.bingxWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  okxSubscribeOrderbook(symbol: string, depth: number = 20) {
+    // OKX использует тот же клиент, что и Bybit (нужно проверить)
+    return this.bybitWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  // Методы для отписки от стаканов
+  mexcUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    // TODO: добавить метод unsubscribe в mexc.ws-client.ts если нужно
+    return Promise.resolve();
+  }
+
+  bybitUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    // TODO: добавить метод unsubscribe в bybit.ws-client.ts если нужно
+    return Promise.resolve();
+  }
+
+  bitgetUnsubscribeOrderbook(symbol: string, depth: 1 | 5 | 15 = 15) {
+    return this.bitgetFuturesWsClient.unsubscribeOrderbook(symbol, depth);
+  }
+
+  gateUnsubscribeOrderbook(symbol: string, depth: 50 | 400 = 50) {
+    // TODO: добавить метод unsubscribe в gate.ws-client.ts если нужно
+    return Promise.resolve();
+  }
+
+  bingxUnsubscribeOrderbook(symbol: string, depth: 5 | 10 | 20 | 50 | 100 = 20) {
+    return this.bingxWsClient.unsubscribeOrderbook(symbol, depth);
+  }
+
+  okxUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    // TODO: добавить метод unsubscribe если нужно
+    return Promise.resolve();
+  }
+
   get serverTime$() {
     if (!this.serverTimeCache$) {
       this.serverTimeCache$ = from(this.alorApi.http.get(`https://api.alor.ru/md/v2/time`)).pipe(

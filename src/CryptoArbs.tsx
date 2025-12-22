@@ -17,6 +17,7 @@ import { Button } from './components/ui/button.tsx';
 import { Input } from './components/ui/input.tsx';
 import { Label } from './components/ui/label.tsx';
 import { Checkbox } from './components/ui/checkbox.tsx';
+import { OrderbookView } from './components/OrderbookView';
 
 interface ArbPair {
   ticker: string;
@@ -881,10 +882,11 @@ export const CryptoArbs = () => {
         </div>
       </div>
 
-            {/* Правая колонка: график спреда (3/4 ширины) */}
-            <div className="flex-[3] flex flex-col min-h-0">
+            {/* Правая колонка: график спреда и стаканы */}
+            <div className="flex-[3] flex gap-2 min-h-0 h-full">
         {selectedEnriched ? (
           <>
+            <div className="flex-[4] flex flex-col min-h-0 h-full">
             <div className="mb-2">
                 {/* Информация о выбранной паре в компактном горизонтальном формате */}
                 <div 
@@ -1042,6 +1044,24 @@ export const CryptoArbs = () => {
                 height="100%"
                 multi={1}
               />
+            </div>
+            </div>
+            {/* Стаканы для обеих бирж */}
+            <div className="flex-[1] flex flex-col min-h-0 h-full w-[140px] flex-shrink-0">
+              <div className="flex-1 min-h-0">
+                <OrderbookView
+                  exchange={selectedEnriched.sellExchange.exchange}
+                  symbol={getTickerWithSuffix(selectedEnriched.sellExchange.exchange, selectedEnriched.ticker)}
+                  ticker={selectedEnriched.ticker}
+                />
+              </div>
+              <div className="flex-1 min-h-0 mt-2">
+                <OrderbookView
+                  exchange={selectedEnriched.buyExchange.exchange}
+                  symbol={getTickerWithSuffix(selectedEnriched.buyExchange.exchange, selectedEnriched.ticker)}
+                  ticker={selectedEnriched.ticker}
+                />
+              </div>
             </div>
           </>
         ) : (
