@@ -10,7 +10,7 @@ import { TypographyH4 } from './components/ui/typography.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
-import { ArrowDown, ArrowUp, TrendingUp, Copy, ExternalLink, Settings, BarChart3 } from 'lucide-react';
+import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, Settings, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Button } from './components/ui/button.tsx';
@@ -759,8 +759,15 @@ export const CryptoArbs = () => {
                               </Tooltip>
                             </div>
                             <div className="flex items-center gap-2">
-                              <TrendingUp className="h-4 w-4 text-green-500" />
-                              <span className="text-sm font-semibold text-green-500 tabular-nums">
+                              {a.funding >= 0 ? (
+                                <TrendingUp className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <TrendingDown className="h-4 w-4 text-red-500" />
+                              )}
+                              <span className={cn(
+                                "text-sm font-semibold tabular-nums",
+                                a.funding >= 0 ? "text-green-500" : "text-red-500"
+                              )}>
                                 {a.funding.toFixed(4)}%
                               </span>
                             </div>
@@ -895,8 +902,15 @@ export const CryptoArbs = () => {
                     
                     {/* Фандинг и спред */}
                     <div className="flex items-center gap-1.5">
-                      <TrendingUp className="h-3.5 w-3.5 text-green-500" />
-                      <span className="text-sm font-semibold text-green-500 tabular-nums">
+                      {selectedEnriched.funding >= 0 ? (
+                        <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+                      )}
+                      <span className={cn(
+                        "text-sm font-semibold tabular-nums",
+                        selectedEnriched.funding >= 0 ? "text-green-500" : "text-red-500"
+                      )}>
                         {selectedEnriched.funding.toFixed(4)}%
                       </span>
                     </div>
