@@ -7,7 +7,8 @@ enum GateFuturesChannelEnum {
   Login = 'futures.login',
 
   Tickers = 'futures.tickers',
-  Orderbook = 'futures.obu',
+  Orderbook = 'futures.order_book', // Старый способ подписки
+  OrderbookNew = 'futures.obu', // Новый способ подписки
   Candlesticks = 'futures.candlesticks',
 }
 
@@ -58,6 +59,10 @@ export class GateFuturesWsClient extends SubscriptionManager {
     if (res.event === 'update') {
       return this.onUpdateEvent(res);
     }
+
+    if (res.event === 'all') {
+      return this.onAllEvent(res);
+    }
   }
 
   subscribeCandles(symbol: string, resolution: string) {
@@ -72,9 +77,14 @@ export class GateFuturesWsClient extends SubscriptionManager {
 
   subscribeOrderbook(symbol: string, depth: 50 | 400) {
     const subj = new Subject<any>();
-    const key = `ob.${symbol}.${depth}`;
+    // Используем символ как ключ, так как в ответе приходит именно символ
+    const key = symbol;
     this.subscribeSubjs.set(key, subj);
-    this.subscribeFuturesChannel(GateFuturesChannelEnum.Orderbook, [key]);
+    // Старый способ подписки: payload: ["BTC_USD", "20", "0"]
+    // где "0" = 100ms интервал, "1" = 1000ms
+    // depth конвертируем в строку, но ограничиваем до 20 для старого API
+    const depthForOldApi = Math.min(depth, 20).toString();
+    this.subscribeFuturesChannel(GateFuturesChannelEnum.Orderbook, [symbol, depthForOldApi, "0"]);
 
     return subj;
   }
@@ -159,25 +169,38 @@ export class GateFuturesWsClient extends SubscriptionManager {
           timestamp: time,
         });
         break;
-      case GateFuturesChannelEnum.Orderbook:
-        const { s, b, a } = result;
-        this.subscribeSubjs.get(s)?.next({
-          bids: (b || []).map((p) => ({
-            price: Number(p[0]),
-            value: Number(p[1]),
-          })),
-          asks: (a || []).map((p) => ({
-            price: Number(p[0]),
-            value: Number(p[1]),
-          })),
-        });
-        break;
       case GateFuturesChannelEnum.Tickers:
         result.forEach((r) => {
           const { contract } = r;
           const key = `${GateFuturesChannelEnum.Tickers}.${contract}`;
           this.subscribeSubjs.get(key)?.next({ ...r, lastPrice: Number(r.last) });
         });
+        break;
+    }
+  }
+
+  private onAllEvent(res: any) {
+    const { channel, result, time, event } = res;
+    if (event !== 'all') return;
+
+    switch (channel) {
+      case GateFuturesChannelEnum.Orderbook:
+        // Старый формат: result содержит объект с contract, asks, bids
+        if (!result || !result.contract) break;
+        const { contract, asks, bids } = result;
+        const subj = this.subscribeSubjs.get(contract);
+        if (subj) {
+          subj.next({
+            bids: (bids || []).map((item: any) => ({
+              price: Number(item.p),
+              value: Number(item.s),
+            })),
+            asks: (asks || []).map((item: any) => ({
+              price: Number(item.p),
+              value: Number(item.s),
+            })),
+          });
+        }
         break;
     }
   }

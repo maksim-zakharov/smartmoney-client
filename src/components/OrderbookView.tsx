@@ -21,8 +21,15 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   const [scrollTop, setScrollTop] = useState(0);
   const [tickSize, setTickSize] = useState(0.0001); // Шаг цены по умолчанию
   const [centerPrice, setCenterPrice] = useState<number | null>(null);
-  const [compression, setCompression] = useState(1); // Сжатие по умолчанию
-  const [compressionInput, setCompressionInput] = useState('1');
+  // Загружаем compression из localStorage при инициализации
+  const [compression, setCompression] = useState(() => {
+    const saved = localStorage.getItem('orderbook_compression');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [compressionInput, setCompressionInput] = useState(() => {
+    const saved = localStorage.getItem('orderbook_compression');
+    return saved || '1';
+  });
   const [isCustomCompression, setIsCustomCompression] = useState(false);
 
   useEffect(() => {
@@ -169,6 +176,17 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
 
   // Вычисляем compressionTickSize
   const compressionTickSize = useMemo(() => tickSize * compression, [tickSize, compression]);
+  
+  // Вычисляем количество знаков после запятой на основе compression
+  // compression = 1 → 5 знаков, compression = 10 → 4 знака, compression = 100 → 3 знака и т.д.
+  const priceDecimals = useMemo(() => {
+    if (compression <= 1) return 5;
+    // Находим порядок compression (логарифм по основанию 10)
+    const order = Math.floor(Math.log10(compression));
+    // Уменьшаем количество знаков на порядок: 5 - order
+    // Но не меньше 0
+    return Math.max(5 - order, 0);
+  }, [compression]);
 
   // Вычисляем цену для строки на основе позиции скролла с учетом compression
   const getPriceForRow = useCallback((rowIndex: number) => {
@@ -224,8 +242,11 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
       setIsCustomCompression(true);
     } else {
       setIsCustomCompression(false);
-      setCompression(parseInt(value, 10));
+      const numValue = parseInt(value, 10);
+      setCompression(numValue);
       setCompressionInput(value);
+      // Сохраняем в localStorage
+      localStorage.setItem('orderbook_compression', value);
     }
   };
 
@@ -236,6 +257,8 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue > 0) {
       setCompression(numValue);
+      // Сохраняем в localStorage
+      localStorage.setItem('orderbook_compression', value);
     }
   };
 
@@ -271,6 +294,9 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
                     setIsCustomCompression(false);
                     setCompression(1);
                     setCompressionInput('1');
+                    localStorage.setItem('orderbook_compression', '1');
+                  } else {
+                    localStorage.setItem('orderbook_compression', compressionInput);
                   }
                 }}
                 className="h-7 w-20 text-xs"
@@ -334,7 +360,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
                     "font-mono",
                     isAsk ? "text-red-400" : isBid ? "text-green-400" : "text-muted-foreground"
                   )}>
-                    {roundedPrice.toFixed(4)}
+                    {roundedPrice.toFixed(priceDecimals)}
                   </span>
                   <span className="text-muted-foreground font-mono">
                     {volume > 0 ? volume.toFixed(4) : ''}
