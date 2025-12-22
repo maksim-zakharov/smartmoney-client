@@ -1,13 +1,12 @@
 import { useEffect, useState, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import { useAppSelector } from '../store';
 import { DataService } from '../api/common/data.service';
-import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
-import { MexcOrderbook } from '../api/mexc.models';
-import { cn } from '../lib/utils';
+import { OrderbookAsk, OrderbookBid } from 'alor-api';
 import { exchangeImgMap } from '../utils';
 import { Card, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
+import { OrderbookManager, OrderbookPriceLevel } from '../api/common/orderbook-manager';
 
 // Функция для компактного форматирования чисел (без дробных)
 const formatCompact = (value: number): string => {
@@ -26,16 +25,19 @@ interface OrderbookViewProps {
 
 export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) => {
   const dataService = useAppSelector((state) => state.alorSlice.dataService) as DataService | null;
-  const [orderbook, setOrderbook] = useState<Orderbook | MexcOrderbook | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const orderbookManagerRef = useRef<OrderbookManager | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [scrollTop, setScrollTop] = useState(0);
   
-  // Кэш для хранения всех уровней цен (обновляется только пришедшими данными)
-  const [priceCache, setPriceCache] = useState<Map<number, { type: 'ask' | 'bid'; volume: number }>>(new Map());
-  const [tickSize, setTickSize] = useState(0.0001); // Шаг цены по умолчанию
-  const [centerPrice, setCenterPrice] = useState<number | null>(null);
+  // Данные из OrderbookManager
+  const [priceCache, setPriceCache] = useState<Map<number, OrderbookPriceLevel>>(new Map());
+  const [tickSize, setTickSize] = useState(0.0001);
+  const [bestAsk, setBestAsk] = useState<OrderbookAsk | null>(null);
+  const [bestBid, setBestBid] = useState<OrderbookBid | null>(null);
+  const [hasData, setHasData] = useState(false);
+  
   // Загружаем compression из localStorage при инициализации
   const [compression, setCompression] = useState(() => {
     const saved = localStorage.getItem('orderbook_compression');
@@ -46,158 +48,54 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     return saved || '100';
   });
   const [isCustomCompression, setIsCustomCompression] = useState(false);
+  
+  // Центральная цена (средняя между bestAsk и bestBid)
+  const centerPrice = useMemo(() => {
+    if (bestAsk && bestBid) {
+      return (bestAsk.price + bestBid.price) / 2;
+    } else if (bestAsk) {
+      return bestAsk.price;
+    } else if (bestBid) {
+      return bestBid.price;
+    }
+    return null;
+  }, [bestAsk, bestBid]);
 
+  // Инициализация OrderbookManager
   useEffect(() => {
     if (!dataService || !symbol) {
-      setOrderbook(null);
+      setHasData(false);
       return;
     }
 
-    let subscription: any;
-
-    const exchangeUpper = exchange.toUpperCase();
-    
-    try {
-      switch (exchangeUpper) {
-        case 'MEXC':
-          subscription = dataService.mexcSubscribeOrderbook(symbol, 200);
-          break;
-        case 'BYBIT':
-          subscription = dataService.bybitSubscribeOrderbook(symbol, 200);
-          break;
-        case 'BITGET':
-          subscription = dataService.bitgetSubscribeOrderbook(symbol, 15);
-          break;
-        case 'GATE':
-        case 'GATEIO':
-          subscription = dataService.gateSubscribeOrderbook(symbol, 400);
-          break;
-        case 'BINGX':
-          subscription = dataService.bingxSubscribeOrderbook(symbol, 100);
-          break;
-        case 'OKX':
-          subscription = dataService.okxSubscribeOrderbook(symbol, 200);
-          break;
-        default:
-          setOrderbook(null);
-          return;
-      }
-
-      if (subscription) {
-        console.log(`Subscribing to orderbook for ${exchange} with symbol ${symbol}`);
-        const sub = subscription.subscribe({
-          next: (data: Orderbook | MexcOrderbook) => {
-            console.log(`Received orderbook data for ${exchange}:`, data);
-            setOrderbook(data);
-          },
-          error: (error) => {
-            console.error(`Error in orderbook subscription for ${exchange}:`, error);
-          },
-        });
-        
-        return () => {
-          console.log(`Unsubscribing from orderbook for ${exchange}`);
-          sub.unsubscribe();
-        };
-      } else {
-        console.warn(`No subscription returned for ${exchange} with symbol ${symbol}`);
-      }
-    } catch (error) {
-      console.error(`Error subscribing to orderbook for ${exchange}:`, error);
-      setOrderbook(null);
-    }
-  }, [dataService, exchange, symbol]);
-
-  const asks = orderbook?.asks || [];
-  const bids = orderbook?.bids || [];
-
-  // Определяем шаг цены на основе разницы между ценами
-  useEffect(() => {
-    if (asks.length > 0 && bids.length > 0) {
-      const allPrices = [...asks.map(a => a.price), ...bids.map(b => b.price)];
-      const sortedPrices = allPrices.sort((a, b) => a - b);
-      
-      // Находим минимальную разницу между соседними ценами
-      let minDiff = Infinity;
-      for (let i = 1; i < sortedPrices.length; i++) {
-        const diff = sortedPrices[i] - sortedPrices[i - 1];
-        if (diff > 0 && diff < minDiff) {
-          minDiff = diff;
-        }
-      }
-      
-      // Определяем шаг цены (tick size) - округляем до разумного значения
-      if (minDiff < Infinity && minDiff > 0) {
-        // Находим порядок минимальной разницы
-        const order = Math.floor(Math.log10(minDiff));
-        // Округляем до 0.0001, 0.001, 0.01 и т.д.
-        const newTickSize = Math.pow(10, Math.floor(order));
-        setTickSize(newTickSize);
-      }
-    }
-  }, [orderbook, asks, bids]);
-
-  // Находим ближайший ask (самый дешевый) и ближайший bid (самый дорогой)
-  const sortedAsks = useMemo(() => [...asks].sort((a, b) => a.price - b.price), [asks]);
-  const sortedBids = useMemo(() => [...bids].sort((a, b) => b.price - a.price), [bids]);
-  const bestAsk = sortedAsks.length > 0 ? sortedAsks[0] : null;
-  const bestBid = sortedBids.length > 0 ? sortedBids[0] : null;
-
-  // Определяем центральную цену (средняя между bestAsk и bestBid)
-  useEffect(() => {
-    if (bestAsk && bestBid) {
-      setCenterPrice((bestAsk.price + bestBid.price) / 2);
-    } else if (bestAsk) {
-      setCenterPrice(bestAsk.price);
-    } else if (bestBid) {
-      setCenterPrice(bestBid.price);
-    }
-  }, [bestAsk, bestBid]);
-
-  // Обновляем кэш только пришедшими данными из вебсокета
-  useEffect(() => {
-    if (!orderbook) return;
-    
-    const compressionTickSize = tickSize * compression;
-    
-    setPriceCache((prevCache) => {
-      const newCache = new Map(prevCache);
-      
-      // Обновляем только те уровни, которые пришли в новом обновлении
-      // Для asks - заменяем объем (вебсокет присылает полные данные, а не дельты)
-      asks.forEach(ask => {
-        const price = Math.round(ask.price / compressionTickSize) * compressionTickSize;
-        const volume = (ask as any).value ?? (ask as any).volume ?? 0;
-        
-        if (volume > 0) {
-          // Заменяем объем для этого уровня (не суммируем)
-          newCache.set(price, { type: 'ask', volume });
-        } else {
-          // Если объем 0, удаляем уровень из кэша
-          newCache.delete(price);
-        }
-      });
-      
-      // Для bids - заменяем объем (вебсокет присылает полные данные, а не дельты)
-      bids.forEach(bid => {
-        const price = Math.round(bid.price / compressionTickSize) * compressionTickSize;
-        const volume = (bid as any).value ?? (bid as any).volume ?? 0;
-        
-        if (volume > 0) {
-          // Заменяем объем для этого уровня (не суммируем)
-          newCache.set(price, { type: 'bid', volume });
-        } else {
-          // Если объем 0, удаляем уровень из кэша
-          newCache.delete(price);
-        }
-      });
-      
-      return newCache;
+    // Создаем менеджер
+    const manager = new OrderbookManager({
+      dataService,
+      exchange,
+      symbol,
     });
-  }, [orderbook, asks, bids, tickSize, compression]);
 
-  // Используем кэш для отображения данных
-  const priceDataMap = priceCache;
+    // Синхронизируем compression с менеджером
+    manager.setCompression(compression);
+
+    // Подписываемся на обновления данных
+    const subscription = manager.dataUpdate$.subscribe((data) => {
+      setPriceCache(data.priceCache);
+      setTickSize(data.tickSize);
+      setBestAsk(data.bestAsk);
+      setBestBid(data.bestBid);
+      setHasData(true);
+    });
+
+    orderbookManagerRef.current = manager;
+
+    return () => {
+      subscription.unsubscribe();
+      manager.destroy();
+      orderbookManagerRef.current = null;
+      setHasData(false);
+    };
+  }, [dataService, exchange, symbol]);
 
   // Находим максимальный объем для нормализации ширины из кэша
   const maxVolume = useMemo(() => {
@@ -296,7 +194,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   // Отрисовка на canvas
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !orderbook || dimensions.width === 0 || dimensions.height === 0) return;
+    if (!canvas || !hasData || dimensions.width === 0 || dimensions.height === 0) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -344,7 +242,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
 
       const price = getPriceForRow(rowIndex);
       const roundedPrice = Math.round(price / compressionTickSize) * compressionTickSize;
-      const data = priceDataMap.get(roundedPrice);
+      const data = priceCache.get(roundedPrice);
       const isAsk = data?.type === 'ask';
       const isBid = data?.type === 'bid';
       const volume = data?.volume ?? 0;
@@ -393,7 +291,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
       ctx.fillStyle = 'rgba(255, 255, 255, 1)'; // белый
       ctx.fillText(priceText, dimensions.width - paddingX, y + ROW_HEIGHT / 2);
     }
-  }, [scrollTop, dimensions, centerPrice, priceDataMap, maxVolume, compressionTickSize, bestAsk, bestBid, getPriceForRow, totalHeight, orderbook, visibleStart, visibleRows, priceDecimals]);
+  }, [scrollTop, dimensions, centerPrice, priceCache, maxVolume, compressionTickSize, bestAsk, bestBid, getPriceForRow, totalHeight, hasData, visibleStart, visibleRows, priceDecimals]);
 
   // Обработчик изменения compression
   const handleCompressionChange = (value: string) => {
@@ -404,8 +302,10 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
       const numValue = parseInt(value, 10);
       setCompression(numValue);
       setCompressionInput(value);
-      // Сохраняем в localStorage
-      localStorage.setItem('orderbook_compression', value);
+      // Обновляем в менеджере
+      if (orderbookManagerRef.current) {
+        orderbookManagerRef.current.setCompression(numValue);
+      }
     }
   };
 
@@ -416,12 +316,14 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue > 0) {
       setCompression(numValue);
-      // Сохраняем в localStorage
-      localStorage.setItem('orderbook_compression', value);
+      // Обновляем в менеджере
+      if (orderbookManagerRef.current) {
+        orderbookManagerRef.current.setCompression(numValue);
+      }
     }
   };
 
-  if (!orderbook) {
+  if (!hasData) {
     return (
       <Card className="h-full flex flex-col pb-0 border-muted-foreground/20 overflow-hidden gap-0">
         <CardHeader className="pb-0 pt-0.5 px-3">
