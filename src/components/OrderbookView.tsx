@@ -49,17 +49,6 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   });
   const [isCustomCompression, setIsCustomCompression] = useState(false);
   
-  // Центральная цена (средняя между bestAsk и bestBid)
-  const centerPrice = useMemo(() => {
-    if (bestAsk && bestBid) {
-      return (bestAsk.price + bestBid.price) / 2;
-    } else if (bestAsk) {
-      return bestAsk.price;
-    } else if (bestBid) {
-      return bestBid.price;
-    }
-    return null;
-  }, [bestAsk, bestBid]);
 
   // Инициализация OrderbookManager
   useEffect(() => {
@@ -68,22 +57,19 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
       return;
     }
 
-    // Создаем менеджер
+    // Создаем менеджер с canvas
     const manager = new OrderbookManager({
       dataService,
       exchange,
       symbol,
+      canvas: canvasRef.current,
     });
 
     // Синхронизируем compression с менеджером
     manager.setCompression(compression);
 
-    // Подписываемся на обновления данных
+    // Подписываемся на обновления данных (только для hasData)
     const subscription = manager.dataUpdate$.subscribe((data) => {
-      setPriceCache(data.priceCache);
-      setTickSize(data.tickSize);
-      setBestAsk(data.bestAsk);
-      setBestBid(data.bestBid);
       setHasData(true);
     });
 
@@ -95,87 +81,71 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
       orderbookManagerRef.current = null;
       setHasData(false);
     };
-  }, [dataService, exchange, symbol]);
+  }, [dataService, exchange, symbol, compression]);
 
-  // Находим максимальный объем для нормализации ширины из кэша
-  const maxVolume = useMemo(() => {
-    const volumes = Array.from(priceCache.values()).map(v => v.volume);
-    return Math.max(...volumes, 1);
-  }, [priceCache]);
+  // Передаем canvas в менеджер при изменении
+  useEffect(() => {
+    if (orderbookManagerRef.current && canvasRef.current) {
+      orderbookManagerRef.current.setCanvas(canvasRef.current);
+    }
+  }, [canvasRef.current]);
 
   // Константы для виртуального скролла
   const ROW_HEIGHT = 20;
   const TOTAL_ROWS = 200000; // Большое количество строк для бесконечного скролла
   const totalHeight = TOTAL_ROWS * ROW_HEIGHT;
 
-  // Вычисляем compressionTickSize
-  const compressionTickSize = useMemo(() => tickSize * compression, [tickSize, compression]);
-  
-  // Вычисляем количество знаков после запятой на основе compression
-  // compression = 1 → 5 знаков, compression = 10 → 4 знака, compression = 100 → 3 знака и т.д.
-  const priceDecimals = useMemo(() => {
-    if (compression <= 1) return 5;
-    // Находим порядок compression (логарифм по основанию 10)
-    const order = Math.floor(Math.log10(compression));
-    // Уменьшаем количество знаков на порядок: 5 - order
-    // Но не меньше 0
-    return Math.max(5 - order, 0);
-  }, [compression]);
-
-  // Вычисляем цену для строки на основе позиции скролла с учетом compression
-  const getPriceForRow = useCallback((rowIndex: number) => {
-    if (centerPrice === null) return 0;
-    // Центрируем на centerPrice в середине всех строк
-    const centerRow = TOTAL_ROWS / 2;
-    const priceOffset = (rowIndex - centerRow) * compressionTickSize;
-    return centerPrice + priceOffset;
-  }, [centerPrice, compressionTickSize, TOTAL_ROWS]);
-
   // Обработчик скролла
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(e.currentTarget.scrollTop);
+    const newScrollTop = e.currentTarget.scrollTop;
+    setScrollTop(newScrollTop);
+    if (orderbookManagerRef.current) {
+      orderbookManagerRef.current.setScrollTop(newScrollTop);
+    }
   }, []);
 
   // Обработчик нажатия Shift для центрирования
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Shift' && scrollContainerRef.current && centerPrice !== null) {
-        // Центрируем на centerPrice
+      if (e.key === 'Shift' && scrollContainerRef.current && hasData) {
+        // Центрируем на середине
         const centerRow = TOTAL_ROWS / 2;
         const scrollTo = centerRow * ROW_HEIGHT - (scrollContainerRef.current.clientHeight / 2);
         scrollContainerRef.current.scrollTop = Math.max(0, scrollTo);
         setScrollTop(scrollTo);
+        if (orderbookManagerRef.current) {
+          orderbookManagerRef.current.setScrollTop(scrollTo);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [centerPrice, TOTAL_ROWS, ROW_HEIGHT]);
+  }, [hasData, TOTAL_ROWS, ROW_HEIGHT]);
 
   // Инициализация скролла при первой загрузке
   useEffect(() => {
-    if (scrollContainerRef.current && centerPrice !== null && scrollTop === 0) {
+    if (scrollContainerRef.current && hasData && scrollTop === 0) {
       const centerRow = TOTAL_ROWS / 2;
       const initialScroll = centerRow * ROW_HEIGHT - (scrollContainerRef.current.clientHeight / 2);
       scrollContainerRef.current.scrollTop = Math.max(0, initialScroll);
       setScrollTop(initialScroll);
+      if (orderbookManagerRef.current) {
+        orderbookManagerRef.current.setScrollTop(initialScroll);
+      }
     }
-  }, [centerPrice, scrollTop, TOTAL_ROWS, ROW_HEIGHT]);
-
-  // Вычисляем видимые строки для виртуального рендеринга
-  const visibleStart = Math.floor(scrollTop / ROW_HEIGHT);
-  const visibleEnd = Math.min(
-    TOTAL_ROWS,
-    Math.ceil((scrollTop + (dimensions.height || 0)) / ROW_HEIGHT)
-  );
-  const visibleRows = Math.min(visibleEnd - visibleStart, 100); // Ограничиваем для производительности
+  }, [hasData, scrollTop, TOTAL_ROWS, ROW_HEIGHT]);
 
   // Определяем размеры canvas
   useLayoutEffect(() => {
     const updateDimensions = () => {
       if (scrollContainerRef.current) {
         const rect = scrollContainerRef.current.getBoundingClientRect();
-        setDimensions({ width: rect.width, height: rect.height });
+        const newDimensions = { width: rect.width, height: rect.height };
+        setDimensions(newDimensions);
+        if (orderbookManagerRef.current) {
+          orderbookManagerRef.current.setDimensions(newDimensions.width, newDimensions.height);
+        }
       }
     };
 
@@ -191,107 +161,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     };
   }, []);
 
-  // Отрисовка на canvas
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !hasData || dimensions.width === 0 || dimensions.height === 0) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Устанавливаем размеры canvas с учетом devicePixelRatio для четкости
-    const dpr = window.devicePixelRatio || 1;
-    const displayWidth = dimensions.width;
-    const displayHeight = dimensions.height;
-    
-    // Устанавливаем внутренние размеры canvas
-    if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
-      canvas.width = displayWidth * dpr;
-      canvas.height = displayHeight * dpr;
-      ctx.scale(dpr, dpr);
-    }
-
-    // Заливаем canvas фоном проекта из CSS переменной --background
-    const root = document.documentElement;
-    const backgroundValue = getComputedStyle(root).getPropertyValue('--background').trim();
-    let backgroundColor = 'rgb(23, 35, 46)'; // дефолтный темный фон из .dark
-    
-    if (backgroundValue) {
-      if (backgroundValue.startsWith('rgb')) {
-        backgroundColor = backgroundValue;
-      } else if (backgroundValue.startsWith('oklch')) {
-        // Для oklch используем дефолтный цвет
-        backgroundColor = 'rgb(23, 35, 46)';
-      }
-    }
-    
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, displayWidth, displayHeight);
-
-    // Настройки для текста
-    ctx.font = '11px monospace';
-    ctx.textBaseline = 'middle';
-
-    const paddingX = 8;
-    const volumeWidth = dimensions.width * 0.4; // 40% для объема
-
-    // Отрисовываем видимые строки
-    for (let i = 0; i < visibleRows; i++) {
-      const rowIndex = visibleStart + i;
-      if (rowIndex < 0 || rowIndex >= TOTAL_ROWS) continue;
-
-      const price = getPriceForRow(rowIndex);
-      const roundedPrice = Math.round(price / compressionTickSize) * compressionTickSize;
-      const data = priceCache.get(roundedPrice);
-      const isAsk = data?.type === 'ask';
-      const isBid = data?.type === 'bid';
-      const volume = data?.volume ?? 0;
-      const widthPercent = maxVolume > 0 ? (volume / maxVolume) * 100 : 0;
-      const isBestLevel = (bestAsk && Math.abs(roundedPrice - bestAsk.price) < compressionTickSize / 2) ||
-                         (bestBid && Math.abs(roundedPrice - bestBid.price) < compressionTickSize / 2);
-
-      const y = rowIndex * ROW_HEIGHT - scrollTop;
-      if (y < -ROW_HEIGHT || y > dimensions.height) continue;
-
-      // Фон для лучшего уровня
-      if (isBestLevel) {
-        ctx.fillStyle = 'rgba(128, 128, 128, 0.1)';
-        ctx.fillRect(0, y, dimensions.width, ROW_HEIGHT);
-      }
-
-      // Фон для asks/bids - используем те же цвета, что в спреде (green-500 и red-500), но более прозрачные
-      if (isAsk) {
-        // red-500: rgb(239, 68, 68) с меньшей прозрачностью
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
-        ctx.fillRect(0, y, dimensions.width, ROW_HEIGHT);
-      } else if (isBid) {
-        // green-500: rgb(34, 197, 94) с меньшей прозрачностью
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.15)';
-        ctx.fillRect(0, y, dimensions.width, ROW_HEIGHT);
-      }
-
-      // Линия заполнения объема (золотая)
-      if (volume > 0) {
-        const fillWidth = (widthPercent / 100) * volumeWidth;
-        ctx.fillStyle = 'rgba(234, 179, 8, 0.3)';
-        ctx.fillRect(paddingX, y, fillWidth, ROW_HEIGHT);
-      }
-
-      // Текст объема (слева) - рисуем поверх всего
-      if (volume > 0) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 1)'; // белый
-        ctx.textAlign = 'left';
-        const volumeText = formatCompact(volume);
-        ctx.fillText(volumeText, paddingX, y + ROW_HEIGHT / 2);
-      }
-
-      // Текст цены (справа) - рисуем поверх всего
-      const priceText = roundedPrice.toFixed(priceDecimals);
-      ctx.textAlign = 'right';
-      ctx.fillStyle = 'rgba(255, 255, 255, 1)'; // белый
-      ctx.fillText(priceText, dimensions.width - paddingX, y + ROW_HEIGHT / 2);
-    }
-  }, [scrollTop, dimensions, centerPrice, priceCache, maxVolume, compressionTickSize, bestAsk, bestBid, getPriceForRow, totalHeight, hasData, visibleStart, visibleRows, priceDecimals]);
+  // Отрисовка теперь происходит напрямую в OrderbookManager, минуя React
 
   // Обработчик изменения compression
   const handleCompressionChange = (value: string) => {
