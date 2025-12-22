@@ -48,7 +48,10 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   const [isCustomCompression, setIsCustomCompression] = useState(false);
 
   useEffect(() => {
-    if (!dataService || !symbol) return;
+    if (!dataService || !symbol) {
+      setOrderbook(null);
+      return;
+    }
 
     let subscription: any;
 
@@ -63,40 +66,46 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
           subscription = dataService.bybitSubscribeOrderbook(symbol, 200);
           break;
         case 'BITGET':
-          subscription = dataService.bitgetSubscribeOrderbook(symbol, 200);
+          subscription = dataService.bitgetSubscribeOrderbook(symbol, 15);
           break;
         case 'GATE':
         case 'GATEIO':
-          subscription = dataService.gateSubscribeOrderbook(symbol, 200);
+          subscription = dataService.gateSubscribeOrderbook(symbol, 400);
           break;
         case 'BINGX':
-          subscription = dataService.bingxSubscribeOrderbook(symbol, 200);
+          subscription = dataService.bingxSubscribeOrderbook(symbol, 100);
           break;
         case 'OKX':
           subscription = dataService.okxSubscribeOrderbook(symbol, 200);
           break;
         default:
+          setOrderbook(null);
           return;
       }
 
       if (subscription) {
-        const sub = subscription.subscribe((data: Orderbook | MexcOrderbook) => {
-          setOrderbook(data);
+        console.log(`Subscribing to orderbook for ${exchange} with symbol ${symbol}`);
+        const sub = subscription.subscribe({
+          next: (data: Orderbook | MexcOrderbook) => {
+            console.log(`Received orderbook data for ${exchange}:`, data);
+            setOrderbook(data);
+          },
+          error: (error) => {
+            console.error(`Error in orderbook subscription for ${exchange}:`, error);
+          },
         });
         
         return () => {
+          console.log(`Unsubscribing from orderbook for ${exchange}`);
           sub.unsubscribe();
         };
+      } else {
+        console.warn(`No subscription returned for ${exchange} with symbol ${symbol}`);
       }
     } catch (error) {
       console.error(`Error subscribing to orderbook for ${exchange}:`, error);
+      setOrderbook(null);
     }
-
-    return () => {
-      if (subscription) {
-        subscription.unsubscribe?.();
-      }
-    };
   }, [dataService, exchange, symbol]);
 
   const asks = orderbook?.asks || [];
