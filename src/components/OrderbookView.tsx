@@ -8,6 +8,15 @@ import { Card, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
 
+// Функция для компактного форматирования чисел (без дробных)
+const formatCompact = (value: number): string => {
+  if (value === 0) return '';
+  if (value < 1000) return Math.round(value).toString();
+  if (value < 1000000) return `${Math.round(value / 1000)}K`;
+  if (value < 1000000000) return `${Math.round(value / 1000000)}M`;
+  return `${Math.round(value / 1000000000)}B`;
+};
+
 interface OrderbookViewProps {
   exchange: string;
   symbol: string;
@@ -363,7 +372,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
                     {roundedPrice.toFixed(priceDecimals)}
                   </span>
                   <span className="text-muted-foreground font-mono">
-                    {volume > 0 ? volume.toFixed(4) : ''}
+                    {volume > 0 ? formatCompact(volume) : ''}
                   </span>
                 </div>
                 {volume > 0 && (
