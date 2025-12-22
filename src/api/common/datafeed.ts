@@ -32,10 +32,13 @@ const resolveOneSymbol = ({ dataService, symbolName }: { dataService: DataServic
     const priceScale = Number((10 ** precision).toFixed(precision));
 
     let session = '0700-0000,0000-0200:1234567';
+    let timezone: string = 'Europe/Moscow';
     if (r.symbol.includes('_xp') || r.symbol.includes('FOREX:')) {
       session = '0100-0000,0000-0100:23456';
     } else if (!r.symbol.includes('FINAM') && r.symbol.includes(':')) {
       session = '24x7';
+      // Криптовалютные биржи работают в UTC
+      timezone = 'UTC';
     }
 
     const resolve: LibrarySymbolInfo = {
@@ -55,7 +58,7 @@ const resolveOneSymbol = ({ dataService, symbolName }: { dataService: DataServic
       has_weekly_and_monthly: true,
       weekly_multipliers: ['1', '2'],
       monthly_multipliers: ['1', '3', '6', '12'],
-      timezone: 'Europe/Moscow',
+      timezone: timezone as any,
       session,
     };
 
@@ -173,10 +176,13 @@ export class DataFeed implements IBasicDataFeed {
         const priceScale = Number((10 ** 5).toFixed(5));
 
         let session = '0700-0000,0000-0200:1234567';
+        let timezone: string = 'Europe/Moscow';
         if (obj.ticker.includes('_xp') || obj.ticker.includes('FOREX:')) {
           session = '0100-0000,0000-0100:23456';
         } else if (!obj.ticker.includes('FINAM') && obj.ticker.includes(':')) {
           session = '24x7';
+          // Криптовалютные биржи работают в UTC
+          timezone = 'UTC';
         }
 
         const resolve: LibrarySymbolInfo = {
@@ -190,7 +196,7 @@ export class DataFeed implements IBasicDataFeed {
           has_weekly_and_monthly: true,
           weekly_multipliers: ['1', '2'],
           monthly_multipliers: ['1', '3', '6', '12'],
-          timezone: 'Europe/Moscow',
+          timezone: timezone as any,
           session,
         };
 

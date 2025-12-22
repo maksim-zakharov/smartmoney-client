@@ -408,9 +408,9 @@ a{
 
 /* Fallback для браузеров без поддержки overlay */
 @supports not (overflow: overlay) {
-    .overflow-y-auto,
-    .overflow-y-scroll,
-    .overflow-auto {
+.overflow-y-auto,
+.overflow-y-scroll,
+.overflow-auto {
         overflow-y: auto;
     }
 }
