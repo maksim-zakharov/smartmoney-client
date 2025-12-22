@@ -242,7 +242,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   if (!orderbook) {
     return (
       <Card className="h-full flex flex-col">
-        <CardHeader className="pb-0.5 pt-1">
+        <CardHeader className="pb-0 pt-0.5">
           <CardTitle className="text-sm font-semibold">{exchange}</CardTitle>
         </CardHeader>
         <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm">
@@ -254,8 +254,8 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="pb-0.5 pt-1">
-        <div className="flex items-center justify-between gap-2">
+      <CardHeader className="pb-0 pt-0.5">
+        <div className="flex items-center justify-between gap-1">
           <CardTitle className="text-sm font-semibold">{exchange}</CardTitle>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Сжатие:</span>
@@ -278,7 +278,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
               />
             ) : (
               <Select value={compression.toString()} onValueChange={handleCompressionChange}>
-                <SelectTrigger className="h-7 w-20 text-xs">
+                <SelectTrigger size="sm" className="h-3.5 w-20 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
