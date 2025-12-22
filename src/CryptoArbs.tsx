@@ -1047,7 +1047,7 @@ export const CryptoArbs = () => {
             </div>
             </div>
             {/* Стаканы для обеих бирж */}
-            <div className="flex-[1] flex flex-col min-h-0 h-full w-[80px] flex-shrink-0">
+            <div className="flex flex-col min-h-0 h-full w-[200px] flex-shrink-0">
               <div className="flex-1 min-h-0">
                 <OrderbookView
                   exchange={selectedEnriched.sellExchange.exchange}
