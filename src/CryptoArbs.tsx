@@ -295,6 +295,7 @@ export const CryptoArbs = () => {
       .reduce((acc, funding) => {
         const key = `${funding.ticker}_${funding.exchange}`;
         acc[key] = {
+          // В API фандинг приходит как коэффициент (0.0001), приводим к числу
           rate: Number(funding.fundingRate),
           nextFundingTime: funding.fundingNextTime || null,
         };
@@ -311,6 +312,8 @@ export const CryptoArbs = () => {
       return -Infinity;
     }
 
+    // Здесь работаем в "сыром" формате (как приходит из API),
+    // проценты добавляем только при отображении и фильтрации
     return a.ratio > 1 ? leftFunding.rate - rightFunding.rate : rightFunding.rate - leftFunding.rate;
   };
 
@@ -481,6 +484,7 @@ export const CryptoArbs = () => {
   const enrichedArbs = useMemo(() => {
     return filteredArbs.map((a) => {
       const spread = (a.ratio - 1) * 100;
+      // Общий фандинг пары в процентах
       const funding = sumFunding(a) * 100;
       const sellExchange = a.right.last > a.left.last ? a.right : a.left;
       const buyExchange = a.right.last < a.left.last ? a.right : a.left;
@@ -496,9 +500,10 @@ export const CryptoArbs = () => {
         funding,
         sellExchange,
         buyExchange,
-        sellFunding: sellFundingData?.rate,
+        // Фандинг по каждой бирже так же приводим к процентам, как на биржах
+        sellFunding: sellFundingData ? sellFundingData.rate * 100 : undefined,
         sellFundingTime: sellFundingData?.nextFundingTime,
-        buyFunding: buyFundingData?.rate,
+        buyFunding: buyFundingData ? buyFundingData.rate * 100 : undefined,
         buyFundingTime: buyFundingData?.nextFundingTime,
         isSelected,
       };
@@ -548,9 +553,9 @@ export const CryptoArbs = () => {
       funding,
       sellExchange,
       buyExchange,
-      sellFunding: sellFundingData?.rate,
+      sellFunding: sellFundingData ? sellFundingData.rate * 100 : undefined,
       sellFundingTime: sellFundingData?.nextFundingTime,
-      buyFunding: buyFundingData?.rate,
+      buyFunding: buyFundingData ? buyFundingData.rate * 100 : undefined,
       buyFundingTime: buyFundingData?.nextFundingTime,
       isSelected: true,
     };
@@ -807,7 +812,10 @@ export const CryptoArbs = () => {
                         {a.sellExchange.last.toFixed(6)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Фандинг: <span className="font-mono">{a.sellFunding?.toFixed(5) ?? 'N/A'}</span>
+                        Фандинг:{" "}
+                        <span className="font-mono">
+                          {a.sellFunding !== undefined ? `${a.sellFunding.toFixed(4)}%` : 'N/A'}
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         Время: {formatFundingTime(a.sellFundingTime)}
@@ -849,7 +857,10 @@ export const CryptoArbs = () => {
                         {a.buyExchange.last.toFixed(6)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Фандинг: <span className="font-mono">{a.buyFunding?.toFixed(5) ?? 'N/A'}</span>
+                        Фандинг:{" "}
+                        <span className="font-mono">
+                          {a.buyFunding !== undefined ? `${a.buyFunding.toFixed(4)}%` : 'N/A'}
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         Время: {formatFundingTime(a.buyFundingTime)}
@@ -944,7 +955,7 @@ export const CryptoArbs = () => {
                         {selectedEnriched.sellExchange.last.toFixed(6)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        Ф: {selectedEnriched.sellFunding?.toFixed(5) ?? 'N/A'}
+                        Ф: {selectedEnriched.sellFunding !== undefined ? `${selectedEnriched.sellFunding.toFixed(4)}%` : 'N/A'}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {formatFundingTime(selectedEnriched.sellFundingTime)}
@@ -983,7 +994,7 @@ export const CryptoArbs = () => {
                         {selectedEnriched.buyExchange.last.toFixed(6)}
                       </span>
                       <span className="text-xs text-muted-foreground">
-                        Ф: {selectedEnriched.buyFunding?.toFixed(5) ?? 'N/A'}
+                        Ф: {selectedEnriched.buyFunding !== undefined ? `${selectedEnriched.buyFunding.toFixed(4)}%` : 'N/A'}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {formatFundingTime(selectedEnriched.buyFundingTime)}
