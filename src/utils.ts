@@ -969,7 +969,7 @@ export const exchangeImgMap = {
   HTX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/102.png',
   MEXC: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png',
   GATEIO: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/302.png',
-  KUCOIN: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/311.png',
+  KUCOIN: 'https://s2.coinmarketcap.com/static/img/coins/64x64/2087.png',
   BYBIT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png',
   BYBIT_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/521.png',
   BITGET: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/513.png',

@@ -159,7 +159,7 @@ export const CryptoArbs = () => {
     });
     
     // Порядок бирж для отображения
-    const exchangeOrder = ['MEXC', 'GATEIO', 'GATE', 'BYBIT', 'BITGET', 'BINGX', 'OKX', 'OURBIT', 'Hyperliquid', 'Aster', 'Lighter'];
+    const exchangeOrder = ['MEXC', 'GATEIO', 'GATE', 'KUCOIN', 'BYBIT', 'BITGET', 'BINGX', 'OKX', 'OURBIT', 'Hyperliquid', 'Aster', 'Lighter'];
     
     // Сортируем биржи по заданному порядку
     const sorted = Array.from(exchanges).sort((a, b) => {

@@ -36,7 +36,10 @@ export class KucoinWsClient {
         };
 
         this.ws.onmessage = (ev: MessageEvent) => {
-          const { type, topic, subject, data } = JSON.parse(ev.data as any);
+          const message = JSON.parse(ev.data as any);
+          const { type, topic, subject, data } = message;
+          
+          // Обработка свечей
           if (subject === 'candle.stick' && type === 'message') {
             const { candles, time: timestamp } = data || {};
             const [t, o, c, h, l, v] = candles;
@@ -48,6 +51,59 @@ export class KucoinWsClient {
               time: t,
               timestamp,
             });
+          }
+          
+          // Обработка стакана через subject (level2Depth)
+          if (subject === 'level2' && type === 'message') {
+            const { changes } = data || {};
+            if (changes) {
+              // Извлекаем символ из topic: /contractMarket/level2Depth20:BTCUSDTM -> BTCUSDTM
+              const symbol = topic?.split(':')[1] || '';
+              const key = `depth_${symbol}`;
+              const subj = this.subscribes.get(key);
+              
+              if (subj) {
+                // Обрабатываем изменения стакана
+                const asks: Array<{ price: number; volume: number }> = [];
+                const bids: Array<{ price: number; volume: number }> = [];
+                
+                changes.forEach(([side, price, size]: [string, string, string]) => {
+                  const priceNum = Number(price);
+                  const sizeNum = Number(size);
+                  
+                  if (side === 'sell' && sizeNum > 0) {
+                    asks.push({ price: priceNum, volume: sizeNum });
+                  } else if (side === 'buy' && sizeNum > 0) {
+                    bids.push({ price: priceNum, volume: sizeNum });
+                  }
+                });
+                
+                if (asks.length > 0 || bids.length > 0) {
+                  subj.next({ asks, bids });
+                }
+              }
+            }
+          }
+          
+          // Обработка полного снапшота стакана
+          if (subject === 'level2' && type === 'message' && data?.asks && data?.bids) {
+            const symbol = topic?.split(':')[1] || '';
+            const key = `depth_${symbol}`;
+            const subj = this.subscribes.get(key);
+            
+            if (subj) {
+              const orderbookData = {
+                asks: (data.asks || []).map(([price, size]: [string, string]) => ({
+                  price: Number(price),
+                  volume: Number(size),
+                })),
+                bids: (data.bids || []).map(([price, size]: [string, string]) => ({
+                  price: Number(price),
+                  volume: Number(size),
+                })),
+              };
+              subj.next(orderbookData);
+            }
           }
         };
         this.ws.onclose = () => {
@@ -95,17 +151,41 @@ export class KucoinWsClient {
     const subj = new Subject<any>();
     const key = `depth_${symbol}`;
     this.subscribes.set(key, subj);
+    
+    // KuCoin использует формат topic для подписки на стакан
+    const topic = `/contractMarket/level2Depth${depth}:${symbol}`;
     this.ws.send(
       JSON.stringify({
-        method: 'sub.depth',
-        param: {
-          symbol,
-          limit: depth,
-        },
+        id: Math.round(Date.now() / 1000),
+        type: 'subscribe',
+        topic,
+        response: true,
       }),
     );
 
     return subj;
+  }
+
+  unsubscribeOrderbook(symbol: string, depth: number) {
+    const key = `depth_${symbol}`;
+    const subj = this.subscribes.get(key);
+    if (subj) {
+      subj.complete();
+      this.subscribes.delete(key);
+    }
+    
+    // KuCoin использует формат topic для отписки от стакана
+    const topic = `/contractMarket/level2Depth${depth}:${symbol}`;
+    if (this.ws && this.ws.readyState === 1) {
+      this.ws.send(
+        JSON.stringify({
+          id: Math.round(Date.now() / 1000),
+          type: 'unsubscribe',
+          topic,
+          response: true,
+        }),
+      );
+    }
   }
 
   subscribeQuotes(symbol: string) {

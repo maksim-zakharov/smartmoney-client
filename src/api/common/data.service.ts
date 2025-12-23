@@ -254,7 +254,16 @@ export class DataService {
   }
 
   ourbitUnsubscribeOrderbook(symbol: string, depth: number = 200) {
-    // TODO: добавить метод unsubscribe в ourbit.ws-client.ts если нужно
+    this.ourbitWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
+  }
+
+  kucoinSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.kucoinWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  kucoinUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.kucoinWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 

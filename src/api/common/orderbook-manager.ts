@@ -126,6 +126,9 @@ export class OrderbookManager {
         case 'OURBIT':
           this.wsSubscription = this.dataService.ourbitSubscribeOrderbook(this.symbol, 200);
           break;
+        case 'KUCOIN':
+          this.wsSubscription = this.dataService.kucoinSubscribeOrderbook(this.symbol, 200);
+          break;
         default:
           return;
       }

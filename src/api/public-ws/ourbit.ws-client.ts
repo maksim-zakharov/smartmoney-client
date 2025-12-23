@@ -182,5 +182,20 @@ export class OurbitWsClient extends SubscriptionManager {
 
     return subj;
   }
+
+  unsubscribeOrderbook(symbol: string, depth: number) {
+    const key = `depth_${symbol}`;
+    this.removeSubj(key);
+    // Отправляем запрос на отписку
+    if (this.ws && this.ws.readyState === 1) {
+      this.ws.send(JSON.stringify({
+        method: 'unsub.depth',
+        param: {
+          symbol,
+          limit: depth,
+        },
+      }));
+    }
+  }
 }
 
