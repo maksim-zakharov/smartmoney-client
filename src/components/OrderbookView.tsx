@@ -228,10 +228,10 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   if (!hasData) {
     return (
       <Card className="h-full flex flex-col pb-0 border-muted-foreground/20 overflow-hidden gap-0">
-        <CardHeader className="pb-0 pt-0.5 px-3">
-          <CardTitle className="text-sm font-semibold">{exchange}</CardTitle>
+        <CardHeader className="py-0.5 px-2">
+          <CardTitle className="text-xs font-semibold">{exchange}</CardTitle>
         </CardHeader>
-        <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm">
+        <div className="flex items-center justify-center flex-1 text-muted-foreground text-xs">
           Загрузка стакана...
         </div>
       </Card>
@@ -240,7 +240,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
 
   return (
     <Card className="h-full flex flex-col pb-0 border-muted-foreground/20 overflow-hidden gap-0">
-      <CardHeader className="pb-0 pt-0.5 px-3 border-b border-muted-foreground/20">
+      <CardHeader className="py-0.5 px-2 border-b border-muted-foreground/20">
         <div className="flex items-center justify-between gap-1">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
             {exchangeImgMap[exchange.toUpperCase()] && (
@@ -252,7 +252,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
             )}
             {exchange}
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {isCustomCompression ? (
               <Input
                 type="number"
@@ -270,12 +270,12 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
                     localStorage.setItem('orderbook_compression', compressionInput);
                   }
                 }}
-                className="h-7 w-20 text-xs"
+                className="h-6 w-16 text-[10px] px-1"
                 placeholder="100"
               />
             ) : (
               <Select value={compression.toString()} onValueChange={handleCompressionChange}>
-                <SelectTrigger size="sm" className="h-3.5 w-20 text-xs">
+                <SelectTrigger size="xss" className="w-16 text-[10px] px-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
