@@ -13,6 +13,7 @@ import { BingXFuturesWsClient } from '../public-ws/bingx-futures.ws-client.ts';
 import { OurbitWsClient } from '../public-ws/ourbit.ws-client.ts';
 import { AsterWsClient } from '../public-ws/aster.ws-client.ts';
 import { HyperliquidWsClient } from '../public-ws/hyperliquid.ws-client.ts';
+import { BinanceFuturesWsClient } from '../public-ws/binance-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -46,6 +47,7 @@ export class DataService {
   private readonly ourbitWsClient: OurbitWsClient;
   private readonly asterWsClient: AsterWsClient;
   private readonly hyperliquidWsClient: HyperliquidWsClient;
+  private readonly binanceFuturesWsClient: BinanceFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -66,6 +68,7 @@ export class DataService {
     this.ourbitWsClient = new OurbitWsClient();
     this.asterWsClient = new AsterWsClient();
     this.hyperliquidWsClient = new HyperliquidWsClient();
+    this.binanceFuturesWsClient = new BinanceFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -264,6 +267,24 @@ export class DataService {
 
   kucoinUnsubscribeOrderbook(symbol: string, depth: number = 20) {
     this.kucoinWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
+  }
+
+  binanceSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.binanceFuturesWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  binanceUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    this.binanceFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  binanceSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.binanceFuturesWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  binanceUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.binanceFuturesWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 

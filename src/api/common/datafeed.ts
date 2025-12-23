@@ -360,6 +360,12 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.hyperliquidUnsubscribeCandles(_symbol, resolution);
+      } else if (symbol.includes('BINANCE')) {
+        const ticker = symbol.split('BINANCE:')[1];
+        this.dataService.binanceSubscribeCandles(ticker, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.binanceUnsubscribeCandles(ticker, resolution);
       } else {
         return this.api.subscriptions.candles(
           {
