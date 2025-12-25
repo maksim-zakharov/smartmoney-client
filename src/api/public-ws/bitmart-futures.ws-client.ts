@@ -3,6 +3,8 @@ import { SubscriptionManager } from '../common/subscription-manager';
 import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
 
 export class BitMartFuturesWsClient extends SubscriptionManager {
+  // Хранилище текущих стаканов для объединения bids и asks
+  private orderbookCache = new Map<string, Orderbook>();
   constructor() {
     super({
       name: 'BitMart Futures',
@@ -82,24 +84,46 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
       }
 
       // Обработка стакана (depth)
-      // Формат: {"group":"futures/depth50","data":{...}}
+      // Формат: {"group":"futures/depth20:PTBUSDT","data":{"symbol":"PTBUSDT","way":1,"depths":[...]}}
       if (message.group && message.group.startsWith('futures/depth') && message.data) {
-        const group = message.group; // например, "futures/depth50"
-        const depth = group.replace('futures/depth', ''); // "50"
+        const group = message.group; // например, "futures/depth20:PTBUSDT"
+        const parts = group.split(':');
+        const depthPart = parts[0]; // "futures/depth20"
+        const depth = depthPart.replace('futures/depth', ''); // "20"
+        const symbol = message.data.symbol || (parts.length > 1 ? parts[1] : '');
         
-        if (message.data.symbol) {
-          const key = `futures/depth${depth}:${message.data.symbol}`;
-          const orderbook: Orderbook = {
-            bids: (message.data.bids || []).map(([price, qty]: [string, string]) => ({
-              price: Number(price),
-              volume: Number(qty),
-            })) as OrderbookBid[],
-            asks: (message.data.asks || []).map(([price, qty]: [string, string]) => ({
-              price: Number(price),
-              volume: Number(qty),
-            })) as OrderbookAsk[],
-          };
-          this.subscribeSubjs.get(key)?.next(orderbook);
+        if (symbol) {
+          const key = `futures/depth${depth}:${symbol}`;
+          
+          // Получаем или создаем стакан в кэше
+          if (!this.orderbookCache.has(key)) {
+            this.orderbookCache.set(key, {
+              bids: [],
+              asks: [],
+            });
+          }
+          
+          const orderbook = this.orderbookCache.get(key)!;
+          
+          // way: 1 = bids, way: 2 = asks
+          const depths = (message.data.depths || []).map((item: { price: string; vol: string }) => ({
+            price: Number(item.price),
+            volume: Number(item.vol),
+          }));
+          
+          if (message.data.way === 1) {
+            // bids
+            orderbook.bids = depths as OrderbookBid[];
+          } else if (message.data.way === 2) {
+            // asks
+            orderbook.asks = depths as OrderbookAsk[];
+          }
+          
+          // Отправляем обновленный стакан
+          this.subscribeSubjs.get(key)?.next({
+            bids: [...orderbook.bids],
+            asks: [...orderbook.asks],
+          });
         }
         return;
       }
@@ -126,6 +150,7 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
     const validDepth = depth <= 5 ? 5 : depth <= 10 ? 10 : depth <= 20 ? 20 : 50;
     const key = `futures/depth${validDepth}:${symbol}`;
     this.removeSubj(key);
+    this.orderbookCache.delete(key); // Очищаем кэш при отписке
     
     this.unsubscribe({
       action: 'unsubscribe',
