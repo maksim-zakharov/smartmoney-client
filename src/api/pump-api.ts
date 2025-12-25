@@ -53,7 +53,7 @@ export const pumpApi = createApi({
   endpoints: (builder) => ({
     getPumpTickers: builder.query<any, { symbol: string; tf: string; from: number; to: number }>({
       query: (params) => ({
-        url: '/pump/tickers',
+        url: '/spread/tickers',
         params,
       }),
     }),
