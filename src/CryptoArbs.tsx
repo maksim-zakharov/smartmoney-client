@@ -50,7 +50,7 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
     case 'OURBIT':
       return `${ticker}_USDT`;
     case 'BITMART':
-      return `${ticker}_USDT`;
+      return `${ticker}USDT`;
     case 'HYPERLIQUID':
       // Hyperliquid использует тикер без суффикса
       return ticker;
