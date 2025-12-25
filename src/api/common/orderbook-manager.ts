@@ -132,6 +132,9 @@ export class OrderbookManager {
         case 'BINANCE':
           this.wsSubscription = this.dataService.binanceSubscribeOrderbook(this.symbol, 20);
           break;
+        case 'BITMART':
+          this.wsSubscription = this.dataService.bitmartSubscribeOrderbook(this.symbol, 20);
+          break;
         default:
           return;
       }

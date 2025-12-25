@@ -366,6 +366,12 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.binanceUnsubscribeCandles(ticker, resolution);
+      } else if (symbol.includes('BITMART')) {
+        const ticker = symbol.split('BITMART:')[1];
+        this.dataService.bitmartSubscribeCandles(ticker, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.bitmartUnsubscribeCandles(ticker, resolution);
       } else {
         return this.api.subscriptions.candles(
           {
