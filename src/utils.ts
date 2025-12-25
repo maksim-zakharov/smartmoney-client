@@ -985,6 +985,7 @@ export const exchangeImgMap = {
   Hyperliquid: 'https://s2.coinmarketcap.com/static/img/coins/64x64/32196.png',
   Aster: 'https://s2.coinmarketcap.com/static/img/coins/64x64/36341.png',
   Lighter: 'https://s2.coinmarketcap.com/static/img/coins/64x64/39125.png',
+  BITMART: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/406.png',
 };
 export const moneyFormat = (
   money: number,
