@@ -15,6 +15,7 @@ import { AsterWsClient } from '../public-ws/aster.ws-client.ts';
 import { HyperliquidWsClient } from '../public-ws/hyperliquid.ws-client.ts';
 import { BinanceFuturesWsClient } from '../public-ws/binance-futures.ws-client.ts';
 import { BitMartFuturesWsClient } from '../public-ws/bitmart-futures.ws-client.ts';
+import { HtxFuturesWsClient } from '../public-ws/htx-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -50,6 +51,7 @@ export class DataService {
   private readonly hyperliquidWsClient: HyperliquidWsClient;
   private readonly binanceFuturesWsClient: BinanceFuturesWsClient;
   private readonly bitMartFuturesWsClient: BitMartFuturesWsClient;
+  private readonly htxFuturesWsClient: HtxFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -72,6 +74,7 @@ export class DataService {
     this.hyperliquidWsClient = new HyperliquidWsClient();
     this.binanceFuturesWsClient = new BinanceFuturesWsClient();
     this.bitMartFuturesWsClient = new BitMartFuturesWsClient();
+    this.htxFuturesWsClient = new HtxFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -309,6 +312,24 @@ export class DataService {
     return Promise.resolve();
   }
 
+  htxSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.htxFuturesWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  htxUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    this.htxFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  htxSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.htxFuturesWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  htxUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.htxFuturesWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
+  }
+
   get serverTime$() {
     if (!this.serverTimeCache$) {
       this.serverTimeCache$ = from(this.alorApi.http.get(`https://api.alor.ru/md/v2/time`)).pipe(
@@ -485,6 +506,21 @@ export class DataService {
       request$ = from(
         fetch(
           `${this.cryptoUrl}/bitmart/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
+    } else if (ticker.includes('HTX:')) {
+      const _ticker = ticker.split('HTX:')[1];
+      request$ = from(
+        fetch(
+          `${this.cryptoUrl}/htx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);

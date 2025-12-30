@@ -135,6 +135,9 @@ export class OrderbookManager {
         case 'BITMART':
           this.wsSubscription = this.dataService.bitmartSubscribeOrderbook(this.symbol, 20);
           break;
+        case 'HTX':
+          this.wsSubscription = this.dataService.htxSubscribeOrderbook(this.symbol, 20);
+          break;
         default:
           return;
       }

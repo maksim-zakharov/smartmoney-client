@@ -110,7 +110,6 @@ export class BingXFuturesWsClient extends SubscriptionManager {
     // Используем pako для распаковки
     const decompressed = pako.ungzip(inputData);
     const decodedMsg = new TextDecoder('utf-8').decode(decompressed);
-    console.debug(decodedMsg);
     if (decodedMsg === 'Ping') {
       this.subscribe('Pong');
       console.debug('Pong');

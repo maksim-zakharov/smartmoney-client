@@ -372,6 +372,12 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.bitmartUnsubscribeCandles(ticker, resolution);
+      } else if (symbol.includes('HTX')) {
+        const ticker = symbol.split('HTX:')[1];
+        this.dataService.htxSubscribeCandles(ticker, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.htxUnsubscribeCandles(ticker, resolution);
       } else {
         return this.api.subscriptions.candles(
           {
