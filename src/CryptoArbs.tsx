@@ -10,7 +10,7 @@ import { TypographyH4 } from './components/ui/typography.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
-import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, Settings, BarChart3 } from 'lucide-react';
+import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, Settings, BarChart3, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Button } from './components/ui/button.tsx';
@@ -278,6 +278,12 @@ export const CryptoArbs = () => {
     return false; // По умолчанию выключено
   });
 
+  // Состояние для исключенных монет
+  const [excludedTickers, setExcludedTickers] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('crypto-arbs-excluded-tickers');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
   // Сохраняем состояние в localStorage
   useEffect(() => {
     localStorage.setItem('crypto-arbs-show-all', JSON.stringify(showAll));
@@ -428,7 +434,9 @@ export const CryptoArbs = () => {
         const funding = sumFunding(b) * 100;
         const minFundingCheck = minFunding === -Infinity ? true : funding >= minFunding;
         const maxFundingCheck = maxFunding === Infinity ? true : funding <= maxFunding;
-        return spread > minSpread && minFundingCheck && maxFundingCheck;
+        // Фильтр по исключенным монетам
+        const isExcluded = excludedTickers.has(b.ticker);
+        return spread > minSpread && minFundingCheck && maxFundingCheck && !isExcluded;
       });
 
     // Сортировка в зависимости от выбранного типа
@@ -446,7 +454,7 @@ export const CryptoArbs = () => {
         return bPart - aPart;
       });
     }
-  }, [tickers, fundingMap, sortType, enabledExchanges, showAll, minSpread, minFunding, maxFunding, sameFundingTime]);
+  }, [tickers, fundingMap, sortType, enabledExchanges, showAll, minSpread, minFunding, maxFunding, sameFundingTime, excludedTickers]);
 
   // Восстанавливаем выбранную пару из query параметров при загрузке
   useEffect(() => {
@@ -713,6 +721,32 @@ export const CryptoArbs = () => {
                         </Label>
                       </div>
                     </div>
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Исключенные монеты</h3>
+                      <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
+                        {excludedTickers.size === 0 ? (
+                          <p className="text-sm text-muted-foreground">Нет исключенных монет</p>
+                        ) : (
+                          Array.from(excludedTickers).map((ticker) => (
+                            <Button
+                              key={ticker}
+                              variant="default"
+                              size="sm"
+                              className="h-7 px-2 text-xs flex items-center gap-1.5 relative"
+                              onClick={() => {
+                                const newExcluded = new Set(excludedTickers);
+                                newExcluded.delete(ticker);
+                                setExcludedTickers(newExcluded);
+                                localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
+                              }}
+                            >
+                              <span>{ticker}</span>
+                              <span className="text-xs ml-1">×</span>
+                            </Button>
+                          ))
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -788,6 +822,23 @@ export const CryptoArbs = () => {
                       )}>
                         {a.funding.toFixed(4)}%
                       </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <EyeOff 
+                            className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer ml-1" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newExcluded = new Set(excludedTickers);
+                              newExcluded.add(a.ticker);
+                              setExcludedTickers(newExcluded);
+                              localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
+                            }}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Скрыть монету</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
 
