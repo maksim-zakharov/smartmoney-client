@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useRef } from 'react';
 import { ColorType, createChart, CrosshairMode, Time } from 'lightweight-charts';
-import moment from 'moment';
+import dayjs from 'dayjs';
 
 function capitalizeFirstLetter(str) {
   return str[0].toUpperCase() + str.slice(1);
@@ -52,7 +52,7 @@ export const Chart: FC<{
           //     return 'Format for business day';
           // }
 
-          return moment.unix(businessDayOrTimestamp / 1000).format('MMM D, YYYY HH:mm');
+          return dayjs.unix(businessDayOrTimestamp / 1000).format('MMM D, YYYY HH:mm');
         },
         priceFormatter: (price) => {
           const formatter = new Intl.NumberFormat('en-US', {
@@ -82,8 +82,8 @@ export const Chart: FC<{
           return `${hours}:00`;
         },
         // tickMarkFormatter: (time, tickMarkType, locale) => {
-        //     // Преобразуем время в формат, используя moment.js
-        //     return moment.unix(time / 1000).format('HH:mm'); // Измените формат, если нужно
+        //     // Преобразуем время в формат, используя dayjs
+        //     return dayjs.unix(time / 1000).format('HH:mm'); // Измените формат, если нужно
         // },
       },
       grid: {
@@ -221,8 +221,8 @@ export const Chart: FC<{
     }
 
     chart.timeScale().setVisibleRange({
-      from: moment().add(-2, 'month').unix() * 1000,
-      to: moment().unix() * 1000,
+      from: dayjs().subtract(2, 'month').unix() * 1000,
+      to: dayjs().unix() * 1000,
     });
 
     window.addEventListener('resize', handleResize);

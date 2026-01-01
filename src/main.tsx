@@ -3,8 +3,6 @@ import './index.css';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { HashRouter } from 'react-router-dom';
-import 'moment/locale/ru';
-import moment from 'moment'; // without this line it didn't work
 import updateLocale from 'dayjs/plugin/updateLocale';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import dayjs from 'dayjs';
@@ -17,8 +15,6 @@ dayjs.locale('ru');
 // dayjs.updateLocale("zh-cn", {
 //     weekStart: 0
 // });
-
-moment().locale('ru');
 
 createRoot(document.getElementById('root')!).render(
   // <StrictMode>

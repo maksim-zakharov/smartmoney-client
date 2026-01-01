@@ -16,7 +16,6 @@ import {
 } from 'lightweight-charts';
 import { Options } from '@vitejs/plugin-react';
 import { Rectangle, RectangleDrawingToolOptions } from './lwc-plugins/rectangle-drawing-tool';
-import moment from 'moment';
 import { Cross, HistoryObject, POI, Swing, Trend } from './sm-lib/models';
 import Decimal from 'decimal.js';
 
@@ -682,7 +681,7 @@ export const roundTime = (date: any, tf: string, utc: boolean = true) => {
   return (utc ? timeToLocal(roundedTimestamp) : roundedTimestamp) as UTCTimestamp;
 };
 
-export const formatDateTime = (value) => moment(value).format('YYYY-MM-DD HH:mm');
+export const formatDateTime = (value) => dayjs(value).format('YYYY-MM-DD HH:mm');
 
 /**
  * Формула справедливой стоимости фьючерса (без учета дивидендов): F = S * (1 + r * t / 365)
@@ -967,6 +966,7 @@ export const exchangeImgMap = {
   BINANCE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png',
   BINANCE_FUTURE: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/270.png',
   HTX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/102.png',
+  PHEMEX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/955.png',
   MEXC: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/544.png',
   GATEIO: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/302.png',
   KUCOIN: 'https://s2.coinmarketcap.com/static/img/coins/64x64/2087.png',
