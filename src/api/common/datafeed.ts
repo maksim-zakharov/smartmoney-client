@@ -378,6 +378,12 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.htxUnsubscribeCandles(ticker, resolution);
+      } else if (symbol.includes('PHEMEX')) {
+        const ticker = symbol.split('PHEMEX:')[1];
+        this.dataService.phemexSubscribeCandles(ticker, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.phemexUnsubscribeCandles(ticker, resolution);
       } else {
         return this.api.subscriptions.candles(
           {

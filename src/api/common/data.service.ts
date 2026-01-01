@@ -16,6 +16,7 @@ import { HyperliquidWsClient } from '../public-ws/hyperliquid.ws-client.ts';
 import { BinanceFuturesWsClient } from '../public-ws/binance-futures.ws-client.ts';
 import { BitMartFuturesWsClient } from '../public-ws/bitmart-futures.ws-client.ts';
 import { HtxFuturesWsClient } from '../public-ws/htx-futures.ws-client.ts';
+import { PhemexFuturesWsClient } from '../public-ws/phemex-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -52,6 +53,7 @@ export class DataService {
   private readonly binanceFuturesWsClient: BinanceFuturesWsClient;
   private readonly bitMartFuturesWsClient: BitMartFuturesWsClient;
   private readonly htxFuturesWsClient: HtxFuturesWsClient;
+  private readonly phemexFuturesWsClient: PhemexFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -75,6 +77,7 @@ export class DataService {
     this.binanceFuturesWsClient = new BinanceFuturesWsClient();
     this.bitMartFuturesWsClient = new BitMartFuturesWsClient();
     this.htxFuturesWsClient = new HtxFuturesWsClient();
+    this.phemexFuturesWsClient = new PhemexFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -330,6 +333,24 @@ export class DataService {
     return Promise.resolve();
   }
 
+  phemexSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.phemexFuturesWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  phemexUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    this.phemexFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  phemexSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.phemexFuturesWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  phemexUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.phemexFuturesWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
+  }
+
   get serverTime$() {
     if (!this.serverTimeCache$) {
       this.serverTimeCache$ = from(this.alorApi.http.get(`https://api.alor.ru/md/v2/time`)).pipe(
@@ -521,6 +542,21 @@ export class DataService {
       request$ = from(
         fetch(
           `${this.cryptoUrl}/htx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
+    } else if (ticker.includes('PHEMEX:')) {
+      const _ticker = ticker.split('PHEMEX:')[1];
+      request$ = from(
+        fetch(
+          `${this.cryptoUrl}/phemex/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);

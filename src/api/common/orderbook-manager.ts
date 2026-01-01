@@ -138,6 +138,9 @@ export class OrderbookManager {
         case 'HTX':
           this.wsSubscription = this.dataService.htxSubscribeOrderbook(this.symbol, 20);
           break;
+        case 'PHEMEX':
+          this.wsSubscription = this.dataService.phemexSubscribeOrderbook(this.symbol, 20);
+          break;
         default:
           return;
       }
