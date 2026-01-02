@@ -18,6 +18,7 @@ import { BitMartFuturesWsClient } from '../public-ws/bitmart-futures.ws-client.t
 import { HtxFuturesWsClient } from '../public-ws/htx-futures.ws-client.ts';
 import { PhemexFuturesWsClient } from '../public-ws/phemex-futures.ws-client.ts';
 import { BitunixFuturesWsClient } from '../public-ws/bitunix-futures.ws-client.ts';
+import { ToobitFuturesWsClient } from '../public-ws/toobit-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -56,6 +57,7 @@ export class DataService {
   private readonly htxFuturesWsClient: HtxFuturesWsClient;
   private readonly phemexFuturesWsClient: PhemexFuturesWsClient;
   private readonly bitunixFuturesWsClient: BitunixFuturesWsClient;
+  private readonly toobitFuturesWsClient: ToobitFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -81,6 +83,7 @@ export class DataService {
     this.htxFuturesWsClient = new HtxFuturesWsClient();
     this.phemexFuturesWsClient = new PhemexFuturesWsClient();
     this.bitunixFuturesWsClient = new BitunixFuturesWsClient();
+    this.toobitFuturesWsClient = new ToobitFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -363,6 +366,15 @@ export class DataService {
     return Promise.resolve();
   }
 
+  toobitSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.toobitFuturesWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  toobitUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    this.toobitFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
   bitunixSubscribeOrderbook(symbol: string, depth: number = 20) {
     return this.bitunixFuturesWsClient.subscribeOrderbook(symbol, depth);
   }
@@ -593,6 +605,27 @@ export class DataService {
       request$ = from(
         fetch(
           `${this.cryptoUrl}/bitunix/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+        ).then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        }),
+      ).pipe(
+        map((r) => ({ history: r })),
+        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+      );
+    } else if (ticker.includes('TOOBIT:')) {
+      const _ticker = ticker.split('TOOBIT:')[1];
+      // Преобразуем тикер в формат Toobit: BTC -> BTC-SWAP-USDT, RIVER-USDT -> RIVER-SWAP-USDT
+      const toobitTicker = _ticker.includes('-SWAP-')
+        ? _ticker
+        : _ticker.endsWith('-USDT')
+          ? _ticker.replace('-USDT', '-SWAP-USDT')
+          : `${_ticker}-SWAP-USDT`;
+      request$ = from(
+        fetch(
+          `http://localhost:3000/toobit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${toobitTicker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);

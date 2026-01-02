@@ -55,6 +55,10 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
       return `${ticker}-USDT`;
     case 'BITUNIX':
       return `${ticker}USDT`;
+    case 'XT':
+      return `${ticker}_USDT`;
+    case 'TOOBIT':
+      return `${ticker}-USDT`;
     case 'HYPERLIQUID':
       // Hyperliquid использует тикер без суффикса
       return ticker;
@@ -98,6 +102,16 @@ const getExchangeUrl = (exchange: string, ticker: string): string => {
       return `https://phemex.com/futures/${ticker}-USDT`;
     case 'BITUNIX':
       return `https://www.bitunix.com/contract-trade/${ticker}USDT`;
+    case 'XT':
+      return `https://www.xt.com/en/futures/trade/${ticker.toLowerCase()}_usdt`;
+    case 'TOOBIT':
+      // Преобразуем тикер в формат Toobit: BTC -> BTC-SWAP-USDT, RIVER-USDT -> RIVER-SWAP-USDT
+      const toobitTicker = ticker.includes('-SWAP-') 
+        ? ticker 
+        : ticker.endsWith('-USDT') 
+          ? ticker.replace('-USDT', '-SWAP-USDT')
+          : `${ticker}-SWAP-USDT`;
+      return `https://www.toobit.com/ru-RU/futures/${toobitTicker}`;
     case 'HYPERLIQUID':
       return `https://app.hyperliquid.xyz/trade/${ticker}`;
     case 'ASTER':
@@ -128,6 +142,8 @@ const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, tick
     HTX: 'HTX',
     PHEMEX: 'PHEMEX',
     BITUNIX: 'BITUNIX',
+    XT: 'XT',
+    TOOBIT: 'TOOBIT',
     HYPERLIQUID: 'HYPERLIQUID',
     ASTER: 'ASTER',
   };
@@ -192,6 +208,8 @@ export const CryptoArbs = () => {
       'HTX',
       'PHEMEX',
       'BITUNIX',
+      'XT',
+      'TOOBIT',
       'Hyperliquid',
       'Aster',
       'Lighter',

@@ -987,6 +987,8 @@ export const exchangeImgMap = {
   Lighter: 'https://s2.coinmarketcap.com/static/img/coins/64x64/39125.png',
   BITMART: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/406.png',
   BITUNIX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/7302.png',
+  XT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/525.png',
+  TOOBIT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/6137.png',
 };
 export const moneyFormat = (
   money: number,

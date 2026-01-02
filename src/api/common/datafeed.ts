@@ -390,6 +390,18 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.bitunixUnsubscribeCandles(ticker, resolution);
+      } else if (symbol.includes('TOOBIT')) {
+        const ticker = symbol.split('TOOBIT:')[1];
+        // Преобразуем тикер в формат Toobit: BTC -> BTC-SWAP-USDT, RIVER-USDT -> RIVER-SWAP-USDT
+        const toobitTicker = ticker.includes('-SWAP-') 
+          ? ticker 
+          : ticker.endsWith('-USDT') 
+            ? ticker.replace('-USDT', '-SWAP-USDT')
+            : `${ticker}-SWAP-USDT`;
+        this.dataService.toobitSubscribeCandles(toobitTicker, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.toobitUnsubscribeCandles(toobitTicker, resolution);
       } else {
         return this.api.subscriptions.candles(
           {
