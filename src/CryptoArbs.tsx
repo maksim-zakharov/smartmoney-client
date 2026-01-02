@@ -159,10 +159,81 @@ export const CryptoArbs = () => {
 
   const [selectedArb, setSelectedArb] = useState<ArbPair | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Состояние для минимального спреда (по умолчанию 1%)
+  const [minSpread, setMinSpread] = useState<number>(() => {
+    const saved = localStorage.getItem('crypto-arbs-min-spread');
+    if (saved !== null) {
+      const parsed = parseFloat(saved);
+      return !isNaN(parsed) ? parsed : 1;
+    }
+    return 1; // По умолчанию 1%
+  });
+
+  // Состояние для режима "Все" (по умолчанию включен - фильтрация отсутствует)
+  const [showAll, setShowAll] = useState<boolean>(() => {
+    const saved = localStorage.getItem('crypto-arbs-show-all');
+    if (saved !== null) {
+      return JSON.parse(saved);
+    }
+    return true; // По умолчанию показываем все
+  });
+
+  // Состояние для выбранных бирж (используется только когда showAll = false)
+  const [enabledExchanges, setEnabledExchanges] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('crypto-arbs-enabled-exchanges');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.length > 0 ? new Set(parsed) : new Set();
+      } catch {
+        return new Set();
+      }
+    }
+    return new Set();
+  });
+
+  // Состояние для минимального фандинга
+  const [minFunding, setMinFunding] = useState<number>(() => {
+    const saved = localStorage.getItem('crypto-arbs-min-funding');
+    if (saved !== null) {
+      const parsed = parseFloat(saved);
+      return !isNaN(parsed) ? parsed : -Infinity;
+    }
+    return -Infinity;
+  });
+
+  // Состояние для максимального фандинга
+  const [maxFunding, setMaxFunding] = useState<number>(() => {
+    const saved = localStorage.getItem('crypto-arbs-max-funding');
+    if (saved !== null) {
+      const parsed = parseFloat(saved);
+      return !isNaN(parsed) ? parsed : Infinity;
+    }
+    return Infinity;
+  });
+
+  // Состояние для фильтра "Фандинг в одно время"
+  const [sameFundingTime, setSameFundingTime] = useState<boolean>(() => {
+    const saved = localStorage.getItem('crypto-arbs-same-funding-time');
+    if (saved !== null) {
+      return JSON.parse(saved);
+    }
+    return false;
+  });
+
   const { data: tickersMap = {} } = useGetPumpTickersQuery(
-    {},
     {
-      pollingInterval: 5000,
+      minSpread: minSpread,
+      exchanges: showAll ? [] : Array.from(enabledExchanges),
+      minFunding: minFunding === -Infinity ? undefined : minFunding,
+      maxFunding: maxFunding === Infinity ? undefined : maxFunding,
+      sameFundingTime: sameFundingTime,
+      sortBy: sortType,
+      limit: 500, // Ограничиваем количество результатов
+    },
+    {
+      pollingInterval: 5000, // Увеличиваем интервал до 10 секунд
     },
   );
 
@@ -200,29 +271,6 @@ export const CryptoArbs = () => {
     return sorted;
   }, [tickers]);
 
-  // Состояние для режима "Все" (по умолчанию включен - фильтрация отсутствует)
-  const [showAll, setShowAll] = useState<boolean>(() => {
-    const saved = localStorage.getItem('crypto-arbs-show-all');
-    if (saved !== null) {
-      return JSON.parse(saved);
-    }
-    return true; // По умолчанию показываем все
-  });
-
-  // Состояние для выбранных бирж (используется только когда showAll = false)
-  const [enabledExchanges, setEnabledExchanges] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('crypto-arbs-enabled-exchanges');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.length > 0 ? new Set(parsed) : new Set();
-      } catch {
-        return new Set();
-      }
-    }
-    return new Set();
-  });
-
   // Синхронизируем enabledExchanges с allExchanges при изменении списка бирж
   // Только удаляем биржи, которых больше нет, но не добавляем новые автоматически
   useEffect(() => {
@@ -244,46 +292,32 @@ export const CryptoArbs = () => {
     }
   }, [allExchanges, showAll]);
 
-  // Состояние для минимального спреда (по умолчанию 1%)
-  const [minSpread, setMinSpread] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-min-spread');
-    if (saved !== null) {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : 1;
-    }
-    return 1; // По умолчанию 1%
-  });
+  // Сохраняем настройки в localStorage при изменении
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-show-all', JSON.stringify(showAll));
+  }, [showAll]);
 
-  // Состояние для минимального фандинга (по умолчанию -Infinity - без ограничения)
-  const [minFunding, setMinFunding] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-min-funding');
-    if (saved !== null && saved !== '') {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : -Infinity;
-    }
-    return -Infinity; // По умолчанию без ограничения
-  });
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-enabled-exchanges', JSON.stringify(Array.from(enabledExchanges)));
+  }, [enabledExchanges]);
 
-  // Состояние для максимального фандинга (по умолчанию Infinity - без ограничения)
-  const [maxFunding, setMaxFunding] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-max-funding');
-    if (saved !== null && saved !== '') {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : Infinity;
-    }
-    return Infinity; // По умолчанию без ограничения
-  });
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-min-spread', minSpread.toString());
+  }, [minSpread]);
 
-  // Состояние для фильтра "Фандинг в одно время"
-  const [sameFundingTime, setSameFundingTime] = useState<boolean>(() => {
-    const saved = localStorage.getItem('crypto-arbs-same-funding-time');
-    if (saved !== null) {
-      return saved === 'true';
-    }
-    return false; // По умолчанию выключено
-  });
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-min-funding', minFunding === -Infinity ? '' : minFunding.toString());
+  }, [minFunding]);
 
-  // Состояние для исключенных монет
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-max-funding', maxFunding === Infinity ? '' : maxFunding.toString());
+  }, [maxFunding]);
+
+  useEffect(() => {
+    localStorage.setItem('crypto-arbs-same-funding-time', sameFundingTime.toString());
+  }, [sameFundingTime]);
+
+  // Состояние для исключенных монет (единственный фильтр, который остается на клиенте)
   const [excludedTickers, setExcludedTickers] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('crypto-arbs-excluded-tickers');
     return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -407,59 +441,19 @@ export const CryptoArbs = () => {
     }
   };
 
+  // Фильтрация только по исключенным монетам (остальная фильтрация выполняется на бэкенде)
   const filteredArbs = useMemo(() => {
     const arbs = tickers
       .map(([ticker, invoice], index) => invoice.arbs.map((a) => ({ ...a, ticker })))
       .flat()
       .filter((b) => {
-        // Фильтрация по биржам (только если showAll = false и есть выбранные биржи)
-        // Показываем спред, если обе биржи из пары выбраны
-        if (!showAll && enabledExchanges.size > 0) {
-          if (!enabledExchanges.has(b.left.exchange) || !enabledExchanges.has(b.right.exchange)) {
-            return false;
-          }
-        }
-        // Фильтр по времени фандинга
-        if (sameFundingTime) {
-          const leftFunding = fundingMap[`${b.ticker}_${b.left.exchange}`];
-          const rightFunding = fundingMap[`${b.ticker}_${b.right.exchange}`];
-          if (!leftFunding || !rightFunding) {
-            return false; // Если нет данных о фандинге, исключаем
-          }
-          // Сравниваем время фандинга (может быть null или строка)
-          const leftTime = leftFunding.nextFundingTime;
-          const rightTime = rightFunding.nextFundingTime;
-          // Если оба null или оба имеют одинаковое значение
-          if (leftTime !== rightTime) {
-            return false;
-          }
-        }
-        // Остальные фильтры
-        const spread = Math.abs(b.ratio - 1) * 100;
-        const funding = sumFunding(b) * 100;
-        const minFundingCheck = minFunding === -Infinity ? true : funding >= minFunding;
-        const maxFundingCheck = maxFunding === Infinity ? true : funding <= maxFunding;
-        // Фильтр по исключенным монетам
-        const isExcluded = excludedTickers.has(b.ticker);
-        return spread > minSpread && minFundingCheck && maxFundingCheck && !isExcluded;
+        // Фильтр по исключенным монетам (единственный фильтр на клиенте)
+        return !excludedTickers.has(b.ticker);
       });
 
-    // Сортировка в зависимости от выбранного типа
-    if (sortType === SortType.Spread) {
-      return arbs.sort((a, b) => {
-        const aSpread = Math.abs(a.ratio - 1) * 100;
-        const bSpread = Math.abs(b.ratio - 1) * 100;
-        return bSpread - aSpread;
-      });
-    } else {
-      // Сортировка по фандингу (по умолчанию)
-      return arbs.sort((a, b) => {
-        const aPart = sumFunding(a);
-        const bPart = sumFunding(b);
-        return bPart - aPart;
-      });
-    }
-  }, [tickers, fundingMap, sortType, enabledExchanges, showAll, minSpread, minFunding, maxFunding, sameFundingTime, excludedTickers]);
+    // Сортировка уже выполнена на бэкенде
+    return arbs;
+  }, [tickers, excludedTickers]);
 
   // Восстанавливаем выбранную пару из query параметров при загрузке
   useEffect(() => {

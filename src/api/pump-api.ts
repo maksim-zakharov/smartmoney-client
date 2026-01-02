@@ -39,8 +39,8 @@ export const pumpApi = createApi({
   tagTypes: ['User'],
   baseQuery: fetchBaseQuery({
     // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://176.114.69.4:3000' : undefined,
-    baseUrl: 'http://5.35.13.149',
-    // baseUrl: 'http://localhost:3000',
+    // baseUrl: 'http://5.35.13.149',
+    baseUrl: 'http://localhost:3000',
     // baseUrl: process.env.NODE_ENV !== 'production' ? 'http://localhost:3000' : undefined,
     paramsSerializer: (params) => {
       return new URLSearchParams(
@@ -51,10 +51,29 @@ export const pumpApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getPumpTickers: builder.query<any, { symbol: string; tf: string; from: number; to: number }>({
+    getPumpTickers: builder.query<
+      any,
+      {
+        minSpread?: number;
+        exchanges?: string[];
+        minFunding?: number;
+        maxFunding?: number;
+        sameFundingTime?: boolean;
+        sortBy?: 'funding' | 'spread';
+        limit?: number;
+      }
+    >({
       query: (params) => ({
         url: '/spreads/tickers',
-        params,
+        params: {
+          ...(params.minSpread !== undefined && { minSpread: params.minSpread }),
+          ...(params.exchanges && params.exchanges.length > 0 && { exchanges: params.exchanges }),
+          ...(params.minFunding !== undefined && { minFunding: params.minFunding }),
+          ...(params.maxFunding !== undefined && { maxFunding: params.maxFunding }),
+          ...(params.sameFundingTime !== undefined && { sameFundingTime: params.sameFundingTime }),
+          ...(params.sortBy && { sortBy: params.sortBy }),
+          ...(params.limit && { limit: params.limit }),
+        },
       }),
     }),
   }),
