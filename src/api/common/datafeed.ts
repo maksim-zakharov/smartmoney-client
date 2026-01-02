@@ -384,6 +384,12 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.phemexUnsubscribeCandles(ticker, resolution);
+      } else if (symbol.includes('BITUNIX')) {
+        const ticker = symbol.split('BITUNIX:')[1];
+        this.dataService.bitunixSubscribeCandles(ticker, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.bitunixUnsubscribeCandles(ticker, resolution);
       } else {
         return this.api.subscriptions.candles(
           {

@@ -17,6 +17,7 @@ import { BinanceFuturesWsClient } from '../public-ws/binance-futures.ws-client.t
 import { BitMartFuturesWsClient } from '../public-ws/bitmart-futures.ws-client.ts';
 import { HtxFuturesWsClient } from '../public-ws/htx-futures.ws-client.ts';
 import { PhemexFuturesWsClient } from '../public-ws/phemex-futures.ws-client.ts';
+import { BitunixFuturesWsClient } from '../public-ws/bitunix-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -54,6 +55,7 @@ export class DataService {
   private readonly bitMartFuturesWsClient: BitMartFuturesWsClient;
   private readonly htxFuturesWsClient: HtxFuturesWsClient;
   private readonly phemexFuturesWsClient: PhemexFuturesWsClient;
+  private readonly bitunixFuturesWsClient: BitunixFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -78,6 +80,7 @@ export class DataService {
     this.bitMartFuturesWsClient = new BitMartFuturesWsClient();
     this.htxFuturesWsClient = new HtxFuturesWsClient();
     this.phemexFuturesWsClient = new PhemexFuturesWsClient();
+    this.bitunixFuturesWsClient = new BitunixFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -348,6 +351,24 @@ export class DataService {
 
   phemexUnsubscribeOrderbook(symbol: string, depth: number = 20) {
     this.phemexFuturesWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
+  }
+
+  bitunixSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.bitunixFuturesWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  bitunixUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    this.bitunixFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  bitunixSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.bitunixFuturesWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  bitunixUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.bitunixFuturesWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 

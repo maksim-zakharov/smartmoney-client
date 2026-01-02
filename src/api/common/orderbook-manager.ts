@@ -141,6 +141,9 @@ export class OrderbookManager {
         case 'PHEMEX':
           this.wsSubscription = this.dataService.phemexSubscribeOrderbook(this.symbol, 20);
           break;
+        case 'BITUNIX':
+          this.wsSubscription = this.dataService.bitunixSubscribeOrderbook(this.symbol, 20);
+          break;
         default:
           return;
       }
