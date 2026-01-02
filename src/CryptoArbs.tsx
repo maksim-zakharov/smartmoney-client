@@ -55,6 +55,8 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
       return `${ticker}-USDT`;
     case 'PHEMEX':
       return `${ticker}-USDT`;
+    case 'BITUNIX':
+      return `${ticker}USDT`;
     case 'HYPERLIQUID':
       // Hyperliquid использует тикер без суффикса
       return ticker;
@@ -96,6 +98,8 @@ const getExchangeUrl = (exchange: string, ticker: string): string => {
       return `https://www.htx.com/ru-ru/futures/linear_swap/exchange#contract_code=${ticker}-USDT`;
     case 'PHEMEX':
       return `https://phemex.com/futures/${ticker}-USDT`;
+    case 'BITUNIX':
+      return `https://www.bitunix.com/contract-trade/${ticker}USDT`;
     case 'HYPERLIQUID':
       return `https://app.hyperliquid.xyz/trade/${ticker}`;
     case 'ASTER':
@@ -125,6 +129,7 @@ const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, tick
     'BITMART': 'BITMART',
     'HTX': 'HTX',
     'PHEMEX': 'PHEMEX',
+    'BITUNIX': 'BITUNIX',
     'HYPERLIQUID': 'HYPERLIQUID',
     'ASTER': 'ASTER',
   };
@@ -174,7 +179,7 @@ export const CryptoArbs = () => {
     });
     
     // Порядок бирж для отображения
-    const exchangeOrder = ['MEXC', 'GATEIO', 'GATE', 'KUCOIN', 'BINANCE', 'BYBIT', 'BITGET', 'BINGX', 'OKX', 'OURBIT', 'BITMART', 'HTX', 'PHEMEX', 'Hyperliquid', 'Aster', 'Lighter'];
+    const exchangeOrder = ['MEXC', 'GATEIO', 'GATE', 'KUCOIN', 'BINANCE', 'BYBIT', 'BITGET', 'BINGX', 'OKX', 'OURBIT', 'BITMART', 'HTX', 'PHEMEX', 'BITUNIX', 'Hyperliquid', 'Aster', 'Lighter'];
     
     // Сортируем биржи по заданному порядку
     const sorted = Array.from(exchanges).sort((a, b) => {
