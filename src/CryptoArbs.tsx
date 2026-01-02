@@ -1,12 +1,10 @@
 import { useGetPumpTickersQuery } from './api/pump-api.ts';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
 import { cn } from './lib/utils.ts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { exchangeImgMap } from './utils.ts';
 import dayjs from 'dayjs';
-import { Card, CardDescription, CardHeader, CardTitle } from './components/ui/card.tsx';
-import { TypographyH4 } from './components/ui/typography.tsx';
+import { Card, CardHeader, CardTitle } from './components/ui/card.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
@@ -29,7 +27,7 @@ interface ArbPair {
 // Функция для добавления правильного суффикса к тикеру в зависимости от биржи
 const getTickerWithSuffix = (exchange: string, ticker: string): string => {
   const exchangeUpper = exchange.toUpperCase();
-  
+
   // Определяем суффикс в зависимости от биржи
   switch (exchangeUpper) {
     case 'MEXC':
@@ -71,7 +69,7 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
 // Функция для генерации URL биржи с тикером (фьючерсы) с реферальными кодами
 const getExchangeUrl = (exchange: string, ticker: string): string => {
   const exchangeUpper = exchange.toUpperCase();
-  
+
   switch (exchangeUpper) {
     case 'GATEIO':
     case 'GATE':
@@ -113,37 +111,37 @@ const getExchangeUrl = (exchange: string, ticker: string): string => {
 const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, ticker: string): string => {
   const sellExchangeUpper = sellExchange.toUpperCase();
   const buyExchangeUpper = buyExchange.toUpperCase();
-  
+
   // Маппинг бирж на символы TradingView
   const exchangeMap: Record<string, string> = {
-    'BINANCE': 'BINANCE',
-    'BYBIT': 'BYBIT',
-    'OKX': 'OKX',
-    'BITGET': 'BITGET',
-    'MEXC': 'MEXC',
-    'GATE': 'GATEIO',
-    'GATEIO': 'GATEIO',
-    'KUCOIN': 'KUCOIN',
-    'BINGX': 'BINGX',
-    'OURBIT': 'OURBIT',
-    'BITMART': 'BITMART',
-    'HTX': 'HTX',
-    'PHEMEX': 'PHEMEX',
-    'BITUNIX': 'BITUNIX',
-    'HYPERLIQUID': 'HYPERLIQUID',
-    'ASTER': 'ASTER',
+    BINANCE: 'BINANCE',
+    BYBIT: 'BYBIT',
+    OKX: 'OKX',
+    BITGET: 'BITGET',
+    MEXC: 'MEXC',
+    GATE: 'GATEIO',
+    GATEIO: 'GATEIO',
+    KUCOIN: 'KUCOIN',
+    BINGX: 'BINGX',
+    OURBIT: 'OURBIT',
+    BITMART: 'BITMART',
+    HTX: 'HTX',
+    PHEMEX: 'PHEMEX',
+    BITUNIX: 'BITUNIX',
+    HYPERLIQUID: 'HYPERLIQUID',
+    ASTER: 'ASTER',
   };
-  
+
   const sellTvExchange = exchangeMap[sellExchangeUpper] || sellExchangeUpper;
   const buyTvExchange = exchangeMap[buyExchangeUpper] || buyExchangeUpper;
-  
+
   // Добавляем .P для фьючерсов в TradingView
   const sellSymbol = `${sellTvExchange}:${ticker}USDT.P`;
   const buySymbol = `${buyTvExchange}:${ticker}USDT.P`;
-  
+
   // Формат спреда в TradingView: SYMBOL1!SYMBOL2
   const spreadSymbol = `${sellSymbol}/${buySymbol}`;
-  
+
   return `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(spreadSymbol)}`;
 };
 
@@ -159,16 +157,64 @@ export const CryptoArbs = () => {
 
   const [selectedArb, setSelectedArb] = useState<ArbPair | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  
-  // Состояние для минимального спреда (по умолчанию 1%)
-  const [minSpread, setMinSpread] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-min-spread');
-    if (saved !== null) {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : 1;
-    }
-    return 1; // По умолчанию 1%
-  });
+  const { data: tickersMap = {} } = useGetPumpTickersQuery(
+    {},
+    {
+      pollingInterval: 5000,
+    },
+  );
+
+  const tickers = Object.entries(tickersMap);
+
+  // Получаем список всех уникальных бирж из данных
+  const allExchanges = useMemo(() => {
+    const exchanges = new Set<string>();
+    tickers.forEach(([ticker, invoice]) => {
+      invoice.arbs?.forEach((arb) => {
+        exchanges.add(arb.left.exchange);
+        exchanges.add(arb.right.exchange);
+      });
+    });
+
+    // Порядок бирж для отображения
+    const exchangeOrder = [
+      'MEXC',
+      'GATEIO',
+      'GATE',
+      'KUCOIN',
+      'BINANCE',
+      'BYBIT',
+      'BITGET',
+      'BINGX',
+      'OKX',
+      'OURBIT',
+      'BITMART',
+      'HTX',
+      'PHEMEX',
+      'BITUNIX',
+      'Hyperliquid',
+      'Aster',
+      'Lighter',
+    ];
+
+    // Сортируем биржи по заданному порядку
+    const sorted = Array.from(exchanges).sort((a, b) => {
+      const indexA = exchangeOrder.indexOf(a);
+      const indexB = exchangeOrder.indexOf(b);
+
+      // Если обе биржи в списке порядка, сортируем по индексу
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+      }
+      // Если только одна в списке, она идет первой
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      // Если обе не в списке, сортируем по алфавиту
+      return a.localeCompare(b);
+    });
+
+    return sorted;
+  }, [tickers]);
 
   // Состояние для режима "Все" (по умолчанию включен - фильтрация отсутствует)
   const [showAll, setShowAll] = useState<boolean>(() => {
@@ -193,84 +239,6 @@ export const CryptoArbs = () => {
     return new Set();
   });
 
-  // Состояние для минимального фандинга
-  const [minFunding, setMinFunding] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-min-funding');
-    if (saved !== null) {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : -Infinity;
-    }
-    return -Infinity;
-  });
-
-  // Состояние для максимального фандинга
-  const [maxFunding, setMaxFunding] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-max-funding');
-    if (saved !== null) {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : Infinity;
-    }
-    return Infinity;
-  });
-
-  // Состояние для фильтра "Фандинг в одно время"
-  const [sameFundingTime, setSameFundingTime] = useState<boolean>(() => {
-    const saved = localStorage.getItem('crypto-arbs-same-funding-time');
-    if (saved !== null) {
-      return JSON.parse(saved);
-    }
-    return false;
-  });
-
-  const { data: tickersMap = {} } = useGetPumpTickersQuery(
-    {
-      minSpread: minSpread,
-      exchanges: showAll ? [] : Array.from(enabledExchanges),
-      minFunding: minFunding === -Infinity ? undefined : minFunding,
-      maxFunding: maxFunding === Infinity ? undefined : maxFunding,
-      sameFundingTime: sameFundingTime,
-      sortBy: sortType,
-      limit: 500, // Ограничиваем количество результатов
-    },
-    {
-      pollingInterval: 5000, // Увеличиваем интервал до 10 секунд
-    },
-  );
-
-  const tickers = Object.entries(tickersMap);
-
-  // Получаем список всех уникальных бирж из данных
-  const allExchanges = useMemo(() => {
-    const exchanges = new Set<string>();
-    tickers.forEach(([ticker, invoice]) => {
-      invoice.arbs?.forEach((arb) => {
-        exchanges.add(arb.left.exchange);
-        exchanges.add(arb.right.exchange);
-      });
-    });
-    
-    // Порядок бирж для отображения
-    const exchangeOrder = ['MEXC', 'GATEIO', 'GATE', 'KUCOIN', 'BINANCE', 'BYBIT', 'BITGET', 'BINGX', 'OKX', 'OURBIT', 'BITMART', 'HTX', 'PHEMEX', 'BITUNIX', 'Hyperliquid', 'Aster', 'Lighter'];
-    
-    // Сортируем биржи по заданному порядку
-    const sorted = Array.from(exchanges).sort((a, b) => {
-      const indexA = exchangeOrder.indexOf(a);
-      const indexB = exchangeOrder.indexOf(b);
-      
-      // Если обе биржи в списке порядка, сортируем по индексу
-      if (indexA !== -1 && indexB !== -1) {
-        return indexA - indexB;
-      }
-      // Если только одна в списке, она идет первой
-      if (indexA !== -1) return -1;
-      if (indexB !== -1) return 1;
-      // Если обе не в списке, сортируем по алфавиту
-      return a.localeCompare(b);
-    });
-    
-    return sorted;
-  }, [tickers]);
-
   // Синхронизируем enabledExchanges с allExchanges при изменении списка бирж
   // Только удаляем биржи, которых больше нет, но не добавляем новые автоматически
   useEffect(() => {
@@ -292,32 +260,46 @@ export const CryptoArbs = () => {
     }
   }, [allExchanges, showAll]);
 
-  // Сохраняем настройки в localStorage при изменении
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-show-all', JSON.stringify(showAll));
-  }, [showAll]);
+  // Состояние для минимального спреда (по умолчанию 1%)
+  const [minSpread, setMinSpread] = useState<number>(() => {
+    const saved = localStorage.getItem('crypto-arbs-min-spread');
+    if (saved !== null) {
+      const parsed = parseFloat(saved);
+      return !isNaN(parsed) ? parsed : 1;
+    }
+    return 1; // По умолчанию 1%
+  });
 
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-enabled-exchanges', JSON.stringify(Array.from(enabledExchanges)));
-  }, [enabledExchanges]);
+  // Состояние для минимального фандинга (по умолчанию -Infinity - без ограничения)
+  const [minFunding, setMinFunding] = useState<number>(() => {
+    const saved = localStorage.getItem('crypto-arbs-min-funding');
+    if (saved !== null && saved !== '') {
+      const parsed = parseFloat(saved);
+      return !isNaN(parsed) ? parsed : -Infinity;
+    }
+    return -Infinity; // По умолчанию без ограничения
+  });
 
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-min-spread', minSpread.toString());
-  }, [minSpread]);
+  // Состояние для максимального фандинга (по умолчанию Infinity - без ограничения)
+  const [maxFunding, setMaxFunding] = useState<number>(() => {
+    const saved = localStorage.getItem('crypto-arbs-max-funding');
+    if (saved !== null && saved !== '') {
+      const parsed = parseFloat(saved);
+      return !isNaN(parsed) ? parsed : Infinity;
+    }
+    return Infinity; // По умолчанию без ограничения
+  });
 
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-min-funding', minFunding === -Infinity ? '' : minFunding.toString());
-  }, [minFunding]);
+  // Состояние для фильтра "Фандинг в одно время"
+  const [sameFundingTime, setSameFundingTime] = useState<boolean>(() => {
+    const saved = localStorage.getItem('crypto-arbs-same-funding-time');
+    if (saved !== null) {
+      return saved === 'true';
+    }
+    return false; // По умолчанию выключено
+  });
 
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-max-funding', maxFunding === Infinity ? '' : maxFunding.toString());
-  }, [maxFunding]);
-
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-same-funding-time', sameFundingTime.toString());
-  }, [sameFundingTime]);
-
-  // Состояние для исключенных монет (единственный фильтр, который остается на клиенте)
+  // Состояние для исключенных монет
   const [excludedTickers, setExcludedTickers] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('crypto-arbs-excluded-tickers');
     return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -384,29 +366,30 @@ export const CryptoArbs = () => {
       // Время приходит в формате "HH:mm" (например, "20:00", "00:00")
       // Фандинг происходит каждые 8 часов: 00:00, 08:00, 16:00
       const [hours, minutes] = timeString.split(':').map(Number);
-      
+
       if (isNaN(hours) || isNaN(minutes)) {
         return timeString;
       }
-      
+
       const now = dayjs();
-      
+
       // Создаем дату с этим временем на сегодня
       const todayFundingTime = dayjs().set('hour', hours).set('minute', minutes).set('second', 0).set('millisecond', 0);
-      
+
       // Вычисляем разницу для сегодняшнего времени
       let diffMinutesToday = todayFundingTime.diff(now, 'minute', true);
-      
+
       let fundingTime = todayFundingTime;
-      
+
       // Если время уже прошло сегодня, проверяем ближайшее время фандинга
       if (diffMinutesToday < 0) {
         // Проверяем следующее время фандинга (через 8 часов)
         const nextFundingTime = todayFundingTime.add(8, 'hour');
         const diffNext = nextFundingTime.diff(now, 'minute', true);
-        
+
         // Если следующее время фандинга сегодня ближе, чем завтрашнее, используем его
-        if (diffNext > 0 && diffNext < 480) { // 480 минут = 8 часов
+        if (diffNext > 0 && diffNext < 480) {
+          // 480 минут = 8 часов
           fundingTime = nextFundingTime;
           diffMinutesToday = diffNext;
         } else {
@@ -415,17 +398,17 @@ export const CryptoArbs = () => {
           diffMinutesToday = fundingTime.diff(now, 'minute', true);
         }
       }
-      
+
       // Если разница очень маленькая (менее 1 минуты), показываем "сейчас"
       if (diffMinutesToday >= 0 && diffMinutesToday < 1) {
         return 'сейчас';
       }
-      
+
       // Если разница отрицательная или очень большая (больше суток), показываем просто время
       if (diffMinutesToday < 0 || diffMinutesToday > 1440) {
         return timeString;
       }
-      
+
       if (diffMinutesToday < 60) {
         const roundedMinutes = Math.max(0, Math.round(diffMinutesToday));
         return `через ${roundedMinutes}м`;
@@ -441,19 +424,59 @@ export const CryptoArbs = () => {
     }
   };
 
-  // Фильтрация только по исключенным монетам (остальная фильтрация выполняется на бэкенде)
   const filteredArbs = useMemo(() => {
     const arbs = tickers
       .map(([ticker, invoice], index) => invoice.arbs.map((a) => ({ ...a, ticker })))
       .flat()
       .filter((b) => {
-        // Фильтр по исключенным монетам (единственный фильтр на клиенте)
-        return !excludedTickers.has(b.ticker);
+        // Фильтрация по биржам (только если showAll = false и есть выбранные биржи)
+        // Показываем спред, если обе биржи из пары выбраны
+        if (!showAll && enabledExchanges.size > 0) {
+          if (!enabledExchanges.has(b.left.exchange) || !enabledExchanges.has(b.right.exchange)) {
+            return false;
+          }
+        }
+        // Фильтр по времени фандинга
+        if (sameFundingTime) {
+          const leftFunding = fundingMap[`${b.ticker}_${b.left.exchange}`];
+          const rightFunding = fundingMap[`${b.ticker}_${b.right.exchange}`];
+          if (!leftFunding || !rightFunding) {
+            return false; // Если нет данных о фандинге, исключаем
+          }
+          // Сравниваем время фандинга (может быть null или строка)
+          const leftTime = leftFunding.nextFundingTime;
+          const rightTime = rightFunding.nextFundingTime;
+          // Если оба null или оба имеют одинаковое значение
+          if (leftTime !== rightTime) {
+            return false;
+          }
+        }
+        // Остальные фильтры
+        const spread = Math.abs(b.ratio - 1) * 100;
+        const funding = sumFunding(b) * 100;
+        const minFundingCheck = minFunding === -Infinity ? true : funding >= minFunding;
+        const maxFundingCheck = maxFunding === Infinity ? true : funding <= maxFunding;
+        // Фильтр по исключенным монетам
+        const isExcluded = excludedTickers.has(b.ticker);
+        return spread > minSpread && minFundingCheck && maxFundingCheck && !isExcluded;
       });
 
-    // Сортировка уже выполнена на бэкенде
-    return arbs;
-  }, [tickers, excludedTickers]);
+    // Сортировка в зависимости от выбранного типа
+    if (sortType === SortType.Spread) {
+      return arbs.sort((a, b) => {
+        const aSpread = Math.abs(a.ratio - 1) * 100;
+        const bSpread = Math.abs(b.ratio - 1) * 100;
+        return bSpread - aSpread;
+      });
+    } else {
+      // Сортировка по фандингу (по умолчанию)
+      return arbs.sort((a, b) => {
+        const aPart = sumFunding(a);
+        const bPart = sumFunding(b);
+        return bPart - aPart;
+      });
+    }
+  }, [tickers, fundingMap, sortType, enabledExchanges, showAll, minSpread, minFunding, maxFunding, sameFundingTime, excludedTickers]);
 
   // Восстанавливаем выбранную пару из query параметров при загрузке
   useEffect(() => {
@@ -461,23 +484,25 @@ export const CryptoArbs = () => {
       // Поддерживаем оба формата для обратной совместимости
       const separator = selectedPairKey.includes('|') ? '|' : '_';
       const parts = selectedPairKey.split(separator);
-      
+
       if (parts.length >= 3) {
         const ticker = parts[0];
         const leftExchange = parts[1];
         // Для формата с подчеркиванием берем все остальное, для формата с | - только третий элемент
         const rightExchange = separator === '|' ? parts[2] : parts.slice(2).join('_');
-        
+
         const foundArb = filteredArbs.find(
           (a) => a.ticker === ticker && a.left.exchange === leftExchange && a.right.exchange === rightExchange,
         );
         if (foundArb) {
           // Обновляем только если пара отличается от текущей выбранной
           setSelectedArb((current) => {
-            if (!current || 
-              current.ticker !== foundArb.ticker || 
-              current.left.exchange !== foundArb.left.exchange || 
-              current.right.exchange !== foundArb.right.exchange) {
+            if (
+              !current ||
+              current.ticker !== foundArb.ticker ||
+              current.left.exchange !== foundArb.left.exchange ||
+              current.right.exchange !== foundArb.right.exchange
+            ) {
               return foundArb;
             }
             return current;
@@ -512,7 +537,8 @@ export const CryptoArbs = () => {
       const buyExchange = a.right.last < a.left.last ? a.right : a.left;
       const sellFundingData = fundingMap[`${a.ticker}_${sellExchange.exchange}`];
       const buyFundingData = fundingMap[`${a.ticker}_${buyExchange.exchange}`];
-      const isSelected = selectedArb?.ticker === a.ticker &&
+      const isSelected =
+        selectedArb?.ticker === a.ticker &&
         selectedArb?.left.exchange === a.left.exchange &&
         selectedArb?.right.exchange === a.right.exchange;
 
@@ -535,11 +561,11 @@ export const CryptoArbs = () => {
   // Формируем тикеры с префиксами бирж и правильными суффиксами для графика спреда
   const getSpreadTickers = useMemo(() => {
     if (!selectedArb) return { tickerStock: '', _tickerFuture: '' };
-    
+
     // Формируем тикеры в формате EXCHANGE:TICKER_WITH_SUFFIX
     const leftTicker = `${selectedArb.left.exchange}:${getTickerWithSuffix(selectedArb.left.exchange, selectedArb.ticker)}`;
     const rightTicker = `${selectedArb.right.exchange}:${getTickerWithSuffix(selectedArb.right.exchange, selectedArb.ticker)}`;
-    
+
     return {
       tickerStock: leftTicker,
       _tickerFuture: rightTicker,
@@ -549,18 +575,17 @@ export const CryptoArbs = () => {
   // Обогащаем выбранный арбитраж для отображения (даже если его нет в списке)
   const selectedEnriched = useMemo(() => {
     if (!selectedArb) return null;
-    
+
     // Сначала пытаемся найти в enrichedArbs
     const found = enrichedArbs.find(
-      (a) => a.ticker === selectedArb.ticker &&
-        a.left.exchange === selectedArb.left.exchange &&
-        a.right.exchange === selectedArb.right.exchange
+      (a) =>
+        a.ticker === selectedArb.ticker && a.left.exchange === selectedArb.left.exchange && a.right.exchange === selectedArb.right.exchange,
     );
-    
+
     if (found) {
       return found;
     }
-    
+
     // Если не найден (например, список пуст), формируем из selectedArb
     const spread = (selectedArb.ratio - 1) * 100;
     const funding = sumFunding(selectedArb) * 100;
@@ -568,7 +593,7 @@ export const CryptoArbs = () => {
     const buyExchange = selectedArb.right.last < selectedArb.left.last ? selectedArb.right : selectedArb.left;
     const sellFundingData = fundingMap[`${selectedArb.ticker}_${sellExchange.exchange}`];
     const buyFundingData = fundingMap[`${selectedArb.ticker}_${buyExchange.exchange}`];
-    
+
     return {
       ...selectedArb,
       spread,
@@ -583,182 +608,178 @@ export const CryptoArbs = () => {
     };
   }, [selectedArb, enrichedArbs, fundingMap]);
 
-        return (
+  return (
     <div className="flex gap-2 h-[calc(100vh-76px)]">
-            <div className="w-[320px] flex-shrink-0 flex flex-col overflow-hidden">
-            <div className="mb-4 flex items-center gap-2">
-              <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 px-2 flex-shrink-0">
-                    <Settings className="h-3.5 w-3.5" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Настройки</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-3 px-3 pb-3">
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2">Биржи</h3>
-                      <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
-                        <Button
-                          variant={showAll ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => {
-                            setShowAll(true);
-                            // При выборе "Все" очищаем выбор конкретных бирж
-                            setEnabledExchanges(new Set());
-                          }}
-                          className="h-7 px-2 text-xs"
-                        >
-                          Все
-                        </Button>
-                        {allExchanges.map((exchange) => (
-                          <Button
-                            key={exchange}
-                            variant={!showAll && enabledExchanges.has(exchange) ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => {
-                              // При клике на конкретную биржу отключаем режим "Все"
-                              setShowAll(false);
-                              setEnabledExchanges((prev) => {
-                                const updated = new Set(prev);
-                                if (updated.has(exchange)) {
-                                  updated.delete(exchange);
-                                  // Если все биржи сняты, включаем режим "Все"
-                                  if (updated.size === 0) {
-                                    setShowAll(true);
-                                  }
-                                } else {
-                                  updated.add(exchange);
-                                }
-                                return updated;
-                              });
-                            }}
-                            className="h-7 px-2 text-xs flex items-center gap-1.5"
-                          >
-                            {exchangeImgMap[exchange] && (
-                              <img
-                                src={exchangeImgMap[exchange]}
-                                alt={exchange}
-                                className="h-3.5 w-3.5 rounded-full"
-                              />
-                            )}
-                            {exchange}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="min-spread" className="text-sm font-semibold mb-2 block">
-                          Минимальный спред (%)
-                        </Label>
-                        <Input
-                          id="min-spread"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          value={minSpread}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value);
-                            if (!isNaN(value) && value >= 0) {
-                              setMinSpread(value);
-                            }
-                          }}
-                          className="h-8"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label htmlFor="min-funding" className="text-sm font-semibold mb-2 block">
-                            Фандинг от (%)
-                        </Label>
-                        <Input
-                          id="min-funding"
-                          type="number"
-                          step="0.1"
-                            value={minFunding === -Infinity ? '' : minFunding}
-                          onChange={(e) => {
-                              const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
-                              if (e.target.value === '' || !isNaN(value)) {
-                              setMinFunding(value);
-                            }
-                          }}
-                          className="h-8"
-                            placeholder="Без ограничения"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="max-funding" className="text-sm font-semibold mb-2 block">
-                            Фандинг до (%)
-                          </Label>
-                          <Input
-                            id="max-funding"
-                            type="number"
-                            step="0.1"
-                            value={maxFunding === Infinity ? '' : maxFunding}
-                            onChange={(e) => {
-                              const value = e.target.value === '' ? Infinity : parseFloat(e.target.value);
-                              if (e.target.value === '' || !isNaN(value)) {
-                                setMaxFunding(value);
+      <div className="w-[320px] flex-shrink-0 flex flex-col overflow-hidden">
+        <div className="mb-4 flex items-center gap-2">
+          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 px-2 flex-shrink-0">
+                <Settings className="h-3.5 w-3.5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Настройки</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 px-3 pb-3">
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Биржи</h3>
+                  <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
+                    <Button
+                      variant={showAll ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        setShowAll(true);
+                        // При выборе "Все" очищаем выбор конкретных бирж
+                        setEnabledExchanges(new Set());
+                      }}
+                      className="h-7 px-2 text-xs"
+                    >
+                      Все
+                    </Button>
+                    {allExchanges.map((exchange) => (
+                      <Button
+                        key={exchange}
+                        variant={!showAll && enabledExchanges.has(exchange) ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => {
+                          // При клике на конкретную биржу отключаем режим "Все"
+                          setShowAll(false);
+                          setEnabledExchanges((prev) => {
+                            const updated = new Set(prev);
+                            if (updated.has(exchange)) {
+                              updated.delete(exchange);
+                              // Если все биржи сняты, включаем режим "Все"
+                              if (updated.size === 0) {
+                                setShowAll(true);
                               }
-                            }}
-                            className="h-8"
-                            placeholder="Без ограничения"
-                        />
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2 pt-2">
-                        <Checkbox
-                          id="same-funding-time"
-                          checked={sameFundingTime}
-                          onCheckedChange={(checked) => setSameFundingTime(checked === true)}
-                        />
-                        <Label htmlFor="same-funding-time" className="text-sm font-semibold cursor-pointer">
-                          Фандинг в одно время
-                        </Label>
-                      </div>
+                            } else {
+                              updated.add(exchange);
+                            }
+                            return updated;
+                          });
+                        }}
+                        className="h-7 px-2 text-xs flex items-center gap-1.5"
+                      >
+                        {exchangeImgMap[exchange] && (
+                          <img src={exchangeImgMap[exchange]} alt={exchange} className="h-3.5 w-3.5 rounded-full" />
+                        )}
+                        {exchange}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="min-spread" className="text-sm font-semibold mb-2 block">
+                      Минимальный спред (%)
+                    </Label>
+                    <Input
+                      id="min-spread"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      value={minSpread}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        if (!isNaN(value) && value >= 0) {
+                          setMinSpread(value);
+                        }
+                      }}
+                      className="h-8"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="min-funding" className="text-sm font-semibold mb-2 block">
+                        Фандинг от (%)
+                      </Label>
+                      <Input
+                        id="min-funding"
+                        type="number"
+                        step="0.1"
+                        value={minFunding === -Infinity ? '' : minFunding}
+                        onChange={(e) => {
+                          const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
+                          if (e.target.value === '' || !isNaN(value)) {
+                            setMinFunding(value);
+                          }
+                        }}
+                        className="h-8"
+                        placeholder="Без ограничения"
+                      />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold mb-2">Исключенные монеты</h3>
-                      <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
-                        {excludedTickers.size === 0 ? (
-                          <p className="text-sm text-muted-foreground">Нет исключенных монет</p>
-                        ) : (
-                          Array.from(excludedTickers).map((ticker) => (
-                            <Button
-                              key={ticker}
-                              variant="default"
-                              size="sm"
-                              className="h-7 px-2 text-xs flex items-center gap-1.5 relative"
-                              onClick={() => {
-                                const newExcluded = new Set(excludedTickers);
-                                newExcluded.delete(ticker);
-                                setExcludedTickers(newExcluded);
-                                localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
-                              }}
-                            >
-                              <span>{ticker}</span>
-                              <span className="text-xs ml-1">×</span>
-                            </Button>
-                          ))
-                        )}
-                      </div>
+                      <Label htmlFor="max-funding" className="text-sm font-semibold mb-2 block">
+                        Фандинг до (%)
+                      </Label>
+                      <Input
+                        id="max-funding"
+                        type="number"
+                        step="0.1"
+                        value={maxFunding === Infinity ? '' : maxFunding}
+                        onChange={(e) => {
+                          const value = e.target.value === '' ? Infinity : parseFloat(e.target.value);
+                          if (e.target.value === '' || !isNaN(value)) {
+                            setMaxFunding(value);
+                          }
+                        }}
+                        className="h-8"
+                        placeholder="Без ограничения"
+                      />
                     </div>
                   </div>
-                </DialogContent>
-              </Dialog>
-              <Tabs value={sortType} onValueChange={handleSortChange} className="flex-1">
-                <TabsList className="w-full">
-                  <TabsTrigger value={SortType.Funding} className="flex-1">
-                    По фандингу
-                  </TabsTrigger>
-                  <TabsTrigger value={SortType.Spread} className="flex-1">
-                    По спреду
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Checkbox
+                      id="same-funding-time"
+                      checked={sameFundingTime}
+                      onCheckedChange={(checked) => setSameFundingTime(checked === true)}
+                    />
+                    <Label htmlFor="same-funding-time" className="text-sm font-semibold cursor-pointer">
+                      Фандинг в одно время
+                    </Label>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold mb-2">Исключенные монеты</h3>
+                  <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
+                    {excludedTickers.size === 0 ? (
+                      <p className="text-sm text-muted-foreground">Нет исключенных монет</p>
+                    ) : (
+                      Array.from(excludedTickers).map((ticker) => (
+                        <Button
+                          key={ticker}
+                          variant="default"
+                          size="sm"
+                          className="h-7 px-2 text-xs flex items-center gap-1.5 relative"
+                          onClick={() => {
+                            const newExcluded = new Set(excludedTickers);
+                            newExcluded.delete(ticker);
+                            setExcludedTickers(newExcluded);
+                            localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
+                          }}
+                        >
+                          <span>{ticker}</span>
+                          <span className="text-xs ml-1">×</span>
+                        </Button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Tabs value={sortType} onValueChange={handleSortChange} className="flex-1">
+            <TabsList className="w-full">
+              <TabsTrigger value={SortType.Funding} className="flex-1">
+                По фандингу
+              </TabsTrigger>
+              <TabsTrigger value={SortType.Spread} className="flex-1">
+                По спреду
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
         <div className="flex-1 overflow-y-auto px-1 pt-1 space-y-2">
           {enrichedArbs.length === 0 ? (
@@ -773,34 +794,35 @@ export const CryptoArbs = () => {
                 key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}`}
                 className={cn(
                   'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full',
-                  a.isSelected
-                    ? 'ring-2 ring-primary shadow-lg border-primary'
-                    : 'border-muted-foreground/20',
+                  a.isSelected ? 'ring-2 ring-primary shadow-lg border-primary' : 'border-muted-foreground/20',
                 )}
-                onClick={() => handleArbSelect({
-                  ticker: a.ticker,
-                  left: a.left,
-                  right: a.right,
-                  ratio: a.ratio,
-                })}
+                onClick={() =>
+                  handleArbSelect({
+                    ticker: a.ticker,
+                    left: a.left,
+                    right: a.right,
+                    ratio: a.ratio,
+                  })
+                }
               >
                 <CardHeader className="pb-2 pt-2 px-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-xl font-bold tabular-nums">
-                        {a.ticker}
-                      </CardTitle>
+                      <CardTitle className="text-xl font-bold tabular-nums">{a.ticker}</CardTitle>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Copy 
-                            className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer" 
+                          <Copy
+                            className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigator.clipboard.writeText(a.ticker).then(() => {
-                                toast.success(`Тикер ${a.ticker} скопирован`);
-                              }).catch(() => {
-                                toast.error('Не удалось скопировать тикер');
-                              });
+                              navigator.clipboard
+                                .writeText(a.ticker)
+                                .then(() => {
+                                  toast.success(`Тикер ${a.ticker} скопирован`);
+                                })
+                                .catch(() => {
+                                  toast.error('Не удалось скопировать тикер');
+                                });
                             }}
                           />
                         </TooltipTrigger>
@@ -815,16 +837,13 @@ export const CryptoArbs = () => {
                       ) : (
                         <TrendingDown className="h-4 w-4 text-red-500" />
                       )}
-                      <span className={cn(
-                        "text-sm font-semibold tabular-nums",
-                        a.funding >= 0 ? "text-green-500" : "text-red-500"
-                      )}>
+                      <span className={cn('text-sm font-semibold tabular-nums', a.funding >= 0 ? 'text-green-500' : 'text-red-500')}>
                         {a.funding.toFixed(4)}%
                       </span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <EyeOff 
-                            className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer ml-1" 
+                          <EyeOff
+                            className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer ml-1"
                             onClick={(e) => {
                               e.stopPropagation();
                               const newExcluded = new Set(excludedTickers);
@@ -848,14 +867,8 @@ export const CryptoArbs = () => {
                         <span className="text-xs font-medium text-red-400">Продаем</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <img 
-                          className="h-4 w-4 rounded-full" 
-                          src={exchangeImgMap[a.sellExchange.exchange]} 
-                          alt={a.sellExchange.exchange}
-                        />
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          {a.sellExchange.exchange}
-                        </span>
+                        <img className="h-4 w-4 rounded-full" src={exchangeImgMap[a.sellExchange.exchange]} alt={a.sellExchange.exchange} />
+                        <span className="text-xs font-semibold text-muted-foreground">{a.sellExchange.exchange}</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <a
@@ -873,18 +886,11 @@ export const CryptoArbs = () => {
                           </TooltipContent>
                         </Tooltip>
                       </div>
-                      <div className="text-base font-bold tabular-nums">
-                        {a.sellExchange.last.toFixed(6)}
-                      </div>
+                      <div className="text-base font-bold tabular-nums">{a.sellExchange.last.toFixed(6)}</div>
                       <div className="text-xs text-muted-foreground">
-                        Фандинг:{" "}
-                        <span className="font-mono">
-                          {a.sellFunding !== undefined ? `${a.sellFunding.toFixed(4)}%` : 'N/A'}
-                        </span>
+                        Фандинг: <span className="font-mono">{a.sellFunding !== undefined ? `${a.sellFunding.toFixed(4)}%` : 'N/A'}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Время: {formatFundingTime(a.sellFundingTime)}
-                      </div>
+                      <div className="text-xs text-muted-foreground">Время: {formatFundingTime(a.sellFundingTime)}</div>
                     </div>
 
                     <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-green-500/10 border border-green-500/20">
@@ -893,14 +899,8 @@ export const CryptoArbs = () => {
                         <span className="text-xs font-medium text-green-400">Покупаем</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <img 
-                          className="h-4 w-4 rounded-full" 
-                          src={exchangeImgMap[a.buyExchange.exchange]} 
-                          alt={a.buyExchange.exchange}
-                        />
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          {a.buyExchange.exchange}
-                        </span>
+                        <img className="h-4 w-4 rounded-full" src={exchangeImgMap[a.buyExchange.exchange]} alt={a.buyExchange.exchange} />
+                        <span className="text-xs font-semibold text-muted-foreground">{a.buyExchange.exchange}</span>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <a
@@ -918,28 +918,19 @@ export const CryptoArbs = () => {
                           </TooltipContent>
                         </Tooltip>
                       </div>
-                      <div className="text-base font-bold tabular-nums">
-                        {a.buyExchange.last.toFixed(6)}
-                      </div>
+                      <div className="text-base font-bold tabular-nums">{a.buyExchange.last.toFixed(6)}</div>
                       <div className="text-xs text-muted-foreground">
-                        Фандинг:{" "}
-                        <span className="font-mono">
-                          {a.buyFunding !== undefined ? `${a.buyFunding.toFixed(4)}%` : 'N/A'}
-                        </span>
+                        Фандинг: <span className="font-mono">{a.buyFunding !== undefined ? `${a.buyFunding.toFixed(4)}%` : 'N/A'}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        Время: {formatFundingTime(a.buyFundingTime)}
-                      </div>
+                      <div className="text-xs text-muted-foreground">Время: {formatFundingTime(a.buyFundingTime)}</div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-1.5 border-t border-muted-foreground/20">
                     <span className="text-sm font-semibold">Спред</span>
-                    <span className={cn(
-                      "text-sm font-bold tabular-nums",
-                      a.spread > 0 ? "text-green-500" : "text-red-500"
-                    )}>
-                      {a.spread > 0 ? '+' : ''}{a.spread.toFixed(2)}%
+                    <span className={cn('text-sm font-bold tabular-nums', a.spread > 0 ? 'text-green-500' : 'text-red-500')}>
+                      {a.spread > 0 ? '+' : ''}
+                      {a.spread.toFixed(2)}%
                     </span>
                   </div>
                 </CardHeader>
@@ -953,53 +944,53 @@ export const CryptoArbs = () => {
         {selectedEnriched ? (
           <>
             <div className="flex-[4] flex flex-col min-h-0 h-full">
-            <div className="mb-2">
-                <div 
+              <div className="mb-2">
+                <div
                   className="bg-card rounded-lg px-3 py-1.5 selected-arb-header"
-                  style={{ 
-                    border: '1px solid rgba(166, 189, 213, 0.2)'
+                  style={{
+                    border: '1px solid rgba(166, 189, 213, 0.2)',
                   }}
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-lg font-bold">{selectedEnriched.ticker}</span>
-                    
+
                     <div className="h-4 w-px bg-muted-foreground/30" />
-                    
+
                     <div className="flex items-center gap-1.5">
                       {selectedEnriched.funding >= 0 ? (
-                      <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+                        <TrendingUp className="h-3.5 w-3.5 text-green-500" />
                       ) : (
                         <TrendingDown className="h-3.5 w-3.5 text-red-500" />
                       )}
-                      <span className={cn(
-                        "text-sm font-semibold tabular-nums",
-                        selectedEnriched.funding >= 0 ? "text-green-500" : "text-red-500"
-                      )}>
+                      <span
+                        className={cn(
+                          'text-sm font-semibold tabular-nums',
+                          selectedEnriched.funding >= 0 ? 'text-green-500' : 'text-red-500',
+                        )}
+                      >
                         {selectedEnriched.funding.toFixed(4)}%
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold text-muted-foreground">Спред</span>
-                      <span className={cn(
-                        "text-sm font-bold tabular-nums",
-                        selectedEnriched.spread > 0 ? "text-green-500" : "text-red-500"
-                      )}>
-                        {selectedEnriched.spread > 0 ? '+' : ''}{selectedEnriched.spread.toFixed(2)}%
+                      <span
+                        className={cn('text-sm font-bold tabular-nums', selectedEnriched.spread > 0 ? 'text-green-500' : 'text-red-500')}
+                      >
+                        {selectedEnriched.spread > 0 ? '+' : ''}
+                        {selectedEnriched.spread.toFixed(2)}%
                       </span>
                     </div>
-                    
+
                     <div className="h-4 w-px bg-muted-foreground/30" />
-                    
+
                     <div className="flex items-center gap-2">
                       <ArrowDown className="h-3.5 w-3.5 text-red-400" />
-                      <img 
-                        className="h-3.5 w-3.5 rounded-full" 
-                        src={exchangeImgMap[selectedEnriched.sellExchange.exchange]} 
+                      <img
+                        className="h-3.5 w-3.5 rounded-full"
+                        src={exchangeImgMap[selectedEnriched.sellExchange.exchange]}
                         alt={selectedEnriched.sellExchange.exchange}
                       />
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        {selectedEnriched.sellExchange.exchange}
-                      </span>
+                      <span className="text-xs font-semibold text-muted-foreground">{selectedEnriched.sellExchange.exchange}</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <a
@@ -1016,29 +1007,23 @@ export const CryptoArbs = () => {
                           <p>Перейти на {selectedEnriched.sellExchange.exchange}</p>
                         </TooltipContent>
                       </Tooltip>
-                      <span className="text-sm font-bold tabular-nums">
-                        {selectedEnriched.sellExchange.last.toFixed(6)}
-                      </span>
+                      <span className="text-sm font-bold tabular-nums">{selectedEnriched.sellExchange.last.toFixed(6)}</span>
                       <span className="text-xs text-muted-foreground">
                         Ф: {selectedEnriched.sellFunding !== undefined ? `${selectedEnriched.sellFunding.toFixed(4)}%` : 'N/A'}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatFundingTime(selectedEnriched.sellFundingTime)}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{formatFundingTime(selectedEnriched.sellFundingTime)}</span>
                     </div>
 
                     <div className="h-4 w-px bg-muted-foreground/30" />
-                    
+
                     <div className="flex items-center gap-2">
                       <ArrowUp className="h-3.5 w-3.5 text-green-400" />
-                      <img 
-                        className="h-3.5 w-3.5 rounded-full" 
-                        src={exchangeImgMap[selectedEnriched.buyExchange.exchange]} 
+                      <img
+                        className="h-3.5 w-3.5 rounded-full"
+                        src={exchangeImgMap[selectedEnriched.buyExchange.exchange]}
                         alt={selectedEnriched.buyExchange.exchange}
                       />
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        {selectedEnriched.buyExchange.exchange}
-                      </span>
+                      <span className="text-xs font-semibold text-muted-foreground">{selectedEnriched.buyExchange.exchange}</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <a
@@ -1055,27 +1040,19 @@ export const CryptoArbs = () => {
                           <p>Перейти на {selectedEnriched.buyExchange.exchange}</p>
                         </TooltipContent>
                       </Tooltip>
-                      <span className="text-sm font-bold tabular-nums">
-                        {selectedEnriched.buyExchange.last.toFixed(6)}
-                      </span>
+                      <span className="text-sm font-bold tabular-nums">{selectedEnriched.buyExchange.last.toFixed(6)}</span>
                       <span className="text-xs text-muted-foreground">
                         Ф: {selectedEnriched.buyFunding !== undefined ? `${selectedEnriched.buyFunding.toFixed(4)}%` : 'N/A'}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatFundingTime(selectedEnriched.buyFundingTime)}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{formatFundingTime(selectedEnriched.buyFundingTime)}</span>
                     </div>
 
                     <div className="h-4 w-px bg-muted-foreground/30" />
-                    
+
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <a
-                          href={getTradingViewSpreadUrl(
-                            selectedArb.left.exchange,
-                            selectedArb.right.exchange,
-                            selectedEnriched.ticker
-                          )}
+                          href={getTradingViewSpreadUrl(selectedArb.left.exchange, selectedArb.right.exchange, selectedEnriched.ticker)}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
@@ -1091,15 +1068,15 @@ export const CryptoArbs = () => {
                     </Tooltip>
                   </div>
                 </div>
-            </div>
-            <div className="flex-1 min-h-0">
-              <StatArbPage
-                tickerStock={getSpreadTickers.tickerStock}
-                _tickerFuture={getSpreadTickers._tickerFuture}
-                onlyChart
-                height="100%"
-                multi={1}
-              />
+              </div>
+              <div className="flex-1 min-h-0">
+                <StatArbPage
+                  tickerStock={getSpreadTickers.tickerStock}
+                  _tickerFuture={getSpreadTickers._tickerFuture}
+                  onlyChart
+                  height="100%"
+                  multi={1}
+                />
               </div>
             </div>
             <div className="flex flex-col min-h-0 h-full w-[200px] flex-shrink-0">
