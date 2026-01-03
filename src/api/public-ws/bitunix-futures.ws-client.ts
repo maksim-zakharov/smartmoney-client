@@ -34,14 +34,29 @@ export class BitunixFuturesWsClient extends SubscriptionManager {
     try {
       const message = JSON.parse(ev.data as any);
 
-      // Логирование для отладки стакана
-      if (message.ch && (message.ch.includes('depth') || message.ch === 'depth')) {
-        console.log('Bitunix depth message:', JSON.stringify(message, null, 2));
-      }
-
       // Обработка ответов на подписку/отписку
       if (message.event === 'subscribed' || message.event === 'unsubscribed' || message.code === 0) {
         console.log('Bitunix subscription response:', message);
+        return;
+      }
+
+      // Обработка стакана depth_book1 (новый формат)
+      if (message.ch === 'depth_book1' && message.data && message.symbol) {
+        const symbol = message.symbol.toUpperCase();
+        const key = `depth_${symbol}`;
+        
+        const orderbook: Orderbook = {
+          bids: (message.data.b || []).map(([price, qty]: [string | number, string | number]) => ({
+            price: Number(price),
+            volume: Number(qty),
+          })) as OrderbookBid[],
+          asks: (message.data.a || []).map(([price, qty]: [string | number, string | number]) => ({
+            price: Number(price),
+            volume: Number(qty),
+          })) as OrderbookAsk[],
+        };
+        
+        this.subscribeSubjs.get(key)?.next(orderbook);
         return;
       }
 
@@ -233,15 +248,12 @@ export class BitunixFuturesWsClient extends SubscriptionManager {
     const key = `depth_${symbolNormalized}`;
     const subj = this.createOrUpdateSubj<Orderbook>(key);
 
-    console.log('Bitunix subscribing to orderbook:', { symbol, symbolNormalized, depth });
-
     this.subscribe({
       op: 'subscribe',
       args: [
         {
           symbol: symbolNormalized,
-          ch: 'depth',
-          depth,
+          ch: 'depth_book1',
         },
       ],
     });
@@ -261,8 +273,17 @@ export class BitunixFuturesWsClient extends SubscriptionManager {
       args: [
         {
           symbol: symbolNormalized,
-          ch: 'depth',
-          depth,
+          ch: 'depth_book1',
+        },
+      ],
+    });
+
+    this.removeSubscription({
+      op: 'subscribe',
+      args: [
+        {
+          symbol: symbolNormalized,
+          ch: 'depth_book1',
         },
       ],
     });
