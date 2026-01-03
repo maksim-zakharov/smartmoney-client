@@ -989,6 +989,7 @@ export const exchangeImgMap = {
   BITUNIX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/7302.png',
   XT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/525.png',
   TOOBIT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/6137.png',
+  HOTCOIN: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/943.png',
 };
 export const moneyFormat = (
   money: number,
