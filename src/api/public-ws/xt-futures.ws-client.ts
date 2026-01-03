@@ -6,6 +6,11 @@ export class XtFuturesWsClient extends SubscriptionManager {
   private subscriptionIdCounter = 0;
   private pingInterval: NodeJS.Timeout | null = null;
 
+  private readonly topicHandlers: Record<string, (message: any) => void> = {
+    kline: (msg) => this.handleKlineMessage(msg),
+    depth: (msg) => this.handleDepthMessage(msg),
+  };
+
   constructor() {
     super({
       name: 'XT Futures',
@@ -84,59 +89,83 @@ export class XtFuturesWsClient extends SubscriptionManager {
     }
 
     try {
-      // Обработка свечей (kline)
-      if (parsed.topic === 'kline' && parsed.data && parsed.event) {
-        const eventParts = parsed.event.split('@');
-        if (eventParts.length < 3) {
-          return;
-        }
-        const symbol = eventParts[1]; // например, "btc_usdt"
-        const interval = eventParts[2]; // например, "1m"
-        const key = `kline_${symbol}_${interval}`;
-        
-        if (parsed.data) {
-          const kline = parsed.data;
-          this.subscribeSubjs.get(key)?.next({
-            open: Number(kline.o),
-            high: Number(kline.h),
-            low: Number(kline.l),
-            close: Number(kline.c),
-            time: Math.round(kline.t / 1000), // timestamp в секундах
-            timestamp: kline.t, // timestamp в миллисекундах
-          });
-        }
+      // Обработка ответа на подписку (подтверждение успешной подписки)
+      if (parsed.code === 0 && parsed.msg === 'success' && parsed.id) {
+        this.handleSubscribeResponse(parsed);
         return;
       }
 
-      // Обработка стакана (depth)
-      if (parsed.topic === 'depth' && parsed.data && parsed.event) {
-        // event: "depth@btc_usdt,20" - извлекаем символ до запятой
-        const eventParts = parsed.event.split('@');
-        if (eventParts.length < 2) {
+      // Обработка сообщений с topic, data и event
+      if (parsed.data && parsed.event && parsed.topic) {
+        const handler = this.topicHandlers[parsed.topic];
+        if (handler) {
+          handler(parsed);
           return;
         }
-        const symbolWithParams = eventParts[1]; // например, "btc_usdt,20"
-        const symbol = symbolWithParams.split(',')[0]; // извлекаем символ до запятой
-        const key = `depth_${symbol}`;
-        
-        if (parsed.data) {
-          const depth = parsed.data;
-          const orderbook: Orderbook = {
-            bids: (depth.b || []).map(([price, qty]: [string | number, string | number]) => ({
-              price: Number(price),
-              volume: Number(qty),
-            })) as OrderbookBid[],
-            asks: (depth.a || []).map(([price, qty]: [string | number, string | number]) => ({
-              price: Number(price),
-              volume: Number(qty),
-            })) as OrderbookAsk[],
-          };
-          this.subscribeSubjs.get(key)?.next(orderbook);
-        }
-        return;
       }
     } catch (error) {
       console.error('XT WebSocket message error:', error);
+    }
+  }
+
+  /**
+   * Обрабатывает ответ на подписку (подтверждение успешной подписки)
+   */
+  private handleSubscribeResponse(message: { code: number; msg: string; id: string; sessionId?: string }) {
+    // Это подтверждение успешной подписки, просто игнорируем
+    // Можно добавить логирование при необходимости
+  }
+
+  /**
+   * Обрабатывает сообщение свечей (kline)
+   */
+  private handleKlineMessage(message: { topic: string; event: string; data: any }) {
+    // event: "kline@btc_usdt,5m" - это и есть channel
+    const channel = message.event;
+
+    if (message.data) {
+      const kline = message.data;
+      this.subscribeSubjs.get(channel)?.next({
+        open: Number(kline.o),
+        high: Number(kline.h),
+        low: Number(kline.l),
+        close: Number(kline.c),
+        time: Math.round(kline.t / 1000), // timestamp в секундах
+        timestamp: kline.t, // timestamp в миллисекундах
+      });
+    }
+  }
+
+  /**
+   * Обрабатывает сообщение стакана (depth)
+   */
+  private handleDepthMessage(message: { topic: string; event: string; data: any }) {
+    // event: "depth@btc_usdt,20" или "depth@btc_usdt,50,1000ms" - это и есть channel
+    // Но нужно нормализовать, так как в subscribeOrderbook мы используем формат с 1000ms
+    const eventParts = message.event.split('@');
+    if (eventParts.length < 2) {
+      return;
+    }
+    const symbolWithParams = eventParts[1]; // например, "btc_usdt,20" или "btc_usdt,50,1000ms"
+    const parts = symbolWithParams.split(',');
+    const symbol = parts[0]; // извлекаем символ
+    const depth = parts[1]; // извлекаем depth
+    // Нормализуем channel к формату, используемому в subscribeOrderbook
+    const channel = `depth@${symbol},${depth},1000ms`;
+
+    if (message.data) {
+      const depthData = message.data;
+      const orderbook: Orderbook = {
+        bids: (depthData.b || []).map(([price, qty]: [string | number, string | number]) => ({
+          price: Number(price),
+          volume: Number(qty),
+        })) as OrderbookBid[],
+        asks: (depthData.a || []).map(([price, qty]: [string | number, string | number]) => ({
+          price: Number(price),
+          volume: Number(qty),
+        })) as OrderbookAsk[],
+      };
+      this.subscribeSubjs.get(channel)?.next(orderbook);
     }
   }
 
@@ -144,9 +173,9 @@ export class XtFuturesWsClient extends SubscriptionManager {
     const interval = this.convertResolutionToXTInterval(resolution);
     // XT использует формат с подчеркиванием: BTC-USDT -> btc_usdt (нижний регистр)
     const symbolLower = symbol.toLowerCase().replace('-', '_'); // BTC-USDT -> btc_usdt
-    const channel = `kline@${symbolLower}@${interval}`;
-    const key = `kline_${symbolLower}_${interval}`;
-    const subj = this.createOrUpdateSubj(key);
+    // Формат: kline@symbol,interval (например, kline@btc_usdt,5m)
+    const channel = `kline@${symbolLower},${interval}`;
+    const subj = this.createOrUpdateSubj(channel);
 
     this.subscribe({
       method: 'SUBSCRIBE',
@@ -160,9 +189,9 @@ export class XtFuturesWsClient extends SubscriptionManager {
   unsubscribeCandles(symbol: string, resolution: string) {
     const interval = this.convertResolutionToXTInterval(resolution);
     const symbolLower = symbol.toLowerCase().replace('-', '_'); // BTC-USDT -> btc_usdt
-    const channel = `kline@${symbolLower}@${interval}`;
-    const key = `kline_${symbolLower}_${interval}`;
-    this.removeSubj(key);
+    // Формат должен совпадать с подпиской: kline@symbol,interval
+    const channel = `kline@${symbolLower},${interval}`;
+    this.removeSubj(channel);
 
     this.unsubscribe({
       method: 'UNSUBSCRIBE',
@@ -176,8 +205,7 @@ export class XtFuturesWsClient extends SubscriptionManager {
     const symbolLower = symbol.toLowerCase().replace('-', '_'); // BTC-USDT -> btc_usdt
     // Формат: depth@symbol,depth,interval (например, depth@btc_usdt,50,1000ms)
     const channel = `depth@${symbolLower},${depth},1000ms`;
-    const key = `depth_${symbolLower}`;
-    const subj = this.createOrUpdateSubj<Orderbook>(key);
+    const subj = this.createOrUpdateSubj<Orderbook>(channel);
 
     this.subscribe({
       method: 'SUBSCRIBE',
@@ -192,8 +220,7 @@ export class XtFuturesWsClient extends SubscriptionManager {
     const symbolLower = symbol.toLowerCase().replace('-', '_'); // BTC-USDT -> btc_usdt
     // Формат должен совпадать с подпиской: depth@symbol,depth,interval
     const channel = `depth@${symbolLower},${depth},1000ms`;
-    const key = `depth_${symbolLower}`;
-    this.removeSubj(key);
+    this.removeSubj(channel);
 
     this.unsubscribe({
       method: 'UNSUBSCRIBE',

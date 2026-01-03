@@ -498,7 +498,7 @@ export const CryptoArbs = () => {
 
   // Восстанавливаем выбранную пару из query параметров при загрузке
   useEffect(() => {
-    if (selectedPairKey && filteredArbs.length > 0) {
+    if (selectedPairKey) {
       // Поддерживаем оба формата для обратной совместимости
       const separator = selectedPairKey.includes('|') ? '|' : '_';
       const parts = selectedPairKey.split(separator);
@@ -509,9 +509,11 @@ export const CryptoArbs = () => {
         // Для формата с подчеркиванием берем все остальное, для формата с | - только третий элемент
         const rightExchange = separator === '|' ? parts[2] : parts.slice(2).join('_');
 
+        // Сначала пытаемся найти в filteredArbs
         const foundArb = filteredArbs.find(
           (a) => a.ticker === ticker && a.left.exchange === leftExchange && a.right.exchange === rightExchange,
         );
+        
         if (foundArb) {
           // Обновляем только если пара отличается от текущей выбранной
           setSelectedArb((current) => {
@@ -524,6 +526,33 @@ export const CryptoArbs = () => {
               return foundArb;
             }
             return current;
+          });
+        } else {
+          // Если не найден в filteredArbs, но есть в query параметрах, создаем минимальный объект для отображения графика и стакана
+          setSelectedArb((current) => {
+            // Проверяем, не совпадает ли уже выбранная пара
+            if (
+              current &&
+              current.ticker === ticker &&
+              current.left.exchange === leftExchange &&
+              current.right.exchange === rightExchange
+            ) {
+              return current; // Не меняем, если уже выбрана та же пара
+            }
+            
+            // Создаем минимальный объект ArbPair для отображения графика и стакана
+            return {
+              ticker,
+              left: {
+                exchange: leftExchange,
+                last: 0, // Значение по умолчанию, так как данных нет
+              },
+              right: {
+                exchange: rightExchange,
+                last: 0, // Значение по умолчанию, так как данных нет
+              },
+              ratio: 1, // Значение по умолчанию
+            };
           });
         }
       }
