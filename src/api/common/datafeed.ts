@@ -354,6 +354,12 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.asterUnsubscribeCandles(_symbol, resolution);
+      } else if (symbol.includes('HOTCOIN')) {
+        const ticker = symbol.split('HOTCOIN:')[1];
+        this.dataService.hotcoinSubscribeCandles(ticker, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.hotcoinUnsubscribeCandles(ticker, resolution);
       } else if (symbol.includes('HYPERLIQUID') || symbol.includes('Hyperliquid:')) {
         const _symbol = symbol.split('HYPERLIQUID:')[1] || symbol.split('Hyperliquid:')[1];
         this.dataService.hyperliquidSubscribeCandles(_symbol, resolution).subscribe((data) => {

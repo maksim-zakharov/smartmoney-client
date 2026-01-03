@@ -22,6 +22,7 @@ import { ToobitFuturesWsClient } from '../public-ws/toobit-futures.ws-client.ts'
 import { XtFuturesWsClient } from '../public-ws/xt-futures.ws-client.ts';
 import { OkxFuturesWsClient } from '../public-ws/okx-futures.ws-client.ts';
 import { KucoinFuturesWsClient } from '../public-ws/kucoin-futures.ws-client.ts';
+import { HotcoinFuturesWsClient } from '../public-ws/hotcoin-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -64,6 +65,7 @@ export class DataService {
   private readonly xtFuturesWsClient: XtFuturesWsClient;
   private readonly okxFuturesWsClient: OkxFuturesWsClient;
   private readonly kucoinFuturesWsClient: KucoinFuturesWsClient;
+  private readonly hotcoinFuturesWsClient: HotcoinFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -93,6 +95,7 @@ export class DataService {
     this.xtFuturesWsClient = new XtFuturesWsClient();
     this.okxFuturesWsClient = new OkxFuturesWsClient();
     this.kucoinFuturesWsClient = new KucoinFuturesWsClient();
+    this.hotcoinFuturesWsClient = new HotcoinFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -226,6 +229,24 @@ export class DataService {
 
   asterUnsubscribeOrderbook(symbol: string, depth: number = 20) {
     this.asterWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
+  }
+
+  hotcoinSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.hotcoinFuturesWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  hotcoinUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    this.hotcoinFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  hotcoinSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.hotcoinFuturesWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  hotcoinUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.hotcoinFuturesWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 

@@ -180,6 +180,10 @@ export class OrderbookManager {
           this.orderbookDepth = 20;
           this.wsSubscription = this.dataService.asterSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
+        case 'HOTCOIN':
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.hotcoinSubscribeOrderbook(this.symbol, this.orderbookDepth);
+          break;
         default:
           return;
       }
@@ -550,6 +554,9 @@ export class OrderbookManager {
             break;
           case 'ASTER':
             this.dataService.asterUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'HOTCOIN':
+            this.dataService.hotcoinUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
             break;
         }
       } catch (error) {

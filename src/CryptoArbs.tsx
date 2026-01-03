@@ -64,6 +64,9 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
       return ticker;
     case 'ASTER':
       return `${ticker}USDT`;
+    case 'HOTCOIN':
+      // Hotcoin использует формат btcusdt (нижний регистр, без дефисов)
+      return ticker.toLowerCase().replace('-', '').replace('_', '');
     default:
       // По умолчанию используем формат MEXC
       return `${ticker}_USDT`;
@@ -116,6 +119,10 @@ const getExchangeUrl = (exchange: string, ticker: string): string => {
       return `https://app.hyperliquid.xyz/trade/${ticker}`;
     case 'ASTER':
       return `https://www.asterdex.com/en/futures/v1/${ticker}USDT?ref=59E067`;
+    case 'HOTCOIN':
+      // Hotcoin использует формат btcusdt (нижний регистр, без дефисов)
+      const hotcoinTicker = ticker.toLowerCase().replace('-', '').replace('_', '');
+      return `https://www.hotcoin.com/en_US/contract/exchange/trade/?tradeName=${hotcoinTicker}`;
     default:
       return '#';
   }
@@ -146,6 +153,7 @@ const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, tick
     TOOBIT: 'TOOBIT',
     HYPERLIQUID: 'HYPERLIQUID',
     ASTER: 'ASTER',
+    HOTCOIN: 'HOTCOIN',
   };
 
   const sellTvExchange = exchangeMap[sellExchangeUpper] || sellExchangeUpper;
@@ -212,6 +220,7 @@ export const CryptoArbs = () => {
       'TOOBIT',
       'Hyperliquid',
       'Aster',
+      'HOTCOIN',
       'Lighter',
     ];
 
