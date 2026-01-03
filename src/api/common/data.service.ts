@@ -625,7 +625,7 @@ export class DataService {
           : `${_ticker}-SWAP-USDT`;
       request$ = from(
         fetch(
-          `http://localhost:3000/toobit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${toobitTicker}&to=${Math.max(periodParams.to, 1)}`,
+          `${this.cryptoUrl}/toobit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${toobitTicker}&to=${Math.max(periodParams.to, 1)}`,
         ).then((res) => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
