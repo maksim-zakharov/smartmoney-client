@@ -1,13 +1,18 @@
-import { Subject } from 'rxjs';
+import { share, Subject } from 'rxjs';
 import { SubscriptionManager } from '../common/subscription-manager';
 import { AsterTimeframe } from './aster.models';
+import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
 
 export class AsterWsClient extends SubscriptionManager {
+  private readonly eventHandlers: Record<string, (message: any) => void> = {
+    kline: (msg) => this.handleKlineMessage(msg),
+    depthUpdate: (msg) => this.handleDepthMessage(msg),
+  };
+
   constructor() {
     super({
       url: 'wss://fstream.asterdex.com/ws',
       name: 'Aster',
-      pingRequest: () => ({}), // Send empty for keep-alive if needed
     });
 
     this.on('connect', () => this.onOpen());
@@ -24,100 +29,149 @@ export class AsterWsClient extends SubscriptionManager {
   }
 
   onMessage(ev) {
-    const parsed = JSON.parse(ev.data as any);
-    if (parsed.id) {
-      // Response to subscribe
-      return;
+    try {
+      const message = JSON.parse(ev.data as any);
+
+      // Обработка ответов на подписку/отписку
+      if (message.id && (message.result === null || message.result === undefined)) {
+        // Это ответ на subscribe/unsubscribe, игнорируем
+        return;
+      }
+
+      // Диспетчеризация по типу события
+      if (message.e) {
+        const handler = this.eventHandlers[message.e];
+        if (handler) {
+          handler(message);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Aster WebSocket message error:', error);
     }
-    const stream = parsed.stream || '';
-    const data = parsed.data;
+  }
 
-    if (parsed.e === 'kline') {
-      const { o, h, l, c, t, v, q, i } = parsed.k;
-      const timestamp = parsed.E;
-
-      const key = `${parsed.s.toLowerCase()}@kline_${i}`;
+  private handleKlineMessage(message: any) {
+    if (message.k) {
+      const { k } = message;
+      const interval = k.i; // 1m, 5m, 1h и т.д.
+      const symbol = k.s.toLowerCase();
+      const key = `${symbol}@kline_${interval}`;
       this.subscribeSubjs.get(key)?.next({
-        open: Number(o),
-        high: Number(h),
-        low: Number(l),
-        close: Number(c),
-        time: Math.round(t / 1000),
-        volume: Number(v),
-        volumeUSDT: Number(q),
-        timestamp,
+        open: Number(k.o),
+        high: Number(k.h),
+        low: Number(k.l),
+        close: Number(k.c),
+        time: Math.round(k.t / 1000),
+        timestamp: k.T || k.t,
       });
-    } else if (stream.includes('@ticker') || stream.includes('@miniTicker')) {
-      this.subscribeSubjs.get(stream)?.next(data);
-    } else if (stream.includes('@markPrice')) {
-      this.subscribeSubjs.get(stream)?.next(data);
-    } else if (stream.includes('@depth')) {
-      const { b: bids, a: asks } = data;
-      this.subscribeSubjs.get(stream)?.next({
-        bids: bids.map((p) => ({ price: Number(p[0]), value: Number(p[1]) })),
-        asks: asks.map((p) => ({ price: Number(p[0]), value: Number(p[1]) })),
-      });
-    } else if (Array.isArray(parsed) && parsed[0].e === '24hrMiniTicker') {
-      this.subscribeSubjs.get('24hrMiniTicker')?.next(parsed);
-    } else if (Array.isArray(parsed) && parsed[0].e === '24hrTicker') {
-      this.subscribeSubjs.get('24hrTicker')?.next(parsed);
-    } else if (Array.isArray(parsed) && parsed[0].e === 'markPriceUpdate') {
-      this.subscribeSubjs.get('markPriceUpdate')?.next(parsed);
     }
+  }
+
+  private handleDepthMessage(message: any) {
+    const { s, b, a } = message;
+    const symbol = s.toLowerCase();
+    // Определяем ключ по символу и глубине (по умолчанию используем @depth@100ms)
+    const key = `${symbol}@depth@100ms`;
+    const orderbook: Orderbook = {
+      bids: (b || []).map(([price, qty]: [string, string]) => ({
+        price: Number(price),
+        volume: Number(qty),
+      })) as OrderbookBid[],
+      asks: (a || []).map(([price, qty]: [string, string]) => ({
+        price: Number(price),
+        volume: Number(qty),
+      })) as OrderbookAsk[],
+    };
+    this.subscribeSubjs.get(key)?.next(orderbook);
   }
 
   subscribeCandles(symbol: string, resolution: string) {
-    // Маппинг ResolutionString на AsterTimeframe
-    const resolutionMap: Record<string, AsterTimeframe> = {
-      '1': AsterTimeframe.Min1,
-      '3': AsterTimeframe.Min3,
-      '5': AsterTimeframe.Min5,
-      '15': AsterTimeframe.Min15,
-      '30': AsterTimeframe.Min30,
-      '60': AsterTimeframe.Hour1,
-      '120': AsterTimeframe.Hour2,
-      '240': AsterTimeframe.Hour4,
-      '480': AsterTimeframe.Hour8,
-      '720': AsterTimeframe.Hour12,
-      'D': AsterTimeframe.Day,
-      'W': AsterTimeframe.Week,
-      'M': AsterTimeframe.Month,
-    };
-    const asterTf = resolutionMap[resolution] || AsterTimeframe.Min1;
-    const args = `${symbol.toLowerCase()}@kline_${asterTf}`;
-    const subj = this.createOrUpdateSubj<any>(args);
+    const symbolLower = symbol.toLowerCase();
+    const interval = this.convertResolutionToAsterInterval(resolution);
+    const stream = `${symbolLower}@kline_${interval}`;
+    const subj = this.createOrUpdateSubj(stream);
+
     this.subscribe({
       method: 'SUBSCRIBE',
-      params: [args],
+      params: [stream],
       id: Date.now(),
     });
-    return subj;
+
+    return subj.pipe(share());
   }
 
   unsubscribeCandles(symbol: string, resolution: string) {
-    const resolutionMap: Record<string, AsterTimeframe> = {
-      '1': AsterTimeframe.Min1,
-      '3': AsterTimeframe.Min3,
-      '5': AsterTimeframe.Min5,
-      '15': AsterTimeframe.Min15,
-      '30': AsterTimeframe.Min30,
-      '60': AsterTimeframe.Hour1,
-      '120': AsterTimeframe.Hour2,
-      '240': AsterTimeframe.Hour4,
-      '480': AsterTimeframe.Hour8,
-      '720': AsterTimeframe.Hour12,
-      'D': AsterTimeframe.Day,
-      'W': AsterTimeframe.Week,
-      'M': AsterTimeframe.Month,
-    };
-    const asterTf = resolutionMap[resolution] || AsterTimeframe.Min1;
-    const args = `${symbol.toLowerCase()}@kline_${asterTf}`;
-    this.subscribe({
+    const symbolLower = symbol.toLowerCase();
+    const interval = this.convertResolutionToAsterInterval(resolution);
+    const stream = `${symbolLower}@kline_${interval}`;
+    this.removeSubj(stream);
+
+    this.unsubscribe({
       method: 'UNSUBSCRIBE',
-      params: [args],
+      params: [stream],
       id: Date.now(),
     });
-    this.removeSubj(args);
+
+    this.removeSubscription({
+      method: 'SUBSCRIBE',
+      params: [stream],
+      id: Date.now(),
+    });
+  }
+
+  subscribeOrderbook(symbol: string, depth: number = 20) {
+    const symbolLower = symbol.toLowerCase();
+    // ASTER поддерживает @depth, @depth@500ms, @depth@100ms
+    // Используем @depth@100ms для более частых обновлений
+    const stream = `${symbolLower}@depth@100ms`;
+    const subj = this.createOrUpdateSubj<Orderbook>(stream);
+
+    this.subscribe({
+      method: 'SUBSCRIBE',
+      params: [stream],
+      id: Date.now(),
+    });
+
+    return subj;
+  }
+
+  unsubscribeOrderbook(symbol: string, depth: number = 20) {
+    const symbolLower = symbol.toLowerCase();
+    const stream = `${symbolLower}@depth@100ms`;
+    this.removeSubj(stream);
+
+    this.unsubscribe({
+      method: 'UNSUBSCRIBE',
+      params: [stream],
+      id: Date.now(),
+    });
+
+    this.removeSubscription({
+      method: 'SUBSCRIBE',
+      params: [stream],
+      id: Date.now(),
+    });
+  }
+
+  private convertResolutionToAsterInterval(resolution: string): string {
+    const resolutionMap: Record<string, string> = {
+      '1': '1m',
+      '3': '3m',
+      '5': '5m',
+      '15': '15m',
+      '30': '30m',
+      '60': '1h',
+      '120': '2h',
+      '240': '4h',
+      '360': '6h',
+      '480': '8h',
+      '720': '12h',
+      D: '1d',
+      W: '1w',
+      M: '1M',
+    };
+    return resolutionMap[resolution] || '1m';
   }
 }
 

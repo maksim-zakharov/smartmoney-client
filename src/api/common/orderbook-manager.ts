@@ -176,6 +176,10 @@ export class OrderbookManager {
           this.orderbookDepth = 20;
           this.wsSubscription = this.dataService.hyperliquidSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
+        case 'ASTER':
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.asterSubscribeOrderbook(this.symbol, this.orderbookDepth);
+          break;
         default:
           return;
       }
@@ -543,6 +547,9 @@ export class OrderbookManager {
             break;
           case 'HYPERLIQUID':
             this.dataService.hyperliquidUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'ASTER':
+            this.dataService.asterUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
             break;
         }
       } catch (error) {

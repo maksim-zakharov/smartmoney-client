@@ -216,7 +216,17 @@ export class DataService {
   }
 
   asterUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
-    return this.asterWsClient.unsubscribeCandles(symbol, resolution);
+    this.asterWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  asterSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.asterWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  asterUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.asterWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
   }
 
   hyperliquidSubscribeCandles(symbol: string, resolution: ResolutionString) {
