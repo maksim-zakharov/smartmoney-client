@@ -29,6 +29,12 @@ export interface OurbitWSTrade {
 export class OurbitWsClient extends SubscriptionManager {
   private pingInterval: NodeJS.Timeout | null = null;
 
+  private readonly channelHandlers: Record<string, (data: any, symbol?: string) => void> = {
+    'push.tickers': (data) => this.handleTickersMessage(data),
+    'push.deal': (data, symbol) => this.handleDealMessage(data, symbol),
+    'push.depth': (data, symbol) => this.handleDepthMessage(data, symbol),
+  };
+
   constructor() {
     super({
       url: 'wss://futures.ourbit.com/ws',
@@ -81,35 +87,39 @@ export class OurbitWsClient extends SubscriptionManager {
         return;
       }
 
-      // Обработка тикеров
-      if (message.channel === 'push.tickers') {
-        const key = `sub.tickers`;
-        this.subscribeSubjs.get(key)?.next(message.data);
-      }
-
-      // Обработка сделок (trades)
-      if (message.channel === 'push.deal') {
-        const key = `sub.deal.${message.symbol}`;
-        this.subscribeSubjs.get(key)?.next(message.data);
-      }
-
-      // Обработка стакана (orderbook) - аналогично MEXC
-      if (message.channel === 'push.depth') {
-        const key = `depth_${message.symbol}`;
-        this.subscribeSubjs.get(key)?.next({
-          bids: message.data.bids.map((p) => ({
-            price: Number(p[0]),
-            value: Number(p[1]),
-          })),
-          asks: message.data.asks.map((p) => ({
-            price: Number(p[0]),
-            value: Number(p[1]),
-          })),
-        } as MexcOrderbook);
+      const handler = this.channelHandlers[message.channel];
+      if (handler) {
+        handler(message.data, message.symbol);
       }
     } catch (error) {
       console.error(`Ошибка обработки сообщения: ${error.message}`, error);
     }
+  }
+
+  private handleTickersMessage(data: any) {
+    const key = `sub.tickers`;
+    this.subscribeSubjs.get(key)?.next(data);
+  }
+
+  private handleDealMessage(data: any, symbol?: string) {
+    if (!symbol) return;
+    const key = `sub.deal.${symbol}`;
+    this.subscribeSubjs.get(key)?.next(data);
+  }
+
+  private handleDepthMessage(data: any, symbol?: string) {
+    if (!symbol) return;
+    const key = `depth_${symbol}`;
+    this.subscribeSubjs.get(key)?.next({
+      bids: data.bids.map((p) => ({
+        price: Number(p[0]),
+        value: Number(p[1]),
+      })),
+      asks: data.asks.map((p) => ({
+        price: Number(p[0]),
+        value: Number(p[1]),
+      })),
+    } as MexcOrderbook);
   }
 
   subscribeTickers(timezone: string = 'UTC+8') {
@@ -141,16 +151,21 @@ export class OurbitWsClient extends SubscriptionManager {
 
   unsubscribeTrades(symbol: string) {
     const key = `sub.deal.${symbol}`;
-    this.subscribeSubjs.delete(key);
-    // Отправляем запрос на отписку
-    if (this.ws && this.ws.readyState === 1) {
-      this.ws.send(JSON.stringify({
-        method: 'unsub.deal',
-        param: {
-          symbol,
-        },
-      }));
-    }
+    this.removeSubj(key);
+    this.unsubscribe({
+      method: 'unsub.deal',
+      param: {
+        symbol,
+      },
+    });
+
+    this.removeSubscription({
+      method: 'sub.deal',
+      param: {
+        symbol,
+        compress: true,
+      },
+    });
   }
 
   // Для свечей используем подписку на трейды и агрегацию (аналогично MEXC)
@@ -186,16 +201,51 @@ export class OurbitWsClient extends SubscriptionManager {
   unsubscribeOrderbook(symbol: string, depth: number) {
     const key = `depth_${symbol}`;
     this.removeSubj(key);
-    // Отправляем запрос на отписку
-    if (this.ws && this.ws.readyState === 1) {
-      this.ws.send(JSON.stringify({
-        method: 'unsub.depth',
-        param: {
-          symbol,
-          limit: depth,
-        },
-      }));
-    }
+    this.unsubscribe({
+      method: 'unsub.depth',
+      param: {
+        symbol,
+        limit: depth,
+      },
+    });
+
+    this.removeSubscription({
+      method: 'sub.depth',
+      param: {
+        symbol,
+        limit: depth,
+      },
+    });
+  }
+
+  unsubscribeTickers(timezone: string = 'UTC+8') {
+    const args = `sub.tickers`;
+    this.removeSubj(args);
+    this.unsubscribe({
+      method: 'unsub.tickers',
+      param: {
+        timezone,
+      },
+    });
+
+    this.removeSubscription({
+      method: 'sub.tickers',
+      param: {
+        timezone,
+      },
+    });
+  }
+
+  unsubscribeCandles(symbol: string, resolution: string) {
+    // OURBIT не имеет прямого API для свечей, но добавляем метод для консистентности
+    const key = `candles_${symbol}_${resolution}`;
+    this.removeSubj(key);
+  }
+
+  unsubscribeFairPrice(symbol: string) {
+    // OURBIT не имеет fair price API, но добавляем метод для консистентности
+    const key = `fair_${symbol}`;
+    this.removeSubj(key);
   }
 }
 
