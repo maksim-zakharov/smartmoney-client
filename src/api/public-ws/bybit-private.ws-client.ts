@@ -79,14 +79,16 @@ export class BybitPrivateWsClient extends SubscriptionManager {
 
   unsubscribeCandles(symbol: string, resolution: string) {
     const args = `kline.${resolution}.${symbol}`;
-    const subj = new Subject<any>();
-    this.subscribeSubjs.set(args, subj);
-    this.subscribe({
+    this.removeSubj(args);
+    this.unsubscribe({
       op: 'unsubscribe',
       args: [args],
     });
 
-    return subj;
+    this.removeSubscription({
+      op: 'subscribe',
+      args: [args],
+    });
   }
 
   subscribeQuotes(symbol: string) {
@@ -99,5 +101,33 @@ export class BybitPrivateWsClient extends SubscriptionManager {
     });
 
     return subj;
+  }
+
+  unsubscribeOrderbook(symbol: string, depth: number) {
+    const args = `orderbook.${depth}.${symbol}`;
+    this.removeSubj(args);
+    this.unsubscribe({
+      op: 'unsubscribe',
+      args: [args],
+    });
+
+    this.removeSubscription({
+      op: 'subscribe',
+      args: [args],
+    });
+  }
+
+  unsubscribeQuotes(symbol: string) {
+    const args = `tickers.${symbol}`;
+    this.removeSubj(args);
+    this.unsubscribe({
+      op: 'unsubscribe',
+      args: [args],
+    });
+
+    this.removeSubscription({
+      op: 'subscribe',
+      args: [args],
+    });
   }
 }
