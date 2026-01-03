@@ -1,5 +1,6 @@
 import { share, Subject } from 'rxjs';
 import { SubscriptionManager } from '../common/subscription-manager';
+import { Orderbook } from 'alor-api';
 
 /**
  * Таймфрейм для свечей Toobit
@@ -33,6 +34,18 @@ interface ToobitWSKlineSubscribeRequest {
     klineType: string;
     realtimeInterval: string;
     limit: number;
+  };
+}
+
+/**
+ * Запрос подписки на стакан через WebSocket
+ */
+interface ToobitWSOrderbookSubscribeRequest {
+  symbol: string;
+  topic: 'diffDepth';
+  event: 'sub' | 'cancel';
+  params: {
+    binary: boolean;
   };
 }
 
@@ -86,6 +99,50 @@ export class ToobitFuturesWsClient extends SubscriptionManager {
               time: Math.round((klineData.t || klineData.time) / 1000),
               timestamp: klineData.t || klineData.time,
             });
+          }
+        }
+        return;
+      }
+
+      // Обработка канала diffDepth (стакан)
+      if (message.topic === 'diffDepth' && message.data) {
+        const responseSymbol = message.symbol || '';
+        // Символ в ответе должен совпадать с тем, что мы отправили в запросе
+        // Но на случай, если формат отличается, пробуем найти подписку
+        let key = `depth_${responseSymbol}`;
+        let subj = this.subscribeSubjs.get(key);
+        
+        // Если не нашли по прямому совпадению, пробуем нормализовать
+        if (!subj) {
+          // Если символ без дефисов (BTCUSDT), пробуем найти с дефисами (BTC-SWAP-USDT)
+          if (!responseSymbol.includes('-') && responseSymbol.endsWith('USDT')) {
+            const baseSymbol = responseSymbol.replace('USDT', '');
+            const normalizedSymbol = `${baseSymbol}-SWAP-USDT`;
+            key = `depth_${normalizedSymbol}`;
+            subj = this.subscribeSubjs.get(key);
+          }
+          // Если символ с дефисами, пробуем найти без дефисов
+          else if (responseSymbol.includes('-')) {
+            const symbolWithoutDashes = responseSymbol.replace(/-/g, '');
+            key = `depth_${symbolWithoutDashes}`;
+            subj = this.subscribeSubjs.get(key);
+          }
+        }
+
+        if (subj) {
+          const depthData = Array.isArray(message.data) ? message.data[0] : message.data;
+          if (depthData) {
+            const orderbook: Orderbook = {
+              bids: (depthData.b || []).map(([price, qty]: [string, string]) => ({
+                price: Number(price),
+                volume: Number(qty),
+              })),
+              asks: (depthData.a || []).map(([price, qty]: [string, string]) => ({
+                price: Number(price),
+                volume: Number(qty),
+              })),
+            };
+            subj.next(orderbook);
           }
         }
         return;
@@ -190,6 +247,81 @@ export class ToobitFuturesWsClient extends SubscriptionManager {
 
     this.unsubscribe(unsubscribeMessage);
     this.removeSubj(key);
+
+    const subscribeMessage: ToobitWSKlineSubscribeRequest = {
+      id,
+      topic,
+      event: 'sub',
+      symbol,
+      params: {
+        reduceSerial: true,
+        binary: true,
+        klineType: interval,
+        realtimeInterval: '24h',
+        limit: 1500,
+      },
+    };
+
+    this.removeSubscription(subscribeMessage);
+  }
+
+  subscribeOrderbook(symbol: string, depth: number = 20) {
+    // Преобразуем тикер в формат Toobit: BTC -> BTC-SWAP-USDT, RIVER-USDT -> RIVER-SWAP-USDT
+    const toobitSymbol = symbol.includes('-SWAP-')
+      ? symbol
+      : symbol.endsWith('-USDT')
+        ? symbol.replace('-USDT', '-SWAP-USDT')
+        : `${symbol}-SWAP-USDT`;
+    
+    const key = `depth_${toobitSymbol}`;
+    const subj = this.createOrUpdateSubj<Orderbook>(key);
+
+    const subscribeMessage: ToobitWSOrderbookSubscribeRequest = {
+      symbol: toobitSymbol,
+      topic: 'diffDepth',
+      event: 'sub',
+      params: {
+        binary: false,
+      },
+    };
+
+    this.subscribe(subscribeMessage);
+
+    return subj;
+  }
+
+  unsubscribeOrderbook(symbol: string, depth: number = 20) {
+    // Преобразуем тикер в формат Toobit: BTC -> BTC-SWAP-USDT, RIVER-USDT -> RIVER-SWAP-USDT
+    const toobitSymbol = symbol.includes('-SWAP-')
+      ? symbol
+      : symbol.endsWith('-USDT')
+        ? symbol.replace('-USDT', '-SWAP-USDT')
+        : `${symbol}-SWAP-USDT`;
+    
+    const key = `depth_${toobitSymbol}`;
+    this.removeSubj(key);
+
+    const unsubscribeMessage: ToobitWSOrderbookSubscribeRequest = {
+      symbol: toobitSymbol,
+      topic: 'diffDepth',
+      event: 'cancel',
+      params: {
+        binary: false,
+      },
+    };
+
+    this.unsubscribe(unsubscribeMessage);
+
+    const subscribeMessage: ToobitWSOrderbookSubscribeRequest = {
+      symbol: toobitSymbol,
+      topic: 'diffDepth',
+      event: 'sub',
+      params: {
+        binary: false,
+      },
+    };
+
+    this.removeSubscription(subscribeMessage);
   }
 }
 
