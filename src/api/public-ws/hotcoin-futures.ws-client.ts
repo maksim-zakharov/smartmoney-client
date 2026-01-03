@@ -105,9 +105,15 @@ export class HotcoinFuturesWsClient extends SubscriptionManager {
   /**
    * Нормализует символ для Hotcoin
    * BTC-USDT -> btcusdt
+   * BTC -> btcusdt
    */
   private normalizeSymbol(symbol: string): string {
-    return symbol.toLowerCase().replace('-', '').replace('_', '');
+    const normalized = symbol.toLowerCase().replace('-', '').replace('_', '');
+    // Если символ не заканчивается на usdt, добавляем его
+    if (!normalized.endsWith('usdt')) {
+      return normalized + 'usdt';
+    }
+    return normalized;
   }
 
   /**

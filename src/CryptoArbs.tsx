@@ -66,7 +66,12 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
       return `${ticker}USDT`;
     case 'HOTCOIN':
       // Hotcoin использует формат btcusdt (нижний регистр, без дефисов)
-      return ticker.toLowerCase().replace('-', '').replace('_', '');
+      const hotcoinTicker = ticker.toLowerCase().replace('-', '').replace('_', '');
+      // Если символ не заканчивается на usdt, добавляем его
+      if (!hotcoinTicker.endsWith('usdt')) {
+        return hotcoinTicker + 'usdt';
+      }
+      return hotcoinTicker;
     default:
       // По умолчанию используем формат MEXC
       return `${ticker}_USDT`;
