@@ -3,13 +3,15 @@ import { SubscriptionManager } from '../common/subscription-manager';
 import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
 
 export class BinanceFuturesWsClient extends SubscriptionManager {
+  private readonly eventHandlers: Record<string, (message: any) => void> = {
+    kline: (msg) => this.handleKlineMessage(msg),
+    depthUpdate: (msg) => this.handleDepthMessage(msg),
+  };
+
   constructor() {
     super({
       name: 'Binance Futures',
       url: `wss://fstream.binance.com/ws`,
-      pingRequest: () => ({
-        method: 'PING',
-      }),
     });
 
     this.on('connect', () => this.onOpen());
@@ -44,70 +46,62 @@ export class BinanceFuturesWsClient extends SubscriptionManager {
         return;
       }
 
-      // Обработка свечей (kline)
-      if (message.e === 'kline' && message.k) {
-        const { k } = message;
-        const interval = k.i; // 1m, 5m, 1h и т.д.
-        const key = `${k.s.toLowerCase()}@kline_${interval}`;
-        this.subscribeSubjs.get(key)?.next({
-          open: Number(k.o),
-          high: Number(k.h),
-          low: Number(k.l),
-          close: Number(k.c),
-          time: Math.round(k.t / 1000),
-          timestamp: k.T,
-        });
-      }
-
-      // Обработка стакана (depth)
-      if (message.e === 'depthUpdate') {
-        const { s, b, a } = message;
-        const key = `${s.toLowerCase()}@depth20@100ms`;
-        const orderbook: Orderbook = {
-          bids: (b || []).map(([price, qty]: [string, string]) => ({
-            price: Number(price),
-            volume: Number(qty),
-          })) as OrderbookBid[],
-          asks: (a || []).map(([price, qty]: [string, string]) => ({
-            price: Number(price),
-            volume: Number(qty),
-          })) as OrderbookAsk[],
-        };
-        this.subscribeSubjs.get(key)?.next(orderbook);
+      // Диспетчеризация по типу события
+      if (message.e) {
+        const handler = this.eventHandlers[message.e];
+        if (handler) {
+          handler(message);
+          return;
+        }
       }
     } catch (error) {
       console.error('Binance WebSocket message error:', error);
     }
   }
 
+  private handleKlineMessage(message: any) {
+    if (message.k) {
+      const { k } = message;
+      const interval = k.i; // 1m, 5m, 1h и т.д.
+      const key = `${k.s.toLowerCase()}@kline_${interval}`;
+      this.subscribeSubjs.get(key)?.next({
+        open: Number(k.o),
+        high: Number(k.h),
+        low: Number(k.l),
+        close: Number(k.c),
+        time: Math.round(k.t / 1000),
+        timestamp: k.T,
+      });
+    }
+  }
+
+  private handleDepthMessage(message: any) {
+    const { s, b, a } = message;
+    const key = `${s.toLowerCase()}@depth20@100ms`;
+    const orderbook: Orderbook = {
+      bids: (b || []).map(([price, qty]: [string, string]) => ({
+        price: Number(price),
+        volume: Number(qty),
+      })) as OrderbookBid[],
+      asks: (a || []).map(([price, qty]: [string, string]) => ({
+        price: Number(price),
+        volume: Number(qty),
+      })) as OrderbookAsk[],
+    };
+    this.subscribeSubjs.get(key)?.next(orderbook);
+  }
+
 
   subscribeOrderbook(symbol: string, depth: number = 20) {
     const symbolLower = symbol.toLowerCase();
     const stream = `${symbolLower}@depth20@100ms`;
-    const subj = this.createOrUpdateSubj<Orderbook>(stream);
-    
-    // Binance использует формат SUBSCRIBE
-    const streamId = Date.now();
-    this.subscribe({
-      method: 'SUBSCRIBE',
-      params: [stream],
-      id: streamId,
-    });
-
-    return subj;
+    return this.subscribeStream<Orderbook>(stream);
   }
 
   unsubscribeOrderbook(symbol: string, depth: number = 20) {
     const symbolLower = symbol.toLowerCase();
     const stream = `${symbolLower}@depth20@100ms`;
-    this.removeSubj(stream);
-    
-    const streamId = Date.now();
-    this.unsubscribe({
-      method: 'UNSUBSCRIBE',
-      params: [stream],
-      id: streamId,
-    });
+    this.unsubscribeStream(stream);
   }
 
   subscribeCandles(symbol: string, resolution: string) {
@@ -115,30 +109,14 @@ export class BinanceFuturesWsClient extends SubscriptionManager {
     // Преобразуем resolution в формат Binance (1m, 5m, 1h и т.д.)
     const interval = this.convertResolutionToBinanceInterval(resolution);
     const stream = `${symbolLower}@kline_${interval}`;
-    const subj = this.createOrUpdateSubj(stream);
-    
-    const streamId = Date.now();
-    this.subscribe({
-      method: 'SUBSCRIBE',
-      params: [stream],
-      id: streamId,
-    });
-
-    return subj.pipe(share());
+    return this.subscribeStream(stream).pipe(share());
   }
 
   unsubscribeCandles(symbol: string, resolution: string) {
     const symbolLower = symbol.toLowerCase();
     const interval = this.convertResolutionToBinanceInterval(resolution);
     const stream = `${symbolLower}@kline_${interval}`;
-    this.removeSubj(stream);
-    
-    const streamId = Date.now();
-    this.unsubscribe({
-      method: 'UNSUBSCRIBE',
-      params: [stream],
-      id: streamId,
-    });
+    this.unsubscribeStream(stream);
   }
 
   private convertResolutionToBinanceInterval(resolution: string): string {
@@ -165,7 +143,17 @@ export class BinanceFuturesWsClient extends SubscriptionManager {
   subscribeQuotes(symbol: string) {
     const symbolLower = symbol.toLowerCase();
     const stream = `${symbolLower}@ticker`;
-    const subj = this.createOrUpdateSubj(stream);
+    return this.subscribeStream(stream);
+  }
+
+  unsubscribeQuotes(symbol: string) {
+    const symbolLower = symbol.toLowerCase();
+    const stream = `${symbolLower}@ticker`;
+    this.unsubscribeStream(stream);
+  }
+
+  private subscribeStream<T = any>(stream: string): Subject<T> {
+    const subj = this.createOrUpdateSubj<T>(stream);
     
     const streamId = Date.now();
     this.subscribe({
@@ -175,6 +163,22 @@ export class BinanceFuturesWsClient extends SubscriptionManager {
     });
 
     return subj;
+  }
+
+  private unsubscribeStream(stream: string) {
+    this.removeSubj(stream);
+    const streamId = Date.now();
+    this.unsubscribe({
+      method: 'UNSUBSCRIBE',
+      params: [stream],
+      id: streamId,
+    });
+
+    this.removeSubscription({
+      method: 'SUBSCRIBE',
+      params: [stream],
+      id: streamId,
+    });
   }
 }
 
