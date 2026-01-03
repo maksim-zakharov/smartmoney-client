@@ -1,3 +1,4 @@
+import { Subject } from 'rxjs';
 import { SubscriptionManager, SubscriptionManagerEventTypes } from '../common/subscription-manager';
 import { v4 as uuidv4 } from 'uuid';
 import * as pako from 'pako';
@@ -56,6 +57,11 @@ const eventTypesMap: Record<string, SubscriptionManagerEventTypes> = {
 export class BingXFuturesWsClient extends SubscriptionManager {
   private readonly apiKey: string;
   private readonly secretKey: string;
+  private readonly dataTypeHandlers: Record<string, (dataType: string, data: any, res: any) => void> = {
+    '@kline': (dataType, data, res) => this.handleKlineMessage(dataType, data, res),
+    '@depth': (dataType, data, res) => this.handleDepthMessage(dataType, data, res),
+    '@trade': (dataType, data, res) => this.handleTradeMessage(dataType, data, res),
+  };
 
   constructor(apiKey?: string, secretKey?: string) {
     super({
@@ -150,94 +156,98 @@ export class BingXFuturesWsClient extends SubscriptionManager {
         return;
       }
 
-      if (dataType.includes('@kline')) {
-        this.emit(eventTypesMap['@kline'], res);
-        this.subscribeSubjs.get(dataType)?.next({
-          open: Number(data[0].o),
-          high: Number(data[0].h),
-          low: Number(data[0].l),
-          close: Number(data[0].c),
-          volume: Number(data[0].v),
-          time: Number(data[0].T / 1000),
-        } as HistoryObject);
-      }
-
-      if (dataType.includes('@depth')) {
-        this.emit(eventTypesMap['@depth'], res);
-        this.subscribeSubjs.get(dataType)?.next({
-          bids: data.bids.map(([p, v]) => ({ price: Number(p), volume: Number(v) }) as OrderbookBid),
-          asks: data.asks.map(([p, v]) => ({ price: Number(p), volume: Number(v) }) as OrderbookAsk),
-        } as Orderbook);
-      }
-
-      if (dataType.includes('@trade')) {
-        this.emit(eventTypesMap['@trade'], res);
-        data.forEach((d) =>
-          this.subscribeSubjs.get(dataType)?.next({
-            price: Number(d.p),
-            qty: Number(d.q),
-            timestamp: Number(d.T),
-            side: d.m ? Side.Sell : Side.Buy,
-          } as Alltrade),
-        );
+      // Диспетчеризация по типу данных
+      for (const [key, handler] of Object.entries(this.dataTypeHandlers)) {
+        if (dataType.includes(key)) {
+          handler(dataType, data, res);
+          return;
+        }
       }
     }
   }
 
   subscribeCandles(symbol: string, interval: ResolutionString) {
     const key = `${symbol}@kline_${interval}m`;
-    const subj = this.createOrUpdateSubj(key);
-    this.subscribeFuturesChannel(key);
-
-    return subj;
+    return this.subscribeFuturesChannel(key);
   }
 
   unsubscribeCandles(symbol: string, interval: string) {
     const key = `${symbol}@kline_${interval}m`;
-    this.subscribeSubjs.delete(key);
     this.unsubscribeFuturesChannel(key);
   }
 
   subscribeOrderbook(symbol: string, depth: 5 | 10 | 20 | 50 | 100) {
     const key = `${symbol}@depth${depth}@200ms`;
-    const subj = this.createOrUpdateSubj<Orderbook>(key);
-    this.subscribeFuturesChannel(key);
-
-    return subj;
+    return this.subscribeFuturesChannel<Orderbook>(key);
   }
 
   unsubscribeOrderbook(symbol: string, depth: 5 | 10 | 20 | 50 | 100) {
     const key = `${symbol}@depth${depth}@200ms`;
-    this.subscribeSubjs.delete(key);
     this.unsubscribeFuturesChannel(key);
   }
 
   subscribeTrades(symbol: string) {
     const key = `${symbol}@trade`;
-    const subj = this.createOrUpdateSubj<Alltrade>(key);
-    this.subscribeFuturesChannel(key);
-
-    return subj;
+    return this.subscribeFuturesChannel<Alltrade>(key);
   }
 
   unsubscribeTrades(symbol: string) {
     const key = `${symbol}@trade`;
-    this.subscribeSubjs.delete(key);
     this.unsubscribeFuturesChannel(key);
   }
 
-  private subscribeFuturesChannel(dataType: any) {
+  private handleKlineMessage(dataType: string, data: any, res: any) {
+    this.emit(eventTypesMap['@kline'], res);
+    this.subscribeSubjs.get(dataType)?.next({
+      open: Number(data[0].o),
+      high: Number(data[0].h),
+      low: Number(data[0].l),
+      close: Number(data[0].c),
+      volume: Number(data[0].v),
+      time: Number(data[0].T / 1000),
+    } as HistoryObject);
+  }
+
+  private handleDepthMessage(dataType: string, data: any, res: any) {
+    this.emit(eventTypesMap['@depth'], res);
+    this.subscribeSubjs.get(dataType)?.next({
+      bids: data.bids.map(([p, v]) => ({ price: Number(p), volume: Number(v) }) as OrderbookBid),
+      asks: data.asks.map(([p, v]) => ({ price: Number(p), volume: Number(v) }) as OrderbookAsk),
+    } as Orderbook);
+  }
+
+  private handleTradeMessage(dataType: string, data: any, res: any) {
+    this.emit(eventTypesMap['@trade'], res);
+    data.forEach((d) =>
+      this.subscribeSubjs.get(dataType)?.next({
+        price: Number(d.p),
+        qty: Number(d.q),
+        timestamp: Number(d.T),
+        side: d.m ? Side.Sell : Side.Buy,
+      } as Alltrade),
+    );
+  }
+
+  private subscribeFuturesChannel<T = any>(dataType: string): Subject<T> {
+    const subj = this.createOrUpdateSubj<T>(dataType);
     this.subscribe({
       id: uuidv4(),
       reqType: 'sub',
       dataType,
     });
+    return subj;
   }
 
-  private unsubscribeFuturesChannel(dataType: any) {
-    this.subscribe({
+  private unsubscribeFuturesChannel(dataType: string) {
+    this.removeSubj(dataType);
+    this.unsubscribe({
       id: uuidv4(),
       reqType: 'unsub',
+      dataType,
+    });
+    this.removeSubscription({
+      id: uuidv4(),
+      reqType: 'sub',
       dataType,
     });
   }
