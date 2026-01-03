@@ -157,7 +157,8 @@ export class DataService {
   }
 
   gateUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
-    // return this.gateWsClient.unsubscribeCandles(symbol, resolution);
+    this.gateWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
   }
 
   bingxSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -264,7 +265,7 @@ export class DataService {
   }
 
   gateUnsubscribeOrderbook(symbol: string, depth: 50 | 400 = 50) {
-    // TODO: добавить метод unsubscribe в gate.ws-client.ts если нужно
+    this.gateWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 

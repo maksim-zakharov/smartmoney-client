@@ -14,6 +14,7 @@ enum GateFuturesChannelEnum {
 
 enum GateSpotEventEnum {
   Subscribe = 'subscribe',
+  Unsubscribe = 'unsubscribe',
   Api = 'api',
   Update = 'update',
 }
@@ -103,6 +104,57 @@ export class GateFuturesWsClient extends SubscriptionManager {
     return subj;
   }
 
+  unsubscribeCandles(symbol: string, resolution: string) {
+    const interval = `${resolution}m`;
+    const key = `${interval}_${symbol}`;
+    this.removeSubj(key);
+    this.unsubscribe({
+      time: Math.round(Date.now() / 1000),
+      channel: GateFuturesChannelEnum.Candlesticks,
+      event: GateSpotEventEnum.Unsubscribe,
+      payload: [interval, symbol],
+    });
+
+    this.removeSubscription({
+      time: Math.round(Date.now() / 1000),
+      channel: GateFuturesChannelEnum.Candlesticks,
+      event: GateSpotEventEnum.Subscribe,
+      payload: [interval, symbol],
+    });
+  }
+
+  unsubscribeOrderbook(symbol: string, depth: 50 | 400) {
+    const key = symbol;
+    this.removeSubj(key);
+    const depthForOldApi = Math.min(depth, 20).toString();
+    
+    // Отправляем запрос на отписку в том же формате, что и подписка
+    this.unsubscribeFuturesChannel(GateFuturesChannelEnum.Orderbook, [symbol, depthForOldApi, "0"]);
+
+    this.removeSubscription({
+      time: Math.round(Date.now() / 1000),
+      channel: GateFuturesChannelEnum.Orderbook,
+      event: GateSpotEventEnum.Subscribe,
+      payload: [symbol, depthForOldApi, "0"],
+    });
+  }
+
+  unsubscribeQuotes(symbol: string) {
+    const key = `${GateFuturesChannelEnum.Tickers}.${symbol}`;
+    this.removeSubj(key);
+    this.unsubscribe({
+      channel: GateFuturesChannelEnum.Tickers,
+      event: GateSpotEventEnum.Unsubscribe,
+      payload: [symbol],
+    });
+
+    this.removeSubscription({
+      channel: GateFuturesChannelEnum.Tickers,
+      event: 'subscribe',
+      payload: [symbol],
+    });
+  }
+
   // Функция для отправки ордера
   sendOrder(params: { symbol: string; price: string; size: number; tif?: string; close?: boolean }) {
     const order: any = {
@@ -149,6 +201,15 @@ export class GateFuturesWsClient extends SubscriptionManager {
       time: Math.round(Date.now() / 1000),
       channel: channel,
       event: GateSpotEventEnum.Subscribe,
+      payload,
+    });
+  }
+
+  private unsubscribeFuturesChannel(channel: GateFuturesChannelEnum, payload: any) {
+    this.unsubscribe({
+      time: Math.round(Date.now() / 1000),
+      channel: channel,
+      event: GateSpotEventEnum.Unsubscribe,
       payload,
     });
   }
