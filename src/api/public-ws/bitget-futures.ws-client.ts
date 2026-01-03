@@ -1,3 +1,4 @@
+import { Subject } from 'rxjs';
 import { SubscriptionManager } from '../common/subscription-manager';
 import { ResolutionString } from '../../assets/charting_library';
 import { BitgetTimeframe, BitgetWSFTicker, BitgetWSTrade } from './bitget.models';
@@ -158,11 +159,7 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
       channel: `ticker`,
       instId: symbol,
     };
-    const key = JSON.stringify(arg);
-    const subj = this.createOrUpdateSubj<BitgetWSFTicker>(key);
-    this.subscribeFuturesChannel(arg);
-
-    return subj;
+    return this.subscribeFuturesChannel<BitgetWSFTicker>(arg);
   }
 
   subscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -172,11 +169,7 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
       channel: `candle${bitgetTf}`,
       instId: symbol,
     };
-    const key = JSON.stringify(arg);
-    const subj = this.createOrUpdateSubj<HistoryObject>(key);
-    this.subscribeFuturesChannel(arg);
-
-    return subj;
+    return this.subscribeFuturesChannel<HistoryObject>(arg);
   }
 
   unsubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -186,8 +179,6 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
       channel: `candle${bitgetTf}`,
       instId: symbol,
     };
-    const key = JSON.stringify(arg);
-    this.removeSubj(key);
     this.unsubscribeFuturesChannel(arg);
   }
 
@@ -197,11 +188,7 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
       channel: `books${depth}`,
       instId: symbol,
     };
-    const key = JSON.stringify(arg);
-    const subj = this.createOrUpdateSubj<Orderbook>(key);
-    this.subscribeFuturesChannel(arg);
-
-    return subj;
+    return this.subscribeFuturesChannel<Orderbook>(arg);
   }
 
   unsubscribeOrderbook(symbol: string, depth: 5 | 10 | 20 | 50 | 100) {
@@ -210,8 +197,6 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
       channel: `books${depth}`,
       instId: symbol,
     };
-    const key = JSON.stringify(arg);
-    this.removeSubj(key);
     this.unsubscribeFuturesChannel(arg);
   }
 
@@ -221,11 +206,7 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
       channel: `trade`,
       instId: symbol,
     };
-    const key = JSON.stringify(arg);
-    const subj = this.createOrUpdateSubj<BitgetWSTrade[]>(key);
-    this.subscribeFuturesChannel(arg);
-
-    return subj;
+    return this.subscribeFuturesChannel<BitgetWSTrade[]>(arg);
   }
 
   unsubscribeTrades(symbol: string) {
@@ -234,21 +215,37 @@ export class BitgetFuturesWsClient extends SubscriptionManager {
       channel: `trade`,
       instId: symbol,
     };
-    const key = JSON.stringify(arg);
-    this.removeSubj(key);
     this.unsubscribeFuturesChannel(arg);
   }
 
-  private subscribeFuturesChannel(arg: any) {
+  unsubscribeTickers(symbol: string) {
+    const arg = {
+      instType: 'USDT-FUTURES',
+      channel: `ticker`,
+      instId: symbol,
+    };
+    this.unsubscribeFuturesChannel(arg);
+  }
+
+  private subscribeFuturesChannel<T>(arg: any): Subject<T> {
+    const key = JSON.stringify(arg);
+    const subj = this.createOrUpdateSubj<T>(key);
     this.subscribe({
       op: 'subscribe',
       args: [arg],
     });
+    return subj;
   }
 
   private unsubscribeFuturesChannel(arg: any) {
-    this.subscribe({
+    const key = JSON.stringify(arg);
+    this.removeSubj(key);
+    this.unsubscribe({
       op: 'unsubscribe',
+      args: [arg],
+    });
+    this.removeSubscription({
+      op: 'subscribe',
       args: [arg],
     });
   }
