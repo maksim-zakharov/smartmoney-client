@@ -53,8 +53,8 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
 
       // Диспетчеризация по типу группы
       if (message.group && message.data) {
-        if (message.group.startsWith('futures/kline')) {
-          this.handleKlineMessage(message);
+        if (message.group.startsWith('futures/klineBin')) {
+          this.handleKlineBinMessage(message);
           return;
         }
         if (message.group.startsWith('futures/depth')) {
@@ -67,34 +67,30 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
     }
   }
 
-  private handleKlineMessage(message: any) {
-    // Формат: {"group":"futures/kline1m","data":[...]}
-    const group = message.group; // например, "futures/kline1m"
-    const interval = group.replace('futures/kline', ''); // "1m"
+  private handleKlineBinMessage(message: any) {
+    // Формат: {"group":"futures/klineBin1m:FLOWUSDT","data":{"symbol":"FLOWUSDT","items":[{"o":"0.098","h":"0.1","l":"0.098","c":"0.098","v":"176686","ts":1767456060}]}}
+    const group = message.group; // например, "futures/klineBin1m:FLOWUSDT"
 
-    if (Array.isArray(message.data)) {
-      message.data.forEach((klineData: any) => {
-        if (klineData && klineData.symbol) {
-          const key = `futures/kline${interval}:${klineData.symbol}`;
-          this.subscribeSubjs.get(key)?.next({
-            open: Number(klineData.open_price || klineData.open),
-            high: Number(klineData.high_price || klineData.high),
-            low: Number(klineData.low_price || klineData.low),
-            close: Number(klineData.close_price || klineData.close),
-            time: Math.round((klineData.timestamp || klineData.time) / 1000),
-            timestamp: klineData.timestamp || klineData.time,
-          });
-        }
+    if (message.data && message.data.items && Array.isArray(message.data.items)) {
+      message.data.items.forEach((item: any) => {
+        this.subscribeSubjs.get(group)?.next({
+          open: Number(item.o),
+          high: Number(item.h),
+          low: Number(item.l),
+          close: Number(item.c),
+          time: item.ts,
+          timestamp: item.ts * 1000,
+        });
       });
-    } else if (message.data.symbol) {
-      const key = `futures/kline${interval}:${message.data.symbol}`;
-      this.subscribeSubjs.get(key)?.next({
-        open: Number(message.data.open_price || message.data.open),
-        high: Number(message.data.high_price || message.data.high),
-        low: Number(message.data.low_price || message.data.low),
-        close: Number(message.data.close_price || message.data.close),
-        time: Math.round((message.data.timestamp || message.data.time) / 1000),
-        timestamp: message.data.timestamp || message.data.time,
+    } else if (message.data && message.data.o) {
+      // Обработка случая, когда данные приходят напрямую (без items)
+      this.subscribeSubjs.get(group)?.next({
+        open: Number(message.data.o),
+        high: Number(message.data.h),
+        low: Number(message.data.l),
+        close: Number(message.data.c),
+        time: message.data.ts,
+        timestamp: message.data.ts * 1000,
       });
     }
   }
@@ -174,9 +170,9 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
   }
 
   subscribeCandles(symbol: string, resolution: string) {
-    // Преобразуем resolution в формат BitMart (1m, 5m, 1H и т.д.)
+    // Преобразуем resolution в формат BitMart klineBin (1m, 5m, 1H и т.д.)
     const interval = this.convertResolutionToBitMartInterval(resolution);
-    const key = `futures/kline${interval}:${symbol}`;
+    const key = `futures/klineBin${interval}:${symbol}`;
     const subj = this.createOrUpdateSubj(key);
     
     this.subscribe({
@@ -189,7 +185,7 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
 
   unsubscribeCandles(symbol: string, resolution: string) {
     const interval = this.convertResolutionToBitMartInterval(resolution);
-    const key = `futures/kline${interval}:${symbol}`;
+    const key = `futures/klineBin${interval}:${symbol}`;
     this.removeSubj(key);
     
     this.unsubscribe({
@@ -204,22 +200,17 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
   }
 
   private convertResolutionToBitMartInterval(resolution: string): string {
-    // Преобразуем resolution в формат BitMart
+    // Преобразуем resolution в формат BitMart klineBin
     const resolutionMap: Record<string, string> = {
       '1': '1m',
-      '3': '3m',
       '5': '5m',
       '15': '15m',
       '30': '30m',
       '60': '1H',
       '120': '2H',
       '240': '4H',
-      '360': '6H',
-      '480': '8H',
-      '720': '12H',
       'D': '1D',
       'W': '1W',
-      'M': '1M',
     };
     return resolutionMap[resolution] || '1m';
   }
