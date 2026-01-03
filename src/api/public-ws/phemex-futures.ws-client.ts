@@ -8,7 +8,9 @@ export class PhemexFuturesWsClient extends SubscriptionManager {
       name: 'Phemex Futures',
       url: 'wss://ws.phemex.com',
       pingRequest: () => ({
-        method: 'ping',
+        id: 0,
+        method: 'server.ping',
+        params: [],
       }),
     });
 
@@ -39,22 +41,21 @@ export class PhemexFuturesWsClient extends SubscriptionManager {
         return;
       }
 
-      // Обработка свечей (kline)
-      if (message.type === 'incremental' && message.topic && message.topic.startsWith('kline')) {
-        const parts = message.topic.split('.');
-        const symbol = parts[1]; // BTCUSDT
-        const interval = parts[2]; // 60, 300, 900 и т.д. (секунды)
-
-        if (message.data && Array.isArray(message.data) && message.data.length > 0) {
-          const kline = message.data[message.data.length - 1]; // Берем последнюю свечу
-          const key = `kline_${symbol}_${interval}`;
+      // Обработка свечей (kline_p)
+      if (message.type === 'incremental' && message.kline_p && Array.isArray(message.kline_p) && message.symbol) {
+        const symbol = message.symbol;
+        const klineArray = message.kline_p;
+        if (klineArray.length > 0) {
+          const kline = klineArray[klineArray.length - 1]; // Берем последнюю свечу
+          const interval = kline[1]; // interval в секундах
+          const key = `kline_p_${symbol}_${interval}`;
           this.subscribeSubjs.get(key)?.next({
-            open: Number(kline[1]), // open
-            high: Number(kline[2]), // high
-            low: Number(kline[3]), // low
-            close: Number(kline[4]), // close
-            time: Math.round(kline[0] / 1000), // timestamp в секундах
-            timestamp: kline[0], // timestamp в миллисекундах
+            open: Number(kline[2]), // open
+            high: Number(kline[3]), // high
+            low: Number(kline[4]), // low
+            close: Number(kline[5]), // close
+            time: kline[0], // timestamp в секундах
+            timestamp: kline[0] * 1000, // timestamp в миллисекундах
           });
         }
         return;
@@ -89,14 +90,14 @@ export class PhemexFuturesWsClient extends SubscriptionManager {
     const interval = this.convertResolutionToPhemexInterval(resolution);
     // Phemex использует формат без дефиса: DASH-USDT -> DASHUSDT (верхний регистр)
     const symbolUpper = symbol.toUpperCase().replace('-', ''); // DASH-USDT -> DASHUSDT
-    const topic = `kline.${symbolUpper}.${interval}`;
-    const key = `kline_${symbolUpper}_${interval}`;
+    const intervalNum = Number(interval); // Конвертируем строку в число
+    const key = `kline_p_${symbolUpper}_${intervalNum}`;
     const subj = this.createOrUpdateSubj(key);
 
     this.subscribe({
-      method: 'subscribe',
-      params: [topic],
       id: Date.now(),
+      method: 'kline_p.subscribe',
+      params: [symbolUpper, intervalNum],
     });
 
     return subj.pipe(share());
@@ -105,14 +106,20 @@ export class PhemexFuturesWsClient extends SubscriptionManager {
   unsubscribeCandles(symbol: string, resolution: string) {
     const interval = this.convertResolutionToPhemexInterval(resolution);
     const symbolUpper = symbol.toUpperCase().replace('-', ''); // DASH-USDT -> DASHUSDT
-    const topic = `kline.${symbolUpper}.${interval}`;
-    const key = `kline_${symbolUpper}_${interval}`;
+    const intervalNum = Number(interval); // Конвертируем строку в число
+    const key = `kline_p_${symbolUpper}_${intervalNum}`;
     this.removeSubj(key);
 
     this.unsubscribe({
-      method: 'unsubscribe',
-      params: [topic],
       id: Date.now(),
+      method: 'kline_p.unsubscribe',
+      params: [symbolUpper],
+    });
+
+    this.removeSubscription({
+      id: Date.now(),
+      method: 'kline_p.subscribe',
+      params: [symbolUpper, intervalNum],
     });
   }
 
@@ -151,22 +158,16 @@ export class PhemexFuturesWsClient extends SubscriptionManager {
     const key = `orderbook_${symbolUpper}`;
     this.removeSubj(key);
 
-    // Преобразуем depth в допустимое значение (как при подписке)
-    let phemexDepth = 0;
-    if (depth <= 1) {
-      phemexDepth = 1;
-    } else if (depth <= 5) {
-      phemexDepth = 5;
-    } else if (depth <= 10) {
-      phemexDepth = 10;
-    } else if (depth <= 30) {
-      phemexDepth = 30;
-    }
-
     this.unsubscribe({
       id: Date.now(),
       method: 'orderbook_p.unsubscribe',
-      params: [symbolUpper, false, phemexDepth],
+      params: [symbolUpper],
+    });
+
+    this.removeSubscription({
+      id: Date.now(),
+      method: 'orderbook_p.subscribe',
+      params: [symbolUpper, false, depth <= 1 ? 1 : depth <= 5 ? 5 : depth <= 10 ? 10 : depth <= 30 ? 30 : 0],
     });
   }
 
