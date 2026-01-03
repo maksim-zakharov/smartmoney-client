@@ -144,6 +144,9 @@ export class OrderbookManager {
         case 'BITUNIX':
           this.wsSubscription = this.dataService.bitunixSubscribeOrderbook(this.symbol, 20);
           break;
+        case 'XT':
+          this.wsSubscription = this.dataService.xtSubscribeOrderbook(this.symbol, 20);
+          break;
         default:
           return;
       }

@@ -402,6 +402,12 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.toobitUnsubscribeCandles(toobitTicker, resolution);
+      } else if (symbol.includes('XT')) {
+        const ticker = symbol.split('XT:')[1];
+        this.dataService.xtSubscribeCandles(ticker, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.xtUnsubscribeCandles(ticker, resolution);
       } else {
         return this.api.subscriptions.candles(
           {

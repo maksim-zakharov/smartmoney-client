@@ -19,6 +19,7 @@ import { HtxFuturesWsClient } from '../public-ws/htx-futures.ws-client.ts';
 import { PhemexFuturesWsClient } from '../public-ws/phemex-futures.ws-client.ts';
 import { BitunixFuturesWsClient } from '../public-ws/bitunix-futures.ws-client.ts';
 import { ToobitFuturesWsClient } from '../public-ws/toobit-futures.ws-client.ts';
+import { XtFuturesWsClient } from '../public-ws/xt-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -58,6 +59,7 @@ export class DataService {
   private readonly phemexFuturesWsClient: PhemexFuturesWsClient;
   private readonly bitunixFuturesWsClient: BitunixFuturesWsClient;
   private readonly toobitFuturesWsClient: ToobitFuturesWsClient;
+  private readonly xtFuturesWsClient: XtFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -84,6 +86,7 @@ export class DataService {
     this.phemexFuturesWsClient = new PhemexFuturesWsClient();
     this.bitunixFuturesWsClient = new BitunixFuturesWsClient();
     this.toobitFuturesWsClient = new ToobitFuturesWsClient();
+    this.xtFuturesWsClient = new XtFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -372,6 +375,24 @@ export class DataService {
 
   toobitUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
     this.toobitFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  xtSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.xtFuturesWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  xtUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    this.xtFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  xtSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.xtFuturesWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  xtUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.xtFuturesWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 
