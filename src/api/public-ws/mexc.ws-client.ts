@@ -3,6 +3,13 @@ import { SubscriptionManager } from '../common/subscription-manager';
 import { MexcOrderbook } from '../mexc.models';
 
 export class MexcWsClient extends SubscriptionManager {
+  private readonly channelHandlers: Record<string, (data: any, symbol: string, ts: number) => void> = {
+    'push.kline': (data, symbol, ts) => this.handleKlineMessage(data, symbol, ts),
+    'push.fair.price': (data, symbol) => this.handleFairPriceMessage(data, symbol),
+    'push.tickers': (data) => this.handleTickersMessage(data),
+    'push.depth': (data, symbol) => this.handleDepthMessage(data, symbol),
+  };
+
   constructor() {
     super({
       url: `wss://contract.mexc.com/edge`,
@@ -26,46 +33,54 @@ export class MexcWsClient extends SubscriptionManager {
 
   onMessage(ev) {
     const { channel, data, symbol, ts } = JSON.parse(ev.data as any);
-    if (channel === 'push.kline') {
-      const key = `${symbol}_${data.interval}`;
-      const { o, h, l, c, t } = data;
+    const handler = this.channelHandlers[channel];
+    if (handler) {
+      handler(data, symbol, ts);
+    }
+  }
+
+  private handleKlineMessage(data: any, symbol: string, ts: number) {
+    const key = `${symbol}_${data.interval}`;
+    const { o, h, l, c, t } = data;
+    this.subscribeSubjs.get(key)?.next({
+      open: Number(o),
+      high: Number(h),
+      low: Number(l),
+      close: Number(c),
+      time: t,
+      timestamp: ts,
+    });
+  }
+
+  private handleFairPriceMessage(data: any, symbol: string) {
+    const key = `${symbol}_fair`;
+    const { price } = data;
+    this.subscribeSubjs.get(key)?.next({
+      close: price,
+    });
+  }
+
+  private handleTickersMessage(data: any) {
+    data.forEach(({ symbol, lastPrice }) => {
+      const key = `sub.tickers_${symbol}`;
       this.subscribeSubjs.get(key)?.next({
-        open: Number(o),
-        high: Number(h),
-        low: Number(l),
-        close: Number(c),
-        time: t,
-        timestamp: ts,
+        lastPrice,
       });
-    }
-    if (channel === 'push.fair.price') {
-      const key = `${symbol}_fair`;
-      const { price } = data;
-      this.subscribeSubjs.get(key)?.next({
-        close: price,
-      });
-    }
-    if (channel === 'push.tickers') {
-      data.forEach(({ symbol, lastPrice }) => {
-        const key = `sub.tickers_${symbol}`;
-        this.subscribeSubjs.get(key)?.next({
-          lastPrice,
-        });
-      });
-    }
-    if (channel === 'push.depth') {
-      const key = `depth_${symbol}`;
-      this.subscribeSubjs.get(key)?.next({
-        bids: data.bids.map((p) => ({
-          price: Number(p[0]),
-          value: Number(p[1]),
-        })),
-        asks: data.asks.map((p) => ({
-          price: Number(p[0]),
-          value: Number(p[1]),
-        })),
-      } as MexcOrderbook);
-    }
+    });
+  }
+
+  private handleDepthMessage(data: any, symbol: string) {
+    const key = `depth_${symbol}`;
+    this.subscribeSubjs.get(key)?.next({
+      bids: data.bids.map((p) => ({
+        price: Number(p[0]),
+        value: Number(p[1]),
+      })),
+      asks: data.asks.map((p) => ({
+        price: Number(p[0]),
+        value: Number(p[1]),
+      })),
+    } as MexcOrderbook);
   }
 
   subscribeFairPrice(symbol: string) {
@@ -80,6 +95,24 @@ export class MexcWsClient extends SubscriptionManager {
     });
 
     return subj;
+  }
+
+  unsubscribeFairPrice(symbol: string) {
+    const key = `${symbol}_fair`;
+    this.removeSubj(key);
+    this.unsubscribe({
+      method: 'unsub.fair.price',
+      param: {
+        symbol,
+      },
+    });
+
+    this.removeSubscription({
+      method: 'sub.fair.price',
+      param: {
+        symbol,
+      },
+    });
   }
 
   subscribeCandles(symbol: string, resolution: string) {
@@ -98,6 +131,27 @@ export class MexcWsClient extends SubscriptionManager {
     return subj;
   }
 
+  unsubscribeCandles(symbol: string, resolution: string) {
+    const interval = `Min${resolution}`;
+    const key = `${symbol}_${interval}`;
+    this.removeSubj(key);
+    this.unsubscribe({
+      method: 'unsub.kline',
+      param: {
+        symbol,
+        interval,
+      },
+    });
+
+    this.removeSubscription({
+      method: 'sub.kline',
+      param: {
+        symbol,
+        interval,
+      },
+    });
+  }
+
   subscribeOrderbook(symbol: string, depth: number) {
     const subj = new Subject<MexcOrderbook>();
     const key = `depth_${symbol}`;
@@ -113,6 +167,26 @@ export class MexcWsClient extends SubscriptionManager {
     return subj;
   }
 
+  unsubscribeOrderbook(symbol: string, depth: number) {
+    const key = `depth_${symbol}`;
+    this.removeSubj(key);
+    this.unsubscribe({
+      method: 'unsub.depth',
+      param: {
+        symbol,
+        limit: depth,
+      },
+    });
+
+    this.removeSubscription({
+      method: 'sub.depth',
+      param: {
+        symbol,
+        limit: depth,
+      },
+    });
+  }
+
   subscribeQuotes(symbol: string) {
     const subj = new Subject<{ lastPrice: number }>();
     const key = `sub.tickers_${symbol}`;
@@ -123,5 +197,19 @@ export class MexcWsClient extends SubscriptionManager {
     });
 
     return subj;
+  }
+
+  unsubscribeQuotes(symbol: string) {
+    const key = `sub.tickers_${symbol}`;
+    this.removeSubj(key);
+    this.unsubscribe({
+      method: 'unsub.tickers',
+      param: { symbol },
+    });
+
+    this.removeSubscription({
+      method: 'sub.tickers',
+      param: { symbol },
+    });
   }
 }

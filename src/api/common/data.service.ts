@@ -118,7 +118,14 @@ export class DataService {
   }
 
   mexcUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
-    // if (symbol.includes('_')) return this.mexcWsClient.unsubscribeCandles(symbol, resolution);
+    if (symbol.includes('_')) {
+      if (symbol.includes('_fair')) {
+        this.mexcWsClient.unsubscribeFairPrice(symbol.split('_fair')[0]);
+        return Promise.resolve();
+      }
+      this.mexcWsClient.unsubscribeCandles(symbol, resolution);
+      return Promise.resolve();
+    }
 
     return Promise.resolve(); //  this.mexcSpotWsClient.subscribeCandles(symbol, resolution);
   }
@@ -243,7 +250,7 @@ export class DataService {
 
   // Методы для отписки от стаканов
   mexcUnsubscribeOrderbook(symbol: string, depth: number = 20) {
-    // TODO: добавить метод unsubscribe в mexc.ws-client.ts если нужно
+    this.mexcWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 
