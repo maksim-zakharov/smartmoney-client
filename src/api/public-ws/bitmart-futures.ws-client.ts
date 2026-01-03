@@ -5,6 +5,8 @@ import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
 export class BitMartFuturesWsClient extends SubscriptionManager {
   // Хранилище текущих стаканов для объединения bids и asks
   private orderbookCache = new Map<string, Orderbook>();
+
+
   constructor() {
     super({
       name: 'BitMart Futures',
@@ -49,86 +51,94 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
         return;
       }
 
-      // Обработка свечей (kline)
-      // Формат: {"group":"futures/kline1m","data":[...]}
-      if (message.group && message.group.startsWith('futures/kline') && message.data) {
-        const group = message.group; // например, "futures/kline1m"
-        const interval = group.replace('futures/kline', ''); // "1m"
-        
-        if (Array.isArray(message.data)) {
-          message.data.forEach((klineData: any) => {
-            if (klineData && klineData.symbol) {
-              const key = `futures/kline${interval}:${klineData.symbol}`;
-              this.subscribeSubjs.get(key)?.next({
-                open: Number(klineData.open_price || klineData.open),
-                high: Number(klineData.high_price || klineData.high),
-                low: Number(klineData.low_price || klineData.low),
-                close: Number(klineData.close_price || klineData.close),
-                time: Math.round((klineData.timestamp || klineData.time) / 1000),
-                timestamp: klineData.timestamp || klineData.time,
-              });
-            }
-          });
-        } else if (message.data.symbol) {
-          const key = `futures/kline${interval}:${message.data.symbol}`;
-          this.subscribeSubjs.get(key)?.next({
-            open: Number(message.data.open_price || message.data.open),
-            high: Number(message.data.high_price || message.data.high),
-            low: Number(message.data.low_price || message.data.low),
-            close: Number(message.data.close_price || message.data.close),
-            time: Math.round((message.data.timestamp || message.data.time) / 1000),
-            timestamp: message.data.timestamp || message.data.time,
-          });
+      // Диспетчеризация по типу группы
+      if (message.group && message.data) {
+        if (message.group.startsWith('futures/kline')) {
+          this.handleKlineMessage(message);
+          return;
         }
-        return;
-      }
-
-      // Обработка стакана (depth)
-      // Формат: {"group":"futures/depth20:PTBUSDT","data":{"symbol":"PTBUSDT","way":1,"depths":[...]}}
-      if (message.group && message.group.startsWith('futures/depth') && message.data) {
-        const group = message.group; // например, "futures/depth20:PTBUSDT"
-        const parts = group.split(':');
-        const depthPart = parts[0]; // "futures/depth20"
-        const depth = depthPart.replace('futures/depth', ''); // "20"
-        const symbol = message.data.symbol || (parts.length > 1 ? parts[1] : '');
-        
-        if (symbol) {
-          const key = `futures/depth${depth}:${symbol}`;
-          
-          // Получаем или создаем стакан в кэше
-          if (!this.orderbookCache.has(key)) {
-            this.orderbookCache.set(key, {
-              bids: [],
-              asks: [],
-            });
-          }
-          
-          const orderbook = this.orderbookCache.get(key)!;
-          
-          // way: 1 = bids, way: 2 = asks
-          const depths = (message.data.depths || []).map((item: { price: string; vol: string }) => ({
-            price: Number(item.price),
-            volume: Number(item.vol),
-          }));
-          
-          if (message.data.way === 1) {
-            // bids
-            orderbook.bids = depths as OrderbookBid[];
-          } else if (message.data.way === 2) {
-            // asks
-            orderbook.asks = depths as OrderbookAsk[];
-          }
-          
-          // Отправляем обновленный стакан
-          this.subscribeSubjs.get(key)?.next({
-            bids: [...orderbook.bids],
-            asks: [...orderbook.asks],
-          });
+        if (message.group.startsWith('futures/depth')) {
+          this.handleDepthMessage(message);
+          return;
         }
-        return;
       }
     } catch (error) {
       console.error('BitMart WebSocket message error:', error);
+    }
+  }
+
+  private handleKlineMessage(message: any) {
+    // Формат: {"group":"futures/kline1m","data":[...]}
+    const group = message.group; // например, "futures/kline1m"
+    const interval = group.replace('futures/kline', ''); // "1m"
+
+    if (Array.isArray(message.data)) {
+      message.data.forEach((klineData: any) => {
+        if (klineData && klineData.symbol) {
+          const key = `futures/kline${interval}:${klineData.symbol}`;
+          this.subscribeSubjs.get(key)?.next({
+            open: Number(klineData.open_price || klineData.open),
+            high: Number(klineData.high_price || klineData.high),
+            low: Number(klineData.low_price || klineData.low),
+            close: Number(klineData.close_price || klineData.close),
+            time: Math.round((klineData.timestamp || klineData.time) / 1000),
+            timestamp: klineData.timestamp || klineData.time,
+          });
+        }
+      });
+    } else if (message.data.symbol) {
+      const key = `futures/kline${interval}:${message.data.symbol}`;
+      this.subscribeSubjs.get(key)?.next({
+        open: Number(message.data.open_price || message.data.open),
+        high: Number(message.data.high_price || message.data.high),
+        low: Number(message.data.low_price || message.data.low),
+        close: Number(message.data.close_price || message.data.close),
+        time: Math.round((message.data.timestamp || message.data.time) / 1000),
+        timestamp: message.data.timestamp || message.data.time,
+      });
+    }
+  }
+
+  private handleDepthMessage(message: any) {
+    // Формат: {"group":"futures/depth20:PTBUSDT","data":{"symbol":"PTBUSDT","way":1,"depths":[...]}}
+    const group = message.group; // например, "futures/depth20:PTBUSDT"
+    const parts = group.split(':');
+    const depthPart = parts[0]; // "futures/depth20"
+    const depth = depthPart.replace('futures/depth', ''); // "20"
+    const symbol = message.data.symbol || (parts.length > 1 ? parts[1] : '');
+
+    if (symbol) {
+      const key = `futures/depth${depth}:${symbol}`;
+
+      // Получаем или создаем стакан в кэше
+      if (!this.orderbookCache.has(key)) {
+        this.orderbookCache.set(key, {
+          bids: [],
+          asks: [],
+        });
+      }
+
+      const orderbook = this.orderbookCache.get(key)!;
+
+      // way: 1 = bids, way: 2 = asks
+      const depths = (message.data.depths || []).map((item: { price: string; vol: string }) => ({
+        price: Number(item.price),
+        volume: Number(item.vol),
+      }));
+
+      if (message.data.way === 1) {
+        // bids
+        orderbook.bids = depths as OrderbookBid[];
+      } else if (message.data.way === 2) {
+        // asks
+        orderbook.asks = depths as OrderbookAsk[];
+      }
+
+      // Отправляем обновленный стакан
+      this.subscribeSubjs.get(key)?.next({
+        bids: [...orderbook.bids],
+        asks: [...orderbook.asks],
+      });
     }
   }
 
@@ -156,6 +166,11 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
       action: 'unsubscribe',
       args: [`futures/depth${validDepth}:${symbol}`],
     });
+
+    this.removeSubscription({
+      action: 'subscribe',
+      args: [`futures/depth${validDepth}:${symbol}`],
+    });
   }
 
   subscribeCandles(symbol: string, resolution: string) {
@@ -179,6 +194,11 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
     
     this.unsubscribe({
       action: 'unsubscribe',
+      args: [key],
+    });
+
+    this.removeSubscription({
+      action: 'subscribe',
       args: [key],
     });
   }
@@ -214,6 +234,20 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
     });
 
     return subj;
+  }
+
+  unsubscribeQuotes(symbol: string) {
+    const key = `futures/ticker:${symbol}`;
+    this.removeSubj(key);
+    this.unsubscribe({
+      action: 'unsubscribe',
+      args: [key],
+    });
+
+    this.removeSubscription({
+      action: 'subscribe',
+      args: [key],
+    });
   }
 }
 
