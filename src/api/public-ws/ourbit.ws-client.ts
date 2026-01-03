@@ -29,10 +29,12 @@ export interface OurbitWSTrade {
 export class OurbitWsClient extends SubscriptionManager {
   private pingInterval: NodeJS.Timeout | null = null;
 
-  private readonly channelHandlers: Record<string, (data: any, symbol?: string) => void> = {
+  private readonly channelHandlers: Record<string, (data: any, symbol?: string, ts?: number) => void> = {
     'push.tickers': (data) => this.handleTickersMessage(data),
     'push.deal': (data, symbol) => this.handleDealMessage(data, symbol),
     'push.depth': (data, symbol) => this.handleDepthMessage(data, symbol),
+    'push.kline': (data, symbol, ts) => this.handleKlineMessage(data, symbol, ts),
+    'push.fair.price': (data, symbol) => this.handleFairPriceMessage(data, symbol),
   };
 
   constructor() {
@@ -79,17 +81,17 @@ export class OurbitWsClient extends SubscriptionManager {
 
   onMessage(ev: MessageEvent) {
     try {
-      const message = JSON.parse(ev.data as any);
+      const { channel, data, symbol, ts } = JSON.parse(ev.data as any);
 
       // Обработка pong ответа
-      if (message.channel === 'pong') {
+      if (channel === 'pong') {
         // Просто игнорируем, ping/pong работает автоматически
         return;
       }
 
-      const handler = this.channelHandlers[message.channel];
+      const handler = this.channelHandlers[channel];
       if (handler) {
-        handler(message.data, message.symbol);
+        handler(data, symbol, ts);
       }
     } catch (error) {
       console.error(`Ошибка обработки сообщения: ${error.message}`, error);
@@ -120,6 +122,27 @@ export class OurbitWsClient extends SubscriptionManager {
         value: Number(p[1]),
       })),
     } as MexcOrderbook);
+  }
+
+  private handleKlineMessage(data: any, symbol: string, ts: number) {
+    const key = `${symbol}_${data.interval}`;
+    const { o, h, l, c, t } = data;
+    this.subscribeSubjs.get(key)?.next({
+      open: Number(o),
+      high: Number(h),
+      low: Number(l),
+      close: Number(c),
+      time: t,
+      timestamp: ts,
+    });
+  }
+
+  private handleFairPriceMessage(data: any, symbol: string) {
+    const key = `${symbol}_fair`;
+    const { price } = data;
+    this.subscribeSubjs.get(key)?.next({
+      close: price,
+    });
   }
 
   subscribeTickers(timezone: string = 'UTC+8') {
@@ -168,18 +191,33 @@ export class OurbitWsClient extends SubscriptionManager {
     });
   }
 
-  // Для свечей используем подписку на трейды и агрегацию (аналогично MEXC)
-  // Но пока что просто возвращаем заглушку, так как OURBIT не имеет прямого API для свечей
   subscribeCandles(symbol: string, resolution: string) {
-    // TODO: Реализовать подписку на свечи через агрегацию трейдов если нужно
     const subj = new Subject<any>();
-    // Пока возвращаем пустой subject
+    const interval = `Min${resolution}`;
+    const key = `${symbol}_${interval}`;
+    this.subscribeSubjs.set(key, subj);
+    this.subscribe({
+      method: 'sub.kline',
+      param: {
+        symbol,
+        interval,
+      },
+    });
+
     return subj;
   }
 
   subscribeFairPrice(symbol: string) {
-    // OURBIT не имеет fair price API, возвращаем заглушку
     const subj = new Subject<any>();
+    const key = `${symbol}_fair`;
+    this.subscribeSubjs.set(key, subj);
+    this.subscribe({
+      method: 'sub.fair.price',
+      param: {
+        symbol,
+      },
+    });
+
     return subj;
   }
 
@@ -237,15 +275,42 @@ export class OurbitWsClient extends SubscriptionManager {
   }
 
   unsubscribeCandles(symbol: string, resolution: string) {
-    // OURBIT не имеет прямого API для свечей, но добавляем метод для консистентности
-    const key = `candles_${symbol}_${resolution}`;
+    const interval = `Min${resolution}`;
+    const key = `${symbol}_${interval}`;
     this.removeSubj(key);
+    this.unsubscribe({
+      method: 'unsub.kline',
+      param: {
+        symbol,
+        interval,
+      },
+    });
+
+    this.removeSubscription({
+      method: 'sub.kline',
+      param: {
+        symbol,
+        interval,
+      },
+    });
   }
 
   unsubscribeFairPrice(symbol: string) {
-    // OURBIT не имеет fair price API, но добавляем метод для консистентности
-    const key = `fair_${symbol}`;
+    const key = `${symbol}_fair`;
     this.removeSubj(key);
+    this.unsubscribe({
+      method: 'unsub.fair.price',
+      param: {
+        symbol,
+      },
+    });
+
+    this.removeSubscription({
+      method: 'sub.fair.price',
+      param: {
+        symbol,
+      },
+    });
   }
 }
 
