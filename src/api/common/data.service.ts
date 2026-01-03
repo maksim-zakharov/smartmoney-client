@@ -20,6 +20,7 @@ import { PhemexFuturesWsClient } from '../public-ws/phemex-futures.ws-client.ts'
 import { BitunixFuturesWsClient } from '../public-ws/bitunix-futures.ws-client.ts';
 import { ToobitFuturesWsClient } from '../public-ws/toobit-futures.ws-client.ts';
 import { XtFuturesWsClient } from '../public-ws/xt-futures.ws-client.ts';
+import { OkxFuturesWsClient } from '../public-ws/okx-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -60,6 +61,7 @@ export class DataService {
   private readonly bitunixFuturesWsClient: BitunixFuturesWsClient;
   private readonly toobitFuturesWsClient: ToobitFuturesWsClient;
   private readonly xtFuturesWsClient: XtFuturesWsClient;
+  private readonly okxFuturesWsClient: OkxFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -87,6 +89,7 @@ export class DataService {
     this.bitunixFuturesWsClient = new BitunixFuturesWsClient();
     this.toobitFuturesWsClient = new ToobitFuturesWsClient();
     this.xtFuturesWsClient = new XtFuturesWsClient();
+    this.okxFuturesWsClient = new OkxFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -178,11 +181,12 @@ export class DataService {
   }
 
   okxSubscribeCandles(symbol: string, resolution: ResolutionString) {
-    return this.bybitWsClient.subscribeCandles(symbol, resolution);
+    return this.okxFuturesWsClient.subscribeCandles(symbol, resolution);
   }
 
   okxUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
-    return this.bybitWsClient.unsubscribeCandles(symbol, resolution);
+    this.okxFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
   }
 
   ctraderSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -255,8 +259,7 @@ export class DataService {
   }
 
   okxSubscribeOrderbook(symbol: string, depth: number = 20) {
-    // OKX использует тот же клиент, что и Bybit (нужно проверить)
-    return this.bybitWsClient.subscribeOrderbook(symbol, depth);
+    return this.okxFuturesWsClient.subscribeOrderbook(symbol, depth);
   }
 
   // Методы для отписки от стаканов
@@ -284,7 +287,7 @@ export class DataService {
   }
 
   okxUnsubscribeOrderbook(symbol: string, depth: number = 20) {
-    // TODO: добавить метод unsubscribe если нужно
+    this.okxFuturesWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 
