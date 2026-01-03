@@ -117,7 +117,10 @@ export class BingXFuturesWsClient extends SubscriptionManager {
     const decompressed = pako.ungzip(inputData);
     const decodedMsg = new TextDecoder('utf-8').decode(decompressed);
     if (decodedMsg === 'Ping') {
-      this.subscribe('Pong');
+      // Отправляем Pong в бинарном формате (gzip сжатый)
+      const pongMessage = 'Pong';
+      const compressed = pako.gzip(pongMessage);
+      this.ws.send(compressed);
       console.debug('Pong');
     } else {
       const res = JSONbig.parse(decodedMsg);
