@@ -180,4 +180,20 @@ export class HtxFuturesWsClient extends SubscriptionManager {
 
     return subj;
   }
+
+  unsubscribeQuotes(symbol: string) {
+    const symbolLower = symbol.toLowerCase().replace('-', ''); // DASH-USDT -> dashusdt
+    const channel = `market.${symbolLower}.ticker`;
+    const key = `ticker_${symbolLower}`;
+    this.removeSubj(key);
+    this.unsubscribe({
+      sub: channel,
+      id: `ticker_${Date.now()}`,
+    });
+
+    this.removeSubscription({
+      sub: channel,
+      id: `ticker_${Date.now()}`,
+    });
+  }
 }
