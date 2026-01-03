@@ -386,6 +386,15 @@ export class DataService {
     return Promise.resolve();
   }
 
+  toobitSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.toobitFuturesWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  toobitUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.toobitFuturesWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
+  }
+
   xtSubscribeCandles(symbol: string, resolution: ResolutionString) {
     return this.xtFuturesWsClient.subscribeCandles(symbol, resolution);
   }
