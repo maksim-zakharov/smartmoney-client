@@ -135,7 +135,7 @@ export class OrderbookManager {
           this.wsSubscription = this.dataService.ourbitSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'KUCOIN':
-          this.orderbookDepth = 200;
+          this.orderbookDepth = 20;
           this.wsSubscription = this.dataService.kucoinSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'BINANCE':

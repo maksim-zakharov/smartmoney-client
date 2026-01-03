@@ -21,6 +21,7 @@ import { BitunixFuturesWsClient } from '../public-ws/bitunix-futures.ws-client.t
 import { ToobitFuturesWsClient } from '../public-ws/toobit-futures.ws-client.ts';
 import { XtFuturesWsClient } from '../public-ws/xt-futures.ws-client.ts';
 import { OkxFuturesWsClient } from '../public-ws/okx-futures.ws-client.ts';
+import { KucoinFuturesWsClient } from '../public-ws/kucoin-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -62,6 +63,7 @@ export class DataService {
   private readonly toobitFuturesWsClient: ToobitFuturesWsClient;
   private readonly xtFuturesWsClient: XtFuturesWsClient;
   private readonly okxFuturesWsClient: OkxFuturesWsClient;
+  private readonly kucoinFuturesWsClient: KucoinFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -90,6 +92,7 @@ export class DataService {
     this.toobitFuturesWsClient = new ToobitFuturesWsClient();
     this.xtFuturesWsClient = new XtFuturesWsClient();
     this.okxFuturesWsClient = new OkxFuturesWsClient();
+    this.kucoinFuturesWsClient = new KucoinFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -200,11 +203,12 @@ export class DataService {
   }
 
   kucoinSubscribeCandles(symbol: string, resolution: ResolutionString) {
-    return this.kucoinWsClient.subscribeCandles(symbol, resolution);
+    return this.kucoinFuturesWsClient.subscribeCandles(symbol, resolution);
   }
 
   kucoinUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
-    return this.kucoinWsClient.unsubscribeCandles(symbol, resolution);
+    this.kucoinFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
   }
 
   asterSubscribeCandles(symbol: string, resolution: ResolutionString) {
@@ -301,11 +305,11 @@ export class DataService {
   }
 
   kucoinSubscribeOrderbook(symbol: string, depth: number = 20) {
-    return this.kucoinWsClient.subscribeOrderbook(symbol, depth);
+    return this.kucoinFuturesWsClient.subscribeOrderbook(symbol, depth);
   }
 
   kucoinUnsubscribeOrderbook(symbol: string, depth: number = 20) {
-    this.kucoinWsClient.unsubscribeOrderbook(symbol, depth);
+    this.kucoinFuturesWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 
