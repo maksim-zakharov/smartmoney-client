@@ -1,6 +1,7 @@
-import { Subject } from 'rxjs';
+import { share, Subject } from 'rxjs';
 import { SubscriptionManager } from '../common/subscription-manager';
 import { HyperliquidTimeframe } from './hyperliquid.models';
+import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
 
 export class HyperliquidWsClient extends SubscriptionManager {
   constructor() {
@@ -52,6 +53,11 @@ export class HyperliquidWsClient extends SubscriptionManager {
             `Подписались на свечи ${data.subscription.coin} интервала ${data.subscription.interval}`,
           );
           return;
+        case 'l2Book':
+          console.log(
+            `Подписались на стакан ${data.subscription.coin}`,
+          );
+          return;
         case 'activeAssetCtx':
           console.log(
             `Подписались на инфу ${data.subscription.coin}`,
@@ -86,15 +92,17 @@ export class HyperliquidWsClient extends SubscriptionManager {
       this.subscribeSubjs.get(topic)?.next(mappedData[0]);
     } else if (channel === 'l2Book') {
       topic = JSON.stringify({ type: 'l2Book', coin: data.coin });
-      const bids = data.levels[0].map((p: any) => ({
-        price: Number(p.px),
-        value: Number(p.sz),
-      }));
-      const asks = data.levels[1].map((p: any) => ({
-        price: Number(p.px),
-        value: Number(p.sz),
-      }));
-      this.subscribeSubjs.get(topic)?.next({ bids, asks });
+      const orderbook: Orderbook = {
+        bids: (data.levels[0] || []).map((p: any) => ({
+          price: Number(p.px),
+          volume: Number(p.sz),
+        })) as OrderbookBid[],
+        asks: (data.levels[1] || []).map((p: any) => ({
+          price: Number(p.px),
+          volume: Number(p.sz),
+        })) as OrderbookAsk[],
+      };
+      this.subscribeSubjs.get(topic)?.next(orderbook);
     } else if (channel === 'activeAssetCtx') {
       topic = JSON.stringify({ type: 'activeAssetCtx', coin: data.coin });
       this.subscribeSubjs.get(topic)?.next(data.ctx);
@@ -136,7 +144,7 @@ export class HyperliquidWsClient extends SubscriptionManager {
       method: 'subscribe',
       subscription: sub,
     });
-    return subj;
+    return subj.pipe(share());
   }
 
   unsubscribeCandles(coin: string, resolution: string) {
@@ -162,11 +170,48 @@ export class HyperliquidWsClient extends SubscriptionManager {
       interval: hyperliquidTf,
     };
     const topic = JSON.stringify(sub);
-    this.subscribe({
+    this.removeSubj(topic);
+    this.unsubscribe({
       method: 'unsubscribe',
       subscription: sub,
     });
+
+    this.removeSubscription({
+      method: 'subscribe',
+      subscription: sub,
+    });
+  }
+
+  subscribeOrderbook(coin: string, depth: number = 20) {
+    const sub = {
+      type: 'l2Book',
+      coin: coin.toUpperCase(),
+    };
+    const topic = JSON.stringify(sub);
+    const subj = this.createOrUpdateSubj<Orderbook>(topic);
+    this.subscribe({
+      method: 'subscribe',
+      subscription: sub,
+    });
+    return subj;
+  }
+
+  unsubscribeOrderbook(coin: string, depth: number = 20) {
+    const sub = {
+      type: 'l2Book',
+      coin: coin.toUpperCase(),
+    };
+    const topic = JSON.stringify(sub);
     this.removeSubj(topic);
+    this.unsubscribe({
+      method: 'unsubscribe',
+      subscription: sub,
+    });
+
+    this.removeSubscription({
+      method: 'subscribe',
+      subscription: sub,
+    });
   }
 }
 

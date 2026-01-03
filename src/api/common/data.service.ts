@@ -216,7 +216,17 @@ export class DataService {
   }
 
   hyperliquidUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
-    return this.hyperliquidWsClient.unsubscribeCandles(symbol, resolution);
+    this.hyperliquidWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  hyperliquidSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.hyperliquidWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  hyperliquidUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.hyperliquidWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
   }
 
   // Методы для подписки на стаканы

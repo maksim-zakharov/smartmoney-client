@@ -172,6 +172,10 @@ export class OrderbookManager {
           this.orderbookDepth = 20;
           this.wsSubscription = this.dataService.xtSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
+        case 'HYPERLIQUID':
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.hyperliquidSubscribeOrderbook(this.symbol, this.orderbookDepth);
+          break;
         default:
           return;
       }
@@ -536,6 +540,9 @@ export class OrderbookManager {
             break;
           case 'XT':
             this.dataService.xtUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'HYPERLIQUID':
+            this.dataService.hyperliquidUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
             break;
         }
       } catch (error) {
