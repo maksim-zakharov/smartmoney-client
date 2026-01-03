@@ -154,15 +154,20 @@ export class SubscriptionManager {
   protected unsubscribe(request) {
     const requestKey = JSON.stringify(request);
 
-    if (!this.subscriptions.has(requestKey)) {
-      return;
-    }
+    // if (!this.subscriptions.has(requestKey)) {
+    //   return;
+    // }
 
     if (this.isConnected) {
       this.ws.send(requestKey);
     }
 
     // Удаляем из хранилища подписок; формирование payload делается на уровне конкретной биржи
+    this.removeSubscription(request);
+  }
+
+  removeSubscription(request) {
+    const requestKey = JSON.stringify(request);
     this.subscriptions.delete(requestKey);
   }
 

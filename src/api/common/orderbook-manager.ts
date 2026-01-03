@@ -32,6 +32,7 @@ export class OrderbookManager {
   private subscription: Subscription | null = null;
   private wsSubscription: any = null;
   private canvas: HTMLCanvasElement | null = null;
+  private orderbookDepth: number | 1 | 5 | 15 | 50 | 100 | 200 | 400 = 20; // Сохраняем глубину для отписки
   
   // Кэш для хранения всех уровней цен
   private priceCache = new Map<number, OrderbookPriceLevel>();
@@ -105,47 +106,61 @@ export class OrderbookManager {
     try {
       switch (exchangeUpper) {
         case 'MEXC':
-          this.wsSubscription = this.dataService.mexcSubscribeOrderbook(this.symbol, 200);
+          this.orderbookDepth = 200;
+          this.wsSubscription = this.dataService.mexcSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'BYBIT':
-          this.wsSubscription = this.dataService.bybitSubscribeOrderbook(this.symbol, 200);
+          this.orderbookDepth = 200;
+          this.wsSubscription = this.dataService.bybitSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'BITGET':
-          this.wsSubscription = this.dataService.bitgetSubscribeOrderbook(this.symbol, 15);
+          this.orderbookDepth = 15;
+          this.wsSubscription = this.dataService.bitgetSubscribeOrderbook(this.symbol, this.orderbookDepth as 1 | 5 | 15);
           break;
         case 'GATE':
         case 'GATEIO':
-          this.wsSubscription = this.dataService.gateSubscribeOrderbook(this.symbol, 400);
+          this.orderbookDepth = 400;
+          this.wsSubscription = this.dataService.gateSubscribeOrderbook(this.symbol, this.orderbookDepth as 50 | 400);
           break;
         case 'BINGX':
-          this.wsSubscription = this.dataService.bingxSubscribeOrderbook(this.symbol, 100);
+          this.orderbookDepth = 100;
+          this.wsSubscription = this.dataService.bingxSubscribeOrderbook(this.symbol, this.orderbookDepth as 5 | 10 | 20 | 50 | 100);
           break;
         case 'OKX':
-          this.wsSubscription = this.dataService.okxSubscribeOrderbook(this.symbol, 200);
+          this.orderbookDepth = 200;
+          this.wsSubscription = this.dataService.okxSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'OURBIT':
-          this.wsSubscription = this.dataService.ourbitSubscribeOrderbook(this.symbol, 200);
+          this.orderbookDepth = 200;
+          this.wsSubscription = this.dataService.ourbitSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'KUCOIN':
-          this.wsSubscription = this.dataService.kucoinSubscribeOrderbook(this.symbol, 200);
+          this.orderbookDepth = 200;
+          this.wsSubscription = this.dataService.kucoinSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'BINANCE':
-          this.wsSubscription = this.dataService.binanceSubscribeOrderbook(this.symbol, 20);
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.binanceSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'BITMART':
-          this.wsSubscription = this.dataService.bitmartSubscribeOrderbook(this.symbol, 20);
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.bitmartSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'HTX':
-          this.wsSubscription = this.dataService.htxSubscribeOrderbook(this.symbol, 20);
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.htxSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'PHEMEX':
-          this.wsSubscription = this.dataService.phemexSubscribeOrderbook(this.symbol, 20);
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.phemexSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'BITUNIX':
-          this.wsSubscription = this.dataService.bitunixSubscribeOrderbook(this.symbol, 20);
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.bitunixSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         case 'XT':
-          this.wsSubscription = this.dataService.xtSubscribeOrderbook(this.symbol, 20);
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.xtSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
         default:
           return;
@@ -449,10 +464,66 @@ export class OrderbookManager {
   }
 
   public destroy() {
+    // Отписываемся от RxJS подписки
     if (this.subscription) {
       this.subscription.unsubscribe();
       this.subscription = null;
     }
+    
+    // Отписываемся от websocket
+    if (this.dataService && this.symbol) {
+      const exchangeUpper = this.exchange.toUpperCase();
+      try {
+        switch (exchangeUpper) {
+          case 'MEXC':
+            this.dataService.mexcUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'BYBIT':
+            this.dataService.bybitUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'BITGET':
+            this.dataService.bitgetUnsubscribeOrderbook(this.symbol, this.orderbookDepth as 1 | 5 | 15);
+            break;
+          case 'GATE':
+          case 'GATEIO':
+            this.dataService.gateUnsubscribeOrderbook(this.symbol, this.orderbookDepth as 50 | 400);
+            break;
+          case 'BINGX':
+            this.dataService.bingxUnsubscribeOrderbook(this.symbol, this.orderbookDepth as 5 | 10 | 20 | 50 | 100);
+            break;
+          case 'OKX':
+            this.dataService.okxUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'OURBIT':
+            this.dataService.ourbitUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'KUCOIN':
+            this.dataService.kucoinUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'BINANCE':
+            this.dataService.binanceUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'BITMART':
+            this.dataService.bitmartUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'HTX':
+            this.dataService.htxUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'PHEMEX':
+            this.dataService.phemexUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'BITUNIX':
+            this.dataService.bitunixUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'XT':
+            this.dataService.xtUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+        }
+      } catch (error) {
+        // Игнорируем ошибки при отписке
+      }
+    }
+    
     this.wsSubscription = null;
     this.priceCache.clear();
     this.currentOrderbook = null;

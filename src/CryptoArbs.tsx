@@ -580,6 +580,8 @@ export const CryptoArbs = () => {
       const spread = (a.ratio - 1) * 100;
       // Общий фандинг пары в процентах
       const funding = sumFunding(a) * 100;
+      // Определяем sellExchange (где цена выше - продаем) и buyExchange (где цена ниже - покупаем)
+      // Если цены равны, используем исходный порядок left/right
       const sellExchange = a.right.last > a.left.last ? a.right : a.left;
       const buyExchange = a.right.last < a.left.last ? a.right : a.left;
       const sellFundingData = fundingMap[`${a.ticker}_${sellExchange.exchange}`];
@@ -636,8 +638,23 @@ export const CryptoArbs = () => {
     // Если не найден (например, список пуст), формируем из selectedArb
     const spread = (selectedArb.ratio - 1) * 100;
     const funding = sumFunding(selectedArb) * 100;
+    // Определяем sellExchange (где цена выше - продаем) и buyExchange (где цена ниже - покупаем)
+    // Если цены равны (например, оба 0 для placeholder), используем исходный порядок left/right
+    // left всегда будет sellExchange, right всегда будет buyExchange при равных ценах
     const sellExchange = selectedArb.right.last > selectedArb.left.last ? selectedArb.right : selectedArb.left;
     const buyExchange = selectedArb.right.last < selectedArb.left.last ? selectedArb.right : selectedArb.left;
+    
+    // Отладка: проверяем, что sellExchange и buyExchange разные
+    if (sellExchange.exchange === buyExchange.exchange) {
+      console.warn('sellExchange и buyExchange одинаковые:', {
+        ticker: selectedArb.ticker,
+        left: selectedArb.left,
+        right: selectedArb.right,
+        sellExchange: sellExchange.exchange,
+        buyExchange: buyExchange.exchange,
+      });
+    }
+    
     const sellFundingData = fundingMap[`${selectedArb.ticker}_${sellExchange.exchange}`];
     const buyFundingData = fundingMap[`${selectedArb.ticker}_${buyExchange.exchange}`];
 
@@ -1129,15 +1146,15 @@ export const CryptoArbs = () => {
             <div className="flex flex-col min-h-0 h-full w-[200px] flex-shrink-0">
               <div className="flex-1 min-h-0">
                 <OrderbookView
-                  exchange={selectedEnriched.sellExchange.exchange}
-                  symbol={getTickerWithSuffix(selectedEnriched.sellExchange.exchange, selectedEnriched.ticker)}
+                  exchange={selectedEnriched.left.exchange}
+                  symbol={getTickerWithSuffix(selectedEnriched.left.exchange, selectedEnriched.ticker)}
                   ticker={selectedEnriched.ticker}
                 />
               </div>
               <div className="flex-1 min-h-0 mt-2">
                 <OrderbookView
-                  exchange={selectedEnriched.buyExchange.exchange}
-                  symbol={getTickerWithSuffix(selectedEnriched.buyExchange.exchange, selectedEnriched.ticker)}
+                  exchange={selectedEnriched.right.exchange}
+                  symbol={getTickerWithSuffix(selectedEnriched.right.exchange, selectedEnriched.ticker)}
                   ticker={selectedEnriched.ticker}
                 />
               </div>

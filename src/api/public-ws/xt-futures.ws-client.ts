@@ -3,7 +3,6 @@ import { SubscriptionManager } from '../common/subscription-manager';
 import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
 
 export class XtFuturesWsClient extends SubscriptionManager {
-  private subscriptionIdCounter = 0;
   private pingInterval: NodeJS.Timeout | null = null;
 
   private readonly topicHandlers: Record<string, (message: any) => void> = {
@@ -20,10 +19,6 @@ export class XtFuturesWsClient extends SubscriptionManager {
     this.on('connect', () => this.onOpen());
     this.on('disconnect', () => this.onClose());
     this.on('message', (m) => this.onMessage(m));
-  }
-
-  private getNextId(): string {
-    return `xt_${++this.subscriptionIdCounter}`;
   }
 
   protected onClose() {
@@ -180,7 +175,7 @@ export class XtFuturesWsClient extends SubscriptionManager {
     this.subscribe({
       method: 'SUBSCRIBE',
       params: [channel],
-      id: this.getNextId(),
+      id: `SUBSCRIBE_${channel}`,
     });
 
     return subj.pipe(share());
@@ -196,7 +191,7 @@ export class XtFuturesWsClient extends SubscriptionManager {
     this.unsubscribe({
       method: 'UNSUBSCRIBE',
       params: [channel],
-      id: this.getNextId(),
+      id: `UNSUBSCRIBE_${channel}`,
     });
   }
 
@@ -210,7 +205,7 @@ export class XtFuturesWsClient extends SubscriptionManager {
     this.subscribe({
       method: 'SUBSCRIBE',
       params: [channel],
-      id: this.getNextId(),
+      id: `SUBSCRIBE_${channel}_${Date.now()}`,
     });
 
     return subj;
@@ -225,7 +220,13 @@ export class XtFuturesWsClient extends SubscriptionManager {
     this.unsubscribe({
       method: 'UNSUBSCRIBE',
       params: [channel],
-      id: this.getNextId(),
+      id: `UNSUBSCRIBE_${channel}_${Date.now()}`,
+    });
+
+    this.removeSubscription({
+      method: 'SUBSCRIBE',
+      params: [channel],
+      id: `SUBSCRIBE${channel}_${Date.now()}`,
     });
   }
 
