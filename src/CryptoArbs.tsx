@@ -576,35 +576,37 @@ export const CryptoArbs = () => {
 
   // Обогащаем данные арбитражей для отображения
   const enrichedArbs = useMemo(() => {
-    return filteredArbs.map((a) => {
-      const spread = (a.ratio - 1) * 100;
-      // Общий фандинг пары в процентах
-      const funding = sumFunding(a) * 100;
-      // Определяем sellExchange (где цена выше - продаем) и buyExchange (где цена ниже - покупаем)
-      // Если цены равны, используем исходный порядок left/right
-      const sellExchange = a.right.last > a.left.last ? a.right : a.left;
-      const buyExchange = a.right.last < a.left.last ? a.right : a.left;
-      const sellFundingData = fundingMap[`${a.ticker}_${sellExchange.exchange}`];
-      const buyFundingData = fundingMap[`${a.ticker}_${buyExchange.exchange}`];
-      const isSelected =
-        selectedArb?.ticker === a.ticker &&
-        selectedArb?.left.exchange === a.left.exchange &&
-        selectedArb?.right.exchange === a.right.exchange;
+    return filteredArbs
+      .slice(0, 50)
+      .map((a) => {
+        const spread = (a.ratio - 1) * 100;
+        // Общий фандинг пары в процентах
+        const funding = sumFunding(a) * 100;
+        // Определяем sellExchange (где цена выше - продаем) и buyExchange (где цена ниже - покупаем)
+        // Если цены равны, используем исходный порядок left/right
+        const sellExchange = a.right.last > a.left.last ? a.right : a.left;
+        const buyExchange = a.right.last < a.left.last ? a.right : a.left;
+        const sellFundingData = fundingMap[`${a.ticker}_${sellExchange.exchange}`];
+        const buyFundingData = fundingMap[`${a.ticker}_${buyExchange.exchange}`];
+        const isSelected =
+          selectedArb?.ticker === a.ticker &&
+          selectedArb?.left.exchange === a.left.exchange &&
+          selectedArb?.right.exchange === a.right.exchange;
 
-      return {
-        ...a,
-        spread,
-        funding,
-        sellExchange,
-        buyExchange,
-        // Фандинг по каждой бирже так же приводим к процентам, как на биржах
-        sellFunding: sellFundingData ? sellFundingData.rate * 100 : undefined,
-        sellFundingTime: sellFundingData?.nextFundingTime,
-        buyFunding: buyFundingData ? buyFundingData.rate * 100 : undefined,
-        buyFundingTime: buyFundingData?.nextFundingTime,
-        isSelected,
-      };
-    });
+        return {
+          ...a,
+          spread,
+          funding,
+          sellExchange,
+          buyExchange,
+          // Фандинг по каждой бирже так же приводим к процентам, как на биржах
+          sellFunding: sellFundingData ? sellFundingData.rate * 100 : undefined,
+          sellFundingTime: sellFundingData?.nextFundingTime,
+          buyFunding: buyFundingData ? buyFundingData.rate * 100 : undefined,
+          buyFundingTime: buyFundingData?.nextFundingTime,
+          isSelected,
+        };
+      });
   }, [filteredArbs, fundingMap, selectedArb]);
 
   // Формируем тикеры с префиксами бирж и правильными суффиксами для графика спреда
