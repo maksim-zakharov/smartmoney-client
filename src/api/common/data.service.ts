@@ -256,7 +256,7 @@ export class DataService {
   }
 
   bybitUnsubscribeOrderbook(symbol: string, depth: number = 20) {
-    // TODO: добавить метод unsubscribe в bybit.ws-client.ts если нужно
+    this.bybitWsClient.unsubscribeOrderbook(symbol, depth);
     return Promise.resolve();
   }
 

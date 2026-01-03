@@ -158,6 +158,16 @@ export class OrderbookManager {
           this.orderbookDepth = 20;
           this.wsSubscription = this.dataService.bitunixSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
+        case 'TOOBIT':
+          this.orderbookDepth = 20;
+          // Преобразуем тикер в формат Toobit: BTC -> BTC-SWAP-USDT, RIVER-USDT -> RIVER-SWAP-USDT
+          const toobitSymbol = this.symbol.includes('-SWAP-')
+            ? this.symbol
+            : this.symbol.endsWith('-USDT')
+              ? this.symbol.replace('-USDT', '-SWAP-USDT')
+              : `${this.symbol}-SWAP-USDT`;
+          this.wsSubscription = this.dataService.toobitSubscribeOrderbook(toobitSymbol, this.orderbookDepth);
+          break;
         case 'XT':
           this.orderbookDepth = 20;
           this.wsSubscription = this.dataService.xtSubscribeOrderbook(this.symbol, this.orderbookDepth);
@@ -514,6 +524,15 @@ export class OrderbookManager {
             break;
           case 'BITUNIX':
             this.dataService.bitunixUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'TOOBIT':
+            // Преобразуем тикер в формат Toobit: BTC -> BTC-SWAP-USDT, RIVER-USDT -> RIVER-SWAP-USDT
+            const toobitSymbol = this.symbol.includes('-SWAP-')
+              ? this.symbol
+              : this.symbol.endsWith('-USDT')
+                ? this.symbol.replace('-USDT', '-SWAP-USDT')
+                : `${this.symbol}-SWAP-USDT`;
+            this.dataService.toobitUnsubscribeOrderbook(toobitSymbol, this.orderbookDepth);
             break;
           case 'XT':
             this.dataService.xtUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
