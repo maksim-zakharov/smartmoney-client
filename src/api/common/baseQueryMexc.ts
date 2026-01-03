@@ -5,8 +5,8 @@ const mutex = new Mutex();
 
 const baseQuery = () =>
   fetchBaseQuery({
-    baseUrl: 'http://localhost:3000/mexc',
-    // baseUrl: 'https://176.114.69.4/mexc',
+    // baseUrl: 'http://localhost:3000/mexc',
+    baseUrl: 'https://176.114.69.4/mexc',
     prepareHeaders: (headers, { getState }: any) => {
       const token = getState().alorSlice.cTraderAuth?.accessToken;
 

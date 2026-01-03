@@ -28,7 +28,6 @@ import { Trash } from 'lucide-react';
 import { Button } from './components/ui/button.tsx';
 import { deleteAlert } from './api/alerts.slice';
 import { AlertDialog } from './components/AlertDialog.tsx';
-import { TypographyH4 } from './components/ui/typography.tsx';
 import { useGetWalletBalanceQuery } from './api/bybit.api.ts';
 import { useGetGateFAccountsQuery, useGetGateSAccountsQuery } from './api/gate.api.ts';
 import { useGetBalanceQuery } from './api/bingx.api.ts';
@@ -213,6 +212,7 @@ export default function App() {
     {},
     {
       pollingInterval: 5000,
+      skip: !localStorage.getItem('mexcApiKey') || !localStorage.getItem('mexcSecretKey'),
     },
   );
 
@@ -469,7 +469,10 @@ export default function App() {
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
-          <header className="flex h-11 shrink-0 items-center gap-2 border-b px-4 justify-between" style={{ borderColor: 'rgba(166, 189, 213, 0.2)' }}>
+          <header
+            className="flex h-11 shrink-0 items-center gap-2 border-b px-4 justify-between"
+            style={{ borderColor: 'rgba(166, 189, 213, 0.2)' }}
+          >
             <SidebarTrigger className="-ml-1" />
             <div className="flex gap-2 items-center">
               {cTraderAccount?.ctidTraderAccountId && (
@@ -503,197 +506,179 @@ export default function App() {
                       <div className="p-3 flex gap-3 flex-col">
                         <Accordion type="multiple" defaultValue={['telegram', 'alor']} className="w-full">
                           <AccordionItem value="telegram">
-                            <AccordionTrigger className="text-base">
-                              Telegram
-                            </AccordionTrigger>
+                            <AccordionTrigger className="text-base">Telegram</AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-2 gap-3 w-full">
-                          <div className="flex gap-2 flex-col">
+                                <div className="flex gap-2 flex-col">
                                   <Label htmlFor="telegramToken">Token</Label>
                                   <Input id="telegramToken" value={telegramToken} onChange={handletelegramToken} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
+                                </div>
+                                <div className="flex gap-2 flex-col">
                                   <Label htmlFor="telegramUserId">UserID</Label>
                                   <Input id="telegramUserId" value={telegramUserId} onChange={handletelegramUserId} />
-                          </div>
-                        </div>
+                                </div>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
 
                           <AccordionItem value="alor">
-                            <AccordionTrigger className="text-base">
-                              Alor
-                            </AccordionTrigger>
+                            <AccordionTrigger className="text-base">Alor</AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-2 gap-3 w-full">
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="alorToken">Token</Label>
-                            <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="alorToken">Token</Label>
+                                  <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
                                   <Label htmlFor="alorPortfolio">Портфель</Label>
                                   <Input id="alorPortfolio" value={aPortfolio} onChange={handleaPortfolio} />
-                          </div>
-                        </div>
+                                </div>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
 
                           <AccordionItem value="tinkoff">
-                            <AccordionTrigger className="text-base">
-                              Тинькофф
-                            </AccordionTrigger>
+                            <AccordionTrigger className="text-base">Тинькофф</AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-2 gap-3 w-full">
-                          <div className="flex gap-2 flex-col">
+                                <div className="flex gap-2 flex-col">
                                   <Label htmlFor="tToken">Token</Label>
-                            <Input id="tToken" value={tiToken} onChange={handleEditToken} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="brokerAccountId">BrokerAccountId</Label>
-                            <Input id="brokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
-                          </div>
-                        </div>
+                                  <Input id="tToken" value={tiToken} onChange={handleEditToken} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="brokerAccountId">BrokerAccountId</Label>
+                                  <Input id="brokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
+                                </div>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
 
                           <AccordionItem value="mexc">
-                            <AccordionTrigger className="text-base">
-                              Mexc
-                            </AccordionTrigger>
+                            <AccordionTrigger className="text-base">Mexc</AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-3 gap-3 w-full">
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="mexcApiKey">Api Key</Label>
-                            <Input id="mexcApiKey" value={mexcApiKey} onChange={handleEditmexcApiKey} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="mexcSecretKey">Secret Key</Label>
-                            <Input id="mexcSecretKey" value={mexcSecretKey} onChange={handleEditmexcSecretKey} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="mexcUid">UID</Label>
-                            <Input id="mexcUid" value={mexcUid} onChange={handleEditmexcUid} />
-                          </div>
-                        </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="mexcApiKey">Api Key</Label>
+                                  <Input id="mexcApiKey" value={mexcApiKey} onChange={handleEditmexcApiKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="mexcSecretKey">Secret Key</Label>
+                                  <Input id="mexcSecretKey" value={mexcSecretKey} onChange={handleEditmexcSecretKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="mexcUid">UID</Label>
+                                  <Input id="mexcUid" value={mexcUid} onChange={handleEditmexcUid} />
+                                </div>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
 
                           <AccordionItem value="okx">
-                            <AccordionTrigger className="text-base">
-                              OKX
-                            </AccordionTrigger>
+                            <AccordionTrigger className="text-base">OKX</AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-3 gap-3 w-full">
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="okxApiKey">Api Key</Label>
-                            <Input id="okxApiKey" value={okxApiKey} onChange={handleEditokxApiKey} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="okxApiSecret">Secret Key</Label>
-                            <Input id="okxApiSecret" value={okxApiSecret} onChange={handleEditokxSecretKey} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="okxApiPhrase">Phrase</Label>
-                            <Input id="okxApiPhrase" value={okxPhrase} onChange={handleEditokxPhrase} />
-                          </div>
-                        </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="okxApiKey">Api Key</Label>
+                                  <Input id="okxApiKey" value={okxApiKey} onChange={handleEditokxApiKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="okxApiSecret">Secret Key</Label>
+                                  <Input id="okxApiSecret" value={okxApiSecret} onChange={handleEditokxSecretKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="okxApiPhrase">Phrase</Label>
+                                  <Input id="okxApiPhrase" value={okxPhrase} onChange={handleEditokxPhrase} />
+                                </div>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
 
                           <AccordionItem value="bitget">
-                            <AccordionTrigger className="text-base">
-                              Bitget
-                            </AccordionTrigger>
+                            <AccordionTrigger className="text-base">Bitget</AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-3 gap-3 w-full">
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="bitgetApiKey">Api Key</Label>
-                            <Input id="bitgetApiKey" value={bitgetApiKey} onChange={handleEditbitgetApiKey} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="bitgetSecretKey">Secret Key</Label>
-                            <Input id="bitgetSecretKey" value={bitgetSecretKey} onChange={handleEditbitgetSecretKey} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="bitgetPhrase">Phrase</Label>
-                            <Input id="bitgetPhrase" value={bitgetPhrase} onChange={handleEditbitgetPhrase} />
-                          </div>
-                        </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bitgetApiKey">Api Key</Label>
+                                  <Input id="bitgetApiKey" value={bitgetApiKey} onChange={handleEditbitgetApiKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bitgetSecretKey">Secret Key</Label>
+                                  <Input id="bitgetSecretKey" value={bitgetSecretKey} onChange={handleEditbitgetSecretKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bitgetPhrase">Phrase</Label>
+                                  <Input id="bitgetPhrase" value={bitgetPhrase} onChange={handleEditbitgetPhrase} />
+                                </div>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
 
                           <AccordionItem value="bybit">
-                            <AccordionTrigger className="text-base">
-                              Bybit
-                            </AccordionTrigger>
+                            <AccordionTrigger className="text-base">Bybit</AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-2 gap-3 w-full">
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="bybitApiKey">Api Key</Label>
-                            <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="bybitSecretKey">Secret Key</Label>
-                            <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
-                          </div>
-                        </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bybitApiKey">Api Key</Label>
+                                  <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bybitSecretKey">Secret Key</Label>
+                                  <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
+                                </div>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
 
                           <AccordionItem value="bingx">
-                            <AccordionTrigger className="text-base">
-                              Bingx
-                            </AccordionTrigger>
+                            <AccordionTrigger className="text-base">Bingx</AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-2 gap-3 w-full">
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="bingxApiKey">Api key</Label>
-                            <Input id="bingxApiKey" value={bingxApiKey} onChange={handlebingxApiKey} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="bingxSecretKey">Secret key</Label>
-                            <Input id="bingxSecretKey" value={bingxSecretKey} onChange={handlebingxSecretKey} />
-                          </div>
-                        </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bingxApiKey">Api key</Label>
+                                  <Input id="bingxApiKey" value={bingxApiKey} onChange={handlebingxApiKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bingxSecretKey">Secret key</Label>
+                                  <Input id="bingxSecretKey" value={bingxSecretKey} onChange={handlebingxSecretKey} />
+                                </div>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
 
                           <AccordionItem value="gate">
-                            <AccordionTrigger className="text-base">
-                              Gate
-                            </AccordionTrigger>
+                            <AccordionTrigger className="text-base">Gate</AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-2 gap-3 w-full">
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="gateApiKey">Api key</Label>
-                            <Input id="gateApiKey" value={gateApiKey} onChange={handlegateApiKey} />
-                          </div>
-                          <div className="flex gap-2 flex-col">
-                            <Label htmlFor="gateSecretKey">Secret key</Label>
-                            <Input id="gateSecretKey" value={gateSecretKey} onChange={handlegateSecretKey} />
-                          </div>
-                        </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="gateApiKey">Api key</Label>
+                                  <Input id="gateApiKey" value={gateApiKey} onChange={handlegateApiKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="gateSecretKey">Secret key</Label>
+                                  <Input id="gateSecretKey" value={gateSecretKey} onChange={handlegateSecretKey} />
+                                </div>
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
                         </Accordion>
 
                         <div className="mt-4 pt-4 border-t">
                           <Label htmlFor="ctidTraderAccountId">cTraderAccount</Label>
-                        <RadioGroup
-                          id="ctidTraderAccountId"
-                          value={cTraderAccount?.ctidTraderAccountId}
-                          onValueChange={(val) => dispatch(selectCTraderAccount(Number(val)))}
+                          <RadioGroup
+                            id="ctidTraderAccountId"
+                            value={cTraderAccount?.ctidTraderAccountId}
+                            onValueChange={(val) => dispatch(selectCTraderAccount(Number(val)))}
                             className="mt-2"
-                        >
-                          {cTraderAccounts?.map((cTraderAccount) => (
+                          >
+                            {cTraderAccounts?.map((cTraderAccount) => (
                               <div key={cTraderAccount?.ctidTraderAccountId} className="flex items-center space-x-2">
-                              <RadioGroupItem value={cTraderAccount?.ctidTraderAccountId} id={cTraderAccount?.ctidTraderAccountId} />
-                              <Label htmlFor={cTraderAccount?.ctidTraderAccountId}>
-                                {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
-                              </Label>
-                            </div>
-                          ))}
-                        </RadioGroup>
+                                <RadioGroupItem value={cTraderAccount?.ctidTraderAccountId} id={cTraderAccount?.ctidTraderAccountId} />
+                                <Label htmlFor={cTraderAccount?.ctidTraderAccountId}>
+                                  {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
+                                </Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
                         </div>
                       </div>
                     </TabsContent>
