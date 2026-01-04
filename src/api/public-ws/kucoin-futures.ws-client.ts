@@ -134,6 +134,14 @@ export class KucoinFuturesWsClient extends SubscriptionManager {
           this.handleKlineMessage(message);
           return;
         }
+        if (message.T.startsWith('ticker.')) {
+          this.handleTickerMessage(message);
+          return;
+        }
+        if (message.T.startsWith('trade.')) {
+          this.handleTradeMessage(message);
+          return;
+        }
       }
 
       // Обработка сообщений по t (тип события)
@@ -193,6 +201,50 @@ export class KucoinFuturesWsClient extends SubscriptionManager {
     this.subscribeSubjs.get(key)?.next(orderbook);
   }
 
+  private handleTickerMessage(message: any) {
+    const data = message.d;
+    if (!data || !data.s) {
+      return;
+    }
+
+    const symbol = data.s; // XBTUSDTM
+    const key = `ticker_${symbol}`;
+
+    this.subscribeSubjs.get(key)?.next({
+      symbol: data.s,
+      bestBidPrice: Number(data.b),
+      bestBidSize: Number(data.B),
+      bestAskPrice: Number(data.a),
+      bestAskSize: Number(data.A),
+      lastPrice: Number(data.l),
+      lastSize: Number(data.q),
+      side: data.S, // BUY or SELL
+      sequence: data.E,
+      timestamp: data.M,
+    });
+  }
+
+  private handleTradeMessage(message: any) {
+    const data = message.d;
+    if (!data || !data.s) {
+      return;
+    }
+
+    const symbol = data.s; // XBTUSDTM
+    const key = `trade_${symbol}`;
+
+    this.subscribeSubjs.get(key)?.next({
+      symbol: data.s,
+      sequence: data.E,
+      tradeId: data.ti,
+      price: Number(data.p),
+      size: Number(data.q),
+      side: data.S, // buy or sell
+      rpi: data.rpi, // optional, only for FUTURES
+      timestamp: data.M,
+    });
+  }
+
   /**
    * Нормализует символ для KuCoin Futures
    * BTC-USDT -> BTCUSDTM
@@ -205,6 +257,7 @@ export class KucoinFuturesWsClient extends SubscriptionManager {
     }
     return normalized;
   }
+
 
   /**
    * Преобразует resolution в формат KuCoin
@@ -336,6 +389,82 @@ export class KucoinFuturesWsClient extends SubscriptionManager {
       symbol: normalizedSymbol,
       depth: kucoinDepth,
       rpiFilter: 0,
+    });
+  }
+
+  subscribeTickers(symbol: string) {
+    const normalizedSymbol = this.normalizeSymbol(symbol);
+    const key = `ticker_${normalizedSymbol}`;
+    const subj = this.createOrUpdateSubj<any>(key);
+
+    this.subscribe({
+      id: this.getNextId(),
+      action: 'SUBSCRIBE',
+      channel: 'ticker',
+      tradeType: 'FUTURES',
+      symbol: normalizedSymbol,
+    });
+
+    return subj;
+  }
+
+  unsubscribeTickers(symbol: string) {
+    const normalizedSymbol = this.normalizeSymbol(symbol);
+    const key = `ticker_${normalizedSymbol}`;
+    this.removeSubj(key);
+
+    this.unsubscribe({
+      id: this.getNextId(),
+      action: 'UNSUBSCRIBE',
+      channel: 'ticker',
+      tradeType: 'FUTURES',
+      symbol: normalizedSymbol,
+    });
+
+    this.removeSubscription({
+      id: this.getNextId(),
+      action: 'SUBSCRIBE',
+      channel: 'ticker',
+      tradeType: 'FUTURES',
+      symbol: normalizedSymbol,
+    });
+  }
+
+  subscribeTrades(symbol: string) {
+    const normalizedSymbol = this.normalizeSymbol(symbol);
+    const key = `trade_${normalizedSymbol}`;
+    const subj = this.createOrUpdateSubj<any>(key);
+
+    this.subscribe({
+      id: this.getNextId(),
+      action: 'SUBSCRIBE',
+      channel: 'trade',
+      tradeType: 'FUTURES',
+      symbol: normalizedSymbol,
+    });
+
+    return subj;
+  }
+
+  unsubscribeTrades(symbol: string) {
+    const normalizedSymbol = this.normalizeSymbol(symbol);
+    const key = `trade_${normalizedSymbol}`;
+    this.removeSubj(key);
+
+    this.unsubscribe({
+      id: this.getNextId(),
+      action: 'UNSUBSCRIBE',
+      channel: 'trade',
+      tradeType: 'FUTURES',
+      symbol: normalizedSymbol,
+    });
+
+    this.removeSubscription({
+      id: this.getNextId(),
+      action: 'SUBSCRIBE',
+      channel: 'trade',
+      tradeType: 'FUTURES',
+      symbol: normalizedSymbol,
     });
   }
 }
