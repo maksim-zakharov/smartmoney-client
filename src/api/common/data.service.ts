@@ -1,5 +1,5 @@
 import { AlorApi, Exchange } from 'alor-api';
-import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer } from 'rxjs';
+import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer, bufferTime, scan } from 'rxjs';
 import { PeriodParams, ResolutionString } from '../../assets/charting_library';
 import { BybitWebsocketClient } from '../public-ws/bybit.ws-client.ts';
 import { MexcWsClient } from '../public-ws/mexc.ws-client.ts';
@@ -116,11 +116,60 @@ export class DataService {
   mexcSubscribeCandles(symbol: string, resolution: ResolutionString) {
     if (symbol.includes('_')) {
       if (symbol.includes('_fair')) {
-        return this.mexcWsClient.subscribeFairPrice(symbol.split('_fair')[0]).pipe(
-          map((candle) => {
-            const time = roundToMinutesSimple(dayjs(), Number(resolution)) / 1000;
-            return { ...candle, time };
+        const baseSymbol = symbol.split('_fair')[0];
+        const resolutionMinutes = Number(resolution);
+        
+        // Агрегируем fair.price в полные свечи
+        return this.mexcWsClient.subscribeFairPrice(baseSymbol).pipe(
+          scan(
+            (
+              acc: { candle: { time: number; open: number; high: number; low: number; close: number } | null },
+              priceData: { close: number },
+            ) => {
+              const now = dayjs();
+              const currentTime = roundToMinutesSimple(now, resolutionMinutes);
+              const currentTimeSeconds = currentTime / 1000;
+              const price = Number(priceData.close);
+              
+              // Если это новый интервал, создаем новую свечу
+              if (!acc.candle || acc.candle.time !== currentTimeSeconds) {
+                return {
+                  candle: {
+                    time: currentTimeSeconds,
+                    open: price,
+                    high: price,
+                    low: price,
+                    close: price,
+                  },
+                };
+              } else {
+                // Обновляем текущую свечу
+                return {
+                  candle: {
+                    ...acc.candle,
+                    high: Math.max(acc.candle.high, price),
+                    low: Math.min(acc.candle.low, price),
+                    close: price,
+                  },
+                };
+              }
+            },
+            { candle: null } as { candle: { time: number; open: number; high: number; low: number; close: number } | null },
+          ),
+          map((acc) => {
+            if (!acc.candle) return null;
+            
+            return {
+              time: acc.candle.time,
+              open: acc.candle.open,
+              high: acc.candle.high,
+              low: acc.candle.low,
+              close: acc.candle.close,
+              volume: 0,
+            };
           }),
+          // Фильтруем null значения
+          mergeMap((candle) => (candle ? [candle] : [])),
         );
       }
       return this.mexcWsClient.subscribeCandles(symbol, resolution);
@@ -550,7 +599,7 @@ export class DataService {
     });
   }
 
-  getChartData(ticker: string, resolution: ResolutionString, periodParams: PeriodParams) {
+  getChartData(ticker: string, resolution: ResolutionString, periodParams: PeriodParams, type?: 'spread' | 'fair') {
     let request$;
 
     if (ticker.includes('_xp') || ticker.includes('FOREX:')) {
@@ -776,11 +825,13 @@ export class DataService {
     } else if (ticker.includes('MEXC:')) {
       let _ticker = ticker.split('MEXC:')[1];
 
-      if (_ticker.includes('_fair')) {
+      // Проверяем тип из параметра или из тикера (для обратной совместимости)
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+      if (isFair) {
         _ticker = _ticker.split('_fair')[0];
         request$ = from(
           fetch(
-            `${this.cryptoUrl}/mexc/f-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+            `${this.cryptoUrl}/mexc/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);

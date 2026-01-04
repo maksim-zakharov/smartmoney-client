@@ -225,9 +225,13 @@ export class DataFeed implements IBasicDataFeed {
       );
       return;
     }
+    // Получаем type из URL query параметров
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type') as 'spread' | 'fair' | null;
+    
     const isSentetic = symbolInfo.ticker.includes('/');
     if (!isSentetic) {
-      this.dataService.getChartData(symbolInfo.ticker, resolution, periodParams).subscribe((res) => {
+      this.dataService.getChartData(symbolInfo.ticker, resolution, periodParams, type || undefined).subscribe((res) => {
         const dataIsEmpty = res.history.length === 0;
 
         const nextTime = periodParams.firstDataRequest ? res.next : res.prev;
@@ -247,7 +251,7 @@ export class DataFeed implements IBasicDataFeed {
       });
     } else {
       const parts = symbolInfo.ticker.split('/');
-      Promise.all(parts.map((symbol) => this.dataService.getChartData(symbol, resolution, periodParams).toPromise())).then((res) => {
+      Promise.all(parts.map((symbol) => this.dataService.getChartData(symbol, resolution, periodParams, type || undefined).toPromise())).then((res) => {
         const dataIsEmpty = res.some((r) => !r.history.length);
 
         const nextTime = periodParams.firstDataRequest ? res.find((r) => r.next)?.next : res.find((r) => r.prev)?.prev;
