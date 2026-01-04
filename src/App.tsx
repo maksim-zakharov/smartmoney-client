@@ -47,6 +47,7 @@ import {
 import { CryptoArbs } from './CryptoArbs.tsx';
 import { Multicharts } from './Multicharts.tsx';
 import { CTraderHistory } from './CTraderHistoryPage.tsx';
+import { OrderbookTestPage } from './OrderbookTestPage.tsx';
 import { Toaster } from './components/ui/sonner.tsx';
 
 export default function App() {
@@ -318,6 +319,7 @@ export default function App() {
     { key: '/arbs', label: 'Арбитражи', element: <CryptoArbs /> },
     { key: '/multicharts', label: 'Мульти-графики', element: <Multicharts /> },
     { key: '/ctrader', label: 'Ctrader', element: <CTraderHistory /> },
+    { key: '/orderbook-test', label: 'Тест стакана', element: <OrderbookTestPage /> },
   ];
 
   const [telegramToken, settelegramToken] = useState<string | null>(localStorage.getItem('telegramToken'));
