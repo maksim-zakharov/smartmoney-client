@@ -1,6 +1,5 @@
-import { share, Subject } from 'rxjs';
+import { share } from 'rxjs';
 import { SubscriptionManager } from '../common/subscription-manager';
-import { AsterTimeframe } from './aster.models';
 import { Orderbook, OrderbookAsk, OrderbookBid } from 'alor-api';
 
 export class AsterWsClient extends SubscriptionManager {
@@ -174,4 +173,3 @@ export class AsterWsClient extends SubscriptionManager {
     return resolutionMap[resolution] || '1m';
   }
 }
-
