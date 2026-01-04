@@ -106,7 +106,8 @@ export class CoinexFuturesWsClient extends SubscriptionManager {
   subscribeCandles(symbol: string, resolution: string) {
     // COINEX не имеет прямого WebSocket канала для свечей
     // Используем state.update для получения последней цены
-    const normalizedSymbol = symbol.toUpperCase();
+    // Нормализуем символ: убираем дефисы и подчеркивания, формат BTCUSDT
+    const normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
     const key = `candles_${normalizedSymbol}_${resolution}`;
     const subj = this.createOrUpdateSubj<any>(key);
 
@@ -121,7 +122,8 @@ export class CoinexFuturesWsClient extends SubscriptionManager {
   }
 
   unsubscribeCandles(symbol: string, resolution: string) {
-    const normalizedSymbol = symbol.toUpperCase();
+    // Нормализуем символ: убираем дефисы и подчеркивания, формат BTCUSDT
+    const normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
     const key = `candles_${normalizedSymbol}_${resolution}`;
     this.removeSubj(key);
 
@@ -140,7 +142,8 @@ export class CoinexFuturesWsClient extends SubscriptionManager {
   }
 
   subscribeOrderbook(symbol: string, depth: number = 20) {
-    const normalizedSymbol = symbol.toUpperCase();
+    // Нормализуем символ: убираем дефисы и подчеркивания, формат BTCUSDT
+    const normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
     const key = `depth_${normalizedSymbol}`;
     const subj = this.createOrUpdateSubj<Orderbook>(key);
 
@@ -160,7 +163,8 @@ export class CoinexFuturesWsClient extends SubscriptionManager {
   }
 
   unsubscribeOrderbook(symbol: string, depth: number = 20) {
-    const normalizedSymbol = symbol.toUpperCase();
+    // Нормализуем символ: убираем дефисы и подчеркивания, формат BTCUSDT
+    const normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
     const key = `depth_${normalizedSymbol}`;
     this.removeSubj(key);
 
@@ -185,7 +189,8 @@ export class CoinexFuturesWsClient extends SubscriptionManager {
   }
 
   subscribeFairPrice(symbol: string) {
-    const normalizedSymbol = symbol.toUpperCase();
+    // Нормализуем символ: убираем дефисы и подчеркивания, формат BTCUSDT
+    const normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
     const key = `${normalizedSymbol}_fair`;
     const subj = this.createOrUpdateSubj<{ close?: number; price?: number }>(key);
 
@@ -200,7 +205,8 @@ export class CoinexFuturesWsClient extends SubscriptionManager {
   }
 
   unsubscribeFairPrice(symbol: string) {
-    const normalizedSymbol = symbol.toUpperCase();
+    // Нормализуем символ: убираем дефисы и подчеркивания, формат BTCUSDT
+    const normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
     const key = `${normalizedSymbol}_fair`;
     this.removeSubj(key);
 

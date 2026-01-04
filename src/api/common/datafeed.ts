@@ -425,7 +425,9 @@ export class DataFeed implements IBasicDataFeed {
         });
         return () => this.dataService.kcexUnsubscribeCandles(ticker, resolution);
       } else if (symbol.includes('COINEX')) {
-        const ticker = symbol.split('COINEX:')[1];
+        let ticker = symbol.split('COINEX:')[1];
+        // Нормализуем символ для COINEX: убираем дефисы и подчеркивания, формат BTCUSDT
+        ticker = ticker.toUpperCase().replace(/[-_]/g, '');
         this.dataService.coinexSubscribeCandles(ticker, resolution).subscribe((data) => {
           callback(data);
         });

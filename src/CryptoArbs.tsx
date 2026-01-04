@@ -74,6 +74,9 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
       return hotcoinTicker;
     case 'KCEX':
       return `${ticker}_USDT`;
+    case 'COINEX':
+      // COINEX использует формат BTCUSDT (без дефисов и подчеркиваний)
+      return `${ticker}USDT`.replace(/[-_]/g, '');
     default:
       // По умолчанию используем формат MEXC
       return `${ticker}_USDT`;

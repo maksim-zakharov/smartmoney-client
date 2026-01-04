@@ -990,7 +990,8 @@ export const exchangeImgMap = {
   XT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/525.png',
   TOOBIT: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/6137.png',
   HOTCOIN: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/943.png',
-  KCEX: 'https://www.kcex.com/favicon.ico',
+  KCEX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/9867.png',
+  COINEX: 'https://s2.coinmarketcap.com/static/img/exchanges/64x64/350.png',
 };
 export const moneyFormat = (
   money: number,
