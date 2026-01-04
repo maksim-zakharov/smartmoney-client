@@ -430,10 +430,23 @@ export class DataService {
   }
 
   bitmartSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC_USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.bitMartFuturesWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+    }
+
     return this.bitMartFuturesWsClient.subscribeCandles(symbol, resolution);
   }
 
   bitmartUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_fair')) {
+      this.bitMartFuturesWsClient.unsubscribeFairPrice(symbol.split('_fair')[0]);
+      return Promise.resolve();
+    }
     this.bitMartFuturesWsClient.unsubscribeCandles(symbol, resolution);
     return Promise.resolve();
   }
@@ -749,20 +762,39 @@ export class DataService {
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
     } else if (ticker.includes('BITMART:')) {
-      const _ticker = ticker.split('BITMART:')[1];
-      request$ = from(
-        fetch(
-          `${this.cryptoUrl}/bitmart/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
-        ).then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        }),
-      ).pipe(
-        map((r) => ({ history: r })),
-        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
-      );
+      let _ticker = ticker.split('BITMART:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bitmart/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bitmart/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
     } else if (ticker.includes('HTX:')) {
       const _ticker = ticker.split('HTX:')[1];
       request$ = from(

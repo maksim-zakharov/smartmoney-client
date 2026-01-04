@@ -53,6 +53,10 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
 
       // Диспетчеризация по типу группы
       if (message.group && message.data) {
+        if (message.group.startsWith('futures/markPriceKlineBin')) {
+          this.handleMarkPriceKlineBinMessage(message);
+          return;
+        }
         if (message.group.startsWith('futures/klineBin')) {
           this.handleKlineBinMessage(message);
           return;
@@ -64,6 +68,18 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
       }
     } catch (error) {
       console.error('BitMart WebSocket message error:', error);
+    }
+  }
+
+  private handleMarkPriceKlineBinMessage(message: any) {
+    // Формат: {"group":"futures/markPriceKlineBin1m:BTCUSDT","data":{"symbol":"BTCUSDT","o":"146.24","h":"146.24","l":"146.24","c":"146.24","v":"146","ts":1700533801}}
+    const symbol = message.data?.symbol;
+    if (symbol) {
+      const key = `${symbol}_fair`;
+      this.subscribeSubjs.get(key)?.next({
+        close: Number(message.data.c),
+        price: Number(message.data.c), // Для совместимости с aggregateFairPriceToCandles
+      });
     }
   }
 
@@ -238,6 +254,33 @@ export class BitMartFuturesWsClient extends SubscriptionManager {
     this.removeSubscription({
       action: 'subscribe',
       args: [key],
+    });
+  }
+
+  subscribeFairPrice(symbol: string) {
+    const key = `${symbol}_fair`;
+    const subj = this.createOrUpdateSubj<{ close?: number; price?: number }>(key);
+
+    this.subscribe({
+      action: 'subscribe',
+      args: [`futures/markPriceKlineBin1m:${symbol}`], // Используем 1m для получения обновлений справедливой цены
+    });
+
+    return subj;
+  }
+
+  unsubscribeFairPrice(symbol: string) {
+    const key = `${symbol}_fair`;
+    this.removeSubj(key);
+
+    this.unsubscribe({
+      action: 'unsubscribe',
+      args: [`futures/markPriceKlineBin1m:${symbol}`],
+    });
+
+    this.removeSubscription({
+      action: 'subscribe',
+      args: [`futures/markPriceKlineBin1m:${symbol}`],
     });
   }
 }
