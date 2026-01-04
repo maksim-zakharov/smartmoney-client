@@ -663,33 +663,44 @@ export class DataService {
   }
 
   coinexSubscribeCandles(symbol: string, resolution: ResolutionString) {
-    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC-USDT)
+    // Нормализуем символ для COINEX: убираем дефисы и подчеркивания, формат BTCUSDT
+    let normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
+
+    // Сначала проверяем _fair, так как символы могут содержать _fair
     if (symbol.includes('_fair')) {
-      const baseSymbol = symbol.split('_fair')[0];
+      normalizedSymbol = normalizedSymbol.replace('FAIR', '');
       const resolutionMinutes = Number(resolution);
 
       // Агрегируем fair.price в полные свечи
-      return aggregateFairPriceToCandles(this.coinexFuturesWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+      return aggregateFairPriceToCandles(this.coinexFuturesWsClient.subscribeFairPrice(normalizedSymbol), resolutionMinutes);
     }
 
-    return this.coinexFuturesWsClient.subscribeCandles(symbol, resolution);
+    return this.coinexFuturesWsClient.subscribeCandles(normalizedSymbol, resolution);
   }
 
   coinexUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Нормализуем символ для COINEX: убираем дефисы и подчеркивания, формат BTCUSDT
+    let normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
+
     if (symbol.includes('_fair')) {
-      this.coinexFuturesWsClient.unsubscribeFairPrice(symbol.split('_fair')[0]);
+      normalizedSymbol = normalizedSymbol.replace('FAIR', '');
+      this.coinexFuturesWsClient.unsubscribeFairPrice(normalizedSymbol);
       return Promise.resolve();
     }
-    this.coinexFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    this.coinexFuturesWsClient.unsubscribeCandles(normalizedSymbol, resolution);
     return Promise.resolve();
   }
 
   coinexSubscribeOrderbook(symbol: string, depth: number = 20) {
-    return this.coinexFuturesWsClient.subscribeOrderbook(symbol, depth);
+    // Нормализуем символ для COINEX: убираем дефисы и подчеркивания, формат BTCUSDT
+    const normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
+    return this.coinexFuturesWsClient.subscribeOrderbook(normalizedSymbol, depth);
   }
 
   coinexUnsubscribeOrderbook(symbol: string, depth: number = 20) {
-    this.coinexFuturesWsClient.unsubscribeOrderbook(symbol, depth);
+    // Нормализуем символ для COINEX: убираем дефисы и подчеркивания, формат BTCUSDT
+    const normalizedSymbol = symbol.toUpperCase().replace(/[-_]/g, '');
+    this.coinexFuturesWsClient.unsubscribeOrderbook(normalizedSymbol, depth);
     return Promise.resolve();
   }
 
@@ -1013,22 +1024,7 @@ export class DataService {
         map((r) => ({ history: r })),
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
-    } else if (ticker.includes('BITUNIX:')) {
-      const _ticker = ticker.split('BITUNIX:')[1];
-      request$ = from(
-        fetch(
-          `${this.cryptoUrl}/bitunix/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
-        ).then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        }),
-      ).pipe(
-        map((r) => ({ history: r })),
-        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
-      );
-    } else if (ticker.includes('TOOBIT:')) {
+    }  else if (ticker.includes('TOOBIT:')) {
       const _ticker = ticker.split('TOOBIT:')[1];
       // Преобразуем тикер в формат Toobit: BTC -> BTC-SWAP-USDT, RIVER-USDT -> RIVER-SWAP-USDT
       const toobitTicker = _ticker.includes('-SWAP-')
@@ -1188,9 +1184,15 @@ export class DataService {
 
       if (isFair) {
         _ticker = _ticker.split('_fair')[0];
+      }
+
+      // Нормализуем символ для COINEX: убираем дефисы и подчеркивания, формат BTCUSDT
+      const normalizedTicker = _ticker.toUpperCase().replace(/[-_]/g, '');
+
+      if (isFair) {
         request$ = from(
           fetch(
-            `${this.cryptoUrl}/coinex/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+            `${this.cryptoUrl}/coinex/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${normalizedTicker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);
@@ -1204,7 +1206,7 @@ export class DataService {
       } else {
         request$ = from(
           fetch(
-            `${this.cryptoUrl}/coinex/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+            `${this.cryptoUrl}/coinex/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${normalizedTicker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);
