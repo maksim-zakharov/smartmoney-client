@@ -484,10 +484,23 @@ export class DataService {
   }
 
   bitunixSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC_USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.bitunixFuturesWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+    }
+
     return this.bitunixFuturesWsClient.subscribeCandles(symbol, resolution);
   }
 
   bitunixUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_fair')) {
+      this.bitunixFuturesWsClient.unsubscribeFairPrice(symbol.split('_fair')[0]);
+      return Promise.resolve();
+    }
     this.bitunixFuturesWsClient.unsubscribeCandles(symbol, resolution);
     return Promise.resolve();
   }
@@ -938,6 +951,40 @@ export class DataService {
         request$ = from(
           fetch(
             `${this.cryptoUrl}/kcex/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
+    } else if (ticker.includes('BITUNIX:')) {
+      let _ticker = ticker.split('BITUNIX:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bitunix/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bitunix/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);

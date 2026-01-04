@@ -80,6 +80,9 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
   }
 };
 
+// Биржи с поддержкой графиков справедливой цены
+const EXCHANGES_WITH_FAIR_PRICE = ['MEXC', 'OURBIT', 'KCEX', 'BITUNIX'];
+
 // Функция для генерации URL биржи с тикером (фьючерсы) с реферальными кодами
 const getExchangeUrl = (exchange: string, ticker: string): string => {
   const exchangeUpper = exchange.toUpperCase();
@@ -727,6 +730,10 @@ export const CryptoArbs = () => {
       })
       .flat()
       .filter((r) => {
+        // Игнорируем биржи без поддержки графиков справедливой цены
+        if (!EXCHANGES_WITH_FAIR_PRICE.includes(r.exchange.toUpperCase())) {
+          return false;
+        }
         // Фильтрация по биржам (только если showAll = false и есть выбранные биржи)
         if (!showAll && enabledExchanges.size > 0) {
           if (!enabledExchanges.has(r.exchange)) {
@@ -784,6 +791,12 @@ export const CryptoArbs = () => {
     if (!selectedFairArb) return { tickerStock: '', _tickerFuture: '' };
 
     const exchange = selectedFairArb.exchange;
+    
+    // Проверяем, что биржа поддерживает fair price
+    if (!EXCHANGES_WITH_FAIR_PRICE.includes(exchange.toUpperCase())) {
+      return { tickerStock: '', _tickerFuture: '' };
+    }
+
     const tickerWithSuffix = getTickerWithSuffix(exchange, selectedFairArb.ticker);
     
     // Для fair арбитража: lastPrice / fairPrice на одной бирже
