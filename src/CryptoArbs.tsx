@@ -748,7 +748,7 @@ export const CryptoArbs = () => {
         const isExcluded = excludedTickers.has(r.ticker);
         const minFairCheck = minFairRatio === -Infinity ? true : spread >= minFairRatio;
         const maxFairCheck = maxFairRatio === Infinity ? true : spread <= maxFairRatio;
-        return Math.abs(spread) > minSpread && minFairCheck && maxFairCheck && !isExcluded;
+        return minFairCheck && maxFairCheck && !isExcluded;
       })
       .sort((a, b) => {
         // Сортируем по ratio (чем больше отклонение от 1, тем лучше)
@@ -757,7 +757,7 @@ export const CryptoArbs = () => {
         return bSpread - aSpread;
       })
       .slice(0, 50);
-  }, [tickers, showAll, enabledExchanges, minSpread, excludedTickers, minFairRatio, maxFairRatio]);
+  }, [tickers, showAll, enabledExchanges, excludedTickers, minFairRatio, maxFairRatio]);
 
   // Обновляем выбранный fair арбитраж данными из fairRatios, когда они загрузятся
   useEffect(() => {
