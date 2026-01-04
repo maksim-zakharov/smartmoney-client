@@ -61,6 +61,7 @@ export class BingXFuturesWsClient extends SubscriptionManager {
     '@kline': (dataType, data, res) => this.handleKlineMessage(dataType, data, res),
     '@depth': (dataType, data, res) => this.handleDepthMessage(dataType, data, res),
     '@trade': (dataType, data, res) => this.handleTradeMessage(dataType, data, res),
+    '@markPrice': (dataType, data, res) => this.handleMarkPriceMessage(dataType, data, res),
   };
 
   constructor(apiKey?: string, secretKey?: string) {
@@ -199,6 +200,24 @@ export class BingXFuturesWsClient extends SubscriptionManager {
     this.unsubscribeFuturesChannel(key);
   }
 
+  subscribeFairPrice(symbol: string) {
+    const key = `${symbol}_fair`;
+    const subj = this.createOrUpdateSubj<{ close?: number; price?: number }>(key);
+    
+    const dataType = `${symbol}@markPrice`;
+    this.subscribeFuturesChannel(dataType);
+
+    return subj;
+  }
+
+  unsubscribeFairPrice(symbol: string) {
+    const key = `${symbol}_fair`;
+    this.removeSubj(key);
+
+    const dataType = `${symbol}@markPrice`;
+    this.unsubscribeFuturesChannel(dataType);
+  }
+
   private handleKlineMessage(dataType: string, data: any, res: any) {
     this.emit(eventTypesMap['@kline'], res);
     this.subscribeSubjs.get(dataType)?.next({
@@ -229,6 +248,18 @@ export class BingXFuturesWsClient extends SubscriptionManager {
         side: d.m ? Side.Sell : Side.Buy,
       } as Alltrade),
     );
+  }
+
+  private handleMarkPriceMessage(dataType: string, data: any, res: any) {
+    // Обработка для fair price (используется в subscribeFairPrice)
+    if (data && data.p) {
+      const symbol = data.s || dataType.split('@')[0];
+      const key = `${symbol}_fair`;
+      this.subscribeSubjs.get(key)?.next({
+        close: Number(data.p),
+        price: Number(data.p), // Для совместимости с aggregateFairPriceToCandles
+      });
+    }
   }
 
   private subscribeFuturesChannel<T = any>(dataType: string): Subject<T> {

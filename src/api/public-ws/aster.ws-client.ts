@@ -6,6 +6,7 @@ export class AsterWsClient extends SubscriptionManager {
   private readonly eventHandlers: Record<string, (message: any) => void> = {
     kline: (msg) => this.handleKlineMessage(msg),
     depthUpdate: (msg) => this.handleDepthMessage(msg),
+    markPriceUpdate: (msg) => this.handleMarkPriceUpdateMessage(msg),
   };
 
   constructor() {
@@ -85,6 +86,18 @@ export class AsterWsClient extends SubscriptionManager {
     this.subscribeSubjs.get(key)?.next(orderbook);
   }
 
+  private handleMarkPriceUpdateMessage(message: any) {
+    // Обработка для конкретного символа (используется в subscribeFairPrice)
+    if (message.s) {
+      const symbol = message.s.toLowerCase();
+      const key = `${symbol}_fair`;
+      this.subscribeSubjs.get(key)?.next({
+        close: Number(message.p),
+        price: Number(message.p), // Для совместимости с aggregateFairPriceToCandles
+      });
+    }
+  }
+
   subscribeCandles(symbol: string, resolution: string) {
     const symbolLower = symbol.toLowerCase();
     const interval = this.convertResolutionToAsterInterval(resolution);
@@ -140,6 +153,40 @@ export class AsterWsClient extends SubscriptionManager {
     const stream = `${symbolLower}@depth@100ms`;
     this.removeSubj(stream);
 
+    this.unsubscribe({
+      method: 'UNSUBSCRIBE',
+      params: [stream],
+      id: Date.now(),
+    });
+
+    this.removeSubscription({
+      method: 'SUBSCRIBE',
+      params: [stream],
+      id: Date.now(),
+    });
+  }
+
+  subscribeFairPrice(symbol: string) {
+    const symbolLower = symbol.toLowerCase();
+    const key = `${symbolLower}_fair`;
+    const subj = this.createOrUpdateSubj<{ close?: number; price?: number }>(key);
+
+    const stream = `${symbolLower}@markPrice`;
+    this.subscribe({
+      method: 'SUBSCRIBE',
+      params: [stream],
+      id: Date.now(),
+    });
+
+    return subj;
+  }
+
+  unsubscribeFairPrice(symbol: string) {
+    const symbolLower = symbol.toLowerCase();
+    const key = `${symbolLower}_fair`;
+    this.removeSubj(key);
+
+    const stream = `${symbolLower}@markPrice`;
     this.unsubscribe({
       method: 'UNSUBSCRIBE',
       params: [stream],

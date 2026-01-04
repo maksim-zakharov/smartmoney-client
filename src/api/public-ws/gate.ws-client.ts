@@ -76,6 +76,40 @@ export class GateFuturesWsClient extends SubscriptionManager {
     return subj;
   }
 
+  subscribeFairPrice(symbol: string, resolution: string) {
+    // Добавляем префикс mark_ для получения mark price candlesticks
+    const markSymbol = `mark_${symbol}`;
+    const interval = `${resolution}m`;
+    const key = `${interval}_${markSymbol}_fair`;
+    const subj = this.createOrUpdateSubj<{ close?: number; price?: number }>(key);
+    
+    this.subscribeFuturesChannel(GateFuturesChannelEnum.Candlesticks, [interval, markSymbol]);
+
+    return subj;
+  }
+
+  unsubscribeFairPrice(symbol: string, resolution: string) {
+    // Добавляем префикс mark_ для получения mark price candlesticks
+    const markSymbol = `mark_${symbol}`;
+    const interval = `${resolution}m`;
+    const key = `${interval}_${markSymbol}_fair`;
+    this.removeSubj(key);
+
+    this.unsubscribe({
+      time: Math.round(Date.now() / 1000),
+      channel: GateFuturesChannelEnum.Candlesticks,
+      event: GateSpotEventEnum.Unsubscribe,
+      payload: [interval, markSymbol],
+    });
+
+    this.removeSubscription({
+      time: Math.round(Date.now() / 1000),
+      channel: GateFuturesChannelEnum.Candlesticks,
+      event: GateSpotEventEnum.Subscribe,
+      payload: [interval, markSymbol],
+    });
+  }
+
   subscribeOrderbook(symbol: string, depth: 50 | 400) {
     const subj = new Subject<any>();
     // Используем символ как ключ, так как в ответе приходит именно символ
@@ -221,6 +255,7 @@ export class GateFuturesWsClient extends SubscriptionManager {
     switch (channel) {
       case GateFuturesChannelEnum.Candlesticks:
         const { o, h, l, c, t, n } = result[0] || {};
+        // Обработка для обычных свечей
         this.subscribeSubjs.get(n)?.next({
           open: Number(o),
           high: Number(h),
@@ -229,6 +264,15 @@ export class GateFuturesWsClient extends SubscriptionManager {
           time: t,
           timestamp: time,
         });
+        
+        // Обработка для fair price (если n содержит mark_)
+        if (n && n.includes('mark_')) {
+          const key = `${n}_fair`;
+          this.subscribeSubjs.get(key)?.next({
+            close: Number(c),
+            price: Number(c), // Для совместимости с aggregateFairPriceToCandles
+          });
+        }
         break;
       case GateFuturesChannelEnum.Tickers:
         result.forEach((r) => {

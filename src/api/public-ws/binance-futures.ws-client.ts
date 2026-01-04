@@ -6,6 +6,7 @@ export class BinanceFuturesWsClient extends SubscriptionManager {
   private readonly eventHandlers: Record<string, (message: any) => void> = {
     kline: (msg) => this.handleKlineMessage(msg),
     depthUpdate: (msg) => this.handleDepthMessage(msg),
+    markPriceUpdate: (msg) => this.handleMarkPriceUpdateMessage(msg),
   };
 
   constructor() {
@@ -91,6 +92,18 @@ export class BinanceFuturesWsClient extends SubscriptionManager {
     this.subscribeSubjs.get(key)?.next(orderbook);
   }
 
+  private handleMarkPriceUpdateMessage(message: any) {
+    // Обработка для fair price (используется в subscribeFairPrice)
+    if (message.s && message.p) {
+      const symbol = message.s.toLowerCase();
+      const key = `${symbol}_fair`;
+      this.subscribeSubjs.get(key)?.next({
+        close: Number(message.p),
+        price: Number(message.p), // Для совместимости с aggregateFairPriceToCandles
+      });
+    }
+  }
+
 
   subscribeOrderbook(symbol: string, depth: number = 20) {
     const symbolLower = symbol.toLowerCase();
@@ -167,6 +180,42 @@ export class BinanceFuturesWsClient extends SubscriptionManager {
 
   private unsubscribeStream(stream: string) {
     this.removeSubj(stream);
+    const streamId = Date.now();
+    this.unsubscribe({
+      method: 'UNSUBSCRIBE',
+      params: [stream],
+      id: streamId,
+    });
+
+    this.removeSubscription({
+      method: 'SUBSCRIBE',
+      params: [stream],
+      id: streamId,
+    });
+  }
+
+  subscribeFairPrice(symbol: string) {
+    const symbolLower = symbol.toLowerCase();
+    const key = `${symbolLower}_fair`;
+    const subj = this.createOrUpdateSubj<{ close?: number; price?: number }>(key);
+
+    const stream = `${symbolLower}@markPrice`;
+    const streamId = Date.now();
+    this.subscribe({
+      method: 'SUBSCRIBE',
+      params: [stream],
+      id: streamId,
+    });
+
+    return subj;
+  }
+
+  unsubscribeFairPrice(symbol: string) {
+    const symbolLower = symbol.toLowerCase();
+    const key = `${symbolLower}_fair`;
+    this.removeSubj(key);
+
+    const stream = `${symbolLower}@markPrice`;
     const streamId = Date.now();
     this.unsubscribe({
       method: 'UNSUBSCRIBE',

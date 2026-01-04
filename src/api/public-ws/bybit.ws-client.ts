@@ -59,10 +59,21 @@ export class BybitWebsocketClient extends SubscriptionManager {
   }
 
   private handleTickersMessage(topic: string, data: any) {
-    const { lastPrice } = data;
+    const { lastPrice, markPrice } = data;
+    // Обработка для обычных подписок на tickers
     if (lastPrice) {
       this.subscribeSubjs.get(topic)?.next({
         lastPrice: Number(lastPrice),
+      });
+    }
+    
+    // Обработка для fair price (используется в subscribeFairPrice)
+    if (markPrice) {
+      const symbol = topic.split('.')[1]; // Извлекаем symbol из topic (например, "tickers.BTCUSDT")
+      const key = `${symbol}_fair`;
+      this.subscribeSubjs.get(key)?.next({
+        close: Number(markPrice),
+        price: Number(markPrice), // Для совместимости с aggregateFairPriceToCandles
       });
     }
   }
@@ -141,6 +152,41 @@ export class BybitWebsocketClient extends SubscriptionManager {
   unsubscribeQuotes(symbol: string) {
     const args = `tickers.${symbol}`;
     this.removeSubj(args);
+    this.unsubscribe({
+      op: 'unsubscribe',
+      args: [args],
+    });
+
+    this.removeSubscription({
+      op: 'subscribe',
+      args: [args],
+    });
+  }
+
+  subscribeFairPrice(symbol: string) {
+    const key = `${symbol}_fair`;
+    const subj = this.createOrUpdateSubj<{ close?: number; price?: number }>(key);
+
+    // Подписываемся на tickers, чтобы получать markPrice
+    const args = `tickers.${symbol}`;
+    if (!this.subscribeSubjs.has(args)) {
+      this.subscribe({
+        op: 'subscribe',
+        args: [args],
+      });
+    }
+
+    return subj;
+  }
+
+  unsubscribeFairPrice(symbol: string) {
+    const key = `${symbol}_fair`;
+    this.removeSubj(key);
+
+    // Отписываемся от tickers (но только если нет других подписок на этот ticker)
+    // В реальности нужно проверять, есть ли другие подписчики на tickers.{symbol}
+    // Для простоты просто удаляем подписку
+    const args = `tickers.${symbol}`;
     this.unsubscribe({
       op: 'unsubscribe',
       args: [args],

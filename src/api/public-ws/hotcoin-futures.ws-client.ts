@@ -50,6 +50,12 @@ export class HotcoinFuturesWsClient extends SubscriptionManager {
         return;
       }
 
+      // Обработка данных mark candles (fair price)
+      if (message.type === 'mark_candles' && message.data) {
+        this.handleMarkKlineMessage(message);
+        return;
+      }
+
       // Обработка данных стакана
       if (message.type === 'depth' && message.data) {
         this.handleDepthMessage(message);
@@ -77,6 +83,24 @@ export class HotcoinFuturesWsClient extends SubscriptionManager {
             close: Number(candle[4]),
             time: Math.round(candle[0] / 1000), // timestamp в миллисекундах -> секунды
             timestamp: candle[0],
+          });
+        }
+      });
+    }
+  }
+
+  private handleMarkKlineMessage(message: any) {
+    const contractCode = message.contractCode?.toLowerCase(); // btcusdt
+    const key = `${contractCode}_fair`;
+
+    if (Array.isArray(message.data) && message.data.length > 0) {
+      // Обрабатываем массив mark candles
+      message.data.forEach((candle: any[]) => {
+        // Формат: [timestamp, open, high, low, close, ...]
+        if (candle.length >= 5) {
+          this.subscribeSubjs.get(key)?.next({
+            close: Number(candle[4]),
+            price: Number(candle[4]), // Для совместимости с aggregateFairPriceToCandles
           });
         }
       });
@@ -232,6 +256,58 @@ export class HotcoinFuturesWsClient extends SubscriptionManager {
         biz: 'perpetual',
         type: 'depth',
         contractCode: normalizedSymbol,
+        zip: false,
+        serialize: false,
+      },
+    });
+  }
+
+  subscribeFairPrice(symbol: string, resolution: string) {
+    const normalizedSymbol = this.normalizeSymbol(symbol);
+    const granularity = this.convertResolutionToHotcoinGranularity(resolution);
+    const key = `${normalizedSymbol}_fair`;
+    const subj = this.createOrUpdateSubj<{ close?: number; price?: number }>(key);
+
+    this.subscribe({
+      event: 'subscribe',
+      params: {
+        biz: 'perpetual',
+        type: 'mark_candles',
+        contractCode: normalizedSymbol,
+        granularity,
+        zip: false,
+        serialize: false,
+      },
+    });
+
+    return subj;
+  }
+
+  unsubscribeFairPrice(symbol: string, resolution: string) {
+    const normalizedSymbol = this.normalizeSymbol(symbol);
+    const granularity = this.convertResolutionToHotcoinGranularity(resolution);
+    const key = `${normalizedSymbol}_fair`;
+    this.removeSubj(key);
+
+    this.unsubscribe({
+      event: 'unsubscribe',
+      params: {
+        biz: 'perpetual',
+        type: 'mark_candles',
+        contractCode: normalizedSymbol,
+        granularity,
+        zip: false,
+        serialize: false,
+      },
+    });
+
+    this.removeSubscription({
+      event: 'subscribe',
+      params: {
+        biz: 'perpetual',
+        type: 'mark_candles',
+        contractCode: normalizedSymbol,
+        granularity,
         zip: false,
         serialize: false,
       },

@@ -229,27 +229,66 @@ export class DataService {
   }
 
   gateSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC_USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.gateWsClient.subscribeFairPrice(baseSymbol, resolution), resolutionMinutes);
+    }
+
     return this.gateWsClient.subscribeCandles(symbol, resolution);
   }
 
   gateUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_fair')) {
+      this.gateWsClient.unsubscribeFairPrice(symbol.split('_fair')[0], resolution);
+      return Promise.resolve();
+    }
     this.gateWsClient.unsubscribeCandles(symbol, resolution);
     return Promise.resolve();
   }
 
   bingxSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC-USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.bingxWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+    }
+
     return this.bingxWsClient.subscribeCandles(symbol, resolution);
   }
 
   bingxUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_fair')) {
+      this.bingxWsClient.unsubscribeFairPrice(symbol.split('_fair')[0]);
+      return Promise.resolve();
+    }
     return this.bingxWsClient.unsubscribeCandles(symbol, resolution);
   }
 
   bybitSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC-USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.bybitWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+    }
+
     return this.bybitWsClient.subscribeCandles(symbol, resolution);
   }
 
   bybitUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_fair')) {
+      this.bybitWsClient.unsubscribeFairPrice(symbol.split('_fair')[0]);
+      return Promise.resolve();
+    }
     return this.bybitWsClient.unsubscribeCandles(symbol, resolution);
   }
 
@@ -282,10 +321,23 @@ export class DataService {
   }
 
   asterSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC_USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.asterWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+    }
+
     return this.asterWsClient.subscribeCandles(symbol, resolution);
   }
 
   asterUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_fair')) {
+      this.asterWsClient.unsubscribeFairPrice(symbol.split('_fair')[0]);
+      return Promise.resolve();
+    }
     this.asterWsClient.unsubscribeCandles(symbol, resolution);
     return Promise.resolve();
   }
@@ -300,10 +352,23 @@ export class DataService {
   }
 
   hotcoinSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC-USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.hotcoinFuturesWsClient.subscribeFairPrice(baseSymbol, resolution), resolutionMinutes);
+    }
+
     return this.hotcoinFuturesWsClient.subscribeCandles(symbol, resolution);
   }
 
   hotcoinUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_fair')) {
+      this.hotcoinFuturesWsClient.unsubscribeFairPrice(symbol.split('_fair')[0], resolution);
+      return Promise.resolve();
+    }
     this.hotcoinFuturesWsClient.unsubscribeCandles(symbol, resolution);
     return Promise.resolve();
   }
@@ -412,10 +477,23 @@ export class DataService {
   }
 
   binanceSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC_USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.binanceFuturesWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+    }
+
     return this.binanceFuturesWsClient.subscribeCandles(symbol, resolution);
   }
 
   binanceUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_fair')) {
+      this.binanceFuturesWsClient.unsubscribeFairPrice(symbol.split('_fair')[0]);
+      return Promise.resolve();
+    }
     this.binanceFuturesWsClient.unsubscribeCandles(symbol, resolution);
     return Promise.resolve();
   }
@@ -675,35 +753,73 @@ export class DataService {
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
     } else if (ticker.includes('GATEIO:')) {
-      const _ticker = ticker.split('GATEIO:')[1];
-      request$ = from(
-        fetch(
-          `${this.cryptoUrl}/gate/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
-        ).then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        }),
-      ).pipe(
-        map((r) => ({ history: r })),
-        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
-      );
+      let _ticker = ticker.split('GATEIO:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/gate/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/gate/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
     } else if (ticker.includes('BITGET:')) {
-      const _ticker = ticker.split('BITGET:')[1];
-      request$ = from(
-        fetch(
-          `${this.cryptoUrl}/bitget/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
-        ).then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        }),
-      ).pipe(
-        map((r) => ({ history: r })),
-        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
-      );
+      let _ticker = ticker.split('BITGET:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bitget/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bitget/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
     } else if (ticker.includes('ITS:')) {
       const _ticker = ticker.split('ITS:')[1];
       request$ = from(
@@ -732,35 +848,73 @@ export class DataService {
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
     } else if (ticker.includes('BYBIT:')) {
-      const _ticker = ticker.split('BYBIT:')[1];
-      request$ = from(
-        fetch(
-          `${this.cryptoUrl}/bybit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
-        ).then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        }),
-      ).pipe(
-        map((r) => ({ history: r.sort((a, b) => a.time - b.time) })),
-        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
-      );
+      let _ticker = ticker.split('BYBIT:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bybit/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&category=linear&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r.sort((a, b) => a.time - b.time) })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bybit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r.sort((a, b) => a.time - b.time) })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
     } else if (ticker.includes('BINANCE:')) {
-      const _ticker = ticker.split('BINANCE:')[1];
-      request$ = from(
-        fetch(
-          `${this.cryptoUrl}/binance/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
-        ).then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        }),
-      ).pipe(
-        map((r) => ({ history: r })),
-        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
-      );
+      let _ticker = ticker.split('BINANCE:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/binance/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/binance/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
     } else if (ticker.includes('BITMART:')) {
       let _ticker = ticker.split('BITMART:')[1];
       const isFair = type === 'fair' || _ticker.includes('_fair');
@@ -1029,20 +1183,39 @@ export class DataService {
         );
       }
     } else if (ticker.includes('Aster:')) {
-      const _ticker = ticker.split('Aster:')[1];
-      request$ = from(
-        fetch(
-          `${this.cryptoUrl}/aster/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
-        ).then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        }),
-      ).pipe(
-        map((r) => ({ history: r })),
-        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
-      );
+      let _ticker = ticker.split('Aster:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/aster/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/aster/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
     } else if (ticker.includes('Hyperliquid:') || ticker.includes('HYPERLIQUID:')) {
       const _ticker = ticker.split('Hyperliquid:')[1] || ticker.split('HYPERLIQUID:')[1];
       request$ = from(
@@ -1058,6 +1231,40 @@ export class DataService {
         map((r) => ({ history: r })),
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
+    } else if (ticker.includes('HOTCOIN:')) {
+      let _ticker = ticker.split('HOTCOIN:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/hotcoin/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/hotcoin/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
     } else if (ticker.includes('Lighter:') || ticker.includes('LIGHTER:')) {
       const _ticker = ticker.split('Lighter:')[1] || ticker.split('LIGHTER:')[1];
       request$ = from(
@@ -1089,20 +1296,39 @@ export class DataService {
         catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
       );
     } else if (ticker.includes('BINGX:')) {
-      const _ticker = ticker.split('BINGX:')[1];
-      request$ = from(
-        fetch(
-          `${this.cryptoUrl}/bingx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
-        ).then((res) => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-          return res.json();
-        }),
-      ).pipe(
-        map((r) => ({ history: r })),
-        catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
-      );
+      let _ticker = ticker.split('BINGX:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bingx/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/bingx/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
     } else if (ticker.includes('KUCOIN:')) {
       const _ticker = ticker.split('KUCOIN:')[1];
       request$ = from(
