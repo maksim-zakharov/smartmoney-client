@@ -72,6 +72,8 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
         return hotcoinTicker + 'usdt';
       }
       return hotcoinTicker;
+    case 'KCEX':
+      return `${ticker}_USDT`;
     default:
       // По умолчанию используем формат MEXC
       return `${ticker}_USDT`;
@@ -128,6 +130,8 @@ const getExchangeUrl = (exchange: string, ticker: string): string => {
       // Hotcoin использует формат btcusdt (нижний регистр, без дефисов)
       const hotcoinTicker = ticker.toLowerCase().replace('-', '').replace('_', '');
       return `https://www.hotcoin.com/en_US/contract/exchange/trade/?tradeName=${hotcoinTicker}`;
+    case 'KCEX':
+      return `https://www.kcex.com/futures/${ticker}_USDT`;
     default:
       return '#';
   }
@@ -159,6 +163,7 @@ const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, tick
     HYPERLIQUID: 'HYPERLIQUID',
     ASTER: 'ASTER',
     HOTCOIN: 'HOTCOIN',
+    KCEX: 'KCEX',
   };
 
   const sellTvExchange = exchangeMap[sellExchangeUpper] || sellExchangeUpper;
@@ -226,6 +231,7 @@ export const CryptoArbs = () => {
       'Hyperliquid',
       'Aster',
       'HOTCOIN',
+      'KCEX',
       'Lighter',
     ];
 

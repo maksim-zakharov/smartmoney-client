@@ -414,6 +414,12 @@ export class DataFeed implements IBasicDataFeed {
           callback(data);
         });
         return () => this.dataService.xtUnsubscribeCandles(ticker, resolution);
+      } else if (symbol.includes('KCEX')) {
+        const ticker = symbol.split('KCEX:')[1];
+        this.dataService.kcexSubscribeCandles(ticker, resolution).subscribe((data) => {
+          callback(data);
+        });
+        return () => this.dataService.kcexUnsubscribeCandles(ticker, resolution);
       } else {
         return this.api.subscriptions.candles(
           {

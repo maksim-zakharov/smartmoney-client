@@ -184,6 +184,10 @@ export class OrderbookManager {
           this.orderbookDepth = 20;
           this.wsSubscription = this.dataService.hotcoinSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
+        case 'KCEX':
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.kcexSubscribeOrderbook(this.symbol, this.orderbookDepth);
+          break;
         default:
           return;
       }
@@ -557,6 +561,9 @@ export class OrderbookManager {
             break;
           case 'HOTCOIN':
             this.dataService.hotcoinUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'KCEX':
+            this.dataService.kcexUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
             break;
         }
       } catch (error) {

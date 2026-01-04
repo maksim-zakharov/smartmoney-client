@@ -23,6 +23,7 @@ import { XtFuturesWsClient } from '../public-ws/xt-futures.ws-client.ts';
 import { OkxFuturesWsClient } from '../public-ws/okx-futures.ws-client.ts';
 import { KucoinFuturesWsClient } from '../public-ws/kucoin-futures.ws-client.ts';
 import { HotcoinFuturesWsClient } from '../public-ws/hotcoin-futures.ws-client.ts';
+import { KcexWsClient } from '../public-ws/kcex.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -66,6 +67,7 @@ export class DataService {
   private readonly okxFuturesWsClient: OkxFuturesWsClient;
   private readonly kucoinFuturesWsClient: KucoinFuturesWsClient;
   private readonly hotcoinFuturesWsClient: HotcoinFuturesWsClient;
+  private readonly kcexWsClient: KcexWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -96,6 +98,7 @@ export class DataService {
     this.okxFuturesWsClient = new OkxFuturesWsClient();
     this.kucoinFuturesWsClient = new KucoinFuturesWsClient();
     this.hotcoinFuturesWsClient = new HotcoinFuturesWsClient();
+    this.kcexWsClient = new KcexWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -458,6 +461,24 @@ export class DataService {
 
   xtUnsubscribeOrderbook(symbol: string, depth: number = 20) {
     this.xtFuturesWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
+  }
+
+  kcexSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    return this.kcexWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  kcexUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    this.kcexWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  kcexSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.kcexWsClient.subscribeOrderbook(symbol, 0.1);
+  }
+
+  kcexUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.kcexWsClient.unsubscribeOrderbook(symbol, 0.1);
     return Promise.resolve();
   }
 
