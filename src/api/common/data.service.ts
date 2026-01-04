@@ -24,6 +24,7 @@ import { OkxFuturesWsClient } from '../public-ws/okx-futures.ws-client.ts';
 import { KucoinFuturesWsClient } from '../public-ws/kucoin-futures.ws-client.ts';
 import { HotcoinFuturesWsClient } from '../public-ws/hotcoin-futures.ws-client.ts';
 import { KcexWsClient } from '../public-ws/kcex.ws-client.ts';
+import { CoinexFuturesWsClient } from '../public-ws/coinex-futures.ws-client.ts';
 import dayjs from 'dayjs';
 
 function roundToMinutesSimple(date = dayjs(), interval = 1) {
@@ -131,6 +132,7 @@ export class DataService {
   private readonly kucoinFuturesWsClient: KucoinFuturesWsClient;
   private readonly hotcoinFuturesWsClient: HotcoinFuturesWsClient;
   private readonly kcexWsClient: KcexWsClient;
+  private readonly coinexFuturesWsClient: CoinexFuturesWsClient;
 
   private symbols: Partial<{ symbolId: number; symbolName: string }>[] = [];
 
@@ -162,6 +164,7 @@ export class DataService {
     this.kucoinFuturesWsClient = new KucoinFuturesWsClient();
     this.hotcoinFuturesWsClient = new HotcoinFuturesWsClient();
     this.kcexWsClient = new KcexWsClient();
+    this.coinexFuturesWsClient = new CoinexFuturesWsClient();
   }
 
   setSymbols(symbols: Partial<{ symbolId: number; symbolName: string }>[]) {
@@ -659,6 +662,37 @@ export class DataService {
     return Promise.resolve();
   }
 
+  coinexSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC-USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.coinexFuturesWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+    }
+
+    return this.coinexFuturesWsClient.subscribeCandles(symbol, resolution);
+  }
+
+  coinexUnsubscribeCandles(symbol: string, resolution: ResolutionString) {
+    if (symbol.includes('_fair')) {
+      this.coinexFuturesWsClient.unsubscribeFairPrice(symbol.split('_fair')[0]);
+      return Promise.resolve();
+    }
+    this.coinexFuturesWsClient.unsubscribeCandles(symbol, resolution);
+    return Promise.resolve();
+  }
+
+  coinexSubscribeOrderbook(symbol: string, depth: number = 20) {
+    return this.coinexFuturesWsClient.subscribeOrderbook(symbol, depth);
+  }
+
+  coinexUnsubscribeOrderbook(symbol: string, depth: number = 20) {
+    this.coinexFuturesWsClient.unsubscribeOrderbook(symbol, depth);
+    return Promise.resolve();
+  }
+
   bitunixSubscribeOrderbook(symbol: string, depth: number = 20) {
     return this.bitunixFuturesWsClient.subscribeOrderbook(symbol, depth);
   }
@@ -1137,6 +1171,40 @@ export class DataService {
         request$ = from(
           fetch(
             `${this.cryptoUrl}/kcex/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
+    } else if (ticker.includes('COINEX:')) {
+      let _ticker = ticker.split('COINEX:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/coinex/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/coinex/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);

@@ -81,7 +81,7 @@ const getTickerWithSuffix = (exchange: string, ticker: string): string => {
 };
 
 // Биржи с поддержкой графиков справедливой цены
-const EXCHANGES_WITH_FAIR_PRICE = ['MEXC', 'OURBIT', 'KCEX', 'BITUNIX', 'BITMART', 'ASTER', 'BINANCE', 'GATEIO', 'BINGX', 'BITGET', 'BYBIT', 'HOTCOIN'];
+const EXCHANGES_WITH_FAIR_PRICE = ['MEXC', 'OURBIT', 'KCEX', 'BITUNIX', 'BITMART', 'ASTER', 'BINANCE', 'GATEIO', 'BINGX', 'BITGET', 'BYBIT', 'HOTCOIN', 'COINEX'];
 
 // Функция для генерации URL биржи с тикером (фьючерсы) с реферальными кодами
 const getExchangeUrl = (exchange: string, ticker: string): string => {

@@ -188,6 +188,10 @@ export class OrderbookManager {
           this.orderbookDepth = 20;
           this.wsSubscription = this.dataService.kcexSubscribeOrderbook(this.symbol, this.orderbookDepth);
           break;
+        case 'COINEX':
+          this.orderbookDepth = 20;
+          this.wsSubscription = this.dataService.coinexSubscribeOrderbook(this.symbol, this.orderbookDepth);
+          break;
         default:
           return;
       }
@@ -564,6 +568,9 @@ export class OrderbookManager {
             break;
           case 'KCEX':
             this.dataService.kcexUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
+            break;
+          case 'COINEX':
+            this.dataService.coinexUnsubscribeOrderbook(this.symbol, this.orderbookDepth);
             break;
         }
       } catch (error) {
