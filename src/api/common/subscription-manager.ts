@@ -45,9 +45,10 @@ export class SubscriptionManager {
     name: string;
     loginPromise?: () => Promise<any>;
     pingRequest?: () => any;
+    headers?: Record<string, string>;
   };
 
-  constructor(options: { url?: string; name: string; pingRequest?: any; loginPromise?: any }) {
+  constructor(options: { url?: string; name: string; pingRequest?: any; loginPromise?: any; headers?: Record<string, string> }) {
     this._options = options;
 
     if (this._options.loginPromise) {
@@ -65,6 +66,11 @@ export class SubscriptionManager {
 
   // Подключение к WebSocket
   private connect(url: string) {
+    // В браузере WebSocket API не поддерживает кастомные заголовки напрямую
+    // Заголовки Host, Origin и User-Agent устанавливаются автоматически браузером
+    // Однако, если сервер требует специфические значения, можно попробовать использовать опции
+    // Для Node.js можно использовать библиотеку ws, которая поддерживает headers
+    // В браузере мы просто создаем WebSocket - браузер автоматически установит нужные заголовки
     this.ws = new WebSocket(url);
 
     let spotInterval;
