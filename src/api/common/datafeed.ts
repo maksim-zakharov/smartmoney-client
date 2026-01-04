@@ -477,7 +477,7 @@ export class DataFeed implements IBasicDataFeed {
             onTick({ ...newCandle, time: newCandle.time * 1000 } as Bar);
           }
         });
-      Promise.all([parts.map((part) => secondProm(part, (candle) => lastCandles[part].next(candle)))]).then((unsubs) =>
+      Promise.all(parts.map((part) => secondProm(part, (candle) => lastCandles[part].next(candle)))).then((unsubs) =>
         this.subscriptions.set(listenerGuid, unsubs),
       );
     }
