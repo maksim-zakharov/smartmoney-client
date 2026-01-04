@@ -1,5 +1,5 @@
 import { AlorApi, Exchange } from 'alor-api';
-import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer, bufferTime, scan } from 'rxjs';
+import { catchError, from, map, mergeMap, Observable, pluck, retryWhen, shareReplay, throwError, timer, scan } from 'rxjs';
 import { PeriodParams, ResolutionString } from '../../assets/charting_library';
 import { BybitWebsocketClient } from '../public-ws/bybit.ws-client.ts';
 import { MexcWsClient } from '../public-ws/mexc.ws-client.ts';
@@ -37,6 +37,69 @@ function roundToMinutesSimple(date = dayjs(), interval = 1) {
   const roundedMs = timeMs - diff;
 
   return roundedMs;
+}
+
+/**
+ * Агрегирует поток цен fair price в полные свечи
+ * @param fairPrice$ - Observable с данными fair price (должен содержать поле close или price)
+ * @param resolutionMinutes - Интервал свечи в минутах
+ * @returns Observable со свечами
+ */
+function aggregateFairPriceToCandles(
+  fairPrice$: Observable<{ close?: number; price?: number }>,
+  resolutionMinutes: number,
+): Observable<{ time: number; open: number; high: number; low: number; close: number; volume: number }> {
+  return fairPrice$.pipe(
+    scan(
+      (
+        acc: { candle: { time: number; open: number; high: number; low: number; close: number } | null },
+        priceData: { close?: number; price?: number },
+      ) => {
+        const now = dayjs();
+        const currentTime = roundToMinutesSimple(now, resolutionMinutes);
+        const currentTimeSeconds = currentTime / 1000;
+        const price = Number(priceData.close || priceData.price);
+
+        // Если это новый интервал, создаем новую свечу
+        if (!acc.candle || acc.candle.time !== currentTimeSeconds) {
+          return {
+            candle: {
+              time: currentTimeSeconds,
+              open: price,
+              high: price,
+              low: price,
+              close: price,
+            },
+          };
+        } else {
+          // Обновляем текущую свечу
+          return {
+            candle: {
+              ...acc.candle,
+              high: Math.max(acc.candle.high, price),
+              low: Math.min(acc.candle.low, price),
+              close: price,
+            },
+          };
+        }
+      },
+      { candle: null } as { candle: { time: number; open: number; high: number; low: number; close: number } | null },
+    ),
+    map((acc) => {
+      if (!acc.candle) return null;
+
+      return {
+        time: acc.candle.time,
+        open: acc.candle.open,
+        high: acc.candle.high,
+        low: acc.candle.low,
+        close: acc.candle.close,
+        volume: 0,
+      };
+    }),
+    // Фильтруем null значения
+    mergeMap((candle) => (candle ? [candle] : [])),
+  );
 }
 
 export class DataService {
@@ -118,59 +181,9 @@ export class DataService {
       if (symbol.includes('_fair')) {
         const baseSymbol = symbol.split('_fair')[0];
         const resolutionMinutes = Number(resolution);
-        
+
         // Агрегируем fair.price в полные свечи
-        return this.mexcWsClient.subscribeFairPrice(baseSymbol).pipe(
-          scan(
-            (
-              acc: { candle: { time: number; open: number; high: number; low: number; close: number } | null },
-              priceData: { close: number },
-            ) => {
-              const now = dayjs();
-              const currentTime = roundToMinutesSimple(now, resolutionMinutes);
-              const currentTimeSeconds = currentTime / 1000;
-              const price = Number(priceData.close);
-              
-              // Если это новый интервал, создаем новую свечу
-              if (!acc.candle || acc.candle.time !== currentTimeSeconds) {
-                return {
-                  candle: {
-                    time: currentTimeSeconds,
-                    open: price,
-                    high: price,
-                    low: price,
-                    close: price,
-                  },
-                };
-              } else {
-                // Обновляем текущую свечу
-                return {
-                  candle: {
-                    ...acc.candle,
-                    high: Math.max(acc.candle.high, price),
-                    low: Math.min(acc.candle.low, price),
-                    close: price,
-                  },
-                };
-              }
-            },
-            { candle: null } as { candle: { time: number; open: number; high: number; low: number; close: number } | null },
-          ),
-          map((acc) => {
-            if (!acc.candle) return null;
-            
-            return {
-              time: acc.candle.time,
-              open: acc.candle.open,
-              high: acc.candle.high,
-              low: acc.candle.low,
-              close: acc.candle.close,
-              volume: 0,
-            };
-          }),
-          // Фильтруем null значения
-          mergeMap((candle) => (candle ? [candle] : [])),
-        );
+        return aggregateFairPriceToCandles(this.mexcWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
       }
       return this.mexcWsClient.subscribeCandles(symbol, resolution);
     }
@@ -192,15 +205,17 @@ export class DataService {
   }
 
   ourbitSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC_USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.ourbitWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+    }
+
+    // Для обычных futures символов (содержат _)
     if (symbol.includes('_')) {
-      if (symbol.includes('_fair')) {
-        return this.ourbitWsClient.subscribeFairPrice(symbol.split('_fair')[0]).pipe(
-          map((candle) => {
-            const time = roundToMinutesSimple(dayjs(), Number(resolution)) / 1000;
-            return { ...candle, time };
-          }),
-        );
-      }
       return this.ourbitWsClient.subscribeCandles(symbol, resolution);
     }
 
@@ -514,6 +529,15 @@ export class DataService {
   }
 
   kcexSubscribeCandles(symbol: string, resolution: ResolutionString) {
+    // Сначала проверяем _fair, так как символы могут содержать _ (например, BTC_USDT)
+    if (symbol.includes('_fair')) {
+      const baseSymbol = symbol.split('_fair')[0];
+      const resolutionMinutes = Number(resolution);
+
+      // Агрегируем fair.price в полные свечи
+      return aggregateFairPriceToCandles(this.kcexWsClient.subscribeFairPrice(baseSymbol), resolutionMinutes);
+    }
+
     return this.kcexWsClient.subscribeCandles(symbol, resolution);
   }
 
@@ -859,12 +883,13 @@ export class DataService {
       }
     } else if (ticker.includes('OURBIT:')) {
       let _ticker = ticker.split('OURBIT:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
 
-      if (_ticker.includes('_fair')) {
+      if (isFair) {
         _ticker = _ticker.split('_fair')[0];
         request$ = from(
           fetch(
-            `${this.cryptoUrl}/ourbit/f-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+            `${this.cryptoUrl}/ourbit/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);
@@ -879,6 +904,40 @@ export class DataService {
         request$ = from(
           fetch(
             `${this.cryptoUrl}/ourbit/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      }
+    } else if (ticker.includes('KCEX:')) {
+      let _ticker = ticker.split('KCEX:')[1];
+      const isFair = type === 'fair' || _ticker.includes('_fair');
+
+      if (isFair) {
+        _ticker = _ticker.split('_fair')[0];
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/kcex/fair-candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
+          ).then((res) => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          }),
+        ).pipe(
+          map((r) => ({ history: r })),
+          catchError((error) => throwError(() => new Error(`Fetch error: ${error.message}`))),
+        );
+      } else {
+        request$ = from(
+          fetch(
+            `${this.cryptoUrl}/kcex/candles?tf=${this.parseTimeframe(resolution)}&from=${Math.max(periodParams.from, 0)}&symbol=${_ticker}&to=${Math.max(periodParams.to, 1)}`,
           ).then((res) => {
             if (!res.ok) {
               throw new Error(`HTTP error! status: ${res.status}`);
