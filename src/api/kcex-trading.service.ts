@@ -1,12 +1,5 @@
-import CryptoJS from 'crypto-js';
+import { generateHeaders as generateMexcHeaders } from './utils/headers';
 import { PlaceLimitOrderParams, PlaceOrderResponse } from './mexc-trading.service';
-
-/**
- * Функция для генерации hex MD5
- */
-function hexMd5(str: string): string {
-  return CryptoJS.MD5(str).toString();
-}
 
 /**
  * Сервис для торговли на KCEX
@@ -17,29 +10,6 @@ export class KcexTradingService {
 
   constructor(backendUrl: string = 'http://5.35.13.149') {
     this.backendUrl = backendUrl;
-  }
-
-  /**
-   * Генерирует заголовки для KCEX Futures API с authToken
-   * Формат идентичен MEXC
-   */
-  private generateHeaders(authToken: string, body: any): Record<string, string> {
-    const ts = Date.now();
-    const nonce = ts.toString();
-
-    // Генерируем подпись по схеме (идентично MEXC)
-    const bodyStr = JSON.stringify(body || '');
-    const authHash = hexMd5(`${authToken}${ts}`).substring(7);
-    const sign = hexMd5(`${ts}${bodyStr}${authHash}`);
-
-    return {
-      'x-mxc-nonce': nonce,
-      authentication: authToken,
-      'x-mxc-sign': sign,
-      authorization: authToken,
-      'content-type': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    };
   }
 
   /**
@@ -97,7 +67,8 @@ export class KcexTradingService {
   }
 
   /**
-   * Размещает лимитный ордер на KCEX через /create endpoint
+   * Размещает лимитный ордер на KCEX через /submit endpoint
+   * Основано на SDK: https://github.com/maksim-zakharov/mexc-futures-sdk/blob/main/src/client.ts
    */
   async placeLimitOrder(params: PlaceLimitOrderParams): Promise<PlaceOrderResponse> {
     const { authToken, symbol, side, price, quantity, leverage = 10 } = params;
@@ -116,11 +87,20 @@ export class KcexTradingService {
       priceProtect: '0',
     };
 
-    // Генерируем заголовки с подписью
-    const headers = this.generateHeaders(authToken, orderData);
+    // Генерируем заголовки с подписью (с origin, referer и префиксом для KCEX)
+    const headers = generateMexcHeaders(
+      {
+        authToken,
+        origin: 'https://www.kcex.com',
+        referer: 'https://www.kcex.com/',
+        signaturePrefix: 'kcex',
+      },
+      true,
+      orderData,
+    );
 
-    // Используем endpoint /create с baseURL KCEX
-    const targetUrl = 'https://www.kcex.com/fapi/v1/private/order/create';
+    // Используем endpoint /submit как в SDK
+    const targetUrl = 'https://www.kcex.com/fapi/v1/private/order/submit';
 
     // Отправляем через общий прокси с конфигом axios
     const data = await this.proxyRequest({
@@ -130,8 +110,8 @@ export class KcexTradingService {
       data: orderData,
     });
 
-    // KCEX возвращает ошибки через поле code
-    if (data.code !== undefined && data.code !== 0) {
+    // Проверяем success как в SDK
+    if (!data.success) {
       const errorCode = data.code || 'Unknown';
       const errorMsg = data.message || data.msg || 'Ошибка при размещении ордера';
       throw new Error(`KCEX Error ${errorCode} - ${errorMsg}`);
@@ -141,7 +121,8 @@ export class KcexTradingService {
   }
 
   /**
-   * Размещает рыночный ордер на KCEX
+   * Размещает рыночный ордер на KCEX через /submit endpoint
+   * Основано на SDK: https://github.com/maksim-zakharov/mexc-futures-sdk/blob/main/src/client.ts
    */
   async placeMarketOrder(params: {
     authToken: string;
@@ -162,19 +143,28 @@ export class KcexTradingService {
       symbol,
       side: side === 'BUY' ? 1 : 3, // 1 = Buy, 3 = Sell
       openType: 1, // Isolated margin
-      type: '2', // Market order (строка)
+      type: '5', // Market order (строка) - тип 5 для рыночных ордеров
       vol, // Количество в базовой валюте
       positionMode: 2, // One-way mode
       marketCeiling: false,
-      leverage: '10',
+      leverage: 10, // Плечо для рыночных ордеров
       priceProtect: '0',
     };
 
-    // Генерируем заголовки с подписью
-    const headers = this.generateHeaders(authToken, orderData);
+    // Генерируем заголовки с подписью (с origin, referer и префиксом для KCEX)
+    const headers = generateMexcHeaders(
+      {
+        authToken,
+        origin: 'https://www.kcex.com',
+        referer: 'https://www.kcex.com/',
+        signaturePrefix: 'kcex',
+      },
+      true,
+      orderData,
+    );
 
-    // Используем endpoint /create с baseURL KCEX
-    const targetUrl = 'https://www.kcex.com/fapi/v1/private/order/create';
+    // Используем endpoint /submit как в SDK
+    const targetUrl = 'https://www.kcex.com/fapi/v1/private/order/submit';
 
     // Отправляем через общий прокси с конфигом axios
     const data = await this.proxyRequest({
@@ -184,8 +174,8 @@ export class KcexTradingService {
       data: orderData,
     });
 
-    // KCEX возвращает ошибки через поле code
-    if (data.code !== undefined && data.code !== 0) {
+    // Проверяем success как в SDK
+    if (!data.success) {
       const errorCode = data.code || 'Unknown';
       const errorMsg = data.message || data.msg || 'Ошибка при размещении ордера';
       throw new Error(`KCEX Error ${errorCode} - ${errorMsg}`);

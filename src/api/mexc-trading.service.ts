@@ -1,4 +1,4 @@
-import CryptoJS from 'crypto-js';
+import { generateHeaders as generateMexcHeaders, SDKOptions } from './utils/headers';
 
 /**
  * Интерфейс для размещения лимитного ордера
@@ -36,13 +36,6 @@ export interface PlaceOrderResponse {
 }
 
 /**
- * Функция для генерации hex MD5
- */
-function hexMd5(str: string): string {
-  return CryptoJS.MD5(str).toString();
-}
-
-/**
  * Сервис для торговли на MEXC
  */
 export class MexcTradingService {
@@ -50,29 +43,6 @@ export class MexcTradingService {
 
   constructor(backendUrl: string = 'http://5.35.13.149') {
     this.backendUrl = backendUrl;
-  }
-
-  /**
-   * Генерирует заголовки для MEXC Futures API с authToken
-   */
-  private generateHeaders(authToken: string, body: any): Record<string, string> {
-    const ts = Date.now();
-    const nonce = ts.toString();
-
-    // Генерируем подпись по схеме MEXC Futures API
-    // Формат: MD5(timestamp + JSON.stringify(body) + MD5(authToken + timestamp).substring(7))
-    const bodyStr = JSON.stringify(body || '');
-    const authHash = hexMd5(`${authToken}${ts}`).substring(7);
-    const sign = hexMd5(`${ts}${bodyStr}${authHash}`);
-
-    return {
-      'x-mxc-nonce': nonce,
-      authentication: authToken,
-      'x-mxc-sign': sign,
-      authorization: authToken,
-      'content-type': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    };
   }
 
   /**
@@ -107,8 +77,8 @@ export class MexcTradingService {
    * Получает последнюю цену для символа
    */
   private async getLastPrice(symbol: string): Promise<number> {
-    const url = `https://www.mexc.com/api/platform/futures/api/v1/contract/ticker`;
-    
+    const url = `https://futures.mexc.com/api/v1/contract/ticker`;
+
     const data = await this.proxyRequest({
       method: 'GET',
       url,
@@ -130,12 +100,13 @@ export class MexcTradingService {
   }
 
   /**
-   * Размещает лимитный ордер на MEXC через /create endpoint
+   * Размещает лимитный ордер на MEXC через /submit endpoint
+   * Основано на SDK: https://github.com/maksim-zakharov/mexc-futures-sdk/blob/main/src/client.ts
    */
   async placeLimitOrder(params: PlaceLimitOrderParams): Promise<PlaceOrderResponse> {
     const { authToken, symbol, side, price, quantity, leverage = 10 } = params;
 
-    // Формируем данные для запроса
+    // Формируем данные для запроса согласно SDK
     const orderData: any = {
       symbol,
       side: side === 'BUY' ? 1 : 3, // 1 = Buy, 3 = Sell
@@ -149,11 +120,19 @@ export class MexcTradingService {
       priceProtect: '0',
     };
 
-    // Генерируем заголовки с подписью
-    const headers = this.generateHeaders(authToken, orderData);
+    // Генерируем заголовки с подписью (как в SDK)
+    const headers = generateMexcHeaders(
+      {
+        authToken,
+        origin: 'https://futures.mexc.com',
+        referer: 'https://futures.mexc.com/',
+      },
+      true,
+      orderData,
+    );
 
-    // Используем endpoint /create
-    const targetUrl = 'https://www.mexc.com/api/platform/futures/api/v1/private/order/create';
+    // Используем endpoint /submit как в SDK
+    const targetUrl = 'https://futures.mexc.com/api/v1/private/order/submit';
 
     // Отправляем через общий прокси с конфигом axios
     const data = await this.proxyRequest({
@@ -163,8 +142,8 @@ export class MexcTradingService {
       data: orderData,
     });
 
-    // MEXC возвращает ошибки через поле code
-    if (data.code !== undefined && data.code !== 0) {
+    // Проверяем success как в SDK
+    if (!data.success) {
       const errorCode = data.code || 'Unknown';
       const errorMsg = data.message || data.msg || 'Ошибка при размещении ордера';
       throw new Error(`MEXC Error ${errorCode} - ${errorMsg}`);
@@ -174,7 +153,8 @@ export class MexcTradingService {
   }
 
   /**
-   * Размещает рыночный ордер на MEXC
+   * Размещает рыночный ордер на MEXC через /submit endpoint
+   * Основано на SDK: https://github.com/maksim-zakharov/mexc-futures-sdk/blob/main/src/client.ts
    */
   async placeMarketOrder(params: {
     authToken: string;
@@ -186,7 +166,7 @@ export class MexcTradingService {
 
     // Получаем последнюю цену для расчета vol
     const lastPrice = await this.getLastPrice(symbol);
-    
+
     // Рассчитываем vol на основе usdAmount и последней цены, округляем вниз
     const vol = Math.floor(usdAmount / lastPrice);
 
@@ -195,19 +175,27 @@ export class MexcTradingService {
       symbol,
       side: side === 'BUY' ? 1 : 3, // 1 = Buy, 3 = Sell
       openType: 1, // Isolated margin
-      type: '2', // Market order (строка)
+      type: '5', // Market order (строка) - тип 5 для рыночных ордеров
       vol, // Количество в базовой валюте
       positionMode: 2, // One-way mode
       marketCeiling: false,
-      leverage: '10',
+      leverage: 10, // Плечо для рыночных ордеров
       priceProtect: '0',
     };
 
-    // Генерируем заголовки с подписью
-    const headers = this.generateHeaders(authToken, orderData);
+    // Генерируем заголовки с подписью (как в SDK)
+    const headers = generateMexcHeaders(
+      {
+        authToken,
+        origin: 'https://futures.mexc.com',
+        referer: 'https://futures.mexc.com/',
+      },
+      true,
+      orderData,
+    );
 
-    // Используем endpoint /create
-    const targetUrl = 'https://www.mexc.com/api/platform/futures/api/v1/private/order/create';
+    // Используем endpoint /submit как в SDK
+    const targetUrl = 'https://futures.mexc.com/api/v1/private/order/submit';
 
     // Отправляем через общий прокси с конфигом axios
     const data = await this.proxyRequest({
@@ -217,8 +205,8 @@ export class MexcTradingService {
       data: orderData,
     });
 
-    // MEXC возвращает ошибки через поле code
-    if (data.code !== undefined && data.code !== 0) {
+    // Проверяем success как в SDK
+    if (!data.success) {
       const errorCode = data.code || 'Unknown';
       const errorMsg = data.message || data.msg || 'Ошибка при размещении ордера';
       throw new Error(`MEXC Error ${errorCode} - ${errorMsg}`);
