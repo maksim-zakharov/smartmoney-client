@@ -158,37 +158,52 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     orderbookManagerRef.current.handleClick(mouseY);
   }, []);
 
+  // Функция для центрирования стакана
+  const centerOrderbook = useCallback(() => {
+    if (!scrollContainerRef.current || !hasData) return;
+    
+    const centerRow = TOTAL_ROWS / 2;
+    const scrollTo = centerRow * ROW_HEIGHT - (scrollContainerRef.current.clientHeight / 2);
+    scrollContainerRef.current.scrollTop = Math.max(0, scrollTo);
+    setScrollTop(scrollTo);
+    if (orderbookManagerRef.current) {
+      orderbookManagerRef.current.setScrollTop(scrollTo);
+    }
+  }, [hasData, TOTAL_ROWS, ROW_HEIGHT]);
+
   // Обработчик нажатия Shift для центрирования
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Shift' && scrollContainerRef.current && hasData) {
-        // Центрируем на середине
-        const centerRow = TOTAL_ROWS / 2;
-        const scrollTo = centerRow * ROW_HEIGHT - (scrollContainerRef.current.clientHeight / 2);
-        scrollContainerRef.current.scrollTop = Math.max(0, scrollTo);
-        setScrollTop(scrollTo);
-        if (orderbookManagerRef.current) {
-          orderbookManagerRef.current.setScrollTop(scrollTo);
-        }
+      if (e.key === 'Shift' && hasData) {
+        centerOrderbook();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasData, TOTAL_ROWS, ROW_HEIGHT]);
+  }, [hasData, centerOrderbook]);
 
   // Инициализация скролла при первой загрузке
   useEffect(() => {
-    if (scrollContainerRef.current && hasData && scrollTop === 0) {
-      const centerRow = TOTAL_ROWS / 2;
-      const initialScroll = centerRow * ROW_HEIGHT - (scrollContainerRef.current.clientHeight / 2);
-      scrollContainerRef.current.scrollTop = Math.max(0, initialScroll);
-      setScrollTop(initialScroll);
-      if (orderbookManagerRef.current) {
-        orderbookManagerRef.current.setScrollTop(initialScroll);
-      }
+    if (hasData && scrollTop === 0) {
+      // Используем небольшую задержку, чтобы убедиться, что размеры установлены
+      const timer = setTimeout(() => {
+        centerOrderbook();
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [hasData, scrollTop, TOTAL_ROWS, ROW_HEIGHT]);
+  }, [hasData, scrollTop, centerOrderbook]);
+
+  // Центрирование при изменении compression
+  useEffect(() => {
+    if (hasData && compression > 0) {
+      // Используем задержку, чтобы дать время менеджеру обновить данные
+      const timer = setTimeout(() => {
+        centerOrderbook();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [compression, hasData, centerOrderbook]);
 
   // Определяем размеры canvas
   useLayoutEffect(() => {
@@ -301,8 +316,14 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
                     setCompression(100);
                     setCompressionInput('100');
                     localStorage.setItem('orderbook_compression', '100');
+                    if (orderbookManagerRef.current) {
+                      orderbookManagerRef.current.setCompression(100);
+                    }
                   } else {
                     localStorage.setItem('orderbook_compression', compressionInput);
+                    if (orderbookManagerRef.current) {
+                      orderbookManagerRef.current.setCompression(numValue);
+                    }
                   }
                 }}
                 className="h-6 w-16 text-[10px] px-1"
