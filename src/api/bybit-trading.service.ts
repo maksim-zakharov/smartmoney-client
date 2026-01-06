@@ -1,0 +1,89 @@
+/**
+ * Интерфейс для размещения рыночного ордера на Bybit
+ */
+export interface BybitPlaceMarketOrderParams {
+  /** API ключ */
+  apiKey: string;
+  /** Секретный ключ */
+  secretKey: string;
+  /** Символ (например, BTCUSDT) */
+  symbol: string;
+  /** Сторона ордера: BUY или SELL */
+  side: 'BUY' | 'SELL';
+  /** Количество в долларах */
+  usdAmount: number;
+}
+
+/**
+ * Интерфейс ответа при размещении ордера
+ */
+export interface BybitPlaceOrderResponse {
+  /** Успешность операции */
+  retCode: number;
+  /** Сообщение */
+  retMsg: string;
+  /** Данные ордера */
+  result?: {
+    /** ID ордера */
+    orderId: string;
+  };
+}
+
+/**
+ * Сервис для торговли на Bybit
+ */
+export class BybitTradingService {
+  private readonly backendUrl: string;
+
+  constructor(backendUrl: string = 'http://5.35.13.149') {
+    this.backendUrl = backendUrl;
+  }
+
+  /**
+   * Размещает рыночный ордер на Bybit
+   */
+  async placeMarketOrder(params: BybitPlaceMarketOrderParams): Promise<BybitPlaceOrderResponse> {
+    const { apiKey, secretKey, symbol, side, usdAmount } = params;
+
+    // Формируем данные для запроса
+    const orderData: any = {
+      category: 'linear',
+      isLeverage: 1,
+      side: side === 'BUY' ? 'Buy' : 'Sell',
+      symbol,
+      orderType: 'Market',
+      // Для рыночного ордера количество будет рассчитано на бекенде на основе usdAmount
+      usdAmount,
+    };
+
+    const targetUrl = 'https://api.bybit.com/v5/order/create';
+
+    // Отправляем через общий прокси
+    const response = await fetch(
+      `${this.backendUrl}/proxy?url=${encodeURIComponent(targetUrl)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-BAPI-API-KEY': apiKey,
+          'X-BAPI-TIMESTAMP': Date.now().toString(),
+        },
+        body: JSON.stringify({
+          ...orderData,
+          _apiKey: apiKey,
+          _secretKey: secretKey,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        message: 'Ошибка при размещении ордера',
+      }));
+      throw new Error(error.message || 'Ошибка при размещении ордера');
+    }
+
+    return await response.json();
+  }
+}
+

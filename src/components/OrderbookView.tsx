@@ -218,6 +218,12 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   
   // Обработчик левого клика (покупка)
   const handleClick = useCallback(async (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Проверяем флаг в localStorage для разрешения торговли по клику
+    const enableOrderbookTrading = localStorage.getItem('enableOrderbookTrading') === 'true';
+    if (!enableOrderbookTrading) {
+      return; // Торговля по клику отключена
+    }
+
     if (!orderbookManagerRef.current || !canvasRef.current || !scrollContainerRef.current) return;
     
     const scrollContainerRect = scrollContainerRef.current.getBoundingClientRect();
@@ -236,6 +242,12 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   // Обработчик правого клика (продажа)
   const handleContextMenu = useCallback(async (e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault(); // Предотвращаем стандартное контекстное меню
+    
+    // Проверяем флаг в localStorage для разрешения торговли по клику
+    const enableOrderbookTrading = localStorage.getItem('enableOrderbookTrading') === 'true';
+    if (!enableOrderbookTrading) {
+      return; // Торговля по клику отключена
+    }
     
     if (!orderbookManagerRef.current || !canvasRef.current || !scrollContainerRef.current) return;
     

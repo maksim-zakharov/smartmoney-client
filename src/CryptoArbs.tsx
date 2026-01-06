@@ -1,6 +1,6 @@
 import { useGetPumpTickersQuery } from './api/pump-api.ts';
 import { cn } from './lib/utils.ts';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { exchangeImgMap } from './utils.ts';
 import dayjs from 'dayjs';
@@ -16,6 +16,7 @@ import { Input } from './components/ui/input.tsx';
 import { Label } from './components/ui/label.tsx';
 import { Checkbox } from './components/ui/checkbox.tsx';
 import { OrderbookView } from './components/OrderbookView';
+import { TradingService } from './api/trading.service';
 
 interface ArbPair {
   ticker: string;
@@ -211,6 +212,12 @@ export const CryptoArbs = () => {
   const [selectedArb, setSelectedArb] = useState<ArbPair | null>(null);
   const [selectedFairArb, setSelectedFairArb] = useState<FairRatio | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const tradingServiceRef = useRef<TradingService | null>(null);
+  const [tradingVolume, setTradingVolume] = useState<string>('100');
+  const [isTrading, setIsTrading] = useState(false);
+  const [showTradingPanel, setShowTradingPanel] = useState(() => {
+    return localStorage.getItem('enableOrderbookTrading') === 'true';
+  });
   const { data: tickersMap = {} } = useGetPumpTickersQuery(
     {},
     {
@@ -219,6 +226,26 @@ export const CryptoArbs = () => {
   );
 
   const tickers = Object.entries(tickersMap);
+
+  // Инициализация trading service
+  useEffect(() => {
+    if (!tradingServiceRef.current) {
+      tradingServiceRef.current = new TradingService();
+    }
+  }, []);
+
+  // Отслеживаем изменение флага в localStorage
+  useEffect(() => {
+    const checkFlag = () => {
+      setShowTradingPanel(localStorage.getItem('enableOrderbookTrading') === 'true');
+    };
+    
+    checkFlag();
+    // Проверяем каждую секунду (можно оптимизировать через события storage)
+    const interval = setInterval(checkFlag, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Получаем список всех уникальных бирж из данных
   const allExchanges = useMemo(() => {
@@ -1543,6 +1570,107 @@ export const CryptoArbs = () => {
                   ticker={selectedEnriched.ticker}
                 />
               </div>
+              {/* Торговая панель - видна только если есть флаг в localStorage */}
+              {showTradingPanel && (
+                <Card className="mt-2 flex-shrink-0 border-muted-foreground/20">
+                <CardHeader className="py-2 px-3">
+                  <CardTitle className="text-xs font-semibold">Торговля</CardTitle>
+                </CardHeader>
+                <div className="px-3 pb-3 space-y-2">
+                  <div>
+                    <Label htmlFor="trading-volume" className="text-xs">Объем (USD)</Label>
+                    <Input
+                      id="trading-volume"
+                      type="number"
+                      value={tradingVolume}
+                      onChange={(e) => setTradingVolume(e.target.value)}
+                      className="h-7 text-xs"
+                      placeholder="100"
+                    />
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      if (!tradingServiceRef.current || !selectedEnriched) return;
+                      
+                      const usdAmount = parseFloat(tradingVolume);
+                      if (isNaN(usdAmount) || usdAmount <= 0) {
+                        toast.error('Введите корректный объем');
+                        return;
+                      }
+
+                      setIsTrading(true);
+                      try {
+                        // Определяем какая биржа дешевле (покупка) и какая дороже (продажа)
+                        const leftPrice = selectedEnriched.left.last;
+                        const rightPrice = selectedEnriched.right.last;
+                        const buyExchange = leftPrice < rightPrice ? selectedEnriched.left.exchange : selectedEnriched.right.exchange;
+                        const sellExchange = leftPrice < rightPrice ? selectedEnriched.right.exchange : selectedEnriched.left.exchange;
+                        const buySymbol = getTickerWithSuffix(buyExchange, selectedEnriched.ticker);
+                        const sellSymbol = getTickerWithSuffix(sellExchange, selectedEnriched.ticker);
+
+                        // Получаем API ключи для бирж
+                        const getApiKeys = (exchange: string) => {
+                          const exchangeUpper = exchange.toUpperCase();
+                          switch (exchangeUpper) {
+                            case 'BYBIT':
+                              return {
+                                apiKey: localStorage.getItem('bybitApiKey'),
+                                secretKey: localStorage.getItem('bybitSecretKey'),
+                              };
+                            case 'BITGET':
+                              return {
+                                apiKey: localStorage.getItem('bitgetApiKey'),
+                                secretKey: localStorage.getItem('bitgetSecretKey'),
+                                passphrase: localStorage.getItem('bitgetPassphrase'),
+                              };
+                            case 'BITMART':
+                              return {
+                                apiKey: localStorage.getItem('bitmartApiKey'),
+                                secretKey: localStorage.getItem('bitmartSecretKey'),
+                              };
+                            default:
+                              return {};
+                          }
+                        };
+
+                        const buyKeys = getApiKeys(buyExchange);
+                        const sellKeys = getApiKeys(sellExchange);
+
+                        if (!buyKeys.apiKey || !buyKeys.secretKey || !sellKeys.apiKey || !sellKeys.secretKey) {
+                          toast.error('API ключи не найдены для одной из бирж');
+                          return;
+                        }
+
+                        const result = await tradingServiceRef.current.placeArbitrageOrders({
+                          buyExchange,
+                          sellExchange,
+                          buySymbol,
+                          sellSymbol,
+                          usdAmount,
+                          buyApiKey: buyKeys.apiKey,
+                          buySecretKey: buyKeys.secretKey,
+                          buyPassphrase: buyKeys.passphrase,
+                          sellApiKey: sellKeys.apiKey,
+                          sellSecretKey: sellKeys.secretKey,
+                          sellPassphrase: sellKeys.passphrase,
+                        });
+
+                        toast.success(`Ордера размещены! Buy: ${result.buy?.orderId || 'N/A'}, Sell: ${result.sell?.orderId || 'N/A'}`);
+                      } catch (error: any) {
+                        console.error('Ошибка при размещении ордеров:', error);
+                        toast.error(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
+                      } finally {
+                        setIsTrading(false);
+                      }
+                    }}
+                    disabled={isTrading || !selectedEnriched}
+                    className="w-full h-8 bg-yellow-500 hover:bg-yellow-600 text-black font-bold text-xs"
+                  >
+                    {isTrading ? 'Выполняется...' : 'Бабло'}
+                  </Button>
+                </div>
+              </Card>
+              )}
             </div>
           </>
         ) : selectedFairArb ? (
