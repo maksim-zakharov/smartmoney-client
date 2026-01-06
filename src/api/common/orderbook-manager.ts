@@ -14,6 +14,7 @@ export interface OrderbookManagerConfig {
   symbol: string;
   canvas: HTMLCanvasElement | null;
   onDataUpdate?: (priceCache: Map<number, OrderbookPriceLevel>, tickSize: number, bestAsk: OrderbookAsk | null, bestBid: OrderbookBid | null) => void;
+  onRowClick?: (price: number) => void;
 }
 
 // Функция для компактного форматирования чисел (без дробных)
@@ -23,6 +24,47 @@ const formatCompact = (value: number): string => {
   if (value < 1000000) return `${Math.round(value / 1000)}K`;
   if (value < 1000000000) return `${Math.round(value / 1000000)}M`;
   return `${Math.round(value / 1000000000)}B`;
+};
+
+// Функция для умного сокращения цен
+const formatSmartPrice = (price: number, decimals: number): string => {
+  const priceStr = price.toFixed(decimals);
+  
+  // Если нет точки, возвращаем как есть
+  if (!priceStr.includes('.')) {
+    return priceStr;
+  }
+  
+  const [integerPart, decimalPart] = priceStr.split('.');
+  
+  // Если целая часть не 0, возвращаем как есть
+  if (integerPart !== '0') {
+    return priceStr;
+  }
+  
+  // Если первая цифра после точки не 0, возвращаем как есть
+  if (decimalPart[0] !== '0') {
+    return priceStr;
+  }
+  
+  // Считаем количество ведущих нулей
+  let leadingZeros = 0;
+  for (let i = 0; i < decimalPart.length; i++) {
+    if (decimalPart[i] === '0') {
+      leadingZeros++;
+    } else {
+      break;
+    }
+  }
+  
+  // Если нет ведущих нулей, возвращаем как есть
+  if (leadingZeros === 0) {
+    return priceStr;
+  }
+  
+  // Формируем строку: убираем "0." и заменяем нули на скобки
+  const remainingDigits = decimalPart.substring(leadingZeros);
+  return `(${leadingZeros})${remainingDigits}`;
 };
 
 export class OrderbookManager {
@@ -47,9 +89,13 @@ export class OrderbookManager {
   // Параметры для отрисовки
   private scrollTop = 0;
   private dimensions = { width: 0, height: 0 };
+  private hoveredRow: number | null = null; // Индекс строки под курсором
   
   // Колбэк для уведомления об обновлениях
   private onDataUpdate?: (priceCache: Map<number, OrderbookPriceLevel>, tickSize: number, bestAsk: OrderbookAsk | null, bestBid: OrderbookBid | null) => void;
+  
+  // Колбэк для клика по строке
+  private onRowClick?: (price: number) => void;
   
   // Subject для уведомлений об изменениях
   public dataUpdate$ = new Subject<{
@@ -69,6 +115,7 @@ export class OrderbookManager {
     this.symbol = config.symbol;
     this.canvas = config.canvas;
     this.onDataUpdate = config.onDataUpdate;
+    this.onRowClick = config.onRowClick;
     
     // Загружаем compression из localStorage
     const saved = localStorage.getItem('orderbook_compression');
@@ -94,6 +141,68 @@ export class OrderbookManager {
   public setDimensions(width: number, height: number) {
     this.dimensions = { width, height };
     this.draw();
+  }
+
+  // Получить цену по координатам мыши (mouseY - абсолютная позиция с учетом скролла)
+  public getPriceAtPosition(mouseY: number): number | null {
+    if (!this.canvas || this.priceCache.size === 0) {
+      return null;
+    }
+
+    const compressionTickSize = this.tickSize * this.compression;
+    
+    // Вычисляем центральную цену
+    const askPrices = Array.from(this.priceCache.entries())
+      .filter(([_, d]) => d.type === 'ask')
+      .map(([p]) => p)
+      .sort((a, b) => a - b);
+    const bidPrices = Array.from(this.priceCache.entries())
+      .filter(([_, d]) => d.type === 'bid')
+      .map(([p]) => p)
+      .sort((a, b) => b - a);
+    
+    const bestAskPrice = askPrices[0];
+    const bestBidPrice = bidPrices[0];
+    
+    let centerPrice: number | null = null;
+    if (bestAskPrice !== undefined && bestBidPrice !== undefined) {
+      centerPrice = (bestAskPrice + bestBidPrice) / 2;
+    } else if (bestAskPrice !== undefined) {
+      centerPrice = bestAskPrice;
+    } else if (bestBidPrice !== undefined) {
+      centerPrice = bestBidPrice;
+    }
+    
+    if (centerPrice === null) return null;
+
+    // Вычисляем индекс строки (mouseY уже включает scrollTop)
+    const centerRow = this.TOTAL_ROWS / 2;
+    const rowIndex = Math.floor(mouseY / this.ROW_HEIGHT);
+    const priceOffset = (rowIndex - centerRow) * compressionTickSize;
+    const price = centerPrice + priceOffset;
+    const roundedPrice = Math.round(price / compressionTickSize) * compressionTickSize;
+    
+    return roundedPrice;
+  }
+
+  // Установить наведенную строку (mouseY - абсолютная позиция с учетом скролла)
+  public setHoveredRow(mouseY: number | null) {
+    if (mouseY === null) {
+      this.hoveredRow = null;
+    } else {
+      // mouseY уже включает scrollTop, поэтому просто делим на ROW_HEIGHT
+      const rowIndex = Math.floor(mouseY / this.ROW_HEIGHT);
+      this.hoveredRow = rowIndex;
+    }
+    this.draw();
+  }
+
+  // Обработка клика
+  public handleClick(mouseY: number) {
+    const price = this.getPriceAtPosition(mouseY);
+    if (price !== null && this.onRowClick) {
+      this.onRowClick(price);
+    }
   }
 
   private subscribe() {
@@ -402,7 +511,8 @@ export class OrderbookManager {
     // Функция для вычисления цены для строки
     const getPriceForRow = (rowIndex: number) => {
       const centerRow = this.TOTAL_ROWS / 2;
-      const priceOffset = (rowIndex - centerRow) * compressionTickSize;
+      // Делаем так, чтобы верхние строки соответствовали более высоким ценам (аски сверху, биды снизу)
+      const priceOffset = (centerRow - rowIndex) * compressionTickSize;
       return centerPrice! + priceOffset;
     };
     
@@ -423,6 +533,14 @@ export class OrderbookManager {
       
       const y = rowIndex * this.ROW_HEIGHT - this.scrollTop;
       if (y < -this.ROW_HEIGHT || y > this.dimensions.height) continue;
+      
+      const isHovered = this.hoveredRow === rowIndex;
+      
+      // Фон для наведенной строки (рисуем первым, чтобы был поверх других)
+      if (isHovered) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillRect(0, y, this.dimensions.width, this.ROW_HEIGHT);
+      }
       
       // Фон для лучшего уровня
       if (isBestLevel) {
@@ -454,8 +572,8 @@ export class OrderbookManager {
         ctx.fillText(volumeText, paddingX, y + this.ROW_HEIGHT / 2);
       }
       
-      // Текст цены (справа)
-      const priceText = roundedPrice.toFixed(priceDecimals);
+      // Текст цены (справа) с умным сокращением
+      const priceText = formatSmartPrice(roundedPrice, priceDecimals);
       ctx.textAlign = 'right';
       ctx.fillStyle = 'rgba(255, 255, 255, 1)';
       ctx.fillText(priceText, this.dimensions.width - paddingX, y + this.ROW_HEIGHT / 2);

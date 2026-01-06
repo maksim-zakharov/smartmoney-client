@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { OrderbookView } from './components/OrderbookView';
 import { Input } from './components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
@@ -38,15 +39,52 @@ interface TickerOption {
 
 export const OrderbookTestPage = () => {
   const dataService = useAppSelector((state) => state.alorSlice.dataService) as DataService | null;
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchValue, setSearchValue] = useState('');
-  const [selectedExchange, setSelectedExchange] = useState<string | null>(null);
-  const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
   const [tickers, setTickers] = useState<TickerOption[]>([]);
   const [loadingTickers, setLoadingTickers] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Читаем выбранную биржу и тикер из query параметров
+  const selectedExchange = useMemo(() => {
+    const exchange = searchParams.get('exchange');
+    return exchange && EXCHANGES.includes(exchange.toUpperCase()) ? exchange.toUpperCase() : null;
+  }, [searchParams]);
+
+  const selectedTicker = useMemo(() => {
+    return searchParams.get('ticker');
+  }, [searchParams]);
+
+  // Восстанавливаем searchValue из query параметров при изменении
+  useEffect(() => {
+    if (selectedExchange && selectedTicker) {
+      setSearchValue(`${selectedExchange}:${selectedTicker}`);
+    } else if (selectedExchange) {
+      setSearchValue(`${selectedExchange}:`);
+    } else {
+      setSearchValue('');
+    }
+  }, [selectedExchange, selectedTicker]);
+
+  // Функция для обновления query параметров
+  const updateQueryParams = (exchange: string | null, ticker: string | null) => {
+    const params = new URLSearchParams(searchParams);
+    if (exchange) {
+      params.set('exchange', exchange);
+      if (ticker) {
+        params.set('ticker', ticker);
+      } else {
+        params.delete('ticker');
+      }
+    } else {
+      params.delete('exchange');
+      params.delete('ticker');
+    }
+    setSearchParams(params, { replace: true });
+  };
 
   // Получаем список фьючерсов для выбранной биржи
   useEffect(() => {
@@ -134,8 +172,7 @@ export const OrderbookTestPage = () => {
     
     if (colonIndex === -1) {
       // Нет двоеточия - автокомплит по биржам
-      setSelectedExchange(null);
-      setSelectedTicker(null);
+      updateQueryParams(null, null);
       
       if (value.trim() === '') {
         // Показываем все биржи при пустом поле
@@ -157,13 +194,12 @@ export const OrderbookTestPage = () => {
       const isValidExchange = EXCHANGES.some((ex) => ex.toUpperCase() === exchangePart);
       
       if (isValidExchange) {
-        setSelectedExchange(exchangePart);
+        updateQueryParams(exchangePart, null);
         
         // Если тикеры еще не загружены, не показываем подсказки
         if (tickers.length === 0) {
           setSuggestions([]);
           setShowSuggestions(false);
-          setSelectedTicker(null);
           return;
         }
         
@@ -172,7 +208,7 @@ export const OrderbookTestPage = () => {
           // Проверяем, есть ли точное совпадение
           const exactMatch = tickers.find((t) => t.display.toLowerCase() === tickerPart.toLowerCase());
           if (exactMatch) {
-            setSelectedTicker(exactMatch.display);
+            updateQueryParams(exchangePart, exactMatch.display);
             setShowSuggestions(false);
           } else {
             // Показываем автокомплит
@@ -181,17 +217,14 @@ export const OrderbookTestPage = () => {
               .map((t) => t.display);
             setSuggestions(filtered);
             setShowSuggestions(filtered.length > 0);
-            setSelectedTicker(null);
           }
         } else {
           // Нет текста после двоеточия - показываем все тикеры
           setSuggestions(tickers.map((t) => t.display));
           setShowSuggestions(true);
-          setSelectedTicker(null);
         }
       } else {
-        setSelectedExchange(null);
-        setSelectedTicker(null);
+        updateQueryParams(null, null);
         setSuggestions([]);
         setShowSuggestions(false);
       }
@@ -204,9 +237,9 @@ export const OrderbookTestPage = () => {
     
     if (colonIndex === -1) {
       // Выбрана биржа
-      setSearchValue(`${suggestion}:`);
-      setSelectedExchange(suggestion.toUpperCase());
-      setSelectedTicker(null);
+      const exchangeUpper = suggestion.toUpperCase();
+      setSearchValue(`${exchangeUpper}:`);
+      updateQueryParams(exchangeUpper, null);
       setShowSuggestions(false);
       inputRef.current?.focus();
     } else {
@@ -214,7 +247,7 @@ export const OrderbookTestPage = () => {
       const exchangePart = searchValue.substring(0, colonIndex).trim();
       const newValue = `${exchangePart}:${suggestion}`;
       setSearchValue(newValue);
-      setSelectedTicker(suggestion);
+      updateQueryParams(exchangePart.toUpperCase(), suggestion);
       setShowSuggestions(false);
     }
   };

@@ -50,6 +50,12 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   const [isCustomCompression, setIsCustomCompression] = useState(false);
   
 
+  // Обработчик клика по строке
+  const handleRowClick = useCallback((price: number) => {
+    console.log('Клик по цене:', price);
+    // Здесь можно добавить дополнительную логику, например, открыть диалог или скопировать цену
+  }, []);
+
   // Инициализация OrderbookManager
   useEffect(() => {
     if (!dataService || !symbol) {
@@ -63,6 +69,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
       exchange,
       symbol,
       canvas: canvasRef.current,
+      onRowClick: handleRowClick,
     });
 
     // Синхронизируем compression с менеджером
@@ -81,7 +88,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
       orderbookManagerRef.current = null;
       setHasData(false);
     };
-  }, [dataService, exchange, symbol, compression]);
+  }, [dataService, exchange, symbol, compression, handleRowClick]);
 
   // Передаем canvas в менеджер при изменении и обновляем dimensions
   useEffect(() => {
@@ -121,6 +128,34 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     if (orderbookManagerRef.current) {
       orderbookManagerRef.current.setScrollTop(newScrollTop);
     }
+  }, []);
+
+  // Обработчик движения мыши
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!orderbookManagerRef.current || !canvasRef.current || !scrollContainerRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const scrollContainerRect = scrollContainerRef.current.getBoundingClientRect();
+    // Координата мыши относительно canvas с учетом скролла контейнера
+    const mouseY = e.clientY - scrollContainerRect.top + scrollContainerRef.current.scrollTop;
+    orderbookManagerRef.current.setHoveredRow(mouseY);
+  }, []);
+
+  // Обработчик ухода мыши
+  const handleMouseLeave = useCallback(() => {
+    if (orderbookManagerRef.current) {
+      orderbookManagerRef.current.setHoveredRow(null);
+    }
+  }, []);
+
+  // Обработчик клика
+  const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!orderbookManagerRef.current || !canvasRef.current || !scrollContainerRef.current) return;
+    
+    const scrollContainerRect = scrollContainerRef.current.getBoundingClientRect();
+    // Координата мыши относительно canvas с учетом скролла контейнера
+    const mouseY = e.clientY - scrollContainerRect.top + scrollContainerRef.current.scrollTop;
+    orderbookManagerRef.current.handleClick(mouseY);
   }, []);
 
   // Обработчик нажатия Shift для центрирования
@@ -305,8 +340,11 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
               width: '100%',
               height: dimensions.height || '100%',
               display: 'block',
-              pointerEvents: 'none',
+              cursor: 'pointer',
             }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onClick={handleClick}
           />
         </div>
       </div>
