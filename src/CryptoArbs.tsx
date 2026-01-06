@@ -1628,6 +1628,18 @@ export const CryptoArbs = () => {
                                 apiKey: localStorage.getItem('bitmartApiKey'),
                                 secretKey: localStorage.getItem('bitmartSecretKey'),
                               };
+                            case 'KCEX':
+                              return {
+                                authToken: localStorage.getItem('kcexAuthToken'),
+                              };
+                            case 'OURBIT':
+                              return {
+                                authToken: localStorage.getItem('ourbitAuthToken'),
+                              };
+                            case 'MEXC':
+                              return {
+                                authToken: localStorage.getItem('mexcAuthToken') || localStorage.getItem('mexcUid'),
+                              };
                             default:
                               return {};
                           }
@@ -1636,9 +1648,25 @@ export const CryptoArbs = () => {
                         const buyKeys = getApiKeys(buyExchange);
                         const sellKeys = getApiKeys(sellExchange);
 
-                        if (!buyKeys.apiKey || !buyKeys.secretKey || !sellKeys.apiKey || !sellKeys.secretKey) {
-                          toast.error('API ключи не найдены для одной из бирж');
-                          return;
+                        // Проверяем наличие ключей в зависимости от типа биржи
+                        const buyExchangeUpper = buyExchange.toUpperCase();
+                        const sellExchangeUpper = sellExchange.toUpperCase();
+                        const needsAuthToken = ['KCEX', 'OURBIT', 'MEXC'].includes(buyExchangeUpper) || ['KCEX', 'OURBIT', 'MEXC'].includes(sellExchangeUpper);
+                        
+                        if (needsAuthToken) {
+                          if ((buyExchangeUpper === 'KCEX' || buyExchangeUpper === 'OURBIT' || buyExchangeUpper === 'MEXC') && !buyKeys.authToken) {
+                            toast.error(`Auth Token не найден для биржи ${buyExchange}`);
+                            return;
+                          }
+                          if ((sellExchangeUpper === 'KCEX' || sellExchangeUpper === 'OURBIT' || sellExchangeUpper === 'MEXC') && !sellKeys.authToken) {
+                            toast.error(`Auth Token не найден для биржи ${sellExchange}`);
+                            return;
+                          }
+                        } else {
+                          if (!buyKeys.apiKey || !buyKeys.secretKey || !sellKeys.apiKey || !sellKeys.secretKey) {
+                            toast.error('API ключи не найдены для одной из бирж');
+                            return;
+                          }
                         }
 
                         const result = await tradingServiceRef.current.placeArbitrageOrders({
@@ -1650,9 +1678,11 @@ export const CryptoArbs = () => {
                           buyApiKey: buyKeys.apiKey,
                           buySecretKey: buyKeys.secretKey,
                           buyPassphrase: buyKeys.passphrase,
+                          buyAuthToken: buyKeys.authToken,
                           sellApiKey: sellKeys.apiKey,
                           sellSecretKey: sellKeys.secretKey,
                           sellPassphrase: sellKeys.passphrase,
+                          sellAuthToken: sellKeys.authToken,
                         });
 
                         toast.success(`Ордера размещены! Buy: ${result.buy?.orderId || 'N/A'}, Sell: ${result.sell?.orderId || 'N/A'}`);

@@ -1,39 +1,5 @@
 import CryptoJS from 'crypto-js';
-
-/**
- * Интерфейс для размещения лимитного ордера
- */
-export interface PlaceLimitOrderParams {
-  /** Auth Token (WEB authentication key, начинается с "WEB...") */
-  authToken: string;
-  /** Символ (например, BTC_USDT) */
-  symbol: string;
-  /** Сторона ордера: BUY или SELL */
-  side: 'BUY' | 'SELL';
-  /** Цена */
-  price: number;
-  /** Количество */
-  quantity: number;
-  /** Плечо (по умолчанию 10) */
-  leverage?: number;
-}
-
-/**
- * Интерфейс ответа при размещении ордера
- */
-export interface PlaceOrderResponse {
-  /** Успешность операции */
-  success: boolean;
-  /** Код ответа */
-  code?: number;
-  /** Сообщение */
-  message?: string;
-  /** Данные ордера */
-  data?: {
-    /** ID ордера */
-    orderId: string;
-  };
-}
+import { PlaceLimitOrderParams, PlaceOrderResponse } from './mexc-trading.service';
 
 /**
  * Функция для генерации hex MD5
@@ -43,9 +9,10 @@ function hexMd5(str: string): string {
 }
 
 /**
- * Сервис для торговли на MEXC
+ * Сервис для торговли на Ourbit
+ * API идентично MEXC, только baseURL другой
  */
-export class MexcTradingService {
+export class OurbitTradingService {
   private readonly backendUrl: string;
 
   constructor(backendUrl: string = 'http://5.35.13.149') {
@@ -53,14 +20,14 @@ export class MexcTradingService {
   }
 
   /**
-   * Генерирует заголовки для MEXC Futures API с authToken
+   * Генерирует заголовки для Ourbit Futures API с authToken
+   * Формат идентичен MEXC
    */
   private generateHeaders(authToken: string, body: any): Record<string, string> {
     const ts = Date.now();
     const nonce = ts.toString();
 
-    // Генерируем подпись по схеме MEXC Futures API
-    // Формат: MD5(timestamp + JSON.stringify(body) + MD5(authToken + timestamp).substring(7))
+    // Генерируем подпись по схеме (идентично MEXC)
     const bodyStr = JSON.stringify(body || '');
     const authHash = hexMd5(`${authToken}${ts}`).substring(7);
     const sign = hexMd5(`${ts}${bodyStr}${authHash}`);
@@ -107,7 +74,7 @@ export class MexcTradingService {
    * Получает последнюю цену для символа
    */
   private async getLastPrice(symbol: string): Promise<number> {
-    const url = `https://www.mexc.com/api/platform/futures/api/v1/contract/ticker`;
+    const url = `https://futures.ourbit.com/api/v1/contract/ticker`;
     
     const data = await this.proxyRequest({
       method: 'GET',
@@ -130,12 +97,12 @@ export class MexcTradingService {
   }
 
   /**
-   * Размещает лимитный ордер на MEXC через /create endpoint
+   * Размещает лимитный ордер на Ourbit через /create endpoint
    */
   async placeLimitOrder(params: PlaceLimitOrderParams): Promise<PlaceOrderResponse> {
     const { authToken, symbol, side, price, quantity, leverage = 10 } = params;
 
-    // Формируем данные для запроса
+    // Формируем данные для запроса (идентично MEXC)
     const orderData: any = {
       symbol,
       side: side === 'BUY' ? 1 : 3, // 1 = Buy, 3 = Sell
@@ -152,8 +119,8 @@ export class MexcTradingService {
     // Генерируем заголовки с подписью
     const headers = this.generateHeaders(authToken, orderData);
 
-    // Используем endpoint /create
-    const targetUrl = 'https://www.mexc.com/api/platform/futures/api/v1/private/order/create';
+    // Используем endpoint /create с baseURL Ourbit
+    const targetUrl = 'https://futures.ourbit.com/api/v1/private/order/create';
 
     // Отправляем через общий прокси с конфигом axios
     const data = await this.proxyRequest({
@@ -163,18 +130,18 @@ export class MexcTradingService {
       data: orderData,
     });
 
-    // MEXC возвращает ошибки через поле code
+    // Ourbit возвращает ошибки через поле code
     if (data.code !== undefined && data.code !== 0) {
       const errorCode = data.code || 'Unknown';
       const errorMsg = data.message || data.msg || 'Ошибка при размещении ордера';
-      throw new Error(`MEXC Error ${errorCode} - ${errorMsg}`);
+      throw new Error(`Ourbit Error ${errorCode} - ${errorMsg}`);
     }
 
     return data;
   }
 
   /**
-   * Размещает рыночный ордер на MEXC
+   * Размещает рыночный ордер на Ourbit
    */
   async placeMarketOrder(params: {
     authToken: string;
@@ -206,8 +173,8 @@ export class MexcTradingService {
     // Генерируем заголовки с подписью
     const headers = this.generateHeaders(authToken, orderData);
 
-    // Используем endpoint /create
-    const targetUrl = 'https://www.mexc.com/api/platform/futures/api/v1/private/order/create';
+    // Используем endpoint /create с baseURL Ourbit
+    const targetUrl = 'https://futures.ourbit.com/api/v1/private/order/create';
 
     // Отправляем через общий прокси с конфигом axios
     const data = await this.proxyRequest({
@@ -217,13 +184,14 @@ export class MexcTradingService {
       data: orderData,
     });
 
-    // MEXC возвращает ошибки через поле code
+    // Ourbit возвращает ошибки через поле code
     if (data.code !== undefined && data.code !== 0) {
       const errorCode = data.code || 'Unknown';
       const errorMsg = data.message || data.msg || 'Ошибка при размещении ордера';
-      throw new Error(`MEXC Error ${errorCode} - ${errorMsg}`);
+      throw new Error(`Ourbit Error ${errorCode} - ${errorMsg}`);
     }
 
     return data;
   }
 }
+

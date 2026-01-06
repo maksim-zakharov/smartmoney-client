@@ -1,4 +1,6 @@
 import { MexcTradingService, PlaceLimitOrderParams, PlaceOrderResponse } from './mexc-trading.service';
+import { OurbitTradingService } from './ourbit-trading.service';
+import { KcexTradingService } from './kcex-trading.service';
 import { BybitTradingService, BybitPlaceMarketOrderParams, BybitPlaceOrderResponse } from './bybit-trading.service';
 import { BitgetTradingService, BitgetPlaceMarketOrderParams, BitgetPlaceOrderResponse } from './bitget-trading.service';
 import { BitmartTradingService, BitmartPlaceMarketOrderParams, BitmartPlaceOrderResponse } from './bitmart-trading.service';
@@ -36,6 +38,8 @@ export interface TradingPlaceLimitOrderParams {
  */
 export class TradingService {
   private readonly mexcTradingService: MexcTradingService;
+  private readonly ourbitTradingService: OurbitTradingService;
+  private readonly kcexTradingService: KcexTradingService;
   private readonly bybitTradingService: BybitTradingService;
   private readonly bitgetTradingService: BitgetTradingService;
   private readonly bitmartTradingService: BitmartTradingService;
@@ -44,6 +48,8 @@ export class TradingService {
   constructor(backendUrl: string = 'http://5.35.13.149') {
     this.backendUrl = backendUrl;
     this.mexcTradingService = new MexcTradingService(backendUrl);
+    this.ourbitTradingService = new OurbitTradingService(backendUrl);
+    this.kcexTradingService = new KcexTradingService(backendUrl);
     this.bybitTradingService = new BybitTradingService(backendUrl);
     this.bitgetTradingService = new BitgetTradingService(backendUrl);
     this.bitmartTradingService = new BitmartTradingService(backendUrl);
@@ -52,7 +58,7 @@ export class TradingService {
   /**
    * Размещает лимитный ордер на указанной бирже
    */
-  async placeLimitOrder(params: TradingPlaceLimitOrderParams): Promise<PlaceOrderResponse> {
+  async placeLimitOrder(params: TradingPlaceLimitOrderParams): Promise<any> {
     const { exchange } = params;
     const exchangeUpper = exchange.toUpperCase();
 
@@ -70,22 +76,51 @@ export class TradingService {
           leverage: params.leverage,
         });
 
+      case 'OURBIT':
+        if (!params.authToken) {
+          throw new Error('Для Ourbit требуется authToken (WEB authentication key)');
+        }
+        return this.ourbitTradingService.placeLimitOrder({
+          authToken: params.authToken,
+          symbol: params.symbol,
+          side: params.side,
+          price: params.price,
+          quantity: params.quantity,
+          leverage: params.leverage,
+        });
+
+      case 'KCEX':
+        if (!params.authToken) {
+          throw new Error('Для KCEX требуется authToken (WEB authentication key)');
+        }
+        return this.kcexTradingService.placeLimitOrder({
+          authToken: params.authToken,
+          symbol: params.symbol,
+          side: params.side,
+          price: params.price,
+          quantity: params.quantity,
+          leverage: params.leverage,
+        });
+
       case 'BYBIT':
         if (!params.apiKey || !params.secretKey) {
           throw new Error('Для Bybit требуются apiKey и secretKey');
         }
+        // Для лимитных ордеров Bybit используем рыночные как заглушку
+        // В реальной реализации здесь должен быть placeLimitOrder
         return this.bybitTradingService.placeMarketOrder({
           apiKey: params.apiKey,
           secretKey: params.secretKey,
           symbol: params.symbol,
           side: params.side,
           usdAmount: params.usdAmount || 0,
-        });
+        }) as any;
 
       case 'BITGET':
         if (!params.apiKey || !params.secretKey || !params.passphrase) {
           throw new Error('Для Bitget требуются apiKey, secretKey и passphrase');
         }
+        // Для лимитных ордеров Bitget используем рыночные как заглушку
         return this.bitgetTradingService.placeMarketOrder({
           apiKey: params.apiKey,
           secretKey: params.secretKey,
@@ -93,19 +128,20 @@ export class TradingService {
           symbol: params.symbol,
           side: params.side,
           usdAmount: params.usdAmount || 0,
-        });
+        }) as any;
 
       case 'BITMART':
         if (!params.apiKey || !params.secretKey) {
           throw new Error('Для Bitmart требуются apiKey и secretKey');
         }
+        // Для лимитных ордеров Bitmart используем рыночные как заглушку
         return this.bitmartTradingService.placeMarketOrder({
           apiKey: params.apiKey,
           secretKey: params.secretKey,
           symbol: params.symbol,
           side: params.side,
           usdAmount: params.usdAmount || 0,
-        });
+        }) as any;
 
       default:
         throw new Error(`Биржа ${exchange} не поддерживается для торговли`);
@@ -115,11 +151,53 @@ export class TradingService {
   /**
    * Размещает рыночный ордер на указанной бирже
    */
-  async placeMarketOrder(params: TradingPlaceLimitOrderParams & { usdAmount: number }): Promise<any> {
+  async placeMarketOrder(params: {
+    exchange: string;
+    symbol: string;
+    side: 'BUY' | 'SELL';
+    usdAmount: number;
+    authToken?: string;
+    apiKey?: string;
+    secretKey?: string;
+    passphrase?: string;
+  }): Promise<any> {
     const { exchange, usdAmount } = params;
     const exchangeUpper = exchange.toUpperCase();
 
     switch (exchangeUpper) {
+      case 'MEXC':
+        if (!params.authToken) {
+          throw new Error('Для MEXC требуется authToken (WEB authentication key)');
+        }
+        return this.mexcTradingService.placeMarketOrder({
+          authToken: params.authToken,
+          symbol: params.symbol,
+          side: params.side,
+          usdAmount,
+        });
+
+      case 'OURBIT':
+        if (!params.authToken) {
+          throw new Error('Для Ourbit требуется authToken (WEB authentication key)');
+        }
+        return this.ourbitTradingService.placeMarketOrder({
+          authToken: params.authToken,
+          symbol: params.symbol,
+          side: params.side,
+          usdAmount,
+        });
+
+      case 'KCEX':
+        if (!params.authToken) {
+          throw new Error('Для KCEX требуется authToken (WEB authentication key)');
+        }
+        return this.kcexTradingService.placeMarketOrder({
+          authToken: params.authToken,
+          symbol: params.symbol,
+          side: params.side,
+          usdAmount,
+        });
+
       case 'BYBIT':
         if (!params.apiKey || !params.secretKey) {
           throw new Error('Для Bybit требуются apiKey и secretKey');

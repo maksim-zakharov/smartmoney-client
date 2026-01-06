@@ -56,23 +56,48 @@ export class BybitTradingService {
   }
 
   /**
-   * Получает последнюю цену для символа
+   * Отправляет запрос через прокси бекенда
    */
-  private async getLastPrice(symbol: string): Promise<number> {
-    const url = `https://api.bybit.com/v5/market/tickers?category=linear&symbol=${symbol}`;
-    
-    const response = await fetch(`${this.backendUrl}/proxy?url=${encodeURIComponent(url)}`, {
-      method: 'GET',
+  private async proxyRequest(config: {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    url: string;
+    headers?: Record<string, string>;
+    data?: any;
+    params?: Record<string, any>;
+  }): Promise<any> {
+    const response = await fetch(`${this.backendUrl}/proxy`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify(config),
     });
 
     if (!response.ok) {
-      throw new Error('Ошибка при получении цены');
+      const error = await response.json().catch(() => ({
+        message: 'Ошибка при проксировании запроса',
+      }));
+      throw new Error(error.message || 'Ошибка при проксировании запроса');
     }
 
-    const data = await response.json();
+    return await response.json();
+  }
+
+  /**
+   * Получает последнюю цену для символа
+   */
+  private async getLastPrice(symbol: string): Promise<number> {
+    const url = `https://api.bybit.com/v5/market/tickers`;
+    
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url,
+      params: {
+        category: 'linear',
+        symbol,
+      },
+    });
+
     if (data.retCode !== 0) {
       throw new Error(data.retMsg || 'Ошибка при получении цены');
     }
@@ -123,25 +148,16 @@ export class BybitTradingService {
 
     const targetUrl = 'https://api.bybit.com/v5/order/create';
 
-    // Отправляем через общий прокси с заголовками в body
-    const response = await fetch(
-      `${this.backendUrl}/proxy?url=${encodeURIComponent(targetUrl)}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...orderData,
-          _headers: headers, // Передаем заголовки через специальное поле
-        }),
-      },
-    );
-
-    const data = await response.json();
+    // Отправляем через общий прокси с конфигом axios
+    const data = await this.proxyRequest({
+      method: 'POST',
+      url: targetUrl,
+      headers,
+      data: orderData,
+    });
 
     // Bybit возвращает ошибки даже при HTTP 200/201, нужно проверять retCode
-    if (!response.ok || (data.retCode !== undefined && data.retCode !== 0)) {
+    if (data.retCode !== undefined && data.retCode !== 0) {
       const errorCode = data.retCode || 'Unknown';
       const errorMsg = data.retMsg || data.message || 'Ошибка при размещении ордера';
       throw new Error(`Bybit Error ${errorCode} - ${errorMsg}`);

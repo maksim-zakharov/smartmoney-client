@@ -447,6 +447,18 @@ export default function App() {
     localStorage.setItem('bybitSecretKey', e.target.value);
   };
 
+  const [kcexAuthToken, setkcexAuthToken] = useState<string | null>(localStorage.getItem('kcexAuthToken'));
+  const handleEditkcexAuthToken = (e) => {
+    setkcexAuthToken(e.target.value);
+    localStorage.setItem('kcexAuthToken', e.target.value);
+  };
+
+  const [ourbitAuthToken, setourbitAuthToken] = useState<string | null>(localStorage.getItem('ourbitAuthToken'));
+  const handleEditourbitAuthToken = (e) => {
+    setourbitAuthToken(e.target.value);
+    localStorage.setItem('ourbitAuthToken', e.target.value);
+  };
+
   const handleCTraderLogin = () => (window.location.href = `https://176.114.69.4/ctrader?redirect_uri=${encodeURIComponent(redirect_uri)}`);
 
   const handleDeleteAlert = (data) => () => {
@@ -658,6 +670,30 @@ export default function App() {
                                 <div className="flex gap-2 flex-col">
                                   <Label htmlFor="gateSecretKey">Secret key</Label>
                                   <Input id="gateSecretKey" value={gateSecretKey} onChange={handlegateSecretKey} />
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+
+                          <AccordionItem value="kcex">
+                            <AccordionTrigger className="text-base">KCEX</AccordionTrigger>
+                            <AccordionContent>
+                              <div className="grid grid-cols-1 gap-3 w-full">
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="kcexAuthToken">Auth Token</Label>
+                                  <Input id="kcexAuthToken" value={kcexAuthToken} onChange={handleEditkcexAuthToken} />
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+
+                          <AccordionItem value="ourbit">
+                            <AccordionTrigger className="text-base">Ourbit</AccordionTrigger>
+                            <AccordionContent>
+                              <div className="grid grid-cols-1 gap-3 w-full">
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="ourbitAuthToken">Auth Token</Label>
+                                  <Input id="ourbitAuthToken" value={ourbitAuthToken} onChange={handleEditourbitAuthToken} />
                                 </div>
                               </div>
                             </AccordionContent>

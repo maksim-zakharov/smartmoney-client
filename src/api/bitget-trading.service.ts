@@ -65,23 +65,48 @@ export class BitgetTradingService {
   }
 
   /**
-   * Получает последнюю цену для символа
+   * Отправляет запрос через прокси бекенда
    */
-  private async getLastPrice(symbol: string): Promise<number> {
-    const url = `https://api.bitget.com/api/v2/mix/market/ticker?symbol=${symbol}&productType=usdt-futures`;
-    
-    const response = await fetch(`${this.backendUrl}/proxy?url=${encodeURIComponent(url)}`, {
-      method: 'GET',
+  private async proxyRequest(config: {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    url: string;
+    headers?: Record<string, string>;
+    data?: any;
+    params?: Record<string, any>;
+  }): Promise<any> {
+    const response = await fetch(`${this.backendUrl}/proxy`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify(config),
     });
 
     if (!response.ok) {
-      throw new Error('Ошибка при получении цены');
+      const error = await response.json().catch(() => ({
+        message: 'Ошибка при проксировании запроса',
+      }));
+      throw new Error(error.message || 'Ошибка при проксировании запроса');
     }
 
-    const data = await response.json();
+    return await response.json();
+  }
+
+  /**
+   * Получает последнюю цену для символа
+   */
+  private async getLastPrice(symbol: string): Promise<number> {
+    const url = `https://api.bitget.com/api/v2/mix/market/ticker`;
+    
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url,
+      params: {
+        symbol,
+        productType: 'usdt-futures',
+      },
+    });
+
     if (data.code !== '00000') {
       throw new Error(data.msg || 'Ошибка при получении цены');
     }
@@ -151,25 +176,16 @@ export class BitgetTradingService {
 
     const targetUrl = 'https://api.bitget.com/api/v2/mix/order/place-order';
 
-    // Отправляем через общий прокси с заголовками в body
-    const response = await fetch(
-      `${this.backendUrl}/proxy?url=${encodeURIComponent(targetUrl)}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...orderData,
-          _headers: headers, // Передаем заголовки через специальное поле
-        }),
-      },
-    );
-
-    const data = await response.json();
+    // Отправляем через общий прокси с конфигом axios
+    const data = await this.proxyRequest({
+      method: 'POST',
+      url: targetUrl,
+      headers,
+      data: orderData,
+    });
 
     // Bitget возвращает ошибки через поле code
-    if (!response.ok || (data.code !== undefined && data.code !== '00000')) {
+    if (data.code !== undefined && data.code !== '00000') {
       const errorCode = data.code || 'Unknown';
       const errorMsg = data.msg || data.message || 'Ошибка при размещении ордера';
       throw new Error(`Bitget Error ${errorCode} - ${errorMsg}`);

@@ -56,23 +56,47 @@ export class BitmartTradingService {
   }
 
   /**
-   * Получает последнюю цену для символа
+   * Отправляет запрос через прокси бекенда
    */
-  private async getLastPrice(symbol: string): Promise<number> {
-    const url = `https://api-cloud.bitmart.com/contract/public/ticker?symbol=${symbol}`;
-    
-    const response = await fetch(`${this.backendUrl}/proxy?url=${encodeURIComponent(url)}`, {
-      method: 'GET',
+  private async proxyRequest(config: {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    url: string;
+    headers?: Record<string, string>;
+    data?: any;
+    params?: Record<string, any>;
+  }): Promise<any> {
+    const response = await fetch(`${this.backendUrl}/proxy`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify(config),
     });
 
     if (!response.ok) {
-      throw new Error('Ошибка при получении цены');
+      const error = await response.json().catch(() => ({
+        message: 'Ошибка при проксировании запроса',
+      }));
+      throw new Error(error.message || 'Ошибка при проксировании запроса');
     }
 
-    const data = await response.json();
+    return await response.json();
+  }
+
+  /**
+   * Получает последнюю цену для символа
+   */
+  private async getLastPrice(symbol: string): Promise<number> {
+    const url = `https://api-cloud.bitmart.com/contract/public/ticker`;
+    
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url,
+      params: {
+        symbol,
+      },
+    });
+
     if (data.code !== 1000) {
       throw new Error(data.message || 'Ошибка при получении цены');
     }
@@ -123,25 +147,16 @@ export class BitmartTradingService {
 
     const targetUrl = 'https://api-cloud.bitmart.com/contract/private/submit-order';
 
-    // Отправляем через общий прокси с заголовками в body
-    const response = await fetch(
-      `${this.backendUrl}/proxy?url=${encodeURIComponent(targetUrl)}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...orderData,
-          _headers: headers, // Передаем заголовки через специальное поле
-        }),
-      },
-    );
-
-    const data = await response.json();
+    // Отправляем через общий прокси с конфигом axios
+    const data = await this.proxyRequest({
+      method: 'POST',
+      url: targetUrl,
+      headers,
+      data: orderData,
+    });
 
     // Bitmart возвращает ошибки через поле code
-    if (!response.ok || (data.code !== undefined && data.code !== 1000)) {
+    if (data.code !== undefined && data.code !== 1000) {
       const errorCode = data.code || 'Unknown';
       const errorMsg = data.message || data.msg || 'Ошибка при размещении ордера';
       throw new Error(`Bitmart Error ${errorCode} - ${errorMsg}`);
