@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
 import { OrderbookManager, OrderbookPriceLevel } from '../api/common/orderbook-manager';
+import { TradingService } from '../api/trading.service';
 
 // Функция для компактного форматирования чисел (без дробных)
 const formatCompact = (value: number): string => {
@@ -28,6 +29,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const orderbookManagerRef = useRef<OrderbookManager | null>(null);
+  const tradingServiceRef = useRef<TradingService | null>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [scrollTop, setScrollTop] = useState(0);
   
@@ -148,15 +150,107 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     }
   }, []);
 
-  // Обработчик клика
-  const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Инициализация trading service
+  useEffect(() => {
+    if (!tradingServiceRef.current) {
+      tradingServiceRef.current = new TradingService();
+    }
+  }, []);
+
+  // Функция для размещения ордера
+  const placeOrder = useCallback(async (
+    exchange: string,
+    symbol: string,
+    side: 'BUY' | 'SELL',
+    price: number,
+  ) => {
+    if (!tradingServiceRef.current) {
+      alert('Сервис торговли не инициализирован');
+      return;
+    }
+
+    try {
+      // Получаем токен/ключи для биржи
+      const exchangeUpper = exchange.toUpperCase();
+      let authToken: string | null = null;
+      let apiKey: string | null = null;
+      let secretKey: string | null = null;
+
+      switch (exchangeUpper) {
+        case 'MEXC':
+          // Для MEXC используем authToken (WEB authentication key)
+          authToken = localStorage.getItem('mexcAuthToken') || localStorage.getItem('mexcUid');
+          if (!authToken) {
+            alert('Auth Token MEXC не найден. Пожалуйста, настройте его в настройках.');
+            return;
+          }
+          break;
+        default:
+          alert(`Биржа ${exchange} не поддерживается для торговли`);
+          return;
+      }
+
+      // Раньше здесь запрашивался объем у пользователя через prompt.
+      // Сейчас объем фиксирован: эквивалент примерно 6 USDT, пересчитанный в монетки.
+      // Объем на мексе передается в монетках, поэтому считаем quantity = ceil(6 / price).
+      const usdAmount = 60;
+      const quantity = Math.ceil(usdAmount / price);
+
+      // Размещаем ордер через trading service
+      const result = await tradingServiceRef.current.placeLimitOrder({
+        exchange: exchangeUpper,
+        authToken: authToken || undefined,
+        apiKey: apiKey || undefined,
+        secretKey: secretKey || undefined,
+        symbol,
+        side,
+        price,
+        quantity,
+        leverage: 10, // По умолчанию плечо 10
+      });
+
+      alert(`Ордер размещен успешно! OrderID: ${result.data?.orderId || 'N/A'}`);
+    } catch (error: any) {
+      console.error('Ошибка при размещении ордера:', error);
+      alert(`Ошибка при размещении ордера: ${error.message || 'Неизвестная ошибка'}`);
+    }
+  }, []);
+  
+  // Обработчик левого клика (покупка)
+  const handleClick = useCallback(async (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!orderbookManagerRef.current || !canvasRef.current || !scrollContainerRef.current) return;
     
     const scrollContainerRect = scrollContainerRef.current.getBoundingClientRect();
     // Координата мыши относительно canvas с учетом скролла контейнера
     const mouseY = e.clientY - scrollContainerRect.top + scrollContainerRef.current.scrollTop;
-    orderbookManagerRef.current.handleClick(mouseY);
-  }, []);
+    const price = orderbookManagerRef.current.getPriceAtPosition(mouseY);
+    
+    if (price === null) return;
+    
+    // Размещаем ордер только для MEXC
+    if (exchange.toUpperCase() === 'MEXC') {
+      await placeOrder(exchange, symbol, 'BUY', price);
+    }
+  }, [exchange, symbol, placeOrder]);
+  
+  // Обработчик правого клика (продажа)
+  const handleContextMenu = useCallback(async (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault(); // Предотвращаем стандартное контекстное меню
+    
+    if (!orderbookManagerRef.current || !canvasRef.current || !scrollContainerRef.current) return;
+    
+    const scrollContainerRect = scrollContainerRef.current.getBoundingClientRect();
+    // Координата мыши относительно canvas с учетом скролла контейнера
+    const mouseY = e.clientY - scrollContainerRect.top + scrollContainerRef.current.scrollTop;
+    const price = orderbookManagerRef.current.getPriceAtPosition(mouseY);
+    
+    if (price === null) return;
+    
+    // Размещаем ордер только для MEXC
+    if (exchange.toUpperCase() === 'MEXC') {
+      await placeOrder(exchange, symbol, 'SELL', price);
+    }
+  }, [exchange, symbol, placeOrder]);
 
   // Функция для центрирования стакана
   const centerOrderbook = useCallback(() => {
@@ -366,6 +460,7 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
+            onContextMenu={handleContextMenu}
           />
         </div>
       </div>
