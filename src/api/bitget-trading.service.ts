@@ -86,12 +86,15 @@ export class BitgetTradingService {
       throw new Error(data.msg || 'Ошибка при получении цены');
     }
 
-    const ticker = data.data;
-    if (!ticker || !ticker.last) {
+    // data.data - это массив, берем первый элемент
+    const tickers = Array.isArray(data.data) ? data.data : [data.data];
+    const ticker = tickers[0];
+    
+    if (!ticker || !ticker.lastPr) {
       throw new Error('Цена не найдена');
     }
 
-    return parseFloat(ticker.last);
+    return parseFloat(ticker.lastPr);
   }
 
   /**
@@ -163,14 +166,16 @@ export class BitgetTradingService {
       },
     );
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        message: 'Ошибка при размещении ордера',
-      }));
-      throw new Error(error.message || 'Ошибка при размещении ордера');
+    const data = await response.json();
+
+    // Bitget возвращает ошибки через поле code
+    if (!response.ok || (data.code !== undefined && data.code !== '00000')) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.msg || data.message || 'Ошибка при размещении ордера';
+      throw new Error(`Bitget Error ${errorCode} - ${errorMsg}`);
     }
 
-    return await response.json();
+    return data;
   }
 }
 

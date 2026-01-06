@@ -138,14 +138,16 @@ export class BybitTradingService {
       },
     );
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        message: 'Ошибка при размещении ордера',
-      }));
-      throw new Error(error.message || 'Ошибка при размещении ордера');
+    const data = await response.json();
+
+    // Bybit возвращает ошибки даже при HTTP 200/201, нужно проверять retCode
+    if (!response.ok || (data.retCode !== undefined && data.retCode !== 0)) {
+      const errorCode = data.retCode || 'Unknown';
+      const errorMsg = data.retMsg || data.message || 'Ошибка при размещении ордера';
+      throw new Error(`Bybit Error ${errorCode} - ${errorMsg}`);
     }
 
-    return await response.json();
+    return data;
   }
 }
 

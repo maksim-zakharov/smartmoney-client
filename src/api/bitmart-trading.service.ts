@@ -138,14 +138,16 @@ export class BitmartTradingService {
       },
     );
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        message: 'Ошибка при размещении ордера',
-      }));
-      throw new Error(error.message || 'Ошибка при размещении ордера');
+    const data = await response.json();
+
+    // Bitmart возвращает ошибки через поле code
+    if (!response.ok || (data.code !== undefined && data.code !== 1000)) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.message || data.msg || 'Ошибка при размещении ордера';
+      throw new Error(`Bitmart Error ${errorCode} - ${errorMsg}`);
     }
 
-    return await response.json();
+    return data;
   }
 }
 
