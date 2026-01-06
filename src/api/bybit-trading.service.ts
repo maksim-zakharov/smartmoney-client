@@ -1,3 +1,5 @@
+import CryptoJS from 'crypto-js';
+
 /**
  * Интерфейс для размещения рыночного ордера на Bybit
  */
@@ -40,38 +42,98 @@ export class BybitTradingService {
   }
 
   /**
+   * Генерирует подпись для Bybit
+   */
+  private generateBybitSignature(
+    apiKey: string,
+    secretKey: string,
+    timestamp: number,
+    recvWindow: number,
+    body: any,
+  ): string {
+    const signStr = `${timestamp}${apiKey}${recvWindow}${JSON.stringify(body)}`;
+    return CryptoJS.HmacSHA256(signStr, secretKey).toString(CryptoJS.enc.Hex);
+  }
+
+  /**
+   * Получает последнюю цену для символа
+   */
+  private async getLastPrice(symbol: string): Promise<number> {
+    const url = `https://api.bybit.com/v5/market/tickers?category=linear&symbol=${symbol}`;
+    
+    const response = await fetch(`${this.backendUrl}/proxy?url=${encodeURIComponent(url)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при получении цены');
+    }
+
+    const data = await response.json();
+    if (data.retCode !== 0) {
+      throw new Error(data.retMsg || 'Ошибка при получении цены');
+    }
+
+    const ticker = data.result?.list?.[0];
+    if (!ticker || !ticker.lastPrice) {
+      throw new Error('Цена не найдена');
+    }
+
+    return parseFloat(ticker.lastPrice);
+  }
+
+  /**
    * Размещает рыночный ордер на Bybit
    */
   async placeMarketOrder(params: BybitPlaceMarketOrderParams): Promise<BybitPlaceOrderResponse> {
     const { apiKey, secretKey, symbol, side, usdAmount } = params;
 
-    // Формируем данные для запроса
+    // Получаем последнюю цену для расчета qty
+    const lastPrice = await this.getLastPrice(symbol);
+    
+    // Рассчитываем qty на основе usdAmount и последней цены, округляем вниз
+    const qty = Math.floor(usdAmount / lastPrice).toString();
+
+    // Формируем данные для запроса согласно документации Bybit
     const orderData: any = {
       category: 'linear',
       isLeverage: 1,
       side: side === 'BUY' ? 'Buy' : 'Sell',
       symbol,
       orderType: 'Market',
-      // Для рыночного ордера количество будет рассчитано на бекенде на основе usdAmount
-      usdAmount,
+      qty, // Количество в базовой валюте
+    };
+
+    // Генерируем подпись
+    const timestamp = Date.now();
+    const recvWindow = 5000;
+    const signature = this.generateBybitSignature(apiKey, secretKey, timestamp, recvWindow, orderData);
+
+    // Формируем заголовки
+    const headers = {
+      'X-BAPI-SIGN': signature,
+      'X-BAPI-API-KEY': apiKey,
+      'X-BAPI-TIMESTAMP': timestamp.toString(),
+      'X-BAPI-RECV-WINDOW': recvWindow.toString(),
+      'Content-Type': 'application/json',
     };
 
     const targetUrl = 'https://api.bybit.com/v5/order/create';
 
-    // Отправляем через общий прокси
+    // Отправляем через общий прокси с заголовками в body
     const response = await fetch(
       `${this.backendUrl}/proxy?url=${encodeURIComponent(targetUrl)}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-BAPI-API-KEY': apiKey,
-          'X-BAPI-TIMESTAMP': Date.now().toString(),
         },
         body: JSON.stringify({
           ...orderData,
-          _apiKey: apiKey,
-          _secretKey: secretKey,
+          _headers: headers, // Передаем заголовки через специальное поле
         }),
       },
     );

@@ -1621,7 +1621,7 @@ export const CryptoArbs = () => {
                               return {
                                 apiKey: localStorage.getItem('bitgetApiKey'),
                                 secretKey: localStorage.getItem('bitgetSecretKey'),
-                                passphrase: localStorage.getItem('bitgetPassphrase'),
+                                passphrase: localStorage.getItem('bitgetPhrase'),
                               };
                             case 'BITMART':
                               return {

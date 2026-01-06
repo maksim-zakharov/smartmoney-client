@@ -1,3 +1,5 @@
+import CryptoJS from 'crypto-js';
+
 /**
  * Интерфейс для размещения рыночного ордера на Bitmart
  */
@@ -40,36 +42,98 @@ export class BitmartTradingService {
   }
 
   /**
+   * Генерирует подпись для Bitmart
+   */
+  private generateBitmartSignature(
+    secretKey: string,
+    timestamp: string,
+    method: string,
+    requestPath: string,
+    body: string,
+  ): string {
+    const message = timestamp + '#' + method + '#' + requestPath + '#' + body;
+    return CryptoJS.HmacSHA256(message, secretKey).toString(CryptoJS.enc.Base64);
+  }
+
+  /**
+   * Получает последнюю цену для символа
+   */
+  private async getLastPrice(symbol: string): Promise<number> {
+    const url = `https://api-cloud.bitmart.com/contract/public/ticker?symbol=${symbol}`;
+    
+    const response = await fetch(`${this.backendUrl}/proxy?url=${encodeURIComponent(url)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при получении цены');
+    }
+
+    const data = await response.json();
+    if (data.code !== 1000) {
+      throw new Error(data.message || 'Ошибка при получении цены');
+    }
+
+    const ticker = data.data;
+    if (!ticker || !ticker.last_price) {
+      throw new Error('Цена не найдена');
+    }
+
+    return parseFloat(ticker.last_price);
+  }
+
+  /**
    * Размещает рыночный ордер на Bitmart
    */
   async placeMarketOrder(params: BitmartPlaceMarketOrderParams): Promise<BitmartPlaceOrderResponse> {
     const { apiKey, secretKey, symbol, side, usdAmount } = params;
 
+    // Получаем последнюю цену для расчета size
+    const lastPrice = await this.getLastPrice(symbol);
+    
+    // Рассчитываем size на основе usdAmount и последней цены, округляем вниз
+    const size = Math.floor(usdAmount / lastPrice).toString();
+
     // Формируем данные для запроса
     const orderData: any = {
       symbol,
-      side: side.toLowerCase(),
-      type: 'market',
-      // Для рыночного ордера количество будет рассчитано на бекенде на основе usdAmount
-      usdAmount,
+      side: side === 'BUY' ? 1 : 2, // 1 = Buy, 2 = Sell
+      type: 1, // 1 = Market order
+      open_type: 1, // Isolated margin
+      size, // Количество в базовой валюте
+    };
+
+    // Генерируем подпись
+    const timestamp = Date.now().toString();
+    const method = 'POST';
+    const requestPath = '/contract/private/submit-order';
+    const bodyStr = JSON.stringify(orderData);
+    const signature = this.generateBitmartSignature(secretKey, timestamp, method, requestPath, bodyStr);
+
+    // Формируем заголовки
+    const headers = {
+      'X-BM-KEY': apiKey,
+      'X-BM-SIGN': signature,
+      'X-BM-TIMESTAMP': timestamp,
+      'Content-Type': 'application/json',
     };
 
     const targetUrl = 'https://api-cloud.bitmart.com/contract/private/submit-order';
 
-    // Отправляем через общий прокси
+    // Отправляем через общий прокси с заголовками в body
     const response = await fetch(
       `${this.backendUrl}/proxy?url=${encodeURIComponent(targetUrl)}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-BM-KEY': apiKey,
-          'X-BM-TIMESTAMP': Date.now().toString(),
         },
         body: JSON.stringify({
           ...orderData,
-          _apiKey: apiKey,
-          _secretKey: secretKey,
+          _headers: headers, // Передаем заголовки через специальное поле
         }),
       },
     );
