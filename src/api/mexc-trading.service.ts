@@ -223,4 +223,46 @@ export class MexcTradingService {
 
     return data;
   }
+
+  /**
+   * Получает открытые позиции на MEXC
+   */
+  async getPositions(params: { authToken: string; symbol?: string }): Promise<any> {
+    const { authToken, symbol } = params;
+
+    // Формируем URL
+    const url = 'https://futures.mexc.com/api/v1/private/position/open_positions';
+
+    // Для GET запроса подпись генерируется с пустым телом
+    const headers = generateMexcHeaders(
+      {
+        authToken,
+        origin: 'https://futures.mexc.com',
+        referer: 'https://futures.mexc.com/',
+      },
+      true,
+      {}, // Пустое тело для GET запроса
+    );
+
+    // Параметры передаем через params, а не в URL
+    const requestParams: Record<string, string> = {};
+    if (symbol) {
+      requestParams.symbol = symbol;
+    }
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url,
+      headers,
+      params: requestParams,
+    });
+
+    if (!data.success) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.message || data.msg || 'Ошибка при получении позиций';
+      throw new Error(`MEXC Error ${errorCode} - ${errorMsg}`);
+    }
+
+    return data;
+  }
 }

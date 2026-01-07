@@ -319,5 +319,61 @@ export class TradingService {
 
     return { buy: buyResult, sell: sellResult };
   }
+
+  /**
+   * Получает открытые позиции на указанной бирже
+   */
+  async getPositions(params: {
+    exchange: string;
+    symbol?: string;
+    authToken?: string;
+    apiKey?: string;
+    secretKey?: string;
+  }): Promise<any> {
+    const { exchange, symbol } = params;
+    const exchangeUpper = exchange.toUpperCase();
+
+    switch (exchangeUpper) {
+      case 'MEXC':
+        if (!params.authToken) {
+          throw new Error('Для MEXC требуется authToken (WEB authentication key)');
+        }
+        return this.mexcTradingService.getPositions({
+          authToken: params.authToken,
+          symbol,
+        });
+
+      case 'OURBIT':
+        if (!params.authToken) {
+          throw new Error('Для Ourbit требуется authToken (WEB authentication key)');
+        }
+        return this.ourbitTradingService.getPositions({
+          authToken: params.authToken,
+          symbol,
+        });
+
+      case 'KCEX':
+        if (!params.authToken) {
+          throw new Error('Для KCEX требуется authToken (WEB authentication key)');
+        }
+        return this.kcexTradingService.getPositions({
+          authToken: params.authToken,
+          symbol,
+        });
+
+      case 'BYBIT':
+        if (!params.apiKey || !params.secretKey) {
+          throw new Error('Для Bybit требуются apiKey и secretKey');
+        }
+        return this.bybitTradingService.getPositions({
+          apiKey: params.apiKey,
+          secretKey: params.secretKey,
+          symbol,
+        });
+
+      default:
+        throw new Error(`Биржа ${exchange} не поддерживается для получения позиций`);
+    }
+  }
 }
 

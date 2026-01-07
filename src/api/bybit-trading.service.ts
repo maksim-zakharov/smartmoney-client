@@ -165,5 +165,56 @@ export class BybitTradingService {
 
     return data;
   }
+
+  /**
+   * Получает открытые позиции на Bybit
+   */
+  async getPositions(params: { apiKey: string; secretKey: string; symbol?: string }): Promise<any> {
+    const { apiKey, secretKey, symbol } = params;
+
+    // Формируем параметры запроса
+    const requestParams: any = {
+      category: 'linear', // USDT фьючерсы
+    };
+
+    if (symbol) {
+      requestParams.symbol = symbol;
+    }
+
+    // Генерируем подпись для GET запроса
+    const timestamp = Date.now();
+    const recvWindow = 5000;
+    // Для GET запроса подпись генерируется из query string
+    const queryString = new URLSearchParams(requestParams).toString();
+    const signStr = `${timestamp}${apiKey}${recvWindow}${queryString}`;
+    const signature = CryptoJS.HmacSHA256(signStr, secretKey).toString(CryptoJS.enc.Hex);
+
+    // Формируем заголовки
+    const headers = {
+      'X-BAPI-SIGN': signature,
+      'X-BAPI-API-KEY': apiKey,
+      'X-BAPI-TIMESTAMP': timestamp.toString(),
+      'X-BAPI-RECV-WINDOW': recvWindow.toString(),
+      'Content-Type': 'application/json',
+    };
+
+    const url = 'https://api.bybit.com/v5/position/list';
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url,
+      headers,
+      params: requestParams,
+    });
+
+    // Bybit возвращает ошибки даже при HTTP 200, нужно проверять retCode
+    if (data.retCode !== undefined && data.retCode !== 0) {
+      const errorCode = data.retCode || 'Unknown';
+      const errorMsg = data.retMsg || data.message || 'Ошибка при получении позиций';
+      throw new Error(`Bybit Error ${errorCode} - ${errorMsg}`);
+    }
+
+    return data;
+  }
 }
 

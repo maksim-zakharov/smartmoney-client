@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowDown, ArrowUp, TrendingDown, TrendingUp, ExternalLink, BarChart3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { cn } from '../lib/utils';
-import { StatArbPage } from '../ArbitrageMOEXPage/strategies/StatArbPage';
+import { getExchangeUrl } from '../api/utils/tickers';
 
 interface ExchangeSideInfo {
   /** Биржа */
@@ -48,14 +48,8 @@ interface SelectedArbWidgetProps {
   exchangeImgMap: Record<string, string>;
   /** Форматирование времени funding */
   formatFundingTime: (value?: number | string | null) => string;
-  /** Ссылка на биржу */
-  getExchangeUrl: (exchange: string, ticker: string) => string;
   /** Ссылка на TradingView для спреда */
   getTradingViewSpreadUrl: (leftExchange: string, rightExchange: string, ticker: string) => string;
-  /** Тикер для акции (левый инструмент) */
-  tickerStock: string;
-  /** Тикер для фьюча (правый инструмент) */
-  tickerFuture: string;
 }
 
 export const SelectedArbWidget: React.FC<SelectedArbWidgetProps> = ({
@@ -63,14 +57,10 @@ export const SelectedArbWidget: React.FC<SelectedArbWidgetProps> = ({
   selectedArb,
   exchangeImgMap,
   formatFundingTime,
-  getExchangeUrl,
   getTradingViewSpreadUrl,
-  tickerStock,
-  tickerFuture,
 }) => {
   return (
-    <div className="flex-[4] flex flex-col min-h-0 h-full">
-      <div className="mb-2">
+    <div className="mb-2">
         <div
           className="bg-card rounded-lg px-3 py-1.5 selected-arb-header"
           style={{
@@ -221,16 +211,6 @@ export const SelectedArbWidget: React.FC<SelectedArbWidgetProps> = ({
           </div>
         </div>
       </div>
-      <div className="flex-1 min-h-0">
-        <StatArbPage
-          tickerStock={tickerStock}
-          _tickerFuture={tickerFuture}
-          onlyChart
-          height="100%"
-          multi={1}
-        />
-      </div>
-    </div>
   );
 };
 

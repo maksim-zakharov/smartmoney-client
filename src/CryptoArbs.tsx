@@ -3,7 +3,7 @@ import { cn } from './lib/utils.ts';
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { exchangeImgMap } from './utils.ts';
-import { getTickerWithSuffix } from './api/utils/tickers';
+import { getTickerWithSuffix, getExchangeUrl } from './api/utils/tickers';
 import dayjs from 'dayjs';
 import { Card, CardHeader, CardTitle } from './components/ui/card.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
@@ -20,6 +20,7 @@ import { OrderbookView } from './components/OrderbookView';
 import { TradingService } from './api/trading.service';
 import { TradingPanelWidget } from './Widgets/TradingPanelWidget';
 import { SelectedArbWidget } from './Widgets/SelectedArbWidget';
+import { PositionsWidget } from './Widgets/PositionsWidget';
 
 interface ArbPair {
   ticker: string;
@@ -30,63 +31,6 @@ interface ArbPair {
 
 // Биржи с поддержкой графиков справедливой цены
 const EXCHANGES_WITH_FAIR_PRICE = ['MEXC', 'OURBIT', 'KCEX', 'BITUNIX', 'BITMART', 'ASTER', 'BINANCE', 'GATEIO', 'BINGX', 'BITGET', 'BYBIT', 'HOTCOIN', 'COINEX'];
-
-// Функция для генерации URL биржи с тикером (фьючерсы) с реферальными кодами
-const getExchangeUrl = (exchange: string, ticker: string): string => {
-  const exchangeUpper = exchange.toUpperCase();
-
-  switch (exchangeUpper) {
-    case 'GATEIO':
-    case 'GATE':
-      return `https://www.gate.com/ru/futures/USDT/${ticker}_USDT?ref=BFQWBFs`;
-    case 'BYBIT':
-      return `https://www.bybit.com/trade/usdt/${ticker}USDT?ref=1WG1366`;
-    case 'BINGX':
-      return `https://bingx.com/ru-ru/perpetual/${ticker}-USDT?ref=QWIF2Z`;
-    case 'MEXC':
-      return `https://www.mexc.com/ru-RU/futures/${ticker}_USDT?type=linear_swap&shareCode=mexc-2Yy26`;
-    case 'OKX':
-      return `https://www.okx.com/ru/trade-swap/${ticker.toLowerCase()}-usdt-swap?channelid=37578249`;
-    case 'BITGET':
-      return `https://www.bitget.com/futures/usdt/${ticker}USDT`;
-    case 'KUCOIN':
-      return `https://www.kucoin.com/trade/futures/${ticker}USDTM?ref=CX8XF1EA`;
-    case 'BINANCE':
-      return `https://www.binance.com/en/futures/${ticker}USDT?ref=13375376`;
-    case 'OURBIT':
-      return `https://futures.ourbit.com/ru-RU/exchange/${ticker}_USDT?inviteCode=U587UV`;
-    case 'BITMART':
-      return `https://derivatives.bitmart.com/ru-RU/futures/${ticker}USDT?theme=dark`;
-    case 'HTX':
-      return `https://www.htx.com/ru-ru/futures/linear_swap/exchange#contract_code=${ticker}-USDT`;
-    case 'PHEMEX':
-      return `https://phemex.com/futures/${ticker}-USDT`;
-    case 'BITUNIX':
-      return `https://www.bitunix.com/contract-trade/${ticker}USDT`;
-    case 'XT':
-      return `https://www.xt.com/en/futures/trade/${ticker.toLowerCase()}_usdt`;
-    case 'TOOBIT':
-      // Преобразуем тикер в формат Toobit: BTC -> BTC-SWAP-USDT, RIVER-USDT -> RIVER-SWAP-USDT
-      const toobitTicker = ticker.includes('-SWAP-') 
-        ? ticker 
-        : ticker.endsWith('-USDT') 
-          ? ticker.replace('-USDT', '-SWAP-USDT')
-          : `${ticker}-SWAP-USDT`;
-      return `https://www.toobit.com/ru-RU/futures/${toobitTicker}`;
-    case 'HYPERLIQUID':
-      return `https://app.hyperliquid.xyz/trade/${ticker}`;
-    case 'ASTER':
-      return `https://www.asterdex.com/en/futures/v1/${ticker}USDT?ref=59E067`;
-    case 'HOTCOIN':
-      // Hotcoin использует формат btcusdt (нижний регистр, без дефисов)
-      const hotcoinTicker = ticker.toLowerCase().replace('-', '').replace('_', '');
-      return `https://www.hotcoin.com/en_US/contract/exchange/trade/?tradeName=${hotcoinTicker}`;
-    case 'KCEX':
-      return `https://www.kcex.com/futures/${ticker}_USDT`;
-    default:
-      return '#';
-  }
-};
 
 // Функция для генерации URL TradingView для спреда
 const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, ticker: string): string => {
@@ -1362,16 +1306,31 @@ export const CryptoArbs = () => {
       <div className="flex-[3] flex gap-2 min-h-0 h-full">
         {selectedEnriched ? (
           <>
-            <SelectedArbWidget
-              selectedEnriched={selectedEnriched}
-              selectedArb={selectedArb}
-              exchangeImgMap={exchangeImgMap}
-              formatFundingTime={formatFundingTime}
-              getExchangeUrl={getExchangeUrl}
-              getTradingViewSpreadUrl={getTradingViewSpreadUrl}
-              tickerStock={getSpreadTickers.tickerStock}
-              tickerFuture={getSpreadTickers._tickerFuture}
-            />
+            <div className="flex-[4] flex flex-col min-h-0 h-full">
+              <SelectedArbWidget
+                selectedEnriched={selectedEnriched}
+                selectedArb={selectedArb}
+                exchangeImgMap={exchangeImgMap}
+                formatFundingTime={formatFundingTime}
+                getTradingViewSpreadUrl={getTradingViewSpreadUrl}
+              />
+              <div className="flex-1 min-h-0">
+                <StatArbPage
+                  tickerStock={getSpreadTickers.tickerStock}
+                  _tickerFuture={getSpreadTickers._tickerFuture}
+                  onlyChart
+                  height="100%"
+                  multi={1}
+                />
+              </div>
+              {showTradingPanel && (
+                <PositionsWidget
+                  ticker={selectedEnriched.ticker}
+                  leftExchange={selectedArb.left.exchange}
+                  rightExchange={selectedArb.right.exchange}
+                />
+              )}
+            </div>
             <div className="flex flex-col min-h-0 h-full w-[200px] flex-shrink-0">
               <div className="flex-1 min-h-0">
                 <OrderbookView
