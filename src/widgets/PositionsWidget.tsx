@@ -353,18 +353,26 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             ) : (
               positions.map((position) => {
                 const margin = position.volume * position.entryPrice;
+                const numberFormat2 = new Intl.NumberFormat('ru-RU', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                });
+                const numberFormat4 = new Intl.NumberFormat('ru-RU', {
+                  minimumFractionDigits: 4,
+                  maximumFractionDigits: 4,
+                });
                 return (
                   <TableRow key={position.id}>
                     <TableCell className="py-1 px-1">{position.exchange}</TableCell>
                     <TableCell className="py-1 px-1">{position.token}</TableCell>
                     <TableCell className="py-1 px-1 text-right">
-                      {position.entryPrice.toFixed(4)}
+                      {numberFormat4.format(position.entryPrice)}
                     </TableCell>
                     <TableCell className="py-1 px-1 text-right">
-                      {position.volume.toFixed(2)}
+                      {numberFormat2.format(margin)} USDT
                     </TableCell>
                     <TableCell className="py-1 px-1 text-right">
-                      {margin.toFixed(2)}
+                      {numberFormat2.format(margin)} USDT
                     </TableCell>
                     <TableCell
                       className={cn(
@@ -376,7 +384,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                             : '',
                       )}
                     >
-                      {position.unrealizedPnl.toFixed(4)}
+                      {numberFormat4.format(position.unrealizedPnl)} USDT
                     </TableCell>
                     <TableCell
                       className={cn(
@@ -384,7 +392,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                         position.pnl > 0 ? 'text-green-500' : position.pnl < 0 ? 'text-red-500' : '',
                       )}
                     >
-                      {position.pnl.toFixed(4)}
+                      {numberFormat4.format(position.pnl)} USDT
                     </TableCell>
                   <TableCell className="py-1 px-1 text-right">
                     <Button
