@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from './ui/input';
 import { OrderbookManager, OrderbookPriceLevel } from '../api/common/orderbook-manager';
 import { TradingService } from '../api/trading.service';
+import { getTickerWithSuffix } from '../api/utils/tickers';
 
 // Функция для компактного форматирования чисел (без дробных)
 const formatCompact = (value: number): string => {
@@ -20,11 +21,10 @@ const formatCompact = (value: number): string => {
 
 interface OrderbookViewProps {
   exchange: string;
-  symbol: string;
   ticker: string;
 }
 
-export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) => {
+export const OrderbookView = ({ exchange, ticker }: OrderbookViewProps) => {
   const dataService = useAppSelector((state) => state.alorSlice.dataService) as DataService | null;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -57,6 +57,11 @@ export const OrderbookView = ({ exchange, symbol, ticker }: OrderbookViewProps) 
     console.log('Клик по цене:', price);
     // Здесь можно добавить дополнительную логику, например, открыть диалог или скопировать цену
   }, []);
+
+  const symbol = useMemo(
+    () => getTickerWithSuffix(exchange, ticker),
+    [exchange, ticker],
+  );
 
   // Инициализация OrderbookManager
   useEffect(() => {

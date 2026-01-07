@@ -3,6 +3,7 @@ import { cn } from './lib/utils.ts';
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { exchangeImgMap } from './utils.ts';
+import { getTickerWithSuffix } from './api/utils/tickers';
 import dayjs from 'dayjs';
 import { Card, CardHeader, CardTitle } from './components/ui/card.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
@@ -26,65 +27,6 @@ interface ArbPair {
   right: { exchange: string; last: number };
   ratio: number;
 }
-
-// Функция для добавления правильного суффикса к тикеру в зависимости от биржи
-const getTickerWithSuffix = (exchange: string, ticker: string): string => {
-  const exchangeUpper = exchange.toUpperCase();
-
-  // Определяем суффикс в зависимости от биржи
-  switch (exchangeUpper) {
-    case 'MEXC':
-      return `${ticker}_USDT`;
-    case 'BYBIT':
-    case 'BINANCE':
-    case 'BITGET':
-      return `${ticker}USDT`;
-    case 'OKX':
-      return `${ticker}-USDT-SWAP`;
-    case 'BINGX':
-      return `${ticker}-USDT`;
-    case 'GATE':
-    case 'GATEIO':
-      return `${ticker}_USDT`;
-    case 'KUCOIN':
-      return `${ticker}USDTM`;
-    case 'OURBIT':
-      return `${ticker}_USDT`;
-    case 'BITMART':
-      return `${ticker}USDT`;
-    case 'HTX':
-      return `${ticker}-USDT`;
-    case 'PHEMEX':
-      return `${ticker}-USDT`;
-    case 'BITUNIX':
-      return `${ticker}USDT`;
-    case 'XT':
-      return `${ticker}_USDT`;
-    case 'TOOBIT':
-      return `${ticker}-USDT`;
-    case 'HYPERLIQUID':
-      // Hyperliquid использует тикер без суффикса
-      return ticker;
-    case 'ASTER':
-      return `${ticker}USDT`;
-    case 'HOTCOIN':
-      // Hotcoin использует формат btcusdt (нижний регистр, без дефисов)
-      const hotcoinTicker = ticker.toLowerCase().replace('-', '').replace('_', '');
-      // Если символ не заканчивается на usdt, добавляем его
-      if (!hotcoinTicker.endsWith('usdt')) {
-        return hotcoinTicker + 'usdt';
-      }
-      return hotcoinTicker;
-    case 'KCEX':
-      return `${ticker}_USDT`;
-    case 'COINEX':
-      // COINEX использует формат BTCUSDT (без дефисов и подчеркиваний)
-      return `${ticker}USDT`.replace(/[-_]/g, '');
-    default:
-      // По умолчанию используем формат MEXC
-      return `${ticker}_USDT`;
-  }
-};
 
 // Биржи с поддержкой графиков справедливой цены
 const EXCHANGES_WITH_FAIR_PRICE = ['MEXC', 'OURBIT', 'KCEX', 'BITUNIX', 'BITMART', 'ASTER', 'BINANCE', 'GATEIO', 'BINGX', 'BITGET', 'BYBIT', 'HOTCOIN', 'COINEX'];
@@ -1434,14 +1376,12 @@ export const CryptoArbs = () => {
               <div className="flex-1 min-h-0">
                 <OrderbookView
                   exchange={selectedEnriched.left.exchange}
-                  symbol={getTickerWithSuffix(selectedEnriched.left.exchange, selectedEnriched.ticker)}
                   ticker={selectedEnriched.ticker}
                 />
               </div>
               <div className="flex-1 min-h-0 mt-2">
                 <OrderbookView
                   exchange={selectedEnriched.right.exchange}
-                  symbol={getTickerWithSuffix(selectedEnriched.right.exchange, selectedEnriched.ticker)}
                   ticker={selectedEnriched.ticker}
                 />
               </div>
@@ -1452,7 +1392,6 @@ export const CryptoArbs = () => {
                   selectedEnriched={selectedEnriched}
                   tradingService={tradingServiceRef.current}
                   onSetIsTrading={setIsTrading}
-                  getTickerWithSuffix={getTickerWithSuffix}
                 />
               )}
             </div>
@@ -1542,7 +1481,6 @@ export const CryptoArbs = () => {
               <div className="flex-1 min-h-0">
                 <OrderbookView
                   exchange={selectedFairArb.exchange}
-                  symbol={getTickerWithSuffix(selectedFairArb.exchange, selectedFairArb.ticker)}
                   ticker={selectedFairArb.ticker}
                 />
               </div>

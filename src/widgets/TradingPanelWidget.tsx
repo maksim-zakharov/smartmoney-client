@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { TradingService } from '../api/trading.service';
+import { getTickerWithSuffix } from '../api/utils/tickers';
 
 interface SelectedEnrichedLite {
   /** Тикер (например, BTC) */
@@ -34,8 +35,6 @@ interface TradingPanelWidgetProps {
   tradingService: TradingService | null;
   /** Обновление флага isTrading в родителе */
   onSetIsTrading: (value: boolean) => void;
-  /** Функция получения тикера с суффиксом под конкретную биржу */
-  getTickerWithSuffix: (exchange: string, ticker: string) => string;
 }
 
 export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
@@ -43,7 +42,6 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
   selectedEnriched,
   tradingService,
   onSetIsTrading,
-  getTickerWithSuffix,
 }) => {
   const [tradingVolume, setTradingVolume] = useState<string>('100');
 
