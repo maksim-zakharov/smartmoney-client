@@ -6,6 +6,7 @@ import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { TradingService } from '../api/trading.service';
 import { getTickerWithSuffix } from '../api/utils/tickers';
+import { exchangeImgMap } from '../utils';
 
 export interface Position {
   /** Уникальный ID позиции */
@@ -14,6 +15,12 @@ export interface Position {
   exchange: string;
   /** Токен/символ */
   token: string;
+  /** Направление сделки: 'Buy'/'Sell' или 'Long'/'Short' */
+  side?: string;
+  /** Тип маржи: 'Cross' или 'Isolated' */
+  marginType?: string;
+  /** Плечо */
+  leverage?: number;
   /** Цена входа */
   entryPrice: number;
   /** Объем */
@@ -118,10 +125,36 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                 // Пока используем closeProfitLoss, если он есть, иначе 0
                 const unrealizedPnl = parseFloat(pos.closeProfitLoss || '0');
 
+                // Определяем направление сделки на основе positionType
+                // positionType: 1 = Long, 2 = Short (или наоборот, зависит от биржи)
+                // Для MEXC/Ourbit/KCEX: positionType 1 = Long, 2 = Short
+                const positionType = pos.positionType || pos.side;
+                let side = '';
+                if (positionType === 1 || positionType === '1') {
+                  side = 'Long';
+                } else if (positionType === 2 || positionType === '2' || positionType === 3 || positionType === '3') {
+                  side = 'Short';
+                }
+
+                // Плечо
+                const leverage = pos.leverage ? parseFloat(pos.leverage.toString()) : undefined;
+
+                // Тип маржи: openType 1 = Isolated, 2 = Cross (для MEXC/Ourbit/KCEX)
+                const openType = pos.openType || pos.openType;
+                let marginType = '';
+                if (openType === 1 || openType === '1') {
+                  marginType = 'Isolated';
+                } else if (openType === 2 || openType === '2') {
+                  marginType = 'Cross';
+                }
+
                 allPositions.push({
                   id: `${exchange}-${pos.positionId}`,
                   exchange,
                   token: baseTicker,
+                  side,
+                  marginType,
+                  leverage,
                   entryPrice: parseFloat(pos.openAvgPrice || pos.holdAvgPrice || pos.newOpenAvgPrice || '0'),
                   volume: parseFloat(pos.holdVol || '0'),
                   pnl: parseFloat(pos.realised || '0'),
@@ -166,10 +199,34 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                   continue;
                 }
 
+                // Преобразуем side из Bybit формата (Buy/Sell) в Long/Short
+                let side = pos.side;
+                if (side === 'Buy') {
+                  side = 'Long';
+                } else if (side === 'Sell') {
+                  side = 'Short';
+                }
+
+                // Плечо
+                const leverage = pos.leverage ? parseFloat(pos.leverage) : undefined;
+
+                // Тип маржи для Bybit: tradeMode 0 = Cross, 1 = Isolated
+                // Или можно использовать autoAddMargin: 0 = Cross, 1 = Isolated
+                const tradeMode = pos.tradeMode;
+                let marginType = '';
+                if (tradeMode === 0 || tradeMode === '0') {
+                  marginType = 'Cross';
+                } else if (tradeMode === 1 || tradeMode === '1') {
+                  marginType = 'Isolated';
+                }
+
                 allPositions.push({
                   id: `${exchange}-${posSymbol}-${pos.positionIdx || 0}`,
                   exchange,
                   token: baseTicker,
+                  side,
+                  marginType,
+                  leverage,
                   entryPrice: parseFloat(pos.avgPrice || '0'),
                   volume: parseFloat(pos.size || '0'),
                   pnl: parseFloat(pos.curRealisedPnl || pos.cumRealisedPnl || '0'),
@@ -330,7 +387,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
         <Table className="text-xs">
           <TableHeader>
             <TableRow>
-              <TableHead className="py-1 px-1">Биржа</TableHead>
               <TableHead className="py-1 px-1">Тикер</TableHead>
               <TableHead className="py-1 px-1 text-right">Ср. цена входа</TableHead>
               <TableHead className="py-1 px-1 text-right">Позиция</TableHead>
@@ -344,7 +400,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             {positions.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={7}
                   className="py-2 px-1 text-center text-[11px] text-muted-foreground"
                 >
                   Позиции отсутствуют
@@ -361,10 +417,41 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                   minimumFractionDigits: 4,
                   maximumFractionDigits: 4,
                 });
+                const exchangeIcon = exchangeImgMap[position.exchange.toUpperCase()];
                 return (
                   <TableRow key={position.id}>
-                    <TableCell className="py-1 px-1">{position.exchange}</TableCell>
-                    <TableCell className="py-1 px-1">{position.token}</TableCell>
+                    <TableCell className="py-1 px-1">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5">
+                          {exchangeIcon && (
+                            <img
+                              src={exchangeIcon}
+                              alt={position.exchange}
+                              className="h-3.5 w-3.5 rounded-full"
+                            />
+                          )}
+                          <span>
+                            {position.exchange}:{position.token}
+                          </span>
+                        </div>
+                        {(position.marginType || position.leverage) && (
+                          <span
+                            className={cn(
+                              'text-[10px]',
+                              position.side === 'Long' || position.side === 'Buy'
+                                ? 'text-green-500'
+                                : position.side === 'Short' || position.side === 'Sell'
+                                  ? 'text-red-500'
+                                  : 'text-muted-foreground',
+                            )}
+                          >
+                            {position.marginType}
+                            {position.marginType && position.leverage && ' '}
+                            {position.leverage && `${position.leverage.toFixed(2)}x`}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="py-1 px-1 text-right">
                       {numberFormat4.format(position.entryPrice)}
                     </TableCell>
