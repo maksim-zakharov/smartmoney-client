@@ -30,14 +30,23 @@ export class OurbitTradingService {
       body: JSON.stringify(config),
     });
 
+    const responseData = await response.json().catch(() => ({
+      message: 'Ошибка при обработке ответа от сервера',
+    }));
+
     if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        message: 'Ошибка при проксировании запроса',
-      }));
-      throw new Error(error.message || 'Ошибка при проксировании запроса');
+      // Если бекенд вернул ошибку от целевого сервера (MEXC/Ourbit/KCEX)
+      // responseData может содержать данные ошибки от биржи
+      if (responseData.success === false || responseData.code !== undefined) {
+        // Это ошибка от биржи, пробрасываем её дальше
+        throw responseData;
+      }
+      
+      // Иначе это ошибка прокси
+      throw new Error(responseData.message || 'Ошибка при проксировании запроса');
     }
 
-    return await response.json();
+    return responseData;
   }
 
   /**
@@ -67,22 +76,20 @@ export class OurbitTradingService {
   }
 
   /**
-   * Размещает лимитный ордер на Ourbit через /submit endpoint
-   * Основано на SDK: https://github.com/maksim-zakharov/mexc-futures-sdk/blob/main/src/client.ts
+   * Размещает лимитный ордер на Ourbit через /create endpoint
    */
   async placeLimitOrder(params: PlaceLimitOrderParams): Promise<PlaceOrderResponse> {
     const { authToken, symbol, side, price, quantity, leverage = 10 } = params;
 
-    // Формируем данные для запроса (идентично MEXC)
+    // Формируем данные для запроса
     const orderData: any = {
       symbol,
       side: side === 'BUY' ? 1 : 3, // 1 = Buy, 3 = Sell
       openType: 1, // Isolated margin
       type: '1', // Limit order (строка)
       vol: quantity,
-      positionMode: 2, // One-way mode
+      leverage: leverage,
       marketCeiling: false,
-      leverage: leverage.toString(),
       price: price.toString(),
       priceProtect: '0',
     };
@@ -99,8 +106,8 @@ export class OurbitTradingService {
       orderData,
     );
 
-    // Используем endpoint /submit как в SDK
-    const targetUrl = 'https://futures.ourbit.com/api/v1/private/order/submit';
+    // Используем endpoint /create
+    const targetUrl = 'https://futures.ourbit.com/api/v1/private/order/create';
 
     // Отправляем через общий прокси с конфигом axios
     const data = await this.proxyRequest({
@@ -121,8 +128,7 @@ export class OurbitTradingService {
   }
 
   /**
-   * Размещает рыночный ордер на Ourbit через /submit endpoint
-   * Основано на SDK: https://github.com/maksim-zakharov/mexc-futures-sdk/blob/main/src/client.ts
+   * Размещает рыночный ордер на Ourbit через /create endpoint
    */
   async placeMarketOrder(params: {
     authToken: string;
@@ -145,9 +151,8 @@ export class OurbitTradingService {
       openType: 1, // Isolated margin
       type: '5', // Market order (строка) - тип 5 для рыночных ордеров
       vol, // Количество в базовой валюте
-      positionMode: 2, // One-way mode
-      marketCeiling: false,
       leverage: 10, // Плечо для рыночных ордеров
+      marketCeiling: false,
       priceProtect: '0',
     };
 
@@ -163,8 +168,8 @@ export class OurbitTradingService {
       orderData,
     );
 
-    // Используем endpoint /submit как в SDK
-    const targetUrl = 'https://futures.ourbit.com/api/v1/private/order/submit';
+    // Используем endpoint /create
+    const targetUrl = 'https://futures.ourbit.com/api/v1/private/order/create';
 
     // Отправляем через общий прокси с конфигом axios
     const data = await this.proxyRequest({

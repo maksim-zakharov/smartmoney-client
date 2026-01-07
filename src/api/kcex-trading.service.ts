@@ -30,14 +30,23 @@ export class KcexTradingService {
       body: JSON.stringify(config),
     });
 
+    const responseData = await response.json().catch(() => ({
+      message: 'Ошибка при обработке ответа от сервера',
+    }));
+
     if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        message: 'Ошибка при проксировании запроса',
-      }));
-      throw new Error(error.message || 'Ошибка при проксировании запроса');
+      // Если бекенд вернул ошибку от целевого сервера (MEXC/Ourbit/KCEX)
+      // responseData может содержать данные ошибки от биржи
+      if (responseData.success === false || responseData.code !== undefined) {
+        // Это ошибка от биржи, пробрасываем её дальше
+        throw responseData;
+      }
+      
+      // Иначе это ошибка прокси
+      throw new Error(responseData.message || 'Ошибка при проксировании запроса');
     }
 
-    return await response.json();
+    return responseData;
   }
 
   /**
