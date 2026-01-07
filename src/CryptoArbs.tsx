@@ -17,6 +17,7 @@ import { Label } from './components/ui/label.tsx';
 import { Checkbox } from './components/ui/checkbox.tsx';
 import { OrderbookView } from './components/OrderbookView';
 import { TradingService } from './api/trading.service';
+import { TradingPanelWidget } from './Widgets/TradingPanelWidget';
 
 interface ArbPair {
   ticker: string;
@@ -213,7 +214,6 @@ export const CryptoArbs = () => {
   const [selectedFairArb, setSelectedFairArb] = useState<FairRatio | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const tradingServiceRef = useRef<TradingService | null>(null);
-  const [tradingVolume, setTradingVolume] = useState<string>('100');
   const [isTrading, setIsTrading] = useState(false);
   const [showTradingPanel, setShowTradingPanel] = useState(() => {
     return localStorage.getItem('enableOrderbookTrading') === 'true';
@@ -1572,156 +1572,13 @@ export const CryptoArbs = () => {
               </div>
               {/* Торговая панель - видна только если есть флаг в localStorage */}
               {showTradingPanel && (
-                <Card className="mt-2 flex-shrink-0 border-muted-foreground/20">
-                <CardHeader className="py-2 px-3">
-                  <CardTitle className="text-xs font-semibold">Торговля</CardTitle>
-                </CardHeader>
-                <div className="px-3 pb-3 space-y-2">
-                  <div>
-                    <Label htmlFor="trading-volume" className="text-xs">Объем (USD)</Label>
-                    <Input
-                      id="trading-volume"
-                      type="number"
-                      value={tradingVolume}
-                      onChange={(e) => setTradingVolume(e.target.value)}
-                      className="h-7 text-xs"
-                      placeholder="100"
-                    />
-                  </div>
-                  <Button
-                    onClick={async () => {
-                      if (!tradingServiceRef.current || !selectedEnriched) return;
-                      
-                      const usdAmount = parseFloat(tradingVolume);
-                      if (isNaN(usdAmount) || usdAmount <= 0) {
-                        toast.error('Введите корректный объем');
-                        return;
-                      }
-
-                      setIsTrading(true);
-                      try {
-                        // Определяем какая биржа дешевле (покупка) и какая дороже (продажа)
-                        const leftPrice = selectedEnriched.left.last;
-                        const rightPrice = selectedEnriched.right.last;
-                        const buyExchange = leftPrice < rightPrice ? selectedEnriched.left.exchange : selectedEnriched.right.exchange;
-                        const sellExchange = leftPrice < rightPrice ? selectedEnriched.right.exchange : selectedEnriched.left.exchange;
-                        const buySymbol = getTickerWithSuffix(buyExchange, selectedEnriched.ticker);
-                        const sellSymbol = getTickerWithSuffix(sellExchange, selectedEnriched.ticker);
-
-                        // Получаем API ключи для бирж
-                        const getApiKeys = (exchange: string) => {
-                          const exchangeUpper = exchange.toUpperCase();
-                          switch (exchangeUpper) {
-                            case 'BYBIT':
-                              return {
-                                apiKey: localStorage.getItem('bybitApiKey'),
-                                secretKey: localStorage.getItem('bybitSecretKey'),
-                              };
-                            case 'BITGET':
-                              return {
-                                apiKey: localStorage.getItem('bitgetApiKey'),
-                                secretKey: localStorage.getItem('bitgetSecretKey'),
-                                passphrase: localStorage.getItem('bitgetPhrase'),
-                              };
-                            case 'BITMART':
-                              return {
-                                apiKey: localStorage.getItem('bitmartApiKey'),
-                                secretKey: localStorage.getItem('bitmartSecretKey'),
-                                passphrase: localStorage.getItem('bitmartMemo'),
-                              };
-                            case 'GATE':
-                            case 'GATEIO':
-                              return {
-                                apiKey: localStorage.getItem('gateApiKey'),
-                                secretKey: localStorage.getItem('gateSecretKey'),
-                              };
-                            case 'KCEX':
-                              return {
-                                authToken: localStorage.getItem('kcexAuthToken'),
-                              };
-                            case 'OURBIT':
-                              return {
-                                authToken: localStorage.getItem('ourbitAuthToken'),
-                              };
-                            case 'MEXC':
-                              return {
-                                authToken: localStorage.getItem('mexcAuthToken') || localStorage.getItem('mexcUid'),
-                              };
-                            default:
-                              return {};
-                          }
-                        };
-
-                        const buyKeys = getApiKeys(buyExchange);
-                        const sellKeys = getApiKeys(sellExchange);
-
-                        // Проверяем наличие ключей в зависимости от типа биржи
-                        const buyExchangeUpper = buyExchange.toUpperCase();
-                        const sellExchangeUpper = sellExchange.toUpperCase();
-                        const needsAuthToken =
-                          ['KCEX', 'OURBIT', 'MEXC'].includes(buyExchangeUpper) ||
-                          ['KCEX', 'OURBIT', 'MEXC'].includes(sellExchangeUpper);
-                        
-                        if (needsAuthToken) {
-                          if ((buyExchangeUpper === 'KCEX' || buyExchangeUpper === 'OURBIT' || buyExchangeUpper === 'MEXC') && !buyKeys.authToken) {
-                            toast.error(`Auth Token не найден для биржи ${buyExchange}`);
-                            return;
-                          }
-                          if ((sellExchangeUpper === 'KCEX' || sellExchangeUpper === 'OURBIT' || sellExchangeUpper === 'MEXC') && !sellKeys.authToken) {
-                            toast.error(`Auth Token не найден для биржи ${sellExchange}`);
-                            return;
-                          }
-                        } else {
-                          const missingExchanges: string[] = [];
-                          if (!buyKeys.apiKey || !buyKeys.secretKey) {
-                            missingExchanges.push(buyExchange);
-                          }
-                          if (!sellKeys.apiKey || !sellKeys.secretKey) {
-                            // Не дублируем, если биржи совпадают
-                            if (!missingExchanges.includes(sellExchange)) {
-                              missingExchanges.push(sellExchange);
-                            }
-                          }
-
-                          if (missingExchanges.length > 0) {
-                            toast.error(
-                              `API ключи не найдены для бирж: ${missingExchanges.join(', ')}`,
-                            );
-                            return;
-                          }
-                        }
-
-                        const result = await tradingServiceRef.current.placeArbitrageOrders({
-                          buyExchange,
-                          sellExchange,
-                          buySymbol,
-                          sellSymbol,
-                          usdAmount,
-                          buyApiKey: buyKeys.apiKey,
-                          buySecretKey: buyKeys.secretKey,
-                          buyPassphrase: buyKeys.passphrase,
-                          buyAuthToken: buyKeys.authToken,
-                          sellApiKey: sellKeys.apiKey,
-                          sellSecretKey: sellKeys.secretKey,
-                          sellPassphrase: sellKeys.passphrase,
-                          sellAuthToken: sellKeys.authToken,
-                        });
-
-                        toast.success(`Ордера размещены! Buy: ${result.buy?.orderId || 'N/A'}, Sell: ${result.sell?.orderId || 'N/A'}`);
-                      } catch (error: any) {
-                        console.error('Ошибка при размещении ордеров:', error);
-                        toast.error(`Ошибка: ${error.message || 'Неизвестная ошибка'}`);
-                      } finally {
-                        setIsTrading(false);
-                      }
-                    }}
-                    disabled={isTrading || !selectedEnriched}
-                    className="w-full h-8 bg-yellow-500 hover:bg-yellow-600 text-black font-bold text-xs"
-                  >
-                    {isTrading ? 'Выполняется...' : 'Бабло'}
-                  </Button>
-                </div>
-              </Card>
+                <TradingPanelWidget
+                  isTrading={isTrading}
+                  selectedEnriched={selectedEnriched}
+                  tradingService={tradingServiceRef.current}
+                  onSetIsTrading={setIsTrading}
+                  getTickerWithSuffix={getTickerWithSuffix}
+                />
               )}
             </div>
           </>
