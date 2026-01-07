@@ -71,7 +71,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
     const fetchPositions = async () => {
       const allPositions: Position[] = [];
       const exchanges = [leftExchange, rightExchange].filter(
-        (ex) => ex && ['MEXC', 'OURBIT', 'KCEX', 'BYBIT'].includes(ex.toUpperCase()),
+        (ex) => ex && ['MEXC', 'OURBIT', 'KCEX', 'BYBIT', 'BINANCE'].includes(ex.toUpperCase()),
       );
 
       // eslint-disable-next-line no-console
@@ -231,6 +231,75 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                   volume: parseFloat(pos.size || '0'),
                   pnl: parseFloat(pos.curRealisedPnl || pos.cumRealisedPnl || '0'),
                   unrealizedPnl: parseFloat(pos.unrealisedPnl || '0'),
+                });
+              }
+            }
+          } else if (exchangeUpper === 'BINANCE') {
+            if (!keys.apiKey || !keys.secretKey) {
+              // eslint-disable-next-line no-console
+              console.warn(`No API keys for ${exchangeUpper}, skipping`);
+              continue;
+            }
+
+            // eslint-disable-next-line no-console
+            console.log(`Fetching positions from ${exchangeUpper} for symbol:`, symbolWithSuffix);
+
+            const response = await tradingServiceRef.current!.getPositions({
+              exchange,
+              symbol: symbolWithSuffix,
+              apiKey: keys.apiKey,
+              secretKey: keys.secretKey,
+            });
+
+            // eslint-disable-next-line no-console
+            console.log(`${exchangeUpper} positions response:`, response);
+
+            // Binance возвращает массив позиций напрямую
+            if (Array.isArray(response)) {
+              for (const pos of response) {
+                // Извлекаем базовый тикер из symbol (убираем USDT)
+                const posSymbol = pos.symbol || '';
+                let baseTicker = posSymbol.replace('USDT', '');
+
+                // Если тикер не совпадает с выбранным, пропускаем
+                if (baseTicker !== ticker) {
+                  continue;
+                }
+
+                // Пропускаем пустые позиции (positionAmt = "0" или 0)
+                const positionAmt = parseFloat(pos.positionAmt || '0');
+                if (positionAmt === 0) {
+                  continue;
+                }
+
+                // Определяем side на основе positionAmt и positionSide
+                let side = '';
+                if (pos.positionSide === 'LONG' || (positionAmt > 0 && pos.positionSide === 'BOTH')) {
+                  side = 'Long';
+                } else if (pos.positionSide === 'SHORT' || (positionAmt < 0 && pos.positionSide === 'BOTH')) {
+                  side = 'Short';
+                } else if (positionAmt > 0) {
+                  side = 'Long';
+                } else if (positionAmt < 0) {
+                  side = 'Short';
+                }
+
+                // Binance не возвращает leverage в этом endpoint
+                // marginType определяем по isolatedMargin
+                const leverage = undefined;
+                const marginType = pos.isolatedMargin && parseFloat(pos.isolatedMargin) > 0 ? 'Isolated' : 'Cross';
+
+                allPositions.push({
+                  id: `${exchange}-${posSymbol}-${pos.positionSide || 'BOTH'}`,
+                  exchange,
+                  token: baseTicker,
+                  side,
+                  marginType,
+                  leverage,
+                  entryPrice: parseFloat(pos.entryPrice || '0'),
+                  volume: Math.abs(positionAmt), // Абсолютное значение для объема
+                  pnl: 0, // Binance не возвращает реализованный PnL в этом endpoint
+                  unrealizedPnl: parseFloat(pos.unRealizedProfit || '0'),
                 });
               }
             }

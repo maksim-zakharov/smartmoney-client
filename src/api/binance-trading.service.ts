@@ -250,5 +250,67 @@ export class BinanceTradingService {
 
     return data;
   }
+
+  /**
+   * Получает открытые позиции на Binance
+   */
+  async getPositions(params: { apiKey: string; secretKey: string; symbol?: string }): Promise<any> {
+    const { apiKey, secretKey, symbol } = params;
+
+    // Формируем параметры запроса
+    const timestamp = Date.now();
+    const recvWindow = 5000;
+    
+    const requestParams: any = {
+      timestamp,
+      recvWindow,
+    };
+
+    if (symbol) {
+      requestParams.symbol = symbol;
+    }
+
+    // Формируем query string для подписи
+    const queryString = Object.keys(requestParams)
+      .sort()
+      .map((key) => `${key}=${requestParams[key]}`)
+      .join('&');
+
+    // Генерируем подпись
+    const signature = this.generateBinanceSignature(secretKey, queryString);
+
+    // Добавляем подпись к query string
+    const finalQueryString = `${queryString}&signature=${signature}`;
+
+    // Формируем заголовки
+    const headers = {
+      'X-MBX-APIKEY': apiKey,
+      'Content-Type': 'application/json',
+    };
+
+    const url = `https://fapi.binance.com/fapi/v3/positionRisk?${finalQueryString}`;
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url,
+      headers,
+    });
+
+    // Binance возвращает ошибки в формате { code, msg }
+    if (Array.isArray(data) && data.length > 0 && data[0].code !== undefined) {
+      const errorCode = data[0].code || 'Unknown';
+      const errorMsg = data[0].msg || data[0].message || 'Ошибка при получении позиций';
+      throw new Error(`Binance Error ${errorCode} - ${errorMsg}`);
+    }
+
+    // Если это массив ошибок или объект с ошибкой
+    if (!Array.isArray(data) && data.code !== undefined) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.msg || data.message || 'Ошибка при получении позиций';
+      throw new Error(`Binance Error ${errorCode} - ${errorMsg}`);
+    }
+
+    return data;
+  }
 }
 

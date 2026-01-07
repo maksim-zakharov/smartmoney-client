@@ -400,6 +400,16 @@ export class TradingService {
           symbol,
         });
 
+      case 'BINANCE':
+        if (!params.apiKey || !params.secretKey) {
+          throw new Error('Для Binance требуются apiKey и secretKey');
+        }
+        return this.binanceTradingService.getPositions({
+          apiKey: params.apiKey,
+          secretKey: params.secretKey,
+          symbol,
+        });
+
       default:
         throw new Error(`Биржа ${exchange} не поддерживается для получения позиций`);
     }
