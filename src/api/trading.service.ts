@@ -4,6 +4,7 @@ import { KcexTradingService } from './kcex-trading.service';
 import { BybitTradingService, BybitPlaceMarketOrderParams, BybitPlaceOrderResponse } from './bybit-trading.service';
 import { BitgetTradingService, BitgetPlaceMarketOrderParams, BitgetPlaceOrderResponse } from './bitget-trading.service';
 import { BitmartTradingService, BitmartPlaceMarketOrderParams, BitmartPlaceOrderResponse } from './bitmart-trading.service';
+import { GateTradingService } from './gate-trading.service';
 
 /**
  * Интерфейс для размещения лимитного ордера (универсальный)
@@ -43,6 +44,7 @@ export class TradingService {
   private readonly bybitTradingService: BybitTradingService;
   private readonly bitgetTradingService: BitgetTradingService;
   private readonly bitmartTradingService: BitmartTradingService;
+  private readonly gateTradingService: GateTradingService;
   private readonly backendUrl: string;
 
   constructor(backendUrl: string = 'http://5.35.13.149') {
@@ -53,6 +55,7 @@ export class TradingService {
     this.bybitTradingService = new BybitTradingService(backendUrl);
     this.bitgetTradingService = new BitgetTradingService(backendUrl);
     this.bitmartTradingService = new BitmartTradingService(backendUrl);
+    this.gateTradingService = new GateTradingService(backendUrl);
   }
 
   /**
@@ -138,10 +141,26 @@ export class TradingService {
         return this.bitmartTradingService.placeMarketOrder({
           apiKey: params.apiKey,
           secretKey: params.secretKey,
+          memo: params.passphrase || '',
           symbol: params.symbol,
           side: params.side,
           usdAmount: params.usdAmount || 0,
         }) as any;
+
+      case 'GATE':
+      case 'GATEIO':
+        if (!params.apiKey || !params.secretKey) {
+          throw new Error('Для Gate требуются apiKey и secretKey');
+        }
+        // Для лимитных ордеров Gate используем фьючерсный лимитный ордер
+        return this.gateTradingService.placeLimitOrder({
+          apiKey: params.apiKey,
+          secretKey: params.secretKey,
+          contract: params.symbol,
+          side: params.side,
+          price: params.price,
+          size: params.quantity,
+        });
 
       default:
         throw new Error(`Биржа ${exchange} не поддерживается для торговли`);
@@ -230,7 +249,21 @@ export class TradingService {
         return this.bitmartTradingService.placeMarketOrder({
           apiKey: params.apiKey,
           secretKey: params.secretKey,
+          memo: params.passphrase || '',
           symbol: params.symbol,
+          side: params.side,
+          usdAmount,
+        });
+
+      case 'GATE':
+      case 'GATEIO':
+        if (!params.apiKey || !params.secretKey) {
+          throw new Error('Для Gate требуются apiKey и secretKey');
+        }
+        return this.gateTradingService.placeMarketOrder({
+          apiKey: params.apiKey,
+          secretKey: params.secretKey,
+          contract: params.symbol,
           side: params.side,
           usdAmount,
         });

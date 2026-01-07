@@ -8,6 +8,8 @@ export interface BitmartPlaceMarketOrderParams {
   apiKey: string;
   /** Секретный ключ */
   secretKey: string;
+  /** Memo (API Memo) */
+  memo: string;
   /** Символ (например, BTCUSDT) */
   symbol: string;
   /** Сторона ордера: BUY или SELL */
@@ -46,13 +48,12 @@ export class BitmartTradingService {
    */
   private generateBitmartSignature(
     secretKey: string,
+    memo: string,
     timestamp: string,
-    method: string,
-    requestPath: string,
     body: string,
   ): string {
-    const message = timestamp + '#' + method + '#' + requestPath + '#' + body;
-    return CryptoJS.HmacSHA256(message, secretKey).toString(CryptoJS.enc.Base64);
+    const message = `${timestamp}#${memo}#${body}`;
+    return CryptoJS.HmacSHA256(message, secretKey).toString(CryptoJS.enc.Hex);
   }
 
   /**
@@ -87,7 +88,7 @@ export class BitmartTradingService {
    * Получает последнюю цену для символа
    */
   private async getLastPrice(symbol: string): Promise<number> {
-    const url = `https://api-cloud.bitmart.com/contract/public/ticker`;
+    const url = `https://api-cloud-v2.bitmart.com/contract/public/details`;
     
     const data = await this.proxyRequest({
       method: 'GET',
@@ -101,7 +102,8 @@ export class BitmartTradingService {
       throw new Error(data.message || 'Ошибка при получении цены');
     }
 
-    const ticker = data.data;
+    const symbols = data.data?.symbols;
+    const ticker = Array.isArray(symbols) ? symbols[0] : undefined;
     if (!ticker || !ticker.last_price) {
       throw new Error('Цена не найдена');
     }
@@ -113,7 +115,7 @@ export class BitmartTradingService {
    * Размещает рыночный ордер на Bitmart
    */
   async placeMarketOrder(params: BitmartPlaceMarketOrderParams): Promise<BitmartPlaceOrderResponse> {
-    const { apiKey, secretKey, symbol, side, usdAmount } = params;
+    const { apiKey, secretKey, memo, symbol, side, usdAmount } = params;
 
     // Получаем последнюю цену для расчета size
     const lastPrice = await this.getLastPrice(symbol);
@@ -121,21 +123,25 @@ export class BitmartTradingService {
     // Рассчитываем size на основе usdAmount и последней цены, округляем вниз
     const size = Math.floor(usdAmount / lastPrice).toString();
 
-    // Формируем данные для запроса
+    // Формируем данные для запроса согласно новой спецификации Bitmart
+    // POST https://api-cloud-v2.bitmart.com/contract/private/submit-order
+    // type = 'market', side по one-way mode (-1 buy, -4 sell), size = количество контрактов
+    const sideCode = side === 'BUY' ? -1 : -4;
+
     const orderData: any = {
       symbol,
-      side: side === 'BUY' ? 1 : 2, // 1 = Buy, 2 = Sell
-      type: 1, // 1 = Market order
-      open_type: 1, // Isolated margin
+      type: 'market',
+      side: sideCode,
+      leverage: '10',
+      open_type: 'isolated',
+      mode: 1, // GTC
       size, // Количество в базовой валюте
     };
 
     // Генерируем подпись
     const timestamp = Date.now().toString();
-    const method = 'POST';
-    const requestPath = '/contract/private/submit-order';
     const bodyStr = JSON.stringify(orderData);
-    const signature = this.generateBitmartSignature(secretKey, timestamp, method, requestPath, bodyStr);
+    const signature = this.generateBitmartSignature(secretKey, memo, timestamp, bodyStr);
 
     // Формируем заголовки
     const headers = {
@@ -145,7 +151,7 @@ export class BitmartTradingService {
       'Content-Type': 'application/json',
     };
 
-    const targetUrl = 'https://api-cloud.bitmart.com/contract/private/submit-order';
+    const targetUrl = 'https://api-cloud-v2.bitmart.com/contract/private/submit-order';
 
     // Отправляем через общий прокси с конфигом axios
     const data = await this.proxyRequest({

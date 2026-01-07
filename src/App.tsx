@@ -430,6 +430,12 @@ export default function App() {
     localStorage.setItem('bitmartSecretKey', e.target.value);
   };
 
+  const [bitmartMemo, setbitmartMemo] = useState<string | null>(localStorage.getItem('bitmartMemo'));
+  const handleEditbitmartMemo = (e) => {
+    setbitmartMemo(e.target.value);
+    localStorage.setItem('bitmartMemo', e.target.value);
+  };
+
   const [okxApiKey, setokxApiKey] = useState<string | null>(localStorage.getItem('okxApiKey'));
   const handleEditokxApiKey = (e) => {
     setokxApiKey(e.target.value);
@@ -671,7 +677,7 @@ export default function App() {
                               </div>
                             </AccordionTrigger>
                             <AccordionContent>
-                              <div className="grid grid-cols-2 gap-3 w-full">
+                              <div className="grid grid-cols-3 gap-3 w-full">
                                 <div className="flex gap-2 flex-col">
                                   <Label htmlFor="bitmartApiKey">Api Key</Label>
                                   <Input id="bitmartApiKey" value={bitmartApiKey} onChange={handleEditbitmartApiKey} />
@@ -679,6 +685,10 @@ export default function App() {
                                 <div className="flex gap-2 flex-col">
                                   <Label htmlFor="bitmartSecretKey">Secret Key</Label>
                                   <Input id="bitmartSecretKey" value={bitmartSecretKey} onChange={handleEditbitmartSecretKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bitmartMemo">API Memo</Label>
+                                  <Input id="bitmartMemo" value={bitmartMemo} onChange={handleEditbitmartMemo} />
                                 </div>
                               </div>
                             </AccordionContent>
