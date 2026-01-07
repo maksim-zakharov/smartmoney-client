@@ -382,6 +382,18 @@ export default function App() {
     localStorage.setItem('gateSecretKey', e.target.value);
   };
 
+  const [binanceApiKey, setbinanceApiKey] = useState<string | null>(localStorage.getItem('binanceApiKey'));
+  const handlebinanceApiKey = (e) => {
+    setbinanceApiKey(e.target.value);
+    localStorage.setItem('binanceApiKey', e.target.value);
+  };
+
+  const [binanceSecretKey, setbinanceSecretKey] = useState<string | null>(localStorage.getItem('binanceSecretKey'));
+  const handlebinanceSecretKey = (e) => {
+    setbinanceSecretKey(e.target.value);
+    localStorage.setItem('binanceSecretKey', e.target.value);
+  };
+
   const [mexcApiKey, setmexcApiKey] = useState<string | null>(localStorage.getItem('mexcApiKey'));
   const handleEditmexcApiKey = (e) => {
     setmexcApiKey(e.target.value);
@@ -712,6 +724,29 @@ export default function App() {
                                 <div className="flex gap-2 flex-col">
                                   <Label htmlFor="bybitSecretKey">Secret Key</Label>
                                   <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+
+                          <AccordionItem value="binance">
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.BINANCE && (
+                                  <img src={exchangeImgMap.BINANCE} alt="Binance" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>Binance</span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="grid grid-cols-2 gap-3 w-full">
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="binanceApiKey">Api Key</Label>
+                                  <Input id="binanceApiKey" value={binanceApiKey} onChange={handlebinanceApiKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="binanceSecretKey">Secret Key</Label>
+                                  <Input id="binanceSecretKey" value={binanceSecretKey} onChange={handlebinanceSecretKey} />
                                 </div>
                               </div>
                             </AccordionContent>

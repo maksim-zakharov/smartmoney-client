@@ -82,6 +82,11 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
               apiKey: localStorage.getItem('bybitApiKey'),
               secretKey: localStorage.getItem('bybitSecretKey'),
             };
+          case 'BINANCE':
+            return {
+              apiKey: localStorage.getItem('binanceApiKey'),
+              secretKey: localStorage.getItem('binanceSecretKey'),
+            };
           case 'BITGET':
             return {
               apiKey: localStorage.getItem('bitgetApiKey'),
