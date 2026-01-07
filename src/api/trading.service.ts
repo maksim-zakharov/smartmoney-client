@@ -5,6 +5,7 @@ import { BybitTradingService, BybitPlaceMarketOrderParams, BybitPlaceOrderRespon
 import { BitgetTradingService, BitgetPlaceMarketOrderParams, BitgetPlaceOrderResponse } from './bitget-trading.service';
 import { BitmartTradingService, BitmartPlaceMarketOrderParams, BitmartPlaceOrderResponse } from './bitmart-trading.service';
 import { GateTradingService } from './gate-trading.service';
+import { BinanceTradingService, BinancePlaceMarketOrderParams, BinancePlaceLimitOrderParams, BinancePlaceOrderResponse } from './binance-trading.service';
 import { getProxyUrl } from './utils/proxy';
 
 /**
@@ -46,6 +47,7 @@ export class TradingService {
   private readonly bitgetTradingService: BitgetTradingService;
   private readonly bitmartTradingService: BitmartTradingService;
   private readonly gateTradingService: GateTradingService;
+  private readonly binanceTradingService: BinanceTradingService;
   private readonly backendUrl: string;
 
   constructor(backendUrl?: string) {
@@ -57,6 +59,7 @@ export class TradingService {
     this.bitgetTradingService = new BitgetTradingService(this.backendUrl);
     this.bitmartTradingService = new BitmartTradingService(this.backendUrl);
     this.gateTradingService = new GateTradingService(this.backendUrl);
+    this.binanceTradingService = new BinanceTradingService(this.backendUrl);
   }
 
   /**
@@ -163,6 +166,19 @@ export class TradingService {
           size: params.quantity,
         });
 
+      case 'BINANCE':
+        if (!params.apiKey || !params.secretKey) {
+          throw new Error('Для Binance требуются apiKey и secretKey');
+        }
+        return this.binanceTradingService.placeLimitOrder({
+          apiKey: params.apiKey,
+          secretKey: params.secretKey,
+          symbol: params.symbol,
+          side: params.side,
+          price: params.price,
+          quantity: params.quantity,
+        });
+
       default:
         throw new Error(`Биржа ${exchange} не поддерживается для торговли`);
     }
@@ -265,6 +281,18 @@ export class TradingService {
           apiKey: params.apiKey,
           secretKey: params.secretKey,
           contract: params.symbol,
+          side: params.side,
+          usdAmount,
+        });
+
+      case 'BINANCE':
+        if (!params.apiKey || !params.secretKey) {
+          throw new Error('Для Binance требуются apiKey и secretKey');
+        }
+        return this.binanceTradingService.placeMarketOrder({
+          apiKey: params.apiKey,
+          secretKey: params.secretKey,
+          symbol: params.symbol,
           side: params.side,
           usdAmount,
         });
