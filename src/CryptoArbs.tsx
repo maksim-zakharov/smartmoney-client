@@ -1628,6 +1628,12 @@ export const CryptoArbs = () => {
                                 apiKey: localStorage.getItem('bitmartApiKey'),
                                 secretKey: localStorage.getItem('bitmartSecretKey'),
                               };
+                            case 'GATE':
+                            case 'GATEIO':
+                              return {
+                                apiKey: localStorage.getItem('gateApiKey'),
+                                secretKey: localStorage.getItem('gateSecretKey'),
+                              };
                             case 'KCEX':
                               return {
                                 authToken: localStorage.getItem('kcexAuthToken'),
@@ -1651,7 +1657,9 @@ export const CryptoArbs = () => {
                         // Проверяем наличие ключей в зависимости от типа биржи
                         const buyExchangeUpper = buyExchange.toUpperCase();
                         const sellExchangeUpper = sellExchange.toUpperCase();
-                        const needsAuthToken = ['KCEX', 'OURBIT', 'MEXC'].includes(buyExchangeUpper) || ['KCEX', 'OURBIT', 'MEXC'].includes(sellExchangeUpper);
+                        const needsAuthToken =
+                          ['KCEX', 'OURBIT', 'MEXC'].includes(buyExchangeUpper) ||
+                          ['KCEX', 'OURBIT', 'MEXC'].includes(sellExchangeUpper);
                         
                         if (needsAuthToken) {
                           if ((buyExchangeUpper === 'KCEX' || buyExchangeUpper === 'OURBIT' || buyExchangeUpper === 'MEXC') && !buyKeys.authToken) {
@@ -1663,8 +1671,21 @@ export const CryptoArbs = () => {
                             return;
                           }
                         } else {
-                          if (!buyKeys.apiKey || !buyKeys.secretKey || !sellKeys.apiKey || !sellKeys.secretKey) {
-                            toast.error('API ключи не найдены для одной из бирж');
+                          const missingExchanges: string[] = [];
+                          if (!buyKeys.apiKey || !buyKeys.secretKey) {
+                            missingExchanges.push(buyExchange);
+                          }
+                          if (!sellKeys.apiKey || !sellKeys.secretKey) {
+                            // Не дублируем, если биржи совпадают
+                            if (!missingExchanges.includes(sellExchange)) {
+                              missingExchanges.push(sellExchange);
+                            }
+                          }
+
+                          if (missingExchanges.length > 0) {
+                            toast.error(
+                              `API ключи не найдены для бирж: ${missingExchanges.join(', ')}`,
+                            );
                             return;
                           }
                         }

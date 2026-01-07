@@ -25,6 +25,7 @@ import { RadioGroup, RadioGroupItem } from './components/ui/radio-group.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table.tsx';
 import { Trash } from 'lucide-react';
+import { exchangeImgMap } from './utils';
 import { Button } from './components/ui/button.tsx';
 import { deleteAlert } from './api/alerts.slice';
 import { AlertDialog } from './components/AlertDialog.tsx';
@@ -417,6 +418,18 @@ export default function App() {
     localStorage.setItem('bitgetPhrase', e.target.value);
   };
 
+  const [bitmartApiKey, setbitmartApiKey] = useState<string | null>(localStorage.getItem('bitmartApiKey'));
+  const handleEditbitmartApiKey = (e) => {
+    setbitmartApiKey(e.target.value);
+    localStorage.setItem('bitmartApiKey', e.target.value);
+  };
+
+  const [bitmartSecretKey, setbitmartSecretKey] = useState<string | null>(localStorage.getItem('bitmartSecretKey'));
+  const handleEditbitmartSecretKey = (e) => {
+    setbitmartSecretKey(e.target.value);
+    localStorage.setItem('bitmartSecretKey', e.target.value);
+  };
+
   const [okxApiKey, setokxApiKey] = useState<string | null>(localStorage.getItem('okxApiKey'));
   const handleEditokxApiKey = (e) => {
     setokxApiKey(e.target.value);
@@ -568,7 +581,14 @@ export default function App() {
                           </AccordionItem>
 
                           <AccordionItem value="mexc">
-                            <AccordionTrigger className="text-base">Mexc</AccordionTrigger>
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.MEXC && (
+                                  <img src={exchangeImgMap.MEXC} alt="MEXC" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>Mexc</span>
+                              </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-3 gap-3 w-full">
                                 <div className="flex gap-2 flex-col">
@@ -588,7 +608,14 @@ export default function App() {
                           </AccordionItem>
 
                           <AccordionItem value="okx">
-                            <AccordionTrigger className="text-base">OKX</AccordionTrigger>
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.OKX && (
+                                  <img src={exchangeImgMap.OKX} alt="OKX" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>OKX</span>
+                              </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-3 gap-3 w-full">
                                 <div className="flex gap-2 flex-col">
@@ -608,7 +635,14 @@ export default function App() {
                           </AccordionItem>
 
                           <AccordionItem value="bitget">
-                            <AccordionTrigger className="text-base">Bitget</AccordionTrigger>
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.BITGET && (
+                                  <img src={exchangeImgMap.BITGET} alt="Bitget" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>Bitget</span>
+                              </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-3 gap-3 w-full">
                                 <div className="flex gap-2 flex-col">
@@ -627,8 +661,38 @@ export default function App() {
                             </AccordionContent>
                           </AccordionItem>
 
+                          <AccordionItem value="bitmart">
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.BITMART && (
+                                  <img src={exchangeImgMap.BITMART} alt="Bitmart" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>Bitmart</span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="grid grid-cols-2 gap-3 w-full">
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bitmartApiKey">Api Key</Label>
+                                  <Input id="bitmartApiKey" value={bitmartApiKey} onChange={handleEditbitmartApiKey} />
+                                </div>
+                                <div className="flex gap-2 flex-col">
+                                  <Label htmlFor="bitmartSecretKey">Secret Key</Label>
+                                  <Input id="bitmartSecretKey" value={bitmartSecretKey} onChange={handleEditbitmartSecretKey} />
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+
                           <AccordionItem value="bybit">
-                            <AccordionTrigger className="text-base">Bybit</AccordionTrigger>
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.BYBIT && (
+                                  <img src={exchangeImgMap.BYBIT} alt="Bybit" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>Bybit</span>
+                              </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-2 gap-3 w-full">
                                 <div className="flex gap-2 flex-col">
@@ -644,7 +708,14 @@ export default function App() {
                           </AccordionItem>
 
                           <AccordionItem value="bingx">
-                            <AccordionTrigger className="text-base">Bingx</AccordionTrigger>
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.BINGX && (
+                                  <img src={exchangeImgMap.BINGX} alt="Bingx" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>Bingx</span>
+                              </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-2 gap-3 w-full">
                                 <div className="flex gap-2 flex-col">
@@ -660,7 +731,14 @@ export default function App() {
                           </AccordionItem>
 
                           <AccordionItem value="gate">
-                            <AccordionTrigger className="text-base">Gate</AccordionTrigger>
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.GATEIO && (
+                                  <img src={exchangeImgMap.GATEIO} alt="Gate" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>Gate</span>
+                              </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-2 gap-3 w-full">
                                 <div className="flex gap-2 flex-col">
@@ -676,7 +754,14 @@ export default function App() {
                           </AccordionItem>
 
                           <AccordionItem value="kcex">
-                            <AccordionTrigger className="text-base">KCEX</AccordionTrigger>
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.KCEX && (
+                                  <img src={exchangeImgMap.KCEX} alt="KCEX" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>KCEX</span>
+                              </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-1 gap-3 w-full">
                                 <div className="flex gap-2 flex-col">
@@ -688,7 +773,14 @@ export default function App() {
                           </AccordionItem>
 
                           <AccordionItem value="ourbit">
-                            <AccordionTrigger className="text-base">Ourbit</AccordionTrigger>
+                            <AccordionTrigger className="text-base">
+                              <div className="flex items-center gap-2">
+                                {exchangeImgMap.OURBIT && (
+                                  <img src={exchangeImgMap.OURBIT} alt="Ourbit" className="h-4 w-4 rounded-full" />
+                                )}
+                                <span>Ourbit</span>
+                              </div>
+                            </AccordionTrigger>
                             <AccordionContent>
                               <div className="grid grid-cols-1 gap-3 w-full">
                                 <div className="flex gap-2 flex-col">
