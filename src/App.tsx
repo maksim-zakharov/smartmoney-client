@@ -490,6 +490,12 @@ export default function App() {
     localStorage.setItem('ourbitAuthToken', e.target.value);
   };
 
+  const [proxyUrl, setProxyUrl] = useState<string | null>(localStorage.getItem('proxyUrl') || 'http://5.35.13.149');
+  const handleEditProxyUrl = (e) => {
+    setProxyUrl(e.target.value);
+    localStorage.setItem('proxyUrl', e.target.value);
+  };
+
   const handleCTraderLogin = () => (window.location.href = `https://176.114.69.4/ctrader?redirect_uri=${encodeURIComponent(redirect_uri)}`);
 
   const handleDeleteAlert = (data) => () => {
@@ -529,7 +535,7 @@ export default function App() {
                 </>
               )}
               {!accessToken && (
-                <Button size="small" onClick={handleCTraderLogin}>
+                <Button size="sm" onClick={handleCTraderLogin}>
                   Войти в cTrader
                 </Button>
               )}
@@ -549,6 +555,17 @@ export default function App() {
                     </TabsList>
                     <TabsContent value="keys" className="overflow-y-auto max-h-[calc(90vh-120px)]">
                       <div className="p-3 flex gap-3 flex-col">
+                        {localStorage.getItem('enableOrderbookTrading') === 'true' && (
+                          <div className="flex gap-2 flex-col mb-3">
+                            <Label htmlFor="proxyUrl">URL прокси</Label>
+                            <Input
+                              id="proxyUrl"
+                              value={proxyUrl || ''}
+                              onChange={handleEditProxyUrl}
+                              placeholder="http://5.35.13.149"
+                            />
+                          </div>
+                        )}
                         <Accordion type="multiple" defaultValue={['telegram', 'alor']} className="w-full">
                           <AccordionItem value="telegram">
                             <AccordionTrigger className="text-base">Telegram</AccordionTrigger>

@@ -5,6 +5,7 @@ import { BybitTradingService, BybitPlaceMarketOrderParams, BybitPlaceOrderRespon
 import { BitgetTradingService, BitgetPlaceMarketOrderParams, BitgetPlaceOrderResponse } from './bitget-trading.service';
 import { BitmartTradingService, BitmartPlaceMarketOrderParams, BitmartPlaceOrderResponse } from './bitmart-trading.service';
 import { GateTradingService } from './gate-trading.service';
+import { getProxyUrl } from './utils/proxy';
 
 /**
  * Интерфейс для размещения лимитного ордера (универсальный)
@@ -47,15 +48,15 @@ export class TradingService {
   private readonly gateTradingService: GateTradingService;
   private readonly backendUrl: string;
 
-  constructor(backendUrl: string = 'http://5.35.13.149') {
-    this.backendUrl = backendUrl;
-    this.mexcTradingService = new MexcTradingService(backendUrl);
-    this.ourbitTradingService = new OurbitTradingService(backendUrl);
-    this.kcexTradingService = new KcexTradingService(backendUrl);
-    this.bybitTradingService = new BybitTradingService(backendUrl);
-    this.bitgetTradingService = new BitgetTradingService(backendUrl);
-    this.bitmartTradingService = new BitmartTradingService(backendUrl);
-    this.gateTradingService = new GateTradingService(backendUrl);
+  constructor(backendUrl?: string) {
+    this.backendUrl = backendUrl || getProxyUrl();
+    this.mexcTradingService = new MexcTradingService(this.backendUrl);
+    this.ourbitTradingService = new OurbitTradingService(this.backendUrl);
+    this.kcexTradingService = new KcexTradingService(this.backendUrl);
+    this.bybitTradingService = new BybitTradingService(this.backendUrl);
+    this.bitgetTradingService = new BitgetTradingService(this.backendUrl);
+    this.bitmartTradingService = new BitmartTradingService(this.backendUrl);
+    this.gateTradingService = new GateTradingService(this.backendUrl);
   }
 
   /**
