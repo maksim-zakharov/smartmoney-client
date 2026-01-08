@@ -21,6 +21,7 @@ import { ArbCard } from './components/ArbCard';
 import { FairArbCard } from './components/FairArbCard';
 import { SettingsDialog } from './components/SettingsDialog';
 import { FavoriteTabs } from './components/FavoriteTabs';
+import { FairArbHeader } from './components/FairArbHeader';
 import { useAppDispatch, useAppSelector } from '../store';
 import { setShowAll, setEnabledExchanges, addExcludedTicker } from './cryptoArbsSettings.slice';
 
@@ -885,74 +886,7 @@ export const CryptoArbs = () => {
                 onRemoveFavorite={removeFavorite}
                 onClearSelection={handleClearSelection}
               />
-              <div className="mb-1">
-                <div
-                  className="bg-card rounded px-3 py-1.5 selected-arb-header"
-                  style={{
-                    border: '1px solid rgba(166, 189, 213, 0.2)',
-                  }}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-lg font-bold">{selectedFairArb.ticker}</span>
-
-                    <div className="h-4 w-px bg-muted-foreground/30" />
-
-                    <div className="flex items-center gap-2">
-                      <img
-                        className="h-3.5 w-3.5 rounded-full"
-                        src={exchangeImgMap[selectedFairArb.exchange]}
-                        alt={selectedFairArb.exchange}
-                      />
-                      <span className="text-xs font-semibold text-muted-foreground">{selectedFairArb.exchange}</span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <a
-                            href={getExchangeUrl(selectedFairArb.exchange, selectedFairArb.ticker)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-muted-foreground hover:text-primary transition-colors"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Перейти на {selectedFairArb.exchange}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-
-                    <div className="h-4 w-px bg-muted-foreground/30" />
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-muted-foreground">Последняя цена</span>
-                      <span className="text-sm font-bold tabular-nums">{selectedFairArb.last.toFixed(6)}</span>
-                    </div>
-
-                    <div className="h-4 w-px bg-muted-foreground/30" />
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-muted-foreground">Справедливая цена</span>
-                      <span className="text-sm font-bold tabular-nums">{selectedFairArb.fair.toFixed(6)}</span>
-                    </div>
-
-                    <div className="h-4 w-px bg-muted-foreground/30" />
-
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-semibold text-muted-foreground">Отклонение</span>
-                      <span
-                        className={cn(
-                          'text-sm font-bold tabular-nums',
-                          (selectedFairArb.ratio - 1) * 100 > 0 ? 'text-green-500' : 'text-red-500',
-                        )}
-                      >
-                        {(selectedFairArb.ratio - 1) * 100 > 0 ? '+' : ''}
-                        {((selectedFairArb.ratio - 1) * 100).toFixed(4)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <FairArbHeader fairArb={selectedFairArb} />
               <div className="flex-1 min-h-0">
                 <StatArbPage
                   tickerStock={getFairTickers.tickerStock}
