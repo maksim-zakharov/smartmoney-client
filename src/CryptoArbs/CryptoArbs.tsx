@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { StatArbPage } from '../ArbitrageMOEXPage/strategies/StatArbPage';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
-import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, EyeOff, Star, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, EyeOff, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { OrderbookView } from '../components/OrderbookView';
@@ -20,6 +20,7 @@ import { PositionsWidget } from './widgets/PositionsWidget';
 import { ArbCard } from './components/ArbCard';
 import { FairArbCard } from './components/FairArbCard';
 import { SettingsDialog } from './components/SettingsDialog';
+import { FavoriteTabs } from './components/FavoriteTabs';
 import { useAppDispatch, useAppSelector } from '../store';
 import { setShowAll, setEnabledExchanges, addExcludedTicker } from './cryptoArbsSettings.slice';
 
@@ -508,6 +509,14 @@ export const CryptoArbs = () => {
     setSearchParams(searchParams);
   };
 
+  const handleClearSelection = () => {
+    setSelectedArb(null);
+    setSelectedFairArb(null);
+    searchParams.delete('pair');
+    searchParams.delete('type');
+    setSearchParams(searchParams);
+  };
+
   // Обогащаем данные арбитражей для отображения
   const enrichedArbs = useMemo(() => {
     return filteredArbs.slice(0, 50).map((a) => {
@@ -802,109 +811,15 @@ export const CryptoArbs = () => {
           <>
             <div className="flex-[4] flex flex-col min-h-0 h-full">
               {/* Табы избранных пар */}
-              {favoriteArbsList.length > 0 && (
-                <div className="mb-1 flex flex-wrap gap-1.5">
-                  {favoriteArbsList.map((fav) => {
-                    const isSelected =
-                      fav.type === 'spread'
-                        ? selectedArb?.ticker === fav.arb?.ticker &&
-                          selectedArb?.left.exchange === fav.arb?.left.exchange &&
-                          selectedArb?.right.exchange === fav.arb?.right.exchange
-                        : selectedFairArb?.ticker === fav.fair?.ticker && selectedFairArb?.exchange === fav.fair?.exchange;
-
-                    return (
-                      <Button
-                        key={fav.key}
-                        variant={isSelected ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-7 px-2 text-xs flex items-center gap-1.5"
-                        onClick={() => {
-                          if (fav.type === 'spread' && fav.arb) {
-                            handleArbSelect({
-                              ticker: fav.arb.ticker,
-                              left: fav.arb.left,
-                              right: fav.arb.right,
-                              ratio: fav.arb.ratio,
-                            });
-                          } else if (fav.type === 'fair' && fav.fair) {
-                            handleFairArbSelect(fav.fair);
-                          }
-                        }}
-                      >
-                        {fav.type === 'spread' && fav.arb ? (
-                          <>
-                            <span>{fav.arb.ticker}</span>
-                            {exchangeImgMap[fav.arb.left.exchange] && (
-                              <img
-                                src={exchangeImgMap[fav.arb.left.exchange]}
-                                alt={fav.arb.left.exchange}
-                                className="h-3.5 w-3.5 rounded-full"
-                              />
-                            )}
-                            <span>{fav.arb.left.exchange}</span>
-                            <span>/</span>
-                            {exchangeImgMap[fav.arb.right.exchange] && (
-                              <img
-                                src={exchangeImgMap[fav.arb.right.exchange]}
-                                alt={fav.arb.right.exchange}
-                                className="h-3.5 w-3.5 rounded-full"
-                              />
-                            )}
-                            <span>{fav.arb.right.exchange}</span>
-                          </>
-                        ) : (
-                          <>
-                            {fav.fair && exchangeImgMap[fav.fair.exchange] && (
-                              <img src={exchangeImgMap[fav.fair.exchange]} alt={fav.fair.exchange} className="h-3.5 w-3.5 rounded-full" />
-                            )}
-                            <span>{fav.fair?.ticker}</span>
-                            <span>{fav.fair?.exchange}</span>
-                          </>
-                        )}
-                        <X
-                          className="h-3 w-3 ml-1 hover:text-destructive transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const wasSelected = isSelected;
-                            removeFavorite(fav.key);
-                            // Если удаляли выбранный арбитраж, выбираем первый из оставшихся
-                            if (wasSelected && favoriteArbsList.length > 1) {
-                              const remaining = favoriteArbsList.filter((f) => f.key !== fav.key);
-                              if (remaining.length > 0) {
-                                const first = remaining[0];
-                                if (first.type === 'spread' && first.arb) {
-                                  handleArbSelect({
-                                    ticker: first.arb.ticker,
-                                    left: first.arb.left,
-                                    right: first.arb.right,
-                                    ratio: first.arb.ratio,
-                                  });
-                                } else if (first.type === 'fair' && first.fair) {
-                                  handleFairArbSelect(first.fair);
-                                }
-                              } else {
-                                // Если больше нет избранных, очищаем выбор
-                                setSelectedArb(null);
-                                setSelectedFairArb(null);
-                                searchParams.delete('pair');
-                                searchParams.delete('type');
-                                setSearchParams(searchParams);
-                              }
-                            } else if (wasSelected) {
-                              // Если удаляли последний избранный, очищаем выбор
-                              setSelectedArb(null);
-                              setSelectedFairArb(null);
-                              searchParams.delete('pair');
-                              searchParams.delete('type');
-                              setSearchParams(searchParams);
-                            }
-                          }}
-                        />
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
+              <FavoriteTabs
+                favoriteArbsList={favoriteArbsList}
+                selectedArb={selectedArb}
+                selectedFairArb={selectedFairArb}
+                onArbSelect={handleArbSelect}
+                onFairArbSelect={handleFairArbSelect}
+                onRemoveFavorite={removeFavorite}
+                onClearSelection={handleClearSelection}
+              />
               <SelectedArbWidget
                 selectedEnriched={selectedEnriched}
                 selectedArb={selectedArb}
@@ -961,109 +876,15 @@ export const CryptoArbs = () => {
           <>
             <div className="flex-[4] flex flex-col min-h-0 h-full">
               {/* Табы избранных пар */}
-              {favoriteArbsList.length > 0 && (
-                <div className="mb-1 flex flex-wrap gap-1.5">
-                  {favoriteArbsList.map((fav) => {
-                    const isSelected =
-                      fav.type === 'spread'
-                        ? selectedArb?.ticker === fav.arb?.ticker &&
-                          selectedArb?.left.exchange === fav.arb?.left.exchange &&
-                          selectedArb?.right.exchange === fav.arb?.right.exchange
-                        : selectedFairArb?.ticker === fav.fair?.ticker && selectedFairArb?.exchange === fav.fair?.exchange;
-
-                    return (
-                      <Button
-                        key={fav.key}
-                        variant={isSelected ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-7 px-2 text-xs flex items-center gap-1.5"
-                        onClick={() => {
-                          if (fav.type === 'spread' && fav.arb) {
-                            handleArbSelect({
-                              ticker: fav.arb.ticker,
-                              left: fav.arb.left,
-                              right: fav.arb.right,
-                              ratio: fav.arb.ratio,
-                            });
-                          } else if (fav.type === 'fair' && fav.fair) {
-                            handleFairArbSelect(fav.fair);
-                          }
-                        }}
-                      >
-                        {fav.type === 'spread' && fav.arb ? (
-                          <>
-                            <span>{fav.arb.ticker}</span>
-                            {exchangeImgMap[fav.arb.left.exchange] && (
-                              <img
-                                src={exchangeImgMap[fav.arb.left.exchange]}
-                                alt={fav.arb.left.exchange}
-                                className="h-3.5 w-3.5 rounded-full"
-                              />
-                            )}
-                            <span>{fav.arb.left.exchange}</span>
-                            <span>/</span>
-                            {exchangeImgMap[fav.arb.right.exchange] && (
-                              <img
-                                src={exchangeImgMap[fav.arb.right.exchange]}
-                                alt={fav.arb.right.exchange}
-                                className="h-3.5 w-3.5 rounded-full"
-                              />
-                            )}
-                            <span>{fav.arb.right.exchange}</span>
-                          </>
-                        ) : (
-                          <>
-                            {fav.fair && exchangeImgMap[fav.fair.exchange] && (
-                              <img src={exchangeImgMap[fav.fair.exchange]} alt={fav.fair.exchange} className="h-3.5 w-3.5 rounded-full" />
-                            )}
-                            <span>{fav.fair?.ticker}</span>
-                            <span>{fav.fair?.exchange}</span>
-                          </>
-                        )}
-                        <X
-                          className="h-3 w-3 ml-1 hover:text-destructive transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const wasSelected = isSelected;
-                            removeFavorite(fav.key);
-                            // Если удаляли выбранный арбитраж, выбираем первый из оставшихся
-                            if (wasSelected && favoriteArbsList.length > 1) {
-                              const remaining = favoriteArbsList.filter((f) => f.key !== fav.key);
-                              if (remaining.length > 0) {
-                                const first = remaining[0];
-                                if (first.type === 'spread' && first.arb) {
-                                  handleArbSelect({
-                                    ticker: first.arb.ticker,
-                                    left: first.arb.left,
-                                    right: first.arb.right,
-                                    ratio: first.arb.ratio,
-                                  });
-                                } else if (first.type === 'fair' && first.fair) {
-                                  handleFairArbSelect(first.fair);
-                                }
-                              } else {
-                                // Если больше нет избранных, очищаем выбор
-                                setSelectedArb(null);
-                                setSelectedFairArb(null);
-                                searchParams.delete('pair');
-                                searchParams.delete('type');
-                                setSearchParams(searchParams);
-                              }
-                            } else if (wasSelected) {
-                              // Если удаляли последний избранный, очищаем выбор
-                              setSelectedArb(null);
-                              setSelectedFairArb(null);
-                              searchParams.delete('pair');
-                              searchParams.delete('type');
-                              setSearchParams(searchParams);
-                            }
-                          }}
-                        />
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
+              <FavoriteTabs
+                favoriteArbsList={favoriteArbsList}
+                selectedArb={selectedArb}
+                selectedFairArb={selectedFairArb}
+                onArbSelect={handleArbSelect}
+                onFairArbSelect={handleFairArbSelect}
+                onRemoveFavorite={removeFavorite}
+                onClearSelection={handleClearSelection}
+              />
               <div className="mb-1">
                 <div
                   className="bg-card rounded px-3 py-1.5 selected-arb-header"
