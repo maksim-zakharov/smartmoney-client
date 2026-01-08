@@ -107,10 +107,11 @@ export const FavoriteTabs: React.FC<FavoriteTabsProps> = ({
                 <span>{fav.fair?.exchange}</span>
               </>
             )}
-            <X
-              className="h-3 w-3 ml-1 hover:text-destructive transition-colors"
+            <span
+              className="h-3 w-3 ml-1 hover:text-destructive transition-colors cursor-pointer flex items-center justify-center"
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 const wasSelected = isSelected;
                 onRemoveFavorite(fav.key);
                 // Если удаляли выбранный арбитраж, выбираем первый из оставшихся
@@ -137,7 +138,9 @@ export const FavoriteTabs: React.FC<FavoriteTabsProps> = ({
                   onClearSelection();
                 }
               }}
-            />
+            >
+              <X className="h-3 w-3" />
+            </span>
           </Button>
         );
       })}
