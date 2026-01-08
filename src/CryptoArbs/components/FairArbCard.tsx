@@ -1,11 +1,11 @@
 import React from 'react';
-import { cn } from '../lib/utils';
-import { Card, CardHeader, CardTitle } from './ui/card';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { cn } from '../../lib/utils';
+import { Card, CardHeader, CardTitle } from '../../components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
 import { Copy, ExternalLink, EyeOff, Star } from 'lucide-react';
 import { toast } from 'sonner';
-import { exchangeImgMap } from '../utils';
-import { getExchangeUrl } from '../api/utils/tickers';
+import { exchangeImgMap } from '../../utils';
+import { getExchangeUrl } from '../../api/utils/tickers';
 
 export interface FairRatio {
   ticker: string;
@@ -160,4 +160,5 @@ export const FairArbCard: React.FC<FairArbCardProps> = ({
     </Card>
   );
 };
+
 

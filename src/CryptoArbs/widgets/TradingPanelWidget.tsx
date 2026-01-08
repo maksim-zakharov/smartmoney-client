@@ -1,11 +1,11 @@
 import React, { ChangeEvent, useState } from 'react';
-import { Label } from '../components/ui/label';
-import { Input } from '../components/ui/input';
-import { Button } from '../components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Label } from '../../components/ui/label';
+import { Input } from '../../components/ui/input';
+import { Button } from '../../components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { toast } from 'sonner';
-import { TradingService } from '../api/trading.service';
-import { getTickerWithSuffix } from '../api/utils/tickers';
+import { TradingService } from '../../api/trading.service';
+import { getTickerWithSuffix } from '../../api/utils/tickers';
 
 interface SelectedEnrichedLite {
   /** Тикер (например, BTC) */
@@ -233,3 +233,5 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({ isTradin
     </Table>
   );
 };
+
+

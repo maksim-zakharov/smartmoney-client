@@ -1,11 +1,11 @@
 import React from 'react';
-import { cn } from '../lib/utils';
-import { Card, CardHeader, CardTitle } from './ui/card';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { cn } from '../../lib/utils';
+import { Card, CardHeader, CardTitle } from '../../components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/ui/tooltip';
 import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, EyeOff, Star } from 'lucide-react';
 import { toast } from 'sonner';
-import { exchangeImgMap } from '../utils';
-import { getExchangeUrl } from '../api/utils/tickers';
+import { exchangeImgMap } from '../../utils';
+import { getExchangeUrl } from '../../api/utils/tickers';
 
 export interface ArbPair {
   ticker: string;
@@ -264,4 +264,5 @@ export const ArbCard: React.FC<ArbCardProps> = ({
     </Card>
   );
 };
+
 

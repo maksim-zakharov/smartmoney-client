@@ -1,23 +1,23 @@
-import { useGetPumpTickersQuery } from './api/pump-api';
-import { cn } from './lib/utils';
+import { useGetPumpTickersQuery } from '../api/pump-api';
+import { cn } from '../lib/utils';
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { exchangeImgMap } from './utils';
-import { getTickerWithSuffix, getExchangeUrl } from './api/utils/tickers';
+import { exchangeImgMap, getTradingViewSpreadUrl } from '../utils';
+import { getTickerWithSuffix, getExchangeUrl } from '../api/utils/tickers';
 import dayjs from 'dayjs';
-import { Card, CardHeader, CardTitle } from './components/ui/card';
-import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage';
-import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip';
+import { Card, CardHeader, CardTitle } from '../components/ui/card';
+import { StatArbPage } from '../ArbitrageMOEXPage/strategies/StatArbPage';
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, Settings, EyeOff, Star, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
-import { Button } from './components/ui/button';
-import { Input } from './components/ui/input';
-import { Label } from './components/ui/label';
-import { Checkbox } from './components/ui/checkbox';
-import { OrderbookView } from './components/OrderbookView';
-import { TradingService } from './api/trading.service';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Checkbox } from '../components/ui/checkbox';
+import { OrderbookView } from '../components/OrderbookView';
+import { TradingService } from '../api/trading.service';
 import { TradingPanelWidget } from './widgets/TradingPanelWidget';
 import { SelectedArbWidget } from './widgets/SelectedArbWidget';
 import { PositionsWidget } from './widgets/PositionsWidget';
@@ -47,48 +47,6 @@ const EXCHANGES_WITH_FAIR_PRICE = [
   'HOTCOIN',
   'COINEX',
 ];
-
-// Функция для генерации URL TradingView для спреда
-const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, ticker: string): string => {
-  const sellExchangeUpper = sellExchange.toUpperCase();
-  const buyExchangeUpper = buyExchange.toUpperCase();
-
-  // Маппинг бирж на символы TradingView
-  const exchangeMap: Record<string, string> = {
-    BINANCE: 'BINANCE',
-    BYBIT: 'BYBIT',
-    OKX: 'OKX',
-    BITGET: 'BITGET',
-    MEXC: 'MEXC',
-    GATE: 'GATEIO',
-    GATEIO: 'GATEIO',
-    KUCOIN: 'KUCOIN',
-    BINGX: 'BINGX',
-    OURBIT: 'OURBIT',
-    BITMART: 'BITMART',
-    HTX: 'HTX',
-    PHEMEX: 'PHEMEX',
-    BITUNIX: 'BITUNIX',
-    XT: 'XT',
-    TOOBIT: 'TOOBIT',
-    HYPERLIQUID: 'HYPERLIQUID',
-    ASTER: 'ASTER',
-    HOTCOIN: 'HOTCOIN',
-    KCEX: 'KCEX',
-  };
-
-  const sellTvExchange = exchangeMap[sellExchangeUpper] || sellExchangeUpper;
-  const buyTvExchange = exchangeMap[buyExchangeUpper] || buyExchangeUpper;
-
-  // Добавляем .P для фьючерсов в TradingView
-  const sellSymbol = `${sellTvExchange}:${ticker}USDT.P`;
-  const buySymbol = `${buyTvExchange}:${ticker}USDT.P`;
-
-  // Формат спреда в TradingView: SYMBOL1!SYMBOL2
-  const spreadSymbol = `${sellSymbol}/${buySymbol}`;
-
-  return `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(spreadSymbol)}`;
-};
 
 enum SortType {
   Funding = 'funding',

@@ -233,6 +233,48 @@ export const calculateMOEXFutureFee = (side: 'buy' | 'sell', security: any, brok
   return exchangeFee * (1 + brokerFee);
 };
 
+// Функция для генерации URL TradingView для спреда
+export const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, ticker: string): string => {
+  const sellExchangeUpper = sellExchange.toUpperCase();
+  const buyExchangeUpper = buyExchange.toUpperCase();
+
+  // Маппинг бирж на символы TradingView
+  const exchangeMap: Record<string, string> = {
+    BINANCE: 'BINANCE',
+    BYBIT: 'BYBIT',
+    OKX: 'OKX',
+    BITGET: 'BITGET',
+    MEXC: 'MEXC',
+    GATE: 'GATEIO',
+    GATEIO: 'GATEIO',
+    KUCOIN: 'KUCOIN',
+    BINGX: 'BINGX',
+    OURBIT: 'OURBIT',
+    BITMART: 'BITMART',
+    HTX: 'HTX',
+    PHEMEX: 'PHEMEX',
+    BITUNIX: 'BITUNIX',
+    XT: 'XT',
+    TOOBIT: 'TOOBIT',
+    HYPERLIQUID: 'HYPERLIQUID',
+    ASTER: 'ASTER',
+    HOTCOIN: 'HOTCOIN',
+    KCEX: 'KCEX',
+  };
+
+  const sellTvExchange = exchangeMap[sellExchangeUpper] || sellExchangeUpper;
+  const buyTvExchange = exchangeMap[buyExchangeUpper] || buyExchangeUpper;
+
+  // Добавляем .P для фьючерсов в TradingView
+  const sellSymbol = `${sellTvExchange}:${ticker}USDT.P`;
+  const buySymbol = `${buyTvExchange}:${ticker}USDT.P`;
+
+  // Формат спреда в TradingView: SYMBOL1/SYMBOL2
+  const spreadSymbol = `${sellSymbol}/${buySymbol}`;
+
+  return `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(spreadSymbol)}`;
+};
+
 export const calculateFutureQuantityByStopMargin = (stopMargin: number, openPrice: number, stopPrice: number) => {
   const loss = Math.abs(stopPrice - openPrice);
   return Math.floor(stopMargin / loss);

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../components/ui/button';
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { cn } from '../lib/utils';
+import { Button } from '../../components/ui/button';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
-import { TradingService } from '../api/trading.service';
-import { getTickerWithSuffix } from '../api/utils/tickers';
-import { exchangeImgMap, moneyFormat } from '../utils';
+import { TradingService } from '../../api/trading.service';
+import { getTickerWithSuffix } from '../../api/utils/tickers';
+import { exchangeImgMap, moneyFormat } from '../../utils';
 
 export interface Position {
   /** Уникальный ID позиции */
