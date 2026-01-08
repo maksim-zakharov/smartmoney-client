@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { cn } from '../lib/utils';
@@ -49,6 +48,60 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
   const [isTrading, setIsTrading] = useState(false);
   const tradingServiceRef = React.useRef<TradingService | null>(null);
 
+  const getExchangeApiKeys = (exchange: string) => {
+    const exchangeUpper = exchange.toUpperCase();
+    switch (exchangeUpper) {
+      case 'BYBIT':
+        return {
+          apiKey: localStorage.getItem('bybitApiKey'),
+          secretKey: localStorage.getItem('bybitSecretKey'),
+        };
+      case 'BINANCE':
+        return {
+          apiKey: localStorage.getItem('binanceApiKey'),
+          secretKey: localStorage.getItem('binanceSecretKey'),
+        };
+      case 'BITGET':
+        return {
+          apiKey: localStorage.getItem('bitgetApiKey'),
+          secretKey: localStorage.getItem('bitgetSecretKey'),
+          passphrase: localStorage.getItem('bitgetPhrase'),
+        };
+      case 'BITMART':
+        return {
+          apiKey: localStorage.getItem('bitmartApiKey'),
+          secretKey: localStorage.getItem('bitmartSecretKey'),
+          passphrase: localStorage.getItem('bitmartMemo'),
+        };
+      case 'GATE':
+      case 'GATEIO':
+        return {
+          apiKey: localStorage.getItem('gateApiKey'),
+          secretKey: localStorage.getItem('gateSecretKey'),
+        };
+      case 'KCEX':
+        return {
+          authToken: localStorage.getItem('kcexAuthToken'),
+        };
+      case 'OURBIT':
+        return {
+          authToken: localStorage.getItem('ourbitAuthToken'),
+        };
+      case 'MEXC':
+        return {
+          authToken: localStorage.getItem('mexcAuthToken') || localStorage.getItem('mexcUid'),
+        };
+      case 'OKX':
+        return {
+          apiKey: localStorage.getItem('okxApiKey'),
+          secretKey: localStorage.getItem('okxApiSecret'),
+          passphrase: localStorage.getItem('okxApiPhrase'),
+        };
+      default:
+        return {};
+    }
+  };
+
   useEffect(() => {
     if (!tradingServiceRef.current) {
       tradingServiceRef.current = new TradingService();
@@ -70,18 +123,43 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
 
     const fetchPositions = async () => {
       const allPositions: Position[] = [];
-      const exchanges = [leftExchange, rightExchange].filter(
-        (ex) => ex && ['MEXC', 'OURBIT', 'KCEX', 'BYBIT', 'BINANCE', 'BITMART', 'OKX'].includes(ex.toUpperCase()),
-      );
+      
+      // Получаем все поддерживаемые биржи
+      const supportedExchanges = ['MEXC', 'OURBIT', 'KCEX', 'BYBIT', 'BINANCE', 'BITMART', 'OKX'];
+      
+      // Проверяем наличие ключей для каждой биржи
+      const exchangesWithKeys: string[] = [];
+      for (const exchange of supportedExchanges) {
+        const keys = getExchangeApiKeys(exchange);
+        const exchangeUpper = exchange.toUpperCase();
+        
+        // Проверяем наличие необходимых ключей для каждой биржи
+        if (['MEXC', 'OURBIT', 'KCEX'].includes(exchangeUpper)) {
+          if (keys.authToken) {
+            exchangesWithKeys.push(exchange);
+          }
+        } else if (exchangeUpper === 'BYBIT' || exchangeUpper === 'BINANCE') {
+          if (keys.apiKey && keys.secretKey) {
+            exchangesWithKeys.push(exchange);
+          }
+        } else if (exchangeUpper === 'BITMART') {
+          if (keys.apiKey && keys.secretKey && keys.passphrase) {
+            exchangesWithKeys.push(exchange);
+          }
+        } else if (exchangeUpper === 'OKX') {
+          if (keys.apiKey && keys.secretKey && keys.passphrase) {
+            exchangesWithKeys.push(exchange);
+          }
+        }
+      }
 
       // eslint-disable-next-line no-console
-      console.log('Fetching positions for exchanges:', exchanges, 'ticker:', ticker);
+      console.log('Fetching positions for exchanges with keys:', exchangesWithKeys);
 
-      for (const exchange of exchanges) {
+      for (const exchange of exchangesWithKeys) {
         try {
           const keys = getExchangeApiKeys(exchange);
           const exchangeUpper = exchange.toUpperCase();
-          const symbolWithSuffix = getTickerWithSuffix(exchange, ticker);
 
           // eslint-disable-next-line no-console
           console.log(`Processing ${exchangeUpper}, has authToken:`, !!keys.authToken);
@@ -94,11 +172,11 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             }
 
             // eslint-disable-next-line no-console
-            console.log(`Fetching positions from ${exchangeUpper} for symbol:`, symbolWithSuffix);
+            console.log(`Fetching positions from ${exchangeUpper}`);
 
+            // Запрашиваем все позиции без фильтрации по символу
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
-              symbol: symbolWithSuffix,
               authToken: keys.authToken,
             });
 
@@ -116,10 +194,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                   .replace('-USDT-SWAP', '')
                   .replace('-SWAP-USDT', '');
 
-                // Если тикер не совпадает с выбранным, пропускаем
-                if (baseTicker !== ticker) {
-                  continue;
-                }
 
                 // Рассчитываем unrealized PnL на основе текущей цены и цены входа
                 // Пока используем closeProfitLoss, если он есть, иначе 0
@@ -170,11 +244,10 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             }
 
             // eslint-disable-next-line no-console
-            console.log(`Fetching positions from ${exchangeUpper} for symbol:`, symbolWithSuffix);
+            console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
-              symbol: symbolWithSuffix,
               apiKey: keys.apiKey,
               secretKey: keys.secretKey,
             });
@@ -189,10 +262,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                 const posSymbol = pos.symbol || '';
                 let baseTicker = posSymbol.replace('USDT', '');
 
-                // Если тикер не совпадает с выбранным, пропускаем
-                if (baseTicker !== ticker) {
-                  continue;
-                }
 
                 // Пропускаем пустые позиции (size = "0" или side = "")
                 if (!pos.size || parseFloat(pos.size) === 0 || !pos.side) {
@@ -242,11 +311,10 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             }
 
             // eslint-disable-next-line no-console
-            console.log(`Fetching positions from ${exchangeUpper} for symbol:`, symbolWithSuffix);
+            console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
-              symbol: symbolWithSuffix,
               apiKey: keys.apiKey,
               secretKey: keys.secretKey,
             });
@@ -261,10 +329,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                 const posSymbol = pos.symbol || '';
                 let baseTicker = posSymbol.replace('USDT', '');
 
-                // Если тикер не совпадает с выбранным, пропускаем
-                if (baseTicker !== ticker) {
-                  continue;
-                }
 
                 // Пропускаем пустые позиции (positionAmt = "0" или 0)
                 const positionAmt = parseFloat(pos.positionAmt || '0');
@@ -311,11 +375,10 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             }
 
             // eslint-disable-next-line no-console
-            console.log(`Fetching positions from ${exchangeUpper} for symbol:`, symbolWithSuffix);
+            console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
-              symbol: symbolWithSuffix,
               apiKey: keys.apiKey,
               secretKey: keys.secretKey,
               passphrase: keys.passphrase,
@@ -331,10 +394,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                 const posSymbol = pos.symbol || '';
                 let baseTicker = posSymbol.replace('USDT', '');
 
-                // Если тикер не совпадает с выбранным, пропускаем
-                if (baseTicker !== ticker) {
-                  continue;
-                }
 
                 // Пропускаем пустые позиции (position_amount = "0" или 0)
                 const positionAmount = parseFloat(pos.position_amount || '0');
@@ -393,11 +452,10 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             }
 
             // eslint-disable-next-line no-console
-            console.log(`Fetching positions from ${exchangeUpper} for symbol:`, symbolWithSuffix);
+            console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
-              symbol: symbolWithSuffix,
               apiKey: keys.apiKey,
               secretKey: keys.secretKey,
               passphrase: keys.passphrase,
@@ -415,10 +473,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                 const parts = posSymbol.split('-');
                 const baseTicker = parts[0] || '';
 
-                // Если тикер не совпадает с выбранным, пропускаем
-                if (baseTicker !== ticker) {
-                  continue;
-                }
 
                 // Пропускаем пустые позиции (pos = "0" или 0)
                 const positionSize = parseFloat(pos.pos || '0');
@@ -480,9 +534,17 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
         }
       }
 
-      // Фильтруем только по выбранному тикеру
-      const filteredPositions = allPositions.filter((pos) => pos.token === ticker);
-      setPositions(filteredPositions);
+      // Сортируем позиции: сначала по тикеру, потом по бирже
+      const sortedPositions = allPositions.sort((a, b) => {
+        // Сначала сравниваем по тикеру
+        if (a.token !== b.token) {
+          return a.token.localeCompare(b.token);
+        }
+        // Если тикеры одинаковые, сравниваем по бирже
+        return a.exchange.localeCompare(b.exchange);
+      });
+      
+      setPositions(sortedPositions);
     };
 
     // Выполняем сразу при монтировании
@@ -494,61 +556,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
     return () => {
       clearInterval(interval);
     };
-  }, [ticker, leftExchange, rightExchange]);
-
-  const getExchangeApiKeys = (exchange: string) => {
-    const exchangeUpper = exchange.toUpperCase();
-    switch (exchangeUpper) {
-      case 'BYBIT':
-        return {
-          apiKey: localStorage.getItem('bybitApiKey'),
-          secretKey: localStorage.getItem('bybitSecretKey'),
-        };
-      case 'BINANCE':
-        return {
-          apiKey: localStorage.getItem('binanceApiKey'),
-          secretKey: localStorage.getItem('binanceSecretKey'),
-        };
-      case 'BITGET':
-        return {
-          apiKey: localStorage.getItem('bitgetApiKey'),
-          secretKey: localStorage.getItem('bitgetSecretKey'),
-          passphrase: localStorage.getItem('bitgetPhrase'),
-        };
-      case 'BITMART':
-        return {
-          apiKey: localStorage.getItem('bitmartApiKey'),
-          secretKey: localStorage.getItem('bitmartSecretKey'),
-          passphrase: localStorage.getItem('bitmartMemo'),
-        };
-      case 'GATE':
-      case 'GATEIO':
-        return {
-          apiKey: localStorage.getItem('gateApiKey'),
-          secretKey: localStorage.getItem('gateSecretKey'),
-        };
-      case 'KCEX':
-        return {
-          authToken: localStorage.getItem('kcexAuthToken'),
-        };
-      case 'OURBIT':
-        return {
-          authToken: localStorage.getItem('ourbitAuthToken'),
-        };
-      case 'MEXC':
-        return {
-          authToken: localStorage.getItem('mexcAuthToken') || localStorage.getItem('mexcUid'),
-        };
-      case 'OKX':
-        return {
-          apiKey: localStorage.getItem('okxApiKey'),
-          secretKey: localStorage.getItem('okxApiSecret'),
-          passphrase: localStorage.getItem('okxApiPhrase'),
-        };
-      default:
-        return {};
-    }
-  };
+  }, []); // Убрали зависимости, так как теперь проверяем все биржи с ключами независимо от выбранного тикера
 
   const handleClosePosition = async (position: Position) => {
     if (!tradingServiceRef.current) {
@@ -608,137 +616,131 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
       await handleClosePosition(pos);
     }
   };
+  const numberFormat2 = new Intl.NumberFormat('ru-RU', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const numberFormat4 = new Intl.NumberFormat('ru-RU', {
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
+  });
+
   return (
-    <Card className="mt-2 flex-shrink-0 border-muted-foreground/20">
-      <CardHeader className="py-2 px-3 flex items-center justify-between">
-        <CardTitle className="text-xs font-semibold">Позиции</CardTitle>
-        <Button
-          variant="outline"
-          size="xs"
-          className="h-6 text-[10px]"
-          onClick={handleCloseAll}
-          disabled={isTrading || positions.length === 0}
-        >
-          Закрыть все
-        </Button>
-      </CardHeader>
-      <div className="px-3 pb-3 overflow-x-auto">
-        <Table className="text-xs">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="py-1 px-1">Тикер</TableHead>
-              <TableHead className="py-1 px-1 text-right">Ср. цена входа</TableHead>
-              <TableHead className="py-1 px-1 text-right">Позиция</TableHead>
-              <TableHead className="py-1 px-1 text-right">Маржа</TableHead>
-              <TableHead className="py-1 px-1 text-right">Нереализованный PNL</TableHead>
-              <TableHead className="py-1 px-1 text-right">Реализованный PNL</TableHead>
-              <TableHead className="py-1 px-1 text-right">Действия</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {positions.length === 0 ? (
-              <TableRow>
+    <Table wrapperClassName="pt-2 col-span-2 mt-2">
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[200px] text-left" colSpan={7}>
+            <div className="flex items-center justify-between">
+              <span>Позиции</span>
+              <Button
+                variant="outline"
+                size="xs"
+                className="h-6 text-[10px]"
+                onClick={handleCloseAll}
+                disabled={isTrading || positions.length === 0}
+              >
+                Закрыть все
+              </Button>
+            </div>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableHeader className="bg-[rgb(36,52,66)]">
+        <TableRow>
+          <TableHead className="w-[200px]">Тикер</TableHead>
+          <TableHead className="text-right">Ср. цена входа</TableHead>
+          <TableHead className="text-right">Позиция</TableHead>
+          <TableHead className="text-right">Маржа</TableHead>
+          <TableHead className="text-right">Нереализованный PNL</TableHead>
+          <TableHead className="text-right">Реализованный PNL</TableHead>
+          <TableHead className="text-right">Действия</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {positions.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={7} className="text-center text-[11px] text-muted-foreground">
+              Позиции отсутствуют
+            </TableCell>
+          </TableRow>
+        ) : (
+          positions.map((position, index) => {
+            const margin = position.volume * position.entryPrice;
+            const exchangeIcon = exchangeImgMap[position.exchange.toUpperCase()];
+            return (
+              <TableRow key={position.id} className={cn(index % 2 ? 'rowOdd' : 'rowEven')}>
+                <TableCell>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                      {exchangeIcon && (
+                        <img
+                          src={exchangeIcon}
+                          alt={position.exchange}
+                          className="h-3.5 w-3.5 rounded-full"
+                        />
+                      )}
+                      <span>
+                        {position.exchange}:{position.token}
+                      </span>
+                    </div>
+                    {(position.marginType || position.leverage) && (
+                      <span
+                        className={cn(
+                          'text-[10px]',
+                          position.side === 'Long' || position.side === 'Buy'
+                            ? 'text-green-500'
+                            : position.side === 'Short' || position.side === 'Sell'
+                              ? 'text-red-500'
+                              : 'text-muted-foreground',
+                        )}
+                      >
+                        {position.marginType}
+                        {position.marginType && position.leverage && ' '}
+                        {position.leverage && `${position.leverage.toFixed(2)}x`}
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">{numberFormat4.format(position.entryPrice)}</TableCell>
+                <TableCell className="text-right">{numberFormat2.format(margin)} USDT</TableCell>
+                <TableCell className="text-right">{numberFormat2.format(margin)} USDT</TableCell>
                 <TableCell
-                  colSpan={7}
-                  className="py-2 px-1 text-center text-[11px] text-muted-foreground"
+                  className={cn(
+                    'text-right',
+                    position.unrealizedPnl > 0
+                      ? 'profitCell'
+                      : position.unrealizedPnl < 0
+                        ? 'lossCell'
+                        : '',
+                  )}
                 >
-                  Позиции отсутствуют
+                  {numberFormat4.format(position.unrealizedPnl)} USDT
+                </TableCell>
+                <TableCell
+                  className={cn(
+                    'text-right',
+                    position.pnl > 0 ? 'profitCell' : position.pnl < 0 ? 'lossCell' : '',
+                  )}
+                >
+                  {numberFormat4.format(position.pnl)} USDT
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    className="h-6 text-[10px]"
+                    onClick={() => handleClosePosition(position)}
+                    disabled={isTrading}
+                  >
+                    Закрыть
+                  </Button>
                 </TableCell>
               </TableRow>
-            ) : (
-              positions.map((position) => {
-                const margin = position.volume * position.entryPrice;
-                const numberFormat2 = new Intl.NumberFormat('ru-RU', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                });
-                const numberFormat4 = new Intl.NumberFormat('ru-RU', {
-                  minimumFractionDigits: 4,
-                  maximumFractionDigits: 4,
-                });
-                const exchangeIcon = exchangeImgMap[position.exchange.toUpperCase()];
-                return (
-                  <TableRow key={position.id}>
-                    <TableCell className="py-1 px-1">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1.5">
-                          {exchangeIcon && (
-                            <img
-                              src={exchangeIcon}
-                              alt={position.exchange}
-                              className="h-3.5 w-3.5 rounded-full"
-                            />
-                          )}
-                          <span>
-                            {position.exchange}:{position.token}
-                          </span>
-                        </div>
-                        {(position.marginType || position.leverage) && (
-                          <span
-                            className={cn(
-                              'text-[10px]',
-                              position.side === 'Long' || position.side === 'Buy'
-                                ? 'text-green-500'
-                                : position.side === 'Short' || position.side === 'Sell'
-                                  ? 'text-red-500'
-                                  : 'text-muted-foreground',
-                            )}
-                          >
-                            {position.marginType}
-                            {position.marginType && position.leverage && ' '}
-                            {position.leverage && `${position.leverage.toFixed(2)}x`}
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-1 px-1 text-right">
-                      {numberFormat4.format(position.entryPrice)}
-                    </TableCell>
-                    <TableCell className="py-1 px-1 text-right">
-                      {numberFormat2.format(margin)} USDT
-                    </TableCell>
-                    <TableCell className="py-1 px-1 text-right">
-                      {numberFormat2.format(margin)} USDT
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        'py-1 px-1 text-right',
-                        position.unrealizedPnl > 0
-                          ? 'text-green-500'
-                          : position.unrealizedPnl < 0
-                            ? 'text-red-500'
-                            : '',
-                      )}
-                    >
-                      {numberFormat4.format(position.unrealizedPnl)} USDT
-                    </TableCell>
-                    <TableCell
-                      className={cn(
-                        'py-1 px-1 text-right',
-                        position.pnl > 0 ? 'text-green-500' : position.pnl < 0 ? 'text-red-500' : '',
-                      )}
-                    >
-                      {numberFormat4.format(position.pnl)} USDT
-                    </TableCell>
-                  <TableCell className="py-1 px-1 text-right">
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      className="h-6 text-[10px]"
-                      onClick={() => handleClosePosition(position)}
-                      disabled={isTrading}
-                    >
-                      Закрыть
-                    </Button>
-                  </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </Card>
+            );
+          })
+        )}
+      </TableBody>
+    </Table>
   );
 };
 

@@ -223,6 +223,7 @@ export class BybitTradingService {
     // Формируем параметры запроса
     const requestParams: any = {
       category: 'linear', // USDT фьючерсы
+      settleCoin: 'USDT', // Всегда USDT для Bybit
     };
 
     if (symbol) {
