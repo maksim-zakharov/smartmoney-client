@@ -45,7 +45,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from './components/ui/sidebar.tsx';
-import { CryptoArbs } from './CryptoArbs.tsx';
+import { CryptoArbs } from './CryptoArbs/CryptoArbs.tsx';
 import { Multicharts } from './Multicharts.tsx';
 import { CTraderHistory } from './CTraderHistoryPage.tsx';
 import { OrderbookTestPage } from './OrderbookTestPage.tsx';
@@ -55,23 +55,23 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
-  
+
   // Проверка флага fullAccess
   const hasFullAccess = localStorage.getItem('fullAccess') === 'true';
-  
+
   // Редирект на /arbs если нет fullAccess
   useEffect(() => {
     if (!hasFullAccess) {
       const allowedPath = '/arbs';
       const allowedParams = 'pair=LISA|BINGX|OURBIT&type=spread&sort=spread';
-      
+
       // Если пользователь не на разрешенной странице, редиректим
       if (location.pathname !== allowedPath || location.search !== `?${allowedParams}`) {
         navigate(`${allowedPath}?${allowedParams}`, { replace: true });
       }
     }
   }, [hasFullAccess, location, navigate]);
-  
+
   const api = useAppSelector((state) => state.alorSlice.api);
   const tiToken = useAppSelector((state) => state.alorSlice.tToken);
   const { accessToken } = useAppSelector((state) => state.alorSlice.cTraderAuth || ({} as AppsTokenResponse));
@@ -545,413 +545,415 @@ export default function App() {
               style={{ borderColor: 'rgba(166, 189, 213, 0.2)' }}
             >
               <SidebarTrigger className="-ml-1" />
-            <div className="flex gap-2 items-center">
-              {cTraderAccount?.ctidTraderAccountId && (
-                <>
-                  Аккаунт CTrader:{' '}
-                  <div>
-                    {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
-                  </div>
-                </>
-              )}
-              {!accessToken && (
-                <Button size="sm" onClick={handleCTraderLogin}>
-                  Войти в cTrader
-                </Button>
-              )}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">Настройки</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] gap-2">
-                  <DialogHeader>
-                    <DialogTitle>Настройки</DialogTitle>
-                  </DialogHeader>
-                  <Tabs defaultValue="keys">
-                    <TabsList className="px-2">
-                      <TabsTrigger value="keys">Управление API</TabsTrigger>
-                      <TabsTrigger value="alerts">Оповещения</TabsTrigger>
-                      <TabsTrigger value="tickers">Тикеры</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="keys" className="overflow-y-auto max-h-[calc(90vh-120px)]">
-                      <div className="p-3 flex gap-3 flex-col">
-                        {localStorage.getItem('enableOrderbookTrading') === 'true' && (
-                          <div className="flex gap-2 flex-col mb-3">
-                            <Label htmlFor="proxyUrl">URL прокси</Label>
-                            <Input id="proxyUrl" value={proxyUrl || ''} onChange={handleEditProxyUrl} placeholder="http://5.35.13.149" />
+              <div className="flex gap-2 items-center">
+                {cTraderAccount?.ctidTraderAccountId && (
+                  <>
+                    Аккаунт CTrader:{' '}
+                    <div>
+                      {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
+                    </div>
+                  </>
+                )}
+                {!accessToken && (
+                  <Button size="sm" onClick={handleCTraderLogin}>
+                    Войти в cTrader
+                  </Button>
+                )}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Настройки</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl max-h-[90vh] gap-2">
+                    <DialogHeader>
+                      <DialogTitle>Настройки</DialogTitle>
+                    </DialogHeader>
+                    <Tabs defaultValue="keys">
+                      <TabsList className="px-2">
+                        <TabsTrigger value="keys">Управление API</TabsTrigger>
+                        <TabsTrigger value="alerts">Оповещения</TabsTrigger>
+                        <TabsTrigger value="tickers">Тикеры</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="keys" className="overflow-y-auto max-h-[calc(90vh-120px)]">
+                        <div className="p-3 flex gap-3 flex-col">
+                          {localStorage.getItem('enableOrderbookTrading') === 'true' && (
+                            <div className="flex gap-2 flex-col mb-3">
+                              <Label htmlFor="proxyUrl">URL прокси</Label>
+                              <Input id="proxyUrl" value={proxyUrl || ''} onChange={handleEditProxyUrl} placeholder="http://5.35.13.149" />
+                            </div>
+                          )}
+                          <Accordion type="multiple" defaultValue={['telegram', 'alor']} className="w-full">
+                            <AccordionItem value="telegram">
+                              <AccordionTrigger className="text-base">Telegram</AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-2 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="telegramToken">Token</Label>
+                                    <Input id="telegramToken" value={telegramToken} onChange={handletelegramToken} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="telegramUserId">UserID</Label>
+                                    <Input id="telegramUserId" value={telegramUserId} onChange={handletelegramUserId} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="alor">
+                              <AccordionTrigger className="text-base">Alor</AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-2 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="alorToken">Token</Label>
+                                    <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="alorPortfolio">Портфель</Label>
+                                    <Input id="alorPortfolio" value={aPortfolio} onChange={handleaPortfolio} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="tinkoff">
+                              <AccordionTrigger className="text-base">Тинькофф</AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-2 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="tToken">Token</Label>
+                                    <Input id="tToken" value={tiToken} onChange={handleEditToken} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="brokerAccountId">BrokerAccountId</Label>
+                                    <Input id="brokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="mexc">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.MEXC && <img src={exchangeImgMap.MEXC} alt="MEXC" className="h-4 w-4 rounded-full" />}
+                                  <span>Mexc</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-3 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="mexcApiKey">Api Key</Label>
+                                    <Input id="mexcApiKey" value={mexcApiKey} onChange={handleEditmexcApiKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="mexcSecretKey">Secret Key</Label>
+                                    <Input id="mexcSecretKey" value={mexcSecretKey} onChange={handleEditmexcSecretKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="mexcUid">UID</Label>
+                                    <Input id="mexcUid" value={mexcUid} onChange={handleEditmexcUid} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="okx">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.OKX && <img src={exchangeImgMap.OKX} alt="OKX" className="h-4 w-4 rounded-full" />}
+                                  <span>OKX</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-3 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="okxApiKey">Api Key</Label>
+                                    <Input id="okxApiKey" value={okxApiKey} onChange={handleEditokxApiKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="okxApiSecret">Secret Key</Label>
+                                    <Input id="okxApiSecret" value={okxApiSecret} onChange={handleEditokxSecretKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="okxApiPhrase">Phrase</Label>
+                                    <Input id="okxApiPhrase" value={okxPhrase} onChange={handleEditokxPhrase} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="bitget">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.BITGET && (
+                                    <img src={exchangeImgMap.BITGET} alt="Bitget" className="h-4 w-4 rounded-full" />
+                                  )}
+                                  <span>Bitget</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-3 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bitgetApiKey">Api Key</Label>
+                                    <Input id="bitgetApiKey" value={bitgetApiKey} onChange={handleEditbitgetApiKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bitgetSecretKey">Secret Key</Label>
+                                    <Input id="bitgetSecretKey" value={bitgetSecretKey} onChange={handleEditbitgetSecretKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bitgetPhrase">Phrase</Label>
+                                    <Input id="bitgetPhrase" value={bitgetPhrase} onChange={handleEditbitgetPhrase} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="bitmart">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.BITMART && (
+                                    <img src={exchangeImgMap.BITMART} alt="Bitmart" className="h-4 w-4 rounded-full" />
+                                  )}
+                                  <span>Bitmart</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-3 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bitmartApiKey">Api Key</Label>
+                                    <Input id="bitmartApiKey" value={bitmartApiKey} onChange={handleEditbitmartApiKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bitmartSecretKey">Secret Key</Label>
+                                    <Input id="bitmartSecretKey" value={bitmartSecretKey} onChange={handleEditbitmartSecretKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bitmartMemo">API Memo</Label>
+                                    <Input id="bitmartMemo" value={bitmartMemo} onChange={handleEditbitmartMemo} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="bybit">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.BYBIT && <img src={exchangeImgMap.BYBIT} alt="Bybit" className="h-4 w-4 rounded-full" />}
+                                  <span>Bybit</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-2 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bybitApiKey">Api Key</Label>
+                                    <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bybitSecretKey">Secret Key</Label>
+                                    <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="binance">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.BINANCE && (
+                                    <img src={exchangeImgMap.BINANCE} alt="Binance" className="h-4 w-4 rounded-full" />
+                                  )}
+                                  <span>Binance</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-2 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="binanceApiKey">Api Key</Label>
+                                    <Input id="binanceApiKey" value={binanceApiKey} onChange={handlebinanceApiKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="binanceSecretKey">Secret Key</Label>
+                                    <Input id="binanceSecretKey" value={binanceSecretKey} onChange={handlebinanceSecretKey} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="bingx">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.BINGX && <img src={exchangeImgMap.BINGX} alt="Bingx" className="h-4 w-4 rounded-full" />}
+                                  <span>Bingx</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-2 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bingxApiKey">Api key</Label>
+                                    <Input id="bingxApiKey" value={bingxApiKey} onChange={handlebingxApiKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="bingxSecretKey">Secret key</Label>
+                                    <Input id="bingxSecretKey" value={bingxSecretKey} onChange={handlebingxSecretKey} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="gate">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.GATEIO && <img src={exchangeImgMap.GATEIO} alt="Gate" className="h-4 w-4 rounded-full" />}
+                                  <span>Gate</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-2 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="gateApiKey">Api key</Label>
+                                    <Input id="gateApiKey" value={gateApiKey} onChange={handlegateApiKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="gateSecretKey">Secret key</Label>
+                                    <Input id="gateSecretKey" value={gateSecretKey} onChange={handlegateSecretKey} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="kcex">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.KCEX && <img src={exchangeImgMap.KCEX} alt="KCEX" className="h-4 w-4 rounded-full" />}
+                                  <span>KCEX</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-1 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="kcexAuthToken">Auth Token</Label>
+                                    <Input id="kcexAuthToken" value={kcexAuthToken} onChange={handleEditkcexAuthToken} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="ourbit">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.OURBIT && (
+                                    <img src={exchangeImgMap.OURBIT} alt="Ourbit" className="h-4 w-4 rounded-full" />
+                                  )}
+                                  <span>Ourbit</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-1 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="ourbitAuthToken">Auth Token</Label>
+                                    <Input id="ourbitAuthToken" value={ourbitAuthToken} onChange={handleEditourbitAuthToken} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+
+                          <div className="mt-4 pt-4 border-t">
+                            <Label htmlFor="ctidTraderAccountId">cTraderAccount</Label>
+                            <RadioGroup
+                              id="ctidTraderAccountId"
+                              value={cTraderAccount?.ctidTraderAccountId}
+                              onValueChange={(val) => dispatch(selectCTraderAccount(Number(val)))}
+                              className="mt-2"
+                            >
+                              {cTraderAccounts?.map((cTraderAccount) => (
+                                <div key={cTraderAccount?.ctidTraderAccountId} className="flex items-center space-x-2">
+                                  <RadioGroupItem value={cTraderAccount?.ctidTraderAccountId} id={cTraderAccount?.ctidTraderAccountId} />
+                                  <Label htmlFor={cTraderAccount?.ctidTraderAccountId}>
+                                    {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
+                                  </Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
                           </div>
-                        )}
-                        <Accordion type="multiple" defaultValue={['telegram', 'alor']} className="w-full">
-                          <AccordionItem value="telegram">
-                            <AccordionTrigger className="text-base">Telegram</AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-2 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="telegramToken">Token</Label>
-                                  <Input id="telegramToken" value={telegramToken} onChange={handletelegramToken} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="telegramUserId">UserID</Label>
-                                  <Input id="telegramUserId" value={telegramUserId} onChange={handletelegramUserId} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="alor">
-                            <AccordionTrigger className="text-base">Alor</AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-2 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="alorToken">Token</Label>
-                                  <Input id="alorToken" value={aToken} onChange={handleEditAToken} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="alorPortfolio">Портфель</Label>
-                                  <Input id="alorPortfolio" value={aPortfolio} onChange={handleaPortfolio} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="tinkoff">
-                            <AccordionTrigger className="text-base">Тинькофф</AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-2 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="tToken">Token</Label>
-                                  <Input id="tToken" value={tiToken} onChange={handleEditToken} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="brokerAccountId">BrokerAccountId</Label>
-                                  <Input id="brokerAccountId" value={brokerAccountId} onChange={handleEditBrokerAccountId} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="mexc">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.MEXC && <img src={exchangeImgMap.MEXC} alt="MEXC" className="h-4 w-4 rounded-full" />}
-                                <span>Mexc</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-3 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="mexcApiKey">Api Key</Label>
-                                  <Input id="mexcApiKey" value={mexcApiKey} onChange={handleEditmexcApiKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="mexcSecretKey">Secret Key</Label>
-                                  <Input id="mexcSecretKey" value={mexcSecretKey} onChange={handleEditmexcSecretKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="mexcUid">UID</Label>
-                                  <Input id="mexcUid" value={mexcUid} onChange={handleEditmexcUid} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="okx">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.OKX && <img src={exchangeImgMap.OKX} alt="OKX" className="h-4 w-4 rounded-full" />}
-                                <span>OKX</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-3 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="okxApiKey">Api Key</Label>
-                                  <Input id="okxApiKey" value={okxApiKey} onChange={handleEditokxApiKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="okxApiSecret">Secret Key</Label>
-                                  <Input id="okxApiSecret" value={okxApiSecret} onChange={handleEditokxSecretKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="okxApiPhrase">Phrase</Label>
-                                  <Input id="okxApiPhrase" value={okxPhrase} onChange={handleEditokxPhrase} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="bitget">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.BITGET && <img src={exchangeImgMap.BITGET} alt="Bitget" className="h-4 w-4 rounded-full" />}
-                                <span>Bitget</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-3 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bitgetApiKey">Api Key</Label>
-                                  <Input id="bitgetApiKey" value={bitgetApiKey} onChange={handleEditbitgetApiKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bitgetSecretKey">Secret Key</Label>
-                                  <Input id="bitgetSecretKey" value={bitgetSecretKey} onChange={handleEditbitgetSecretKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bitgetPhrase">Phrase</Label>
-                                  <Input id="bitgetPhrase" value={bitgetPhrase} onChange={handleEditbitgetPhrase} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="bitmart">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.BITMART && (
-                                  <img src={exchangeImgMap.BITMART} alt="Bitmart" className="h-4 w-4 rounded-full" />
-                                )}
-                                <span>Bitmart</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-3 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bitmartApiKey">Api Key</Label>
-                                  <Input id="bitmartApiKey" value={bitmartApiKey} onChange={handleEditbitmartApiKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bitmartSecretKey">Secret Key</Label>
-                                  <Input id="bitmartSecretKey" value={bitmartSecretKey} onChange={handleEditbitmartSecretKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bitmartMemo">API Memo</Label>
-                                  <Input id="bitmartMemo" value={bitmartMemo} onChange={handleEditbitmartMemo} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="bybit">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.BYBIT && <img src={exchangeImgMap.BYBIT} alt="Bybit" className="h-4 w-4 rounded-full" />}
-                                <span>Bybit</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-2 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bybitApiKey">Api Key</Label>
-                                  <Input id="bybitApiKey" value={bybitApiKey} onChange={handleEditbybitApiKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bybitSecretKey">Secret Key</Label>
-                                  <Input id="bybitSecretKey" value={bybitSecretKey} onChange={handleEditbybitSecretKey} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="binance">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.BINANCE && (
-                                  <img src={exchangeImgMap.BINANCE} alt="Binance" className="h-4 w-4 rounded-full" />
-                                )}
-                                <span>Binance</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-2 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="binanceApiKey">Api Key</Label>
-                                  <Input id="binanceApiKey" value={binanceApiKey} onChange={handlebinanceApiKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="binanceSecretKey">Secret Key</Label>
-                                  <Input id="binanceSecretKey" value={binanceSecretKey} onChange={handlebinanceSecretKey} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="bingx">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.BINGX && <img src={exchangeImgMap.BINGX} alt="Bingx" className="h-4 w-4 rounded-full" />}
-                                <span>Bingx</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-2 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bingxApiKey">Api key</Label>
-                                  <Input id="bingxApiKey" value={bingxApiKey} onChange={handlebingxApiKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="bingxSecretKey">Secret key</Label>
-                                  <Input id="bingxSecretKey" value={bingxSecretKey} onChange={handlebingxSecretKey} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="gate">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.GATEIO && <img src={exchangeImgMap.GATEIO} alt="Gate" className="h-4 w-4 rounded-full" />}
-                                <span>Gate</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-2 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="gateApiKey">Api key</Label>
-                                  <Input id="gateApiKey" value={gateApiKey} onChange={handlegateApiKey} />
-                                </div>
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="gateSecretKey">Secret key</Label>
-                                  <Input id="gateSecretKey" value={gateSecretKey} onChange={handlegateSecretKey} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="kcex">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.KCEX && <img src={exchangeImgMap.KCEX} alt="KCEX" className="h-4 w-4 rounded-full" />}
-                                <span>KCEX</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-1 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="kcexAuthToken">Auth Token</Label>
-                                  <Input id="kcexAuthToken" value={kcexAuthToken} onChange={handleEditkcexAuthToken} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-
-                          <AccordionItem value="ourbit">
-                            <AccordionTrigger className="text-base">
-                              <div className="flex items-center gap-2">
-                                {exchangeImgMap.OURBIT && <img src={exchangeImgMap.OURBIT} alt="Ourbit" className="h-4 w-4 rounded-full" />}
-                                <span>Ourbit</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                              <div className="grid grid-cols-1 gap-3 w-full">
-                                <div className="flex gap-2 flex-col">
-                                  <Label htmlFor="ourbitAuthToken">Auth Token</Label>
-                                  <Input id="ourbitAuthToken" value={ourbitAuthToken} onChange={handleEditourbitAuthToken} />
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        </Accordion>
-
-                        <div className="mt-4 pt-4 border-t">
-                          <Label htmlFor="ctidTraderAccountId">cTraderAccount</Label>
-                          <RadioGroup
-                            id="ctidTraderAccountId"
-                            value={cTraderAccount?.ctidTraderAccountId}
-                            onValueChange={(val) => dispatch(selectCTraderAccount(Number(val)))}
-                            className="mt-2"
-                          >
-                            {cTraderAccounts?.map((cTraderAccount) => (
-                              <div key={cTraderAccount?.ctidTraderAccountId} className="flex items-center space-x-2">
-                                <RadioGroupItem value={cTraderAccount?.ctidTraderAccountId} id={cTraderAccount?.ctidTraderAccountId} />
-                                <Label htmlFor={cTraderAccount?.ctidTraderAccountId}>
-                                  {cTraderAccount?.brokerTitleShort} {cTraderAccount?.traderLogin}
-                                </Label>
-                              </div>
-                            ))}
-                          </RadioGroup>
                         </div>
-                      </div>
-                    </TabsContent>
-                    <TabsContent value="alerts" className="px-2 pb-2">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[100px]">Тикер</TableHead>
-                            <TableHead>Условие</TableHead>
-                            <TableHead>Цена</TableHead>
-                            <TableHead className="text-right">Триггер</TableHead>
-                            <TableHead className="text-right">Действия</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {alerts.map((invoice, index) => (
-                            <TableRow className={index % 2 ? 'rowOdd' : 'rowEven'}>
-                              <TableCell>{invoice.ticker}</TableCell>
-                              <TableCell>{invoice.condition === 'lessThen' ? 'Меньше' : 'Больше'} чем</TableCell>
-                              <TableCell>{invoice.price.toFixed(5)}</TableCell>
-                              <TableCell className="text-right">{invoice.trigger === 'once' ? 'Один раз' : 'Раз в минуту'}</TableCell>
-                              <TableCell className="text-right">
-                                {/*<Button size="sm" variant="ghost" className="p-0 h-4 w-4">*/}
-                                {/*  <Pencil />*/}
-                                {/*</Button>*/}
+                      </TabsContent>
+                      <TabsContent value="alerts" className="px-2 pb-2">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[100px]">Тикер</TableHead>
+                              <TableHead>Условие</TableHead>
+                              <TableHead>Цена</TableHead>
+                              <TableHead className="text-right">Триггер</TableHead>
+                              <TableHead className="text-right">Действия</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {alerts.map((invoice, index) => (
+                              <TableRow className={index % 2 ? 'rowOdd' : 'rowEven'}>
+                                <TableCell>{invoice.ticker}</TableCell>
+                                <TableCell>{invoice.condition === 'lessThen' ? 'Меньше' : 'Больше'} чем</TableCell>
+                                <TableCell>{invoice.price.toFixed(5)}</TableCell>
+                                <TableCell className="text-right">{invoice.trigger === 'once' ? 'Один раз' : 'Раз в минуту'}</TableCell>
+                                <TableCell className="text-right">
+                                  {/*<Button size="sm" variant="ghost" className="p-0 h-4 w-4">*/}
+                                  {/*  <Pencil />*/}
+                                  {/*</Button>*/}
 
-                                <Button size="sm" variant="ghost" className="p-0 h-4 w-4" onClick={handleDeleteAlert(invoice)}>
-                                  <Trash />
-                                </Button>
-                              </TableCell>
+                                  <Button size="sm" variant="ghost" className="p-0 h-4 w-4" onClick={handleDeleteAlert(invoice)}>
+                                    <Trash />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TabsContent>
+                      <TabsContent value="tickers">
+                        <Table className="mb-3">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[100px]">Тикер</TableHead>
+                              <TableHead>Тип</TableHead>
+                              <TableHead>Мультипликатор</TableHead>
+                              <TableHead className="text-right">Действия</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TabsContent>
-                    <TabsContent value="tickers">
-                      <Table className="mb-3">
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[100px]">Тикер</TableHead>
-                            <TableHead>Тип</TableHead>
-                            <TableHead>Мультипликатор</TableHead>
-                            <TableHead className="text-right">Действия</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {favoritePairs.map((invoice, index) => (
-                            <TableRow className={index % 2 ? 'rowOdd' : 'rowEven'}>
-                              <TableCell>{[invoice.first, invoice.second, invoice.third].filter(Boolean).join('/')}</TableCell>
-                              <TableCell>{invoice.type}</TableCell>
-                              <TableCell>{invoice.multiple}</TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="p-0 h-4 w-4"
-                                  onClick={() =>
-                                    dispatch(
-                                      deletePair({ ticker: [invoice.first, invoice.second, invoice.third].filter(Boolean).join('/') }),
-                                    )
-                                  }
-                                >
-                                  <Trash />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TabsContent>
-                  </Tabs>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </header>
+                          </TableHeader>
+                          <TableBody>
+                            {favoritePairs.map((invoice, index) => (
+                              <TableRow className={index % 2 ? 'rowOdd' : 'rowEven'}>
+                                <TableCell>{[invoice.first, invoice.second, invoice.third].filter(Boolean).join('/')}</TableCell>
+                                <TableCell>{invoice.type}</TableCell>
+                                <TableCell>{invoice.multiple}</TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="p-0 h-4 w-4"
+                                    onClick={() =>
+                                      dispatch(
+                                        deletePair({ ticker: [invoice.first, invoice.second, invoice.third].filter(Boolean).join('/') }),
+                                      )
+                                    }
+                                  >
+                                    <Trash />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TabsContent>
+                    </Tabs>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </header>
           )}
           <div className="flex flex-1 flex-col gap-1 p-1">
             <Routes>
               {hasFullAccess ? (
-                menuItems.map((item) => (
-                  <Route key={item.key} path={item.key} element={item.element} />
-                ))
+                menuItems.map((item) => <Route key={item.key} path={item.key} element={item.element} />)
               ) : (
                 <Route path="/arbs" element={<CryptoArbs />} />
               )}
