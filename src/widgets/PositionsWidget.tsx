@@ -626,7 +626,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
   });
 
   return (
-    <Table wrapperClassName="pt-2 col-span-2 mt-2">
+    <Table wrapperClassName="pt-1 col-span-2">
       <TableHeader>
         <TableRow>
           <TableHead className="w-[200px] text-left" colSpan={7}>

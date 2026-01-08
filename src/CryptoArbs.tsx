@@ -1303,7 +1303,7 @@ export const CryptoArbs = () => {
         </div>
       </div>
 
-      <div className="flex-[3] flex gap-2 min-h-0 h-full">
+      <div className="flex-[3] flex gap-1 min-h-0 h-full">
         {selectedEnriched ? (
           <>
             <div className="flex-[4] flex flex-col min-h-0 h-full">
@@ -1338,7 +1338,7 @@ export const CryptoArbs = () => {
                   ticker={selectedEnriched.ticker}
                 />
               </div>
-              <div className="flex-1 min-h-0 mt-2">
+              <div className="flex-1 min-h-0 mt-1">
                 <OrderbookView
                   exchange={selectedEnriched.right.exchange}
                   ticker={selectedEnriched.ticker}
@@ -1346,12 +1346,14 @@ export const CryptoArbs = () => {
               </div>
               {/* Торговая панель - видна только если есть флаг в localStorage */}
               {showTradingPanel && (
-                <TradingPanelWidget
-                  isTrading={isTrading}
-                  selectedEnriched={selectedEnriched}
-                  tradingService={tradingServiceRef.current}
-                  onSetIsTrading={setIsTrading}
-                />
+                <div className="mt-1">
+                    <TradingPanelWidget
+                      isTrading={isTrading}
+                      selectedEnriched={selectedEnriched}
+                      tradingService={tradingServiceRef.current}
+                      onSetIsTrading={setIsTrading}
+                    />
+                </div>
               )}
             </div>
           </>
