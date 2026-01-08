@@ -16,8 +16,9 @@ import { kucoinApi } from './api/kucoin.api';
 import { coinmarketcapApi } from './api/coinmarketcap.api';
 import { bitgetApi } from './api/bitget.api';
 import { bitstampApi } from './api/bitstamp.api';
-import { okxApi } from './api/okx.api.ts';
-import { pumpApi } from './api/pump-api.ts';
+import { okxApi } from './api/okx.api';
+import { pumpApi } from './api/pump-api';
+import cryptoArbsSettingsReducer from './CryptoArbs/cryptoArbsSettings.slice';
 
 export const reducers = {
   [api.reducerPath]: api.reducer,
@@ -38,6 +39,7 @@ export const reducers = {
   [bitgetApi.reducerPath]: bitgetApi.reducer,
   [bitstampApi.reducerPath]: bitstampApi.reducer,
   [okxApi.reducerPath]: okxApi.reducer,
+  cryptoArbsSettings: cryptoArbsSettingsReducer,
 };
 
 const reducer = combineReducers(reducers);

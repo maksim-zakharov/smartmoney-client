@@ -6,6 +6,8 @@ import { Copy, ExternalLink, EyeOff, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { exchangeImgMap } from '../../utils';
 import { getExchangeUrl } from '../../api/utils/tickers';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { addExcludedTicker } from '../cryptoArbsSettings.slice';
 
 export interface FairRatio {
   ticker: string;
@@ -22,8 +24,6 @@ export interface FairArbCardProps {
   isFavorite: (key: string) => boolean;
   getFairArbPairKey: (fair: FairRatio) => string;
   toggleFavorite: (key: string) => void;
-  excludedTickers: Set<string>;
-  setExcludedTickers: (tickers: Set<string>) => void;
 }
 
 export const FairArbCard: React.FC<FairArbCardProps> = ({
@@ -33,9 +33,10 @@ export const FairArbCard: React.FC<FairArbCardProps> = ({
   isFavorite,
   getFairArbPairKey,
   toggleFavorite,
-  excludedTickers,
-  setExcludedTickers,
 }) => {
+  const dispatch = useAppDispatch();
+  const excludedTickers = useAppSelector((state) => state.cryptoArbsSettings.excludedTickers);
+  const excludedTickersSet = new Set(excludedTickers);
   const spread = (fair.ratio - 1) * 100;
 
   return (
@@ -103,10 +104,7 @@ export const FairArbCard: React.FC<FairArbCardProps> = ({
                   className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer ml-1"
                   onClick={(e) => {
                     e.stopPropagation();
-                    const newExcluded = new Set(excludedTickers);
-                    newExcluded.add(fair.ticker);
-                    setExcludedTickers(newExcluded);
-                    localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
+                    dispatch(addExcludedTicker(fair.ticker));
                   }}
                 />
               </TooltipTrigger>

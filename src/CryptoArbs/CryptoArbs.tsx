@@ -9,13 +9,9 @@ import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { StatArbPage } from '../ArbitrageMOEXPage/strategies/StatArbPage';
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
-import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, Settings, EyeOff, Star, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, EyeOff, Star, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Checkbox } from '../components/ui/checkbox';
 import { OrderbookView } from '../components/OrderbookView';
 import { TradingService } from '../api/trading.service';
 import { TradingPanelWidget } from './widgets/TradingPanelWidget';
@@ -23,6 +19,9 @@ import { SelectedArbWidget } from './widgets/SelectedArbWidget';
 import { PositionsWidget } from './widgets/PositionsWidget';
 import { ArbCard } from './components/ArbCard';
 import { FairArbCard } from './components/FairArbCard';
+import { SettingsDialog } from './components/SettingsDialog';
+import { useAppDispatch, useAppSelector } from '../store';
+import { setShowAll, setEnabledExchanges, addExcludedTicker } from './cryptoArbsSettings.slice';
 
 interface ArbPair {
   ticker: string;
@@ -71,9 +70,21 @@ export const CryptoArbs = () => {
     return typeParam === 'fair' ? 'fair' : 'futures';
   });
 
+  const dispatch = useAppDispatch();
+  const {
+    showAll,
+    enabledExchanges,
+    excludedTickers,
+    minSpread,
+    minFunding,
+    maxFunding,
+    sameFundingTime,
+    minFairRatio,
+    maxFairRatio,
+  } = useAppSelector((state) => state.cryptoArbsSettings);
+
   const [selectedArb, setSelectedArb] = useState<ArbPair | null>(null);
   const [selectedFairArb, setSelectedFairArb] = useState<FairRatio | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const tradingServiceRef = useRef<TradingService | null>(null);
   const [isTrading, setIsTrading] = useState(false);
   const [showTradingPanel, setShowTradingPanel] = useState(() => {
@@ -162,114 +173,19 @@ export const CryptoArbs = () => {
     return sorted;
   }, [tickers]);
 
-  // Состояние для режима "Все" (по умолчанию включен - фильтрация отсутствует)
-  const [showAll, setShowAll] = useState<boolean>(() => {
-    const saved = localStorage.getItem('crypto-arbs-show-all');
-    if (saved !== null) {
-      return JSON.parse(saved);
-    }
-    return true; // По умолчанию показываем все
-  });
-
-  // Состояние для выбранных бирж (используется только когда showAll = false)
-  const [enabledExchanges, setEnabledExchanges] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('crypto-arbs-enabled-exchanges');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.length > 0 ? new Set(parsed) : new Set();
-      } catch {
-        return new Set();
-      }
-    }
-    return new Set();
-  });
-
   // Синхронизируем enabledExchanges с allExchanges при изменении списка бирж
   // Только удаляем биржи, которых больше нет, но не добавляем новые автоматически
   useEffect(() => {
     if (allExchanges.length > 0 && !showAll) {
-      setEnabledExchanges((prev) => {
-        const updated = new Set(prev);
-        // Удаляем только биржи, которых больше нет в данных
-        Array.from(updated).forEach((ex) => {
-          if (!allExchanges.includes(ex)) {
-            updated.delete(ex);
-          }
-        });
-        // Если после удаления не осталось выбранных бирж, включаем режим "Все"
-        if (updated.size === 0) {
-          setShowAll(true);
-        }
-        return updated;
-      });
+      const updated = enabledExchanges.filter((ex) => allExchanges.includes(ex));
+      // Если после удаления не осталось выбранных бирж, включаем режим "Все"
+      if (updated.length === 0) {
+        dispatch(setShowAll(true));
+      } else if (updated.length !== enabledExchanges.length) {
+        dispatch(setEnabledExchanges(updated));
+      }
     }
-  }, [allExchanges, showAll]);
-
-  // Состояние для минимального спреда (по умолчанию 1%)
-  const [minSpread, setMinSpread] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-min-spread');
-    if (saved !== null) {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : 1;
-    }
-    return 1; // По умолчанию 1%
-  });
-
-  // Состояние для минимального фандинга (по умолчанию -Infinity - без ограничения)
-  const [minFunding, setMinFunding] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-min-funding');
-    if (saved !== null && saved !== '') {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : -Infinity;
-    }
-    return -Infinity; // По умолчанию без ограничения
-  });
-
-  // Состояние для максимального фандинга (по умолчанию Infinity - без ограничения)
-  const [maxFunding, setMaxFunding] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-max-funding');
-    if (saved !== null && saved !== '') {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : Infinity;
-    }
-    return Infinity; // По умолчанию без ограничения
-  });
-
-  // Состояние для минимального отклонения справедливой цены (по умолчанию -Infinity - без ограничения)
-  const [minFairRatio, setMinFairRatio] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-min-fair-ratio');
-    if (saved !== null && saved !== '') {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : -Infinity;
-    }
-    return -Infinity; // По умолчанию без ограничения
-  });
-
-  // Состояние для максимального отклонения справедливой цены (по умолчанию Infinity - без ограничения)
-  const [maxFairRatio, setMaxFairRatio] = useState<number>(() => {
-    const saved = localStorage.getItem('crypto-arbs-max-fair-ratio');
-    if (saved !== null && saved !== '') {
-      const parsed = parseFloat(saved);
-      return !isNaN(parsed) ? parsed : Infinity;
-    }
-    return Infinity; // По умолчанию без ограничения
-  });
-
-  // Состояние для фильтра "Фандинг в одно время"
-  const [sameFundingTime, setSameFundingTime] = useState<boolean>(() => {
-    const saved = localStorage.getItem('crypto-arbs-same-funding-time');
-    if (saved !== null) {
-      return saved === 'true';
-    }
-    return false; // По умолчанию выключено
-  });
-
-  // Состояние для исключенных монет
-  const [excludedTickers, setExcludedTickers] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('crypto-arbs-excluded-tickers');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  });
+  }, [allExchanges, showAll, enabledExchanges, dispatch]);
 
   // Состояние для избранных пар арбитража
   // Формат: Set<string> где строка = "ticker|leftExchange|rightExchange" для spread или "ticker|exchange" для fair
@@ -324,38 +240,6 @@ export const CryptoArbs = () => {
     localStorage.setItem('crypto-arbs-favorite-pairs', JSON.stringify(Array.from(favoritePairs)));
   }, [favoritePairs]);
 
-  // Сохраняем состояние в localStorage
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-show-all', JSON.stringify(showAll));
-    if (!showAll && enabledExchanges.size > 0) {
-      localStorage.setItem('crypto-arbs-enabled-exchanges', JSON.stringify(Array.from(enabledExchanges)));
-    }
-  }, [showAll, enabledExchanges]);
-
-  // Сохраняем фильтры в localStorage
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-min-spread', minSpread.toString());
-  }, [minSpread]);
-
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-min-funding', minFunding === -Infinity ? '' : minFunding.toString());
-  }, [minFunding]);
-
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-max-funding', maxFunding === Infinity ? '' : maxFunding.toString());
-  }, [maxFunding]);
-
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-same-funding-time', sameFundingTime.toString());
-  }, [sameFundingTime]);
-
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-min-fair-ratio', minFairRatio === -Infinity ? '' : minFairRatio.toString());
-  }, [minFairRatio]);
-
-  useEffect(() => {
-    localStorage.setItem('crypto-arbs-max-fair-ratio', maxFairRatio === Infinity ? '' : maxFairRatio.toString());
-  }, [maxFairRatio]);
 
   const fundingMap = useMemo(() => {
     return tickers
@@ -458,8 +342,8 @@ export const CryptoArbs = () => {
       .filter((b) => {
         // Фильтрация по биржам (только если showAll = false и есть выбранные биржи)
         // Показываем спред, если обе биржи из пары выбраны
-        if (!showAll && enabledExchanges.size > 0) {
-          if (!enabledExchanges.has(b.left.exchange) || !enabledExchanges.has(b.right.exchange)) {
+        if (!showAll && enabledExchanges.length > 0) {
+          if (!enabledExchanges.includes(b.left.exchange) || !enabledExchanges.includes(b.right.exchange)) {
             return false;
           }
         }
@@ -484,7 +368,7 @@ export const CryptoArbs = () => {
         const minFundingCheck = minFunding === -Infinity ? true : funding >= minFunding;
         const maxFundingCheck = maxFunding === Infinity ? true : funding <= maxFunding;
         // Фильтр по исключенным монетам
-        const isExcluded = excludedTickers.has(b.ticker);
+        const isExcluded = excludedTickers.includes(b.ticker);
         return spread > minSpread && minFundingCheck && maxFundingCheck && !isExcluded;
       });
 
@@ -671,14 +555,14 @@ export const CryptoArbs = () => {
           return false;
         }
         // Фильтрация по биржам (только если showAll = false и есть выбранные биржи)
-        if (!showAll && enabledExchanges.size > 0) {
-          if (!enabledExchanges.has(r.exchange)) {
+        if (!showAll && enabledExchanges.length > 0) {
+          if (!enabledExchanges.includes(r.exchange)) {
             return false;
           }
         }
         // Фильтр по минимальному спреду (ratio - 1 в процентах)
         const spread = (r.ratio - 1) * 100;
-        const isExcluded = excludedTickers.has(r.ticker);
+        const isExcluded = excludedTickers.includes(r.ticker);
         const minFairCheck = minFairRatio === -Infinity ? true : spread >= minFairRatio;
         const maxFairCheck = maxFairRatio === Infinity ? true : spread <= maxFairRatio;
         return minFairCheck && maxFairCheck && !isExcluded;
@@ -853,226 +737,7 @@ export const CryptoArbs = () => {
       <div className="w-[320px] flex-shrink-0 flex flex-col overflow-hidden">
         <div className="mb-2 flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 px-2 flex-shrink-0">
-                  <Settings className="h-3.5 w-3.5" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Настройки</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 px-3 pb-3">
-                  <div>
-                    <h3 className="text-sm font-semibold mb-3">Основные</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Биржи</h4>
-                        <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
-                          <Button
-                            variant={showAll ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => {
-                              setShowAll(true);
-                              // При выборе "Все" очищаем выбор конкретных бирж
-                              setEnabledExchanges(new Set());
-                            }}
-                            className="h-7 px-2 text-xs"
-                          >
-                            Все
-                          </Button>
-                          {allExchanges.map((exchange) => (
-                            <Button
-                              key={exchange}
-                              variant={!showAll && enabledExchanges.has(exchange) ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => {
-                                // При клике на конкретную биржу отключаем режим "Все"
-                                setShowAll(false);
-                                setEnabledExchanges((prev) => {
-                                  const updated = new Set(prev);
-                                  if (updated.has(exchange)) {
-                                    updated.delete(exchange);
-                                    // Если все биржи сняты, включаем режим "Все"
-                                    if (updated.size === 0) {
-                                      setShowAll(true);
-                                    }
-                                  } else {
-                                    updated.add(exchange);
-                                  }
-                                  return updated;
-                                });
-                              }}
-                              className="h-7 px-2 text-xs flex items-center gap-1.5"
-                            >
-                              {exchangeImgMap[exchange] && (
-                                <img src={exchangeImgMap[exchange]} alt={exchange} className="h-3.5 w-3.5 rounded-full" />
-                              )}
-                              {exchange}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Исключенные монеты</h4>
-                        <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
-                          {excludedTickers.size === 0 ? (
-                            <p className="text-sm text-muted-foreground">Нет исключенных монет</p>
-                          ) : (
-                            Array.from(excludedTickers).map((ticker) => (
-                              <Button
-                                key={ticker}
-                                variant="default"
-                                size="sm"
-                                className="h-7 px-2 text-xs flex items-center gap-1.5 relative"
-                                onClick={() => {
-                                  const newExcluded = new Set(excludedTickers);
-                                  newExcluded.delete(ticker);
-                                  setExcludedTickers(newExcluded);
-                                  localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
-                                }}
-                              >
-                                <span>{ticker}</span>
-                                <span className="text-xs ml-1">×</span>
-                              </Button>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-muted-foreground/20 pt-4">
-                    <h3 className="text-sm font-semibold mb-3">Арбитражи</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Минимальный спред (%)</h4>
-                        <Input
-                          id="min-spread"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          value={minSpread}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value);
-                            if (!isNaN(value) && value >= 0) {
-                              setMinSpread(value);
-                            }
-                          }}
-                          className="h-8"
-                        />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Фандинг</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label htmlFor="min-funding" className="text-xs text-muted-foreground mb-1 block">
-                              От (%)
-                            </Label>
-                            <Input
-                              id="min-funding"
-                              type="number"
-                              step="0.1"
-                              value={minFunding === -Infinity ? '' : minFunding}
-                              onChange={(e) => {
-                                const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
-                                if (e.target.value === '' || !isNaN(value)) {
-                                  setMinFunding(value);
-                                }
-                              }}
-                              className="h-8"
-                              placeholder="Без ограничения"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="max-funding" className="text-xs text-muted-foreground mb-1 block">
-                              До (%)
-                            </Label>
-                            <Input
-                              id="max-funding"
-                              type="number"
-                              step="0.1"
-                              value={maxFunding === Infinity ? '' : maxFunding}
-                              onChange={(e) => {
-                                const value = e.target.value === '' ? Infinity : parseFloat(e.target.value);
-                                if (e.target.value === '' || !isNaN(value)) {
-                                  setMaxFunding(value);
-                                }
-                              }}
-                              className="h-8"
-                              placeholder="Без ограничения"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Фандинг в одно время</h4>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="same-funding-time"
-                            checked={sameFundingTime}
-                            onCheckedChange={(checked) => setSameFundingTime(checked === true)}
-                          />
-                          <Label htmlFor="same-funding-time" className="text-xs text-muted-foreground cursor-pointer">
-                            Включить
-                          </Label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-muted-foreground/20 pt-4">
-                    <h3 className="text-sm font-semibold mb-3">Справедливая</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Отклонение</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label htmlFor="min-fair-ratio" className="text-xs text-muted-foreground mb-1 block">
-                              От (%)
-                            </Label>
-                            <Input
-                              id="min-fair-ratio"
-                              type="number"
-                              step="0.1"
-                              value={minFairRatio === -Infinity ? '' : minFairRatio}
-                              onChange={(e) => {
-                                const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
-                                if (e.target.value === '' || !isNaN(value)) {
-                                  setMinFairRatio(value);
-                                }
-                              }}
-                              className="h-8"
-                              placeholder="Без ограничения"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="max-fair-ratio" className="text-xs text-muted-foreground mb-1 block">
-                              До (%)
-                            </Label>
-                            <Input
-                              id="max-fair-ratio"
-                              type="number"
-                              step="0.1"
-                              value={maxFairRatio === Infinity ? '' : maxFairRatio}
-                              onChange={(e) => {
-                                const value = e.target.value === '' ? Infinity : parseFloat(e.target.value);
-                                if (e.target.value === '' || !isNaN(value)) {
-                                  setMaxFairRatio(value);
-                                }
-                              }}
-                              className="h-8"
-                              placeholder="Без ограничения"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <SettingsDialog allExchanges={allExchanges} />
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'futures' | 'fair')} className="flex-1">
               <TabsList className="w-full">
                 <TabsTrigger value="futures" className="flex-1">
@@ -1114,8 +779,6 @@ export const CryptoArbs = () => {
                   isFavorite={isFavorite}
                   getArbPairKey={getArbPairKey}
                   toggleFavorite={toggleFavorite}
-                  excludedTickers={excludedTickers}
-                  setExcludedTickers={setExcludedTickers}
                   formatFundingTime={formatFundingTime}
                 />
               ))
@@ -1139,8 +802,6 @@ export const CryptoArbs = () => {
                   isFavorite={isFavorite}
                   getFairArbPairKey={getFairArbPairKey}
                   toggleFavorite={toggleFavorite}
-                  excludedTickers={excludedTickers}
-                  setExcludedTickers={setExcludedTickers}
                 />
               );
             })

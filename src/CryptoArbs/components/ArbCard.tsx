@@ -6,6 +6,8 @@ import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, EyeOf
 import { toast } from 'sonner';
 import { exchangeImgMap } from '../../utils';
 import { getExchangeUrl } from '../../api/utils/tickers';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { addExcludedTicker } from '../cryptoArbsSettings.slice';
 
 export interface ArbPair {
   ticker: string;
@@ -44,8 +46,6 @@ export interface ArbCardProps {
   isFavorite: (key: string) => boolean;
   getArbPairKey: (arb: ArbPair) => string;
   toggleFavorite: (key: string) => void;
-  excludedTickers: Set<string>;
-  setExcludedTickers: (tickers: Set<string>) => void;
   formatFundingTime: (timeString: string | null | undefined) => string;
 }
 
@@ -55,10 +55,11 @@ export const ArbCard: React.FC<ArbCardProps> = ({
   isFavorite,
   getArbPairKey,
   toggleFavorite,
-  excludedTickers,
-  setExcludedTickers,
   formatFundingTime,
 }) => {
+  const dispatch = useAppDispatch();
+  const excludedTickers = useAppSelector((state) => state.cryptoArbsSettings.excludedTickers);
+  const excludedTickersSet = new Set(excludedTickers);
   return (
     <Card
       className={cn(
@@ -139,13 +140,7 @@ export const ArbCard: React.FC<ArbCardProps> = ({
                   className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer ml-1"
                   onClick={(e) => {
                     e.stopPropagation();
-                    const newExcluded = new Set(excludedTickers);
-                    newExcluded.add(arb.ticker);
-                    setExcludedTickers(newExcluded);
-                    localStorage.setItem(
-                      'crypto-arbs-excluded-tickers',
-                      JSON.stringify(Array.from(newExcluded)),
-                    );
+                    dispatch(addExcludedTicker(arb.ticker));
                   }}
                 />
               </TooltipTrigger>
