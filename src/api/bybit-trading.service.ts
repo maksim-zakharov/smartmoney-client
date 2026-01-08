@@ -36,9 +36,57 @@ export interface BybitPlaceOrderResponse {
  */
 export class BybitTradingService {
   private readonly backendUrl: string;
+  private serverTimeOffset: number | null = null;
 
   constructor(backendUrl: string = 'http://5.35.13.149') {
     this.backendUrl = backendUrl;
+  }
+
+  /**
+   * Получает время сервера Bybit и вычисляет разницу с локальным временем
+   */
+  private async getServerTimeOffset(): Promise<number> {
+    if (this.serverTimeOffset !== null) {
+      return this.serverTimeOffset;
+    }
+
+    try {
+      const url = 'https://api.bybit.com/v5/market/time';
+      const data = await this.proxyRequest({
+        method: 'GET',
+        url,
+      });
+
+      if (data.retCode !== 0) {
+        // eslint-disable-next-line no-console
+        console.warn('Не удалось получить время сервера Bybit:', data.retMsg);
+        return 0;
+      }
+
+      const serverTime = data.result?.timeSecond ? data.result.timeSecond * 1000 : Date.now();
+      const localTime = Date.now();
+      this.serverTimeOffset = serverTime - localTime;
+
+      // Кэшируем на 5 минут
+      setTimeout(() => {
+        this.serverTimeOffset = null;
+      }, 5 * 60 * 1000);
+
+      return this.serverTimeOffset;
+    } catch (error) {
+      // Если не удалось получить время сервера, возвращаем 0 (используем локальное время)
+      // eslint-disable-next-line no-console
+      console.warn('Не удалось получить время сервера Bybit, используем локальное время:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Получает скорректированный timestamp с учетом времени сервера
+   */
+  private async getAdjustedTimestamp(): Promise<number> {
+    const offset = await this.getServerTimeOffset();
+    return Date.now() + offset;
   }
 
   /**
@@ -133,8 +181,8 @@ export class BybitTradingService {
     };
 
     // Генерируем подпись
-    const timestamp = Date.now();
-    const recvWindow = 5000;
+    const timestamp = await this.getAdjustedTimestamp();
+    const recvWindow = 10000; // Увеличиваем recvWindow для компенсации задержек
     const signature = this.generateBybitSignature(apiKey, secretKey, timestamp, recvWindow, orderData);
 
     // Формируем заголовки
@@ -182,8 +230,8 @@ export class BybitTradingService {
     }
 
     // Генерируем подпись для GET запроса
-    const timestamp = Date.now();
-    const recvWindow = 5000;
+    const timestamp = await this.getAdjustedTimestamp();
+    const recvWindow = 10000; // Увеличиваем recvWindow для компенсации задержек
     // Для GET запроса подпись генерируется из query string
     const queryString = new URLSearchParams(requestParams).toString();
     const signStr = `${timestamp}${apiKey}${recvWindow}${queryString}`;

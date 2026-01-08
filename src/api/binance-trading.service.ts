@@ -51,9 +51,51 @@ export interface BinancePlaceOrderResponse {
  */
 export class BinanceTradingService {
   private readonly backendUrl: string;
+  private serverTimeOffset: number | null = null;
 
   constructor(backendUrl: string = 'http://5.35.13.149') {
     this.backendUrl = backendUrl;
+  }
+
+  /**
+   * Получает время сервера Binance и вычисляет разницу с локальным временем
+   */
+  private async getServerTimeOffset(): Promise<number> {
+    if (this.serverTimeOffset !== null) {
+      return this.serverTimeOffset;
+    }
+
+    try {
+      const url = 'https://fapi.binance.com/fapi/v1/time';
+      const data = await this.proxyRequest({
+        method: 'GET',
+        url,
+      });
+
+      const serverTime = data.serverTime || Date.now();
+      const localTime = Date.now();
+      this.serverTimeOffset = serverTime - localTime;
+
+      // Кэшируем на 5 минут
+      setTimeout(() => {
+        this.serverTimeOffset = null;
+      }, 5 * 60 * 1000);
+
+      return this.serverTimeOffset;
+    } catch (error) {
+      // Если не удалось получить время сервера, возвращаем 0 (используем локальное время)
+      // eslint-disable-next-line no-console
+      console.warn('Не удалось получить время сервера Binance, используем локальное время:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Получает скорректированный timestamp с учетом времени сервера
+   */
+  private async getAdjustedTimestamp(): Promise<number> {
+    const offset = await this.getServerTimeOffset();
+    return Date.now() + offset;
   }
 
   /**
@@ -140,8 +182,8 @@ export class BinanceTradingService {
     const quantity = Math.floor(usdAmount / lastPrice);
 
     // Формируем данные для запроса
-    const timestamp = Date.now();
-    const recvWindow = 5000;
+    const timestamp = await this.getAdjustedTimestamp();
+    const recvWindow = 10000; // Увеличиваем recvWindow для компенсации задержек
     
     const orderData: any = {
       symbol,
@@ -198,8 +240,8 @@ export class BinanceTradingService {
     const { apiKey, secretKey, symbol, side, price, quantity } = params;
 
     // Формируем данные для запроса
-    const timestamp = Date.now();
-    const recvWindow = 5000;
+    const timestamp = await this.getAdjustedTimestamp();
+    const recvWindow = 10000; // Увеличиваем recvWindow для компенсации задержек
     
     const orderData: any = {
       symbol,
@@ -258,8 +300,8 @@ export class BinanceTradingService {
     const { apiKey, secretKey, symbol } = params;
 
     // Формируем параметры запроса
-    const timestamp = Date.now();
-    const recvWindow = 5000;
+    const timestamp = await this.getAdjustedTimestamp();
+    const recvWindow = 10000; // Увеличиваем recvWindow для компенсации задержек
     
     const requestParams: any = {
       timestamp,
