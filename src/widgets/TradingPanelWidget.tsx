@@ -37,12 +37,7 @@ interface TradingPanelWidgetProps {
   onSetIsTrading: (value: boolean) => void;
 }
 
-export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
-  isTrading,
-  selectedEnriched,
-  tradingService,
-  onSetIsTrading,
-}) => {
+export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({ isTrading, selectedEnriched, tradingService, onSetIsTrading }) => {
   const [tradingVolume, setTradingVolume] = useState<string>('100');
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -66,10 +61,8 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
       const leftPrice = selectedEnriched.left.last;
       const rightPrice = selectedEnriched.right.last;
 
-      const buyExchange =
-        leftPrice < rightPrice ? selectedEnriched.left.exchange : selectedEnriched.right.exchange;
-      const sellExchange =
-        leftPrice < rightPrice ? selectedEnriched.right.exchange : selectedEnriched.left.exchange;
+      const buyExchange = leftPrice < rightPrice ? selectedEnriched.left.exchange : selectedEnriched.right.exchange;
+      const sellExchange = leftPrice < rightPrice ? selectedEnriched.right.exchange : selectedEnriched.left.exchange;
 
       const buySymbol = getTickerWithSuffix(buyExchange, selectedEnriched.ticker);
       const sellSymbol = getTickerWithSuffix(sellExchange, selectedEnriched.ticker);
@@ -115,8 +108,7 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
             };
           case 'MEXC':
             return {
-              authToken:
-                localStorage.getItem('mexcAuthToken') || localStorage.getItem('mexcUid'),
+              authToken: localStorage.getItem('mexcAuthToken') || localStorage.getItem('mexcUid'),
             };
           default:
             return {};
@@ -130,14 +122,11 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
       const sellExchangeUpper = sellExchange.toUpperCase();
 
       const needsAuthToken =
-        ['KCEX', 'OURBIT', 'MEXC'].includes(buyExchangeUpper) ||
-        ['KCEX', 'OURBIT', 'MEXC'].includes(sellExchangeUpper);
+        ['KCEX', 'OURBIT', 'MEXC'].includes(buyExchangeUpper) || ['KCEX', 'OURBIT', 'MEXC'].includes(sellExchangeUpper);
 
       if (needsAuthToken) {
         if (
-          (buyExchangeUpper === 'KCEX' ||
-            buyExchangeUpper === 'OURBIT' ||
-            buyExchangeUpper === 'MEXC') &&
+          (buyExchangeUpper === 'KCEX' || buyExchangeUpper === 'OURBIT' || buyExchangeUpper === 'MEXC') &&
           !('authToken' in buyKeys && buyKeys.authToken)
         ) {
           toast.error(`Auth Token не найден для биржи ${buyExchange}`);
@@ -145,9 +134,7 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
         }
 
         if (
-          (sellExchangeUpper === 'KCEX' ||
-            sellExchangeUpper === 'OURBIT' ||
-            sellExchangeUpper === 'MEXC') &&
+          (sellExchangeUpper === 'KCEX' || sellExchangeUpper === 'OURBIT' || sellExchangeUpper === 'MEXC') &&
           !('authToken' in sellKeys && sellKeys.authToken)
         ) {
           toast.error(`Auth Token не найден для биржи ${sellExchange}`);
@@ -158,10 +145,7 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
         if (!('apiKey' in buyKeys && buyKeys.apiKey) || !('secretKey' in buyKeys && buyKeys.secretKey)) {
           missingExchanges.push(buyExchange);
         }
-        if (
-          !('apiKey' in sellKeys && sellKeys.apiKey) ||
-          !('secretKey' in sellKeys && sellKeys.secretKey)
-        ) {
+        if (!('apiKey' in sellKeys && sellKeys.apiKey) || !('secretKey' in sellKeys && sellKeys.secretKey)) {
           if (!missingExchanges.includes(sellExchange)) {
             missingExchanges.push(sellExchange);
           }
@@ -198,11 +182,7 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
         sellAuthToken: (sellKeys as any).authToken,
       });
 
-      toast.success(
-        `Ордера размещены! Buy: ${result.buy?.orderId || 'N/A'}, Sell: ${
-          result.sell?.orderId || 'N/A'
-        }`,
-      );
+      toast.success(`Ордера размещены! Buy: ${result.buy?.orderId || 'N/A'}, Sell: ${result.sell?.orderId || 'N/A'}`);
     } catch (error: unknown) {
       // eslint-disable-next-line no-console
       console.error('Ошибка при размещении ордеров:', error);
@@ -214,7 +194,7 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
   };
 
   return (
-    <Table wrapperClassName="pt-1">
+    <Table>
       <TableHeader>
         <TableRow>
           <TableHead className="w-[200px] text-left" colSpan={1}>
@@ -253,5 +233,3 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
     </Table>
   );
 };
-
-

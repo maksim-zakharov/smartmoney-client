@@ -1115,8 +1115,8 @@ export const CryptoArbs = () => {
                 <Card
                   key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}`}
                   className={cn(
-                    'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full',
-                    a.isSelected ? 'ring-2 ring-primary shadow-lg border-primary' : 'border-muted-foreground/20',
+                    'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full rounded',
+                    a.isSelected ? 'ring-2 ring-primary shadow-lg border-primary' : '',
                   )}
                   onClick={() =>
                     handleArbSelect({
@@ -1202,7 +1202,7 @@ export const CryptoArbs = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mb-1.5">
-                      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <div className="flex flex-col gap-1.5 p-2 rounded bg-red-500/10 border border-red-500/20">
                         <div className="flex items-center gap-1.5 mb-1">
                           <ArrowDown className="h-3.5 w-3.5 text-red-400" />
                           <span className="text-xs font-medium text-red-400">Продаем</span>
@@ -1238,7 +1238,7 @@ export const CryptoArbs = () => {
                         <div className="text-xs text-muted-foreground">Время: {formatFundingTime(a.sellFundingTime)}</div>
                       </div>
 
-                      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="flex flex-col gap-1.5 p-2 rounded bg-green-500/10 border border-green-500/20">
                         <div className="flex items-center gap-1.5 mb-1">
                           <ArrowUp className="h-3.5 w-3.5 text-green-400" />
                           <span className="text-xs font-medium text-green-400">Покупаем</span>

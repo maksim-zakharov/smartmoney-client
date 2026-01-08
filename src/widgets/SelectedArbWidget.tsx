@@ -62,10 +62,7 @@ export const SelectedArbWidget: React.FC<SelectedArbWidgetProps> = ({
   return (
     <div className="mb-1">
         <div
-          className="bg-card rounded px-3 py-1.5 selected-arb-header"
-          style={{
-            border: '1px solid rgba(166, 189, 213, 0.2)',
-          }}
+          className="bg-card rounded px-3 py-1.5"
         >
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-lg font-bold">{selectedEnriched.ticker}</span>
