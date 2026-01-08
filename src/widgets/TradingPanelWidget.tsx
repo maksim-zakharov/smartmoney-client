@@ -214,7 +214,7 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
   };
 
   return (
-    <Card className="flex-shrink-0 border-muted-foreground/20 rounded-md">
+    <Card className="flex-shrink-0 border-muted-foreground/20 rounded">
       <CardHeader className="py-2 px-3">
         <CardTitle className="text-xs font-semibold">Торговля</CardTitle>
       </CardHeader>

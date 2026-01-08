@@ -558,12 +558,7 @@ export default function App() {
                         {localStorage.getItem('enableOrderbookTrading') === 'true' && (
                           <div className="flex gap-2 flex-col mb-3">
                             <Label htmlFor="proxyUrl">URL прокси</Label>
-                            <Input
-                              id="proxyUrl"
-                              value={proxyUrl || ''}
-                              onChange={handleEditProxyUrl}
-                              placeholder="http://5.35.13.149"
-                            />
+                            <Input id="proxyUrl" value={proxyUrl || ''} onChange={handleEditProxyUrl} placeholder="http://5.35.13.149" />
                           </div>
                         )}
                         <Accordion type="multiple" defaultValue={['telegram', 'alor']} className="w-full">
@@ -618,9 +613,7 @@ export default function App() {
                           <AccordionItem value="mexc">
                             <AccordionTrigger className="text-base">
                               <div className="flex items-center gap-2">
-                                {exchangeImgMap.MEXC && (
-                                  <img src={exchangeImgMap.MEXC} alt="MEXC" className="h-4 w-4 rounded-full" />
-                                )}
+                                {exchangeImgMap.MEXC && <img src={exchangeImgMap.MEXC} alt="MEXC" className="h-4 w-4 rounded-full" />}
                                 <span>Mexc</span>
                               </div>
                             </AccordionTrigger>
@@ -645,9 +638,7 @@ export default function App() {
                           <AccordionItem value="okx">
                             <AccordionTrigger className="text-base">
                               <div className="flex items-center gap-2">
-                                {exchangeImgMap.OKX && (
-                                  <img src={exchangeImgMap.OKX} alt="OKX" className="h-4 w-4 rounded-full" />
-                                )}
+                                {exchangeImgMap.OKX && <img src={exchangeImgMap.OKX} alt="OKX" className="h-4 w-4 rounded-full" />}
                                 <span>OKX</span>
                               </div>
                             </AccordionTrigger>
@@ -672,9 +663,7 @@ export default function App() {
                           <AccordionItem value="bitget">
                             <AccordionTrigger className="text-base">
                               <div className="flex items-center gap-2">
-                                {exchangeImgMap.BITGET && (
-                                  <img src={exchangeImgMap.BITGET} alt="Bitget" className="h-4 w-4 rounded-full" />
-                                )}
+                                {exchangeImgMap.BITGET && <img src={exchangeImgMap.BITGET} alt="Bitget" className="h-4 w-4 rounded-full" />}
                                 <span>Bitget</span>
                               </div>
                             </AccordionTrigger>
@@ -726,9 +715,7 @@ export default function App() {
                           <AccordionItem value="bybit">
                             <AccordionTrigger className="text-base">
                               <div className="flex items-center gap-2">
-                                {exchangeImgMap.BYBIT && (
-                                  <img src={exchangeImgMap.BYBIT} alt="Bybit" className="h-4 w-4 rounded-full" />
-                                )}
+                                {exchangeImgMap.BYBIT && <img src={exchangeImgMap.BYBIT} alt="Bybit" className="h-4 w-4 rounded-full" />}
                                 <span>Bybit</span>
                               </div>
                             </AccordionTrigger>
@@ -772,9 +759,7 @@ export default function App() {
                           <AccordionItem value="bingx">
                             <AccordionTrigger className="text-base">
                               <div className="flex items-center gap-2">
-                                {exchangeImgMap.BINGX && (
-                                  <img src={exchangeImgMap.BINGX} alt="Bingx" className="h-4 w-4 rounded-full" />
-                                )}
+                                {exchangeImgMap.BINGX && <img src={exchangeImgMap.BINGX} alt="Bingx" className="h-4 w-4 rounded-full" />}
                                 <span>Bingx</span>
                               </div>
                             </AccordionTrigger>
@@ -795,9 +780,7 @@ export default function App() {
                           <AccordionItem value="gate">
                             <AccordionTrigger className="text-base">
                               <div className="flex items-center gap-2">
-                                {exchangeImgMap.GATEIO && (
-                                  <img src={exchangeImgMap.GATEIO} alt="Gate" className="h-4 w-4 rounded-full" />
-                                )}
+                                {exchangeImgMap.GATEIO && <img src={exchangeImgMap.GATEIO} alt="Gate" className="h-4 w-4 rounded-full" />}
                                 <span>Gate</span>
                               </div>
                             </AccordionTrigger>
@@ -818,9 +801,7 @@ export default function App() {
                           <AccordionItem value="kcex">
                             <AccordionTrigger className="text-base">
                               <div className="flex items-center gap-2">
-                                {exchangeImgMap.KCEX && (
-                                  <img src={exchangeImgMap.KCEX} alt="KCEX" className="h-4 w-4 rounded-full" />
-                                )}
+                                {exchangeImgMap.KCEX && <img src={exchangeImgMap.KCEX} alt="KCEX" className="h-4 w-4 rounded-full" />}
                                 <span>KCEX</span>
                               </div>
                             </AccordionTrigger>
@@ -837,9 +818,7 @@ export default function App() {
                           <AccordionItem value="ourbit">
                             <AccordionTrigger className="text-base">
                               <div className="flex items-center gap-2">
-                                {exchangeImgMap.OURBIT && (
-                                  <img src={exchangeImgMap.OURBIT} alt="Ourbit" className="h-4 w-4 rounded-full" />
-                                )}
+                                {exchangeImgMap.OURBIT && <img src={exchangeImgMap.OURBIT} alt="Ourbit" className="h-4 w-4 rounded-full" />}
                                 <span>Ourbit</span>
                               </div>
                             </AccordionTrigger>
@@ -946,7 +925,7 @@ export default function App() {
               </Dialog>
             </div>
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4">
+          <div className="flex flex-1 flex-col gap-1 p-1">
             <Routes>
               {menuItems.map((item) => (
                 <Route path={item.key} element={item.element} />

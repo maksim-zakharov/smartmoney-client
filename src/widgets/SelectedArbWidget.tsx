@@ -60,9 +60,9 @@ export const SelectedArbWidget: React.FC<SelectedArbWidgetProps> = ({
   getTradingViewSpreadUrl,
 }) => {
   return (
-    <div className="mb-2">
+    <div className="mb-1">
         <div
-          className="bg-card rounded-lg px-3 py-1.5 selected-arb-header"
+          className="bg-card rounded px-3 py-1.5 selected-arb-header"
           style={{
             border: '1px solid rgba(166, 189, 213, 0.2)',
           }}

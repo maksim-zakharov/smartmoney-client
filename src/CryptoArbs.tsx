@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle } from './components/ui/card.tsx';
 import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
-import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, Settings, BarChart3, EyeOff } from 'lucide-react';
+import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, Settings, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
 import { Button } from './components/ui/button.tsx';
@@ -30,7 +30,21 @@ interface ArbPair {
 }
 
 // Биржи с поддержкой графиков справедливой цены
-const EXCHANGES_WITH_FAIR_PRICE = ['MEXC', 'OURBIT', 'KCEX', 'BITUNIX', 'BITMART', 'ASTER', 'BINANCE', 'GATEIO', 'BINGX', 'BITGET', 'BYBIT', 'HOTCOIN', 'COINEX'];
+const EXCHANGES_WITH_FAIR_PRICE = [
+  'MEXC',
+  'OURBIT',
+  'KCEX',
+  'BITUNIX',
+  'BITMART',
+  'ASTER',
+  'BINANCE',
+  'GATEIO',
+  'BINGX',
+  'BITGET',
+  'BYBIT',
+  'HOTCOIN',
+  'COINEX',
+];
 
 // Функция для генерации URL TradingView для спреда
 const getTradingViewSpreadUrl = (sellExchange: string, buyExchange: string, ticker: string): string => {
@@ -126,11 +140,11 @@ export const CryptoArbs = () => {
     const checkFlag = () => {
       setShowTradingPanel(localStorage.getItem('enableOrderbookTrading') === 'true');
     };
-    
+
     checkFlag();
     // Проверяем каждую секунду (можно оптимизировать через события storage)
     const interval = setInterval(checkFlag, 1000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -494,15 +508,10 @@ export const CryptoArbs = () => {
         // Создаем минимальный объект сразу для отображения графика и стакана
         setSelectedArb((current) => {
           // Проверяем, не совпадает ли уже выбранная пара
-          if (
-            current &&
-            current.ticker === ticker &&
-            current.left.exchange === leftExchange &&
-            current.right.exchange === rightExchange
-          ) {
+          if (current && current.ticker === ticker && current.left.exchange === leftExchange && current.right.exchange === rightExchange) {
             return current; // Не меняем, если уже выбрана та же пара
           }
-          
+
           // Создаем минимальный объект ArbPair для отображения графика и стакана
           return {
             ticker,
@@ -524,14 +533,10 @@ export const CryptoArbs = () => {
 
         // Создаем минимальный объект для отображения графика
         setSelectedFairArb((current) => {
-          if (
-            current &&
-            current.ticker === ticker &&
-            current.exchange === exchange
-          ) {
+          if (current && current.ticker === ticker && current.exchange === exchange) {
             return current;
           }
-          
+
           return {
             ticker,
             exchange,
@@ -548,9 +553,12 @@ export const CryptoArbs = () => {
   useEffect(() => {
     if (selectedArb && filteredArbs.length > 0) {
       const foundArb = filteredArbs.find(
-        (a) => a.ticker === selectedArb.ticker && a.left.exchange === selectedArb.left.exchange && a.right.exchange === selectedArb.right.exchange,
+        (a) =>
+          a.ticker === selectedArb.ticker &&
+          a.left.exchange === selectedArb.left.exchange &&
+          a.right.exchange === selectedArb.right.exchange,
       );
-      
+
       if (foundArb) {
         setSelectedArb((current) => {
           if (
@@ -605,37 +613,35 @@ export const CryptoArbs = () => {
 
   // Обогащаем данные арбитражей для отображения
   const enrichedArbs = useMemo(() => {
-    return filteredArbs
-      .slice(0, 50)
-      .map((a) => {
-        const spread = (a.ratio - 1) * 100;
-        // Общий фандинг пары в процентах
-        const funding = sumFunding(a) * 100;
-        // Определяем sellExchange (где цена выше - продаем) и buyExchange (где цена ниже - покупаем)
-        // Если цены равны, используем исходный порядок left/right
-        const sellExchange = a.right.last > a.left.last ? a.right : a.left;
-        const buyExchange = a.right.last < a.left.last ? a.right : a.left;
-        const sellFundingData = fundingMap[`${a.ticker}_${sellExchange.exchange}`];
-        const buyFundingData = fundingMap[`${a.ticker}_${buyExchange.exchange}`];
-        const isSelected =
-          selectedArb?.ticker === a.ticker &&
-          selectedArb?.left.exchange === a.left.exchange &&
-          selectedArb?.right.exchange === a.right.exchange;
+    return filteredArbs.slice(0, 50).map((a) => {
+      const spread = (a.ratio - 1) * 100;
+      // Общий фандинг пары в процентах
+      const funding = sumFunding(a) * 100;
+      // Определяем sellExchange (где цена выше - продаем) и buyExchange (где цена ниже - покупаем)
+      // Если цены равны, используем исходный порядок left/right
+      const sellExchange = a.right.last > a.left.last ? a.right : a.left;
+      const buyExchange = a.right.last < a.left.last ? a.right : a.left;
+      const sellFundingData = fundingMap[`${a.ticker}_${sellExchange.exchange}`];
+      const buyFundingData = fundingMap[`${a.ticker}_${buyExchange.exchange}`];
+      const isSelected =
+        selectedArb?.ticker === a.ticker &&
+        selectedArb?.left.exchange === a.left.exchange &&
+        selectedArb?.right.exchange === a.right.exchange;
 
-        return {
-          ...a,
-          spread,
-          funding,
-          sellExchange,
-          buyExchange,
-          // Фандинг по каждой бирже так же приводим к процентам, как на биржах
-          sellFunding: sellFundingData ? sellFundingData.rate * 100 : undefined,
-          sellFundingTime: sellFundingData?.nextFundingTime,
-          buyFunding: buyFundingData ? buyFundingData.rate * 100 : undefined,
-          buyFundingTime: buyFundingData?.nextFundingTime,
-          isSelected,
-        };
-      });
+      return {
+        ...a,
+        spread,
+        funding,
+        sellExchange,
+        buyExchange,
+        // Фандинг по каждой бирже так же приводим к процентам, как на биржах
+        sellFunding: sellFundingData ? sellFundingData.rate * 100 : undefined,
+        sellFundingTime: sellFundingData?.nextFundingTime,
+        buyFunding: buyFundingData ? buyFundingData.rate * 100 : undefined,
+        buyFundingTime: buyFundingData?.nextFundingTime,
+        isSelected,
+      };
+    });
   }, [filteredArbs, fundingMap, selectedArb]);
 
   // Получаем fairRatios из данных
@@ -677,7 +683,7 @@ export const CryptoArbs = () => {
   useEffect(() => {
     if (selectedFairArb && fairRatios.length > 0) {
       const foundFair = fairRatios.find((f) => f.ticker === selectedFairArb.ticker && f.exchange === selectedFairArb.exchange);
-      
+
       if (foundFair) {
         setSelectedFairArb((current) => {
           if (!current || current.ticker !== foundFair.ticker || current.exchange !== foundFair.exchange) {
@@ -708,14 +714,14 @@ export const CryptoArbs = () => {
     if (!selectedFairArb) return { tickerStock: '', _tickerFuture: '' };
 
     const exchange = selectedFairArb.exchange;
-    
+
     // Проверяем, что биржа поддерживает fair price
     if (!EXCHANGES_WITH_FAIR_PRICE.includes(exchange.toUpperCase())) {
       return { tickerStock: '', _tickerFuture: '' };
     }
 
     const tickerWithSuffix = getTickerWithSuffix(exchange, selectedFairArb.ticker);
-    
+
     // Для fair арбитража: lastPrice / fairPrice на одной бирже
     const lastPriceTicker = `${exchange}:${tickerWithSuffix}`;
     const fairPriceTicker = `${exchange}:${tickerWithSuffix}_fair`;
@@ -748,7 +754,7 @@ export const CryptoArbs = () => {
     // left всегда будет sellExchange, right всегда будет buyExchange при равных ценах
     const sellExchange = selectedArb.right.last > selectedArb.left.last ? selectedArb.right : selectedArb.left;
     const buyExchange = selectedArb.right.last < selectedArb.left.last ? selectedArb.right : selectedArb.left;
-    
+
     // Отладка: проверяем, что sellExchange и buyExchange разные
     if (sellExchange.exchange === buyExchange.exchange) {
       console.warn('sellExchange и buyExchange одинаковые:', {
@@ -759,7 +765,7 @@ export const CryptoArbs = () => {
         buyExchange: buyExchange.exchange,
       });
     }
-    
+
     const sellFundingData = fundingMap[`${selectedArb.ticker}_${sellExchange.exchange}`];
     const buyFundingData = fundingMap[`${selectedArb.ticker}_${buyExchange.exchange}`];
 
@@ -778,9 +784,9 @@ export const CryptoArbs = () => {
   }, [selectedArb, enrichedArbs, fundingMap]);
 
   return (
-    <div className="flex gap-2 h-[calc(100vh-76px)]">
+    <div className="flex gap-1 h-[calc(100vh-52px)]">
       <div className="w-[320px] flex-shrink-0 flex flex-col overflow-hidden">
-        <div className="mb-4 flex flex-col gap-2">
+        <div className="mb-2 flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
               <DialogTrigger asChild>
@@ -788,230 +794,230 @@ export const CryptoArbs = () => {
                   <Settings className="h-3.5 w-3.5" />
                 </Button>
               </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Настройки</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 px-3 pb-3">
-                <div>
-                  <h3 className="text-sm font-semibold mb-3">Основные</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="text-xs font-medium text-muted-foreground mb-2">Биржи</h4>
-                      <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
-                    <Button
-                      variant={showAll ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => {
-                        setShowAll(true);
-                        // При выборе "Все" очищаем выбор конкретных бирж
-                        setEnabledExchanges(new Set());
-                      }}
-                      className="h-7 px-2 text-xs"
-                    >
-                      Все
-                    </Button>
-                    {allExchanges.map((exchange) => (
-                      <Button
-                        key={exchange}
-                        variant={!showAll && enabledExchanges.has(exchange) ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                          // При клике на конкретную биржу отключаем режим "Все"
-                          setShowAll(false);
-                          setEnabledExchanges((prev) => {
-                            const updated = new Set(prev);
-                            if (updated.has(exchange)) {
-                              updated.delete(exchange);
-                              // Если все биржи сняты, включаем режим "Все"
-                              if (updated.size === 0) {
-                                setShowAll(true);
-                              }
-                            } else {
-                              updated.add(exchange);
-                            }
-                            return updated;
-                          });
-                        }}
-                        className="h-7 px-2 text-xs flex items-center gap-1.5"
-                      >
-                        {exchangeImgMap[exchange] && (
-                          <img src={exchangeImgMap[exchange]} alt={exchange} className="h-3.5 w-3.5 rounded-full" />
-                        )}
-                        {exchange}
-                      </Button>
-                    ))}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-medium text-muted-foreground mb-2">Исключенные монеты</h4>
-                      <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
-                        {excludedTickers.size === 0 ? (
-                          <p className="text-sm text-muted-foreground">Нет исключенных монет</p>
-                        ) : (
-                          Array.from(excludedTickers).map((ticker) => (
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Настройки</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 px-3 pb-3">
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3">Основные</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Биржи</h4>
+                        <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
+                          <Button
+                            variant={showAll ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                              setShowAll(true);
+                              // При выборе "Все" очищаем выбор конкретных бирж
+                              setEnabledExchanges(new Set());
+                            }}
+                            className="h-7 px-2 text-xs"
+                          >
+                            Все
+                          </Button>
+                          {allExchanges.map((exchange) => (
                             <Button
-                              key={ticker}
-                              variant="default"
+                              key={exchange}
+                              variant={!showAll && enabledExchanges.has(exchange) ? 'default' : 'outline'}
                               size="sm"
-                              className="h-7 px-2 text-xs flex items-center gap-1.5 relative"
                               onClick={() => {
-                                const newExcluded = new Set(excludedTickers);
-                                newExcluded.delete(ticker);
-                                setExcludedTickers(newExcluded);
-                                localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
+                                // При клике на конкретную биржу отключаем режим "Все"
+                                setShowAll(false);
+                                setEnabledExchanges((prev) => {
+                                  const updated = new Set(prev);
+                                  if (updated.has(exchange)) {
+                                    updated.delete(exchange);
+                                    // Если все биржи сняты, включаем режим "Все"
+                                    if (updated.size === 0) {
+                                      setShowAll(true);
+                                    }
+                                  } else {
+                                    updated.add(exchange);
+                                  }
+                                  return updated;
+                                });
                               }}
+                              className="h-7 px-2 text-xs flex items-center gap-1.5"
                             >
-                              <span>{ticker}</span>
-                              <span className="text-xs ml-1">×</span>
+                              {exchangeImgMap[exchange] && (
+                                <img src={exchangeImgMap[exchange]} alt={exchange} className="h-3.5 w-3.5 rounded-full" />
+                              )}
+                              {exchange}
                             </Button>
-                          ))
-                        )}
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Исключенные монеты</h4>
+                        <div className="flex flex-wrap gap-1.5 max-h-[400px] overflow-y-auto">
+                          {excludedTickers.size === 0 ? (
+                            <p className="text-sm text-muted-foreground">Нет исключенных монет</p>
+                          ) : (
+                            Array.from(excludedTickers).map((ticker) => (
+                              <Button
+                                key={ticker}
+                                variant="default"
+                                size="sm"
+                                className="h-7 px-2 text-xs flex items-center gap-1.5 relative"
+                                onClick={() => {
+                                  const newExcluded = new Set(excludedTickers);
+                                  newExcluded.delete(ticker);
+                                  setExcludedTickers(newExcluded);
+                                  localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
+                                }}
+                              >
+                                <span>{ticker}</span>
+                                <span className="text-xs ml-1">×</span>
+                              </Button>
+                            ))
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="border-t border-muted-foreground/20 pt-4">
-                  <h3 className="text-sm font-semibold mb-3">Арбитражи</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="text-xs font-medium text-muted-foreground mb-2">Минимальный спред (%)</h4>
-                      <Input
-                      id="min-spread"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={minSpread}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        if (!isNaN(value) && value >= 0) {
-                          setMinSpread(value);
-                        }
-                      }}
-                        className="h-8"
-                      />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-medium text-muted-foreground mb-2">Фандинг</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label htmlFor="min-funding" className="text-xs text-muted-foreground mb-1 block">
-                            От (%)
-                          </Label>
-                          <Input
-                        id="min-funding"
-                        type="number"
-                        step="0.1"
-                        value={minFunding === -Infinity ? '' : minFunding}
-                        onChange={(e) => {
-                          const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
-                          if (e.target.value === '' || !isNaN(value)) {
-                            setMinFunding(value);
-                          }
-                        }}
-                        className="h-8"
-                            placeholder="Без ограничения"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="max-funding" className="text-xs text-muted-foreground mb-1 block">
-                            До (%)
-                          </Label>
-                          <Input
-                        id="max-funding"
-                        type="number"
-                        step="0.1"
-                        value={maxFunding === Infinity ? '' : maxFunding}
-                        onChange={(e) => {
-                          const value = e.target.value === '' ? Infinity : parseFloat(e.target.value);
-                          if (e.target.value === '' || !isNaN(value)) {
-                            setMaxFunding(value);
-                          }
-                        }}
-                        className="h-8"
-                            placeholder="Без ограничения"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-medium text-muted-foreground mb-2">Фандинг в одно время</h4>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="same-funding-time"
-                          checked={sameFundingTime}
-                          onCheckedChange={(checked) => setSameFundingTime(checked === true)}
+
+                  <div className="border-t border-muted-foreground/20 pt-4">
+                    <h3 className="text-sm font-semibold mb-3">Арбитражи</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Минимальный спред (%)</h4>
+                        <Input
+                          id="min-spread"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={minSpread}
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value) && value >= 0) {
+                              setMinSpread(value);
+                            }
+                          }}
+                          className="h-8"
                         />
-                        <Label htmlFor="same-funding-time" className="text-xs text-muted-foreground cursor-pointer">
-                          Включить
-                        </Label>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Фандинг</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label htmlFor="min-funding" className="text-xs text-muted-foreground mb-1 block">
+                              От (%)
+                            </Label>
+                            <Input
+                              id="min-funding"
+                              type="number"
+                              step="0.1"
+                              value={minFunding === -Infinity ? '' : minFunding}
+                              onChange={(e) => {
+                                const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
+                                if (e.target.value === '' || !isNaN(value)) {
+                                  setMinFunding(value);
+                                }
+                              }}
+                              className="h-8"
+                              placeholder="Без ограничения"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="max-funding" className="text-xs text-muted-foreground mb-1 block">
+                              До (%)
+                            </Label>
+                            <Input
+                              id="max-funding"
+                              type="number"
+                              step="0.1"
+                              value={maxFunding === Infinity ? '' : maxFunding}
+                              onChange={(e) => {
+                                const value = e.target.value === '' ? Infinity : parseFloat(e.target.value);
+                                if (e.target.value === '' || !isNaN(value)) {
+                                  setMaxFunding(value);
+                                }
+                              }}
+                              className="h-8"
+                              placeholder="Без ограничения"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Фандинг в одно время</h4>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="same-funding-time"
+                            checked={sameFundingTime}
+                            onCheckedChange={(checked) => setSameFundingTime(checked === true)}
+                          />
+                          <Label htmlFor="same-funding-time" className="text-xs text-muted-foreground cursor-pointer">
+                            Включить
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-muted-foreground/20 pt-4">
+                    <h3 className="text-sm font-semibold mb-3">Справедливая</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-2">Отклонение</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label htmlFor="min-fair-ratio" className="text-xs text-muted-foreground mb-1 block">
+                              От (%)
+                            </Label>
+                            <Input
+                              id="min-fair-ratio"
+                              type="number"
+                              step="0.1"
+                              value={minFairRatio === -Infinity ? '' : minFairRatio}
+                              onChange={(e) => {
+                                const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
+                                if (e.target.value === '' || !isNaN(value)) {
+                                  setMinFairRatio(value);
+                                }
+                              }}
+                              className="h-8"
+                              placeholder="Без ограничения"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="max-fair-ratio" className="text-xs text-muted-foreground mb-1 block">
+                              До (%)
+                            </Label>
+                            <Input
+                              id="max-fair-ratio"
+                              type="number"
+                              step="0.1"
+                              value={maxFairRatio === Infinity ? '' : maxFairRatio}
+                              onChange={(e) => {
+                                const value = e.target.value === '' ? Infinity : parseFloat(e.target.value);
+                                if (e.target.value === '' || !isNaN(value)) {
+                                  setMaxFairRatio(value);
+                                }
+                              }}
+                              className="h-8"
+                              placeholder="Без ограничения"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                
-                <div className="border-t border-muted-foreground/20 pt-4">
-                  <h3 className="text-sm font-semibold mb-3">Справедливая</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="text-xs font-medium text-muted-foreground mb-2">Отклонение</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label htmlFor="min-fair-ratio" className="text-xs text-muted-foreground mb-1 block">
-                            От (%)
-                          </Label>
-                          <Input
-                        id="min-fair-ratio"
-                        type="number"
-                        step="0.1"
-                        value={minFairRatio === -Infinity ? '' : minFairRatio}
-                        onChange={(e) => {
-                          const value = e.target.value === '' ? -Infinity : parseFloat(e.target.value);
-                          if (e.target.value === '' || !isNaN(value)) {
-                            setMinFairRatio(value);
-                          }
-                        }}
-                        className="h-8"
-                            placeholder="Без ограничения"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="max-fair-ratio" className="text-xs text-muted-foreground mb-1 block">
-                            До (%)
-                          </Label>
-                          <Input
-                        id="max-fair-ratio"
-                        type="number"
-                        step="0.1"
-                        value={maxFairRatio === Infinity ? '' : maxFairRatio}
-                        onChange={(e) => {
-                          const value = e.target.value === '' ? Infinity : parseFloat(e.target.value);
-                          if (e.target.value === '' || !isNaN(value)) {
-                            setMaxFairRatio(value);
-                          }
-                        }}
-                        className="h-8"
-                            placeholder="Без ограничения"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'futures' | 'fair')} className="flex-1">
-            <TabsList className="w-full">
-              <TabsTrigger value="futures" className="flex-1">
-                Арбитраж
-              </TabsTrigger>
-              <TabsTrigger value="fair" className="flex-1">
-                Справедливая цена
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+              </DialogContent>
+            </Dialog>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'futures' | 'fair')} className="flex-1">
+              <TabsList className="w-full">
+                <TabsTrigger value="futures" className="flex-1">
+                  Арбитраж
+                </TabsTrigger>
+                <TabsTrigger value="fair" className="flex-1">
+                  Справедливая цена
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           {activeTab === 'futures' && (
             <Tabs value={sortType} onValueChange={handleSortChange} className="w-full">
@@ -1026,7 +1032,7 @@ export const CryptoArbs = () => {
             </Tabs>
           )}
         </div>
-        <div className="flex-1 overflow-y-auto px-1 pt-1 space-y-2">
+        <div className="flex-1 overflow-y-auto space-y-1">
           {activeTab === 'futures' ? (
             enrichedArbs.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -1036,233 +1042,93 @@ export const CryptoArbs = () => {
               </div>
             ) : (
               enrichedArbs.map((a) => (
-              <Card
-                key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}`}
-                className={cn(
-                  'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full',
-                  a.isSelected ? 'ring-2 ring-primary shadow-lg border-primary' : 'border-muted-foreground/20',
-                )}
-                onClick={() =>
-                  handleArbSelect({
-                    ticker: a.ticker,
-                    left: a.left,
-                    right: a.right,
-                    ratio: a.ratio,
-                  })
-                }
-              >
-                <CardHeader className="pb-2 pt-2 px-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-xl font-bold tabular-nums">{a.ticker}</CardTitle>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Copy
-                            className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard
-                                .writeText(a.ticker)
-                                .then(() => {
-                                  toast.success(`Тикер ${a.ticker} скопирован`);
-                                })
-                                .catch(() => {
-                                  toast.error('Не удалось скопировать тикер');
-                                });
-                            }}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Копировать</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {a.funding >= 0 ? (
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4 text-red-500" />
-                      )}
-                      <span className={cn('text-sm font-semibold tabular-nums', a.funding >= 0 ? 'text-green-500' : 'text-red-500')}>
-                        {a.funding.toFixed(4)}%
-                      </span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <EyeOff
-                            className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer ml-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const newExcluded = new Set(excludedTickers);
-                              newExcluded.add(a.ticker);
-                              setExcludedTickers(newExcluded);
-                              localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
-                            }}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Скрыть монету</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mb-1.5">
-                    <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <ArrowDown className="h-3.5 w-3.5 text-red-400" />
-                        <span className="text-xs font-medium text-red-400">Продаем</span>
-                      </div>
+                <Card
+                  key={`${a.ticker}_${a.left.exchange}_${a.right.exchange}`}
+                  className={cn(
+                    'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full',
+                    a.isSelected ? 'ring-2 ring-primary shadow-lg border-primary' : 'border-muted-foreground/20',
+                  )}
+                  onClick={() =>
+                    handleArbSelect({
+                      ticker: a.ticker,
+                      left: a.left,
+                      right: a.right,
+                      ratio: a.ratio,
+                    })
+                  }
+                >
+                  <CardHeader className="pb-2 pt-2 px-3">
+                    <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <img className="h-4 w-4 rounded-full" src={exchangeImgMap[a.sellExchange.exchange]} alt={a.sellExchange.exchange} />
-                        <span className="text-xs font-semibold text-muted-foreground">{a.sellExchange.exchange}</span>
+                        <CardTitle className="text-xl font-bold tabular-nums">{a.ticker}</CardTitle>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <a
-                              href={getExchangeUrl(a.sellExchange.exchange, a.ticker)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-muted-foreground hover:text-primary transition-colors"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
+                            <Copy
+                              className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard
+                                  .writeText(a.ticker)
+                                  .then(() => {
+                                    toast.success(`Тикер ${a.ticker} скопирован`);
+                                  })
+                                  .catch(() => {
+                                    toast.error('Не удалось скопировать тикер');
+                                  });
+                              }}
+                            />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Перейти на {a.sellExchange.exchange}</p>
+                            <p>Копировать</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
-                      <div className="text-base font-bold tabular-nums">{a.sellExchange.last.toFixed(6)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Фандинг: <span className="font-mono">{a.sellFunding !== undefined ? `${a.sellFunding.toFixed(4)}%` : 'N/A'}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">Время: {formatFundingTime(a.sellFundingTime)}</div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <ArrowUp className="h-3.5 w-3.5 text-green-400" />
-                        <span className="text-xs font-medium text-green-400">Покупаем</span>
-                      </div>
                       <div className="flex items-center gap-2">
-                        <img className="h-4 w-4 rounded-full" src={exchangeImgMap[a.buyExchange.exchange]} alt={a.buyExchange.exchange} />
-                        <span className="text-xs font-semibold text-muted-foreground">{a.buyExchange.exchange}</span>
+                        {a.funding >= 0 ? (
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <TrendingDown className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className={cn('text-sm font-semibold tabular-nums', a.funding >= 0 ? 'text-green-500' : 'text-red-500')}>
+                          {a.funding.toFixed(4)}%
+                        </span>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <a
-                              href={getExchangeUrl(a.buyExchange.exchange, a.ticker)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-muted-foreground hover:text-primary transition-colors"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
+                            <EyeOff
+                              className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer ml-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newExcluded = new Set(excludedTickers);
+                                newExcluded.add(a.ticker);
+                                setExcludedTickers(newExcluded);
+                                localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
+                              }}
+                            />
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Перейти на {a.buyExchange.exchange}</p>
+                            <p>Скрыть монету</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
-                      <div className="text-base font-bold tabular-nums">{a.buyExchange.last.toFixed(6)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Фандинг: <span className="font-mono">{a.buyFunding !== undefined ? `${a.buyFunding.toFixed(4)}%` : 'N/A'}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">Время: {formatFundingTime(a.buyFundingTime)}</div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-1.5 border-t border-muted-foreground/20">
-                    <span className="text-sm font-semibold">Спред</span>
-                    <span className={cn('text-sm font-bold tabular-nums', a.spread > 0 ? 'text-green-500' : 'text-red-500')}>
-                      {a.spread > 0 ? '+' : ''}
-                      {a.spread.toFixed(2)}%
-                    </span>
-                  </div>
-                </CardHeader>
-              </Card>
-              ))
-            )
-          ) : (
-            fairRatios.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                <div className="text-center">
-                  <p className="text-sm">Арбитражные возможности справедливой цены не найдены</p>
-                </div>
-              </div>
-            ) : (
-              fairRatios.map((r) => {
-                const spread = (r.ratio - 1) * 100;
-                const isSelected = selectedFairArb?.ticker === r.ticker && selectedFairArb?.exchange === r.exchange;
-                
-                return (
-                  <Card
-                    key={`${r.ticker}_${r.exchange}_fair`}
-                    className={cn(
-                      'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full',
-                      isSelected ? 'ring-2 ring-primary shadow-lg border-primary' : 'border-muted-foreground/20',
-                    )}
-                    onClick={() => handleFairArbSelect(r)}
-                  >
-                    <CardHeader className="pb-2 pt-2 px-3">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-xl font-bold tabular-nums">{r.ticker}</CardTitle>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Copy
-                                className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard
-                                    .writeText(r.ticker)
-                                    .then(() => {
-                                      toast.success(`Тикер ${r.ticker} скопирован`);
-                                    })
-                                    .catch(() => {
-                                      toast.error('Не удалось скопировать тикер');
-                                    });
-                                }}
-                              />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Копировать</p>
-                            </TooltipContent>
-                          </Tooltip>
+                    <div className="grid grid-cols-2 gap-2 mb-1.5">
+                      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <ArrowDown className="h-3.5 w-3.5 text-red-400" />
+                          <span className="text-xs font-medium text-red-400">Продаем</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={cn('text-sm font-semibold tabular-nums', spread > 0 ? 'text-green-500' : 'text-red-500')}>
-                            {spread > 0 ? '+' : ''}
-                            {spread.toFixed(4)}%
-                          </span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <EyeOff
-                                className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer ml-1"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newExcluded = new Set(excludedTickers);
-                                  newExcluded.add(r.ticker);
-                                  setExcludedTickers(newExcluded);
-                                  localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
-                                }}
-                              />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Скрыть монету</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                        <div className="flex items-center gap-2">
-                          <img className="h-4 w-4 rounded-full" src={exchangeImgMap[r.exchange]} alt={r.exchange} />
-                          <span className="text-xs font-semibold text-muted-foreground">{r.exchange}</span>
+                          <img
+                            className="h-4 w-4 rounded-full"
+                            src={exchangeImgMap[a.sellExchange.exchange]}
+                            alt={a.sellExchange.exchange}
+                          />
+                          <span className="text-xs font-semibold text-muted-foreground">{a.sellExchange.exchange}</span>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <a
-                                href={getExchangeUrl(r.exchange, r.ticker)}
+                                href={getExchangeUrl(a.sellExchange.exchange, a.ticker)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
@@ -1272,33 +1138,175 @@ export const CryptoArbs = () => {
                               </a>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Перейти на {r.exchange}</p>
+                              <p>Перейти на {a.sellExchange.exchange}</p>
                             </TooltipContent>
                           </Tooltip>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">Последняя цена</div>
-                            <div className="text-base font-bold tabular-nums">{r.last.toFixed(6)}</div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-muted-foreground mb-1">Справедливая цена</div>
-                            <div className="text-base font-bold tabular-nums">{r.fair.toFixed(6)}</div>
-                          </div>
+                        <div className="text-base font-bold tabular-nums">{a.sellExchange.last.toFixed(6)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Фандинг: <span className="font-mono">{a.sellFunding !== undefined ? `${a.sellFunding.toFixed(4)}%` : 'N/A'}</span>
                         </div>
-                        <div className="flex items-center justify-between pt-1.5 border-t border-muted-foreground/20">
-                          <span className="text-sm font-semibold">Отклонение</span>
-                          <span className={cn('text-sm font-bold tabular-nums', spread > 0 ? 'text-green-500' : 'text-red-500')}>
-                            {spread > 0 ? '+' : ''}
-                            {spread.toFixed(4)}%
-                          </span>
+                        <div className="text-xs text-muted-foreground">Время: {formatFundingTime(a.sellFundingTime)}</div>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <ArrowUp className="h-3.5 w-3.5 text-green-400" />
+                          <span className="text-xs font-medium text-green-400">Покупаем</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <img className="h-4 w-4 rounded-full" src={exchangeImgMap[a.buyExchange.exchange]} alt={a.buyExchange.exchange} />
+                          <span className="text-xs font-semibold text-muted-foreground">{a.buyExchange.exchange}</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <a
+                                href={getExchangeUrl(a.buyExchange.exchange, a.ticker)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Перейти на {a.buyExchange.exchange}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <div className="text-base font-bold tabular-nums">{a.buyExchange.last.toFixed(6)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Фандинг: <span className="font-mono">{a.buyFunding !== undefined ? `${a.buyFunding.toFixed(4)}%` : 'N/A'}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">Время: {formatFundingTime(a.buyFundingTime)}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1.5 border-t border-muted-foreground/20">
+                      <span className="text-sm font-semibold">Спред</span>
+                      <span className={cn('text-sm font-bold tabular-nums', a.spread > 0 ? 'text-green-500' : 'text-red-500')}>
+                        {a.spread > 0 ? '+' : ''}
+                        {a.spread.toFixed(2)}%
+                      </span>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))
+            )
+          ) : fairRatios.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="text-center">
+                <p className="text-sm">Арбитражные возможности справедливой цены не найдены</p>
+              </div>
+            </div>
+          ) : (
+            fairRatios.map((r) => {
+              const spread = (r.ratio - 1) * 100;
+              const isSelected = selectedFairArb?.ticker === r.ticker && selectedFairArb?.exchange === r.exchange;
+
+              return (
+                <Card
+                  key={`${r.ticker}_${r.exchange}_fair`}
+                  className={cn(
+                    'cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 py-2 w-full',
+                    isSelected ? 'ring-2 ring-primary shadow-lg border-primary' : 'border-muted-foreground/20',
+                  )}
+                  onClick={() => handleFairArbSelect(r)}
+                >
+                  <CardHeader className="pb-2 pt-2 px-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-xl font-bold tabular-nums">{r.ticker}</CardTitle>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Copy
+                              className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard
+                                  .writeText(r.ticker)
+                                  .then(() => {
+                                    toast.success(`Тикер ${r.ticker} скопирован`);
+                                  })
+                                  .catch(() => {
+                                    toast.error('Не удалось скопировать тикер');
+                                  });
+                              }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Копировать</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={cn('text-sm font-semibold tabular-nums', spread > 0 ? 'text-green-500' : 'text-red-500')}>
+                          {spread > 0 ? '+' : ''}
+                          {spread.toFixed(4)}%
+                        </span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <EyeOff
+                              className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer ml-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newExcluded = new Set(excludedTickers);
+                                newExcluded.add(r.ticker);
+                                setExcludedTickers(newExcluded);
+                                localStorage.setItem('crypto-arbs-excluded-tickers', JSON.stringify(Array.from(newExcluded)));
+                              }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Скрыть монету</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <div className="flex items-center gap-2">
+                        <img className="h-4 w-4 rounded-full" src={exchangeImgMap[r.exchange]} alt={r.exchange} />
+                        <span className="text-xs font-semibold text-muted-foreground">{r.exchange}</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a
+                              href={getExchangeUrl(r.exchange, r.ticker)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Перейти на {r.exchange}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">Последняя цена</div>
+                          <div className="text-base font-bold tabular-nums">{r.last.toFixed(6)}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-muted-foreground mb-1">Справедливая цена</div>
+                          <div className="text-base font-bold tabular-nums">{r.fair.toFixed(6)}</div>
                         </div>
                       </div>
-                    </CardHeader>
-                  </Card>
-                );
-              })
-            )
+                      <div className="flex items-center justify-between pt-1.5 border-t border-muted-foreground/20">
+                        <span className="text-sm font-semibold">Отклонение</span>
+                        <span className={cn('text-sm font-bold tabular-nums', spread > 0 ? 'text-green-500' : 'text-red-500')}>
+                          {spread > 0 ? '+' : ''}
+                          {spread.toFixed(4)}%
+                        </span>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              );
+            })
           )}
         </div>
       </div>
@@ -1333,26 +1341,20 @@ export const CryptoArbs = () => {
             </div>
             <div className="flex flex-col min-h-0 h-full w-[200px] flex-shrink-0">
               <div className="flex-1 min-h-0">
-                <OrderbookView
-                  exchange={selectedEnriched.left.exchange}
-                  ticker={selectedEnriched.ticker}
-                />
+                <OrderbookView exchange={selectedEnriched.left.exchange} ticker={selectedEnriched.ticker} />
               </div>
               <div className="flex-1 min-h-0 mt-1">
-                <OrderbookView
-                  exchange={selectedEnriched.right.exchange}
-                  ticker={selectedEnriched.ticker}
-                />
+                <OrderbookView exchange={selectedEnriched.right.exchange} ticker={selectedEnriched.ticker} />
               </div>
               {/* Торговая панель - видна только если есть флаг в localStorage */}
               {showTradingPanel && (
                 <div className="mt-1">
-                    <TradingPanelWidget
-                      isTrading={isTrading}
-                      selectedEnriched={selectedEnriched}
-                      tradingService={tradingServiceRef.current}
-                      onSetIsTrading={setIsTrading}
-                    />
+                  <TradingPanelWidget
+                    isTrading={isTrading}
+                    selectedEnriched={selectedEnriched}
+                    tradingService={tradingServiceRef.current}
+                    onSetIsTrading={setIsTrading}
+                  />
                 </div>
               )}
             </div>
@@ -1360,9 +1362,9 @@ export const CryptoArbs = () => {
         ) : selectedFairArb ? (
           <>
             <div className="flex-[4] flex flex-col min-h-0 h-full">
-              <div className="mb-2">
+              <div className="mb-1">
                 <div
-                  className="bg-card rounded-lg px-3 py-1.5 selected-arb-header"
+                  className="bg-card rounded px-3 py-1.5 selected-arb-header"
                   style={{
                     border: '1px solid rgba(166, 189, 213, 0.2)',
                   }}
@@ -1421,7 +1423,7 @@ export const CryptoArbs = () => {
                           (selectedFairArb.ratio - 1) * 100 > 0 ? 'text-green-500' : 'text-red-500',
                         )}
                       >
-                        {((selectedFairArb.ratio - 1) * 100 > 0 ? '+' : '')}
+                        {(selectedFairArb.ratio - 1) * 100 > 0 ? '+' : ''}
                         {((selectedFairArb.ratio - 1) * 100).toFixed(4)}%
                       </span>
                     </div>
@@ -1440,10 +1442,7 @@ export const CryptoArbs = () => {
             </div>
             <div className="flex flex-col min-h-0 h-full w-[200px] flex-shrink-0">
               <div className="flex-1 min-h-0">
-                <OrderbookView
-                  exchange={selectedFairArb.exchange}
-                  ticker={selectedFairArb.ticker}
-                />
+                <OrderbookView exchange={selectedFairArb.exchange} ticker={selectedFairArb.ticker} />
               </div>
             </div>
           </>
