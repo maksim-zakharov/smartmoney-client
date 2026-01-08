@@ -1,8 +1,8 @@
 import React, { ChangeEvent, useState } from 'react';
-import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { toast } from 'sonner';
 import { TradingService } from '../api/trading.service';
 import { getTickerWithSuffix } from '../api/utils/tickers';
@@ -214,33 +214,43 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({
   };
 
   return (
-    <Card className="flex-shrink-0 border-muted-foreground/20 rounded">
-      <CardHeader className="py-2 px-3">
-        <CardTitle className="text-xs font-semibold">Торговля</CardTitle>
-      </CardHeader>
-      <div className="px-3 pb-3 space-y-2">
-        <div>
-          <Label htmlFor="trading-volume" className="text-xs">
-            Объем (USD)
-          </Label>
-          <Input
-            id="trading-volume"
-            type="number"
-            value={tradingVolume}
-            onChange={handleChange}
-            className="h-7 text-xs"
-            placeholder="100"
-          />
-        </div>
-        <Button
-          onClick={handleClick}
-          disabled={isTrading || !selectedEnriched}
-          className="w-full h-8 bg-yellow-500 hover:bg-yellow-600 text-black font-bold text-xs"
-        >
-          {isTrading ? 'Выполняется...' : 'Бабло'}
-        </Button>
-      </div>
-    </Card>
+    <Table wrapperClassName="pt-1">
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[200px] text-left" colSpan={1}>
+            <span>Торговля</span>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableRow>
+          <TableCell>
+            <div className="space-y-2">
+              <div>
+                <Label htmlFor="trading-volume" className="text-xs">
+                  Объем (USD)
+                </Label>
+                <Input
+                  id="trading-volume"
+                  type="number"
+                  value={tradingVolume}
+                  onChange={handleChange}
+                  className="h-7 text-xs"
+                  placeholder="100"
+                />
+              </div>
+              <Button
+                onClick={handleClick}
+                disabled={isTrading || !selectedEnriched}
+                className="w-full h-8 bg-yellow-500 hover:bg-yellow-600 text-black font-bold text-xs"
+              >
+                {isTrading ? 'Выполняется...' : 'Бабло'}
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
   );
 };
 
