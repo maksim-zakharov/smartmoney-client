@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { cn } from '../lib/utils';
 import { toast } from 'sonner';
 import { TradingService } from '../api/trading.service';
 import { getTickerWithSuffix } from '../api/utils/tickers';
-import { exchangeImgMap } from '../utils';
+import { exchangeImgMap, moneyFormat } from '../utils';
 
 export interface Position {
   /** Уникальный ID позиции */
@@ -625,6 +625,11 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
     maximumFractionDigits: 4,
   });
 
+  // Вычисляем сумму unrealizedPnl и realizedPnl
+  const totalUnrealizedPnl = positions.reduce((sum, pos) => sum + pos.unrealizedPnl, 0);
+  const totalRealizedPnl = positions.reduce((sum, pos) => sum + pos.pnl, 0);
+  const totalPnl = totalUnrealizedPnl + totalRealizedPnl;
+
   return (
     <Table wrapperClassName="pt-1 col-span-2">
       <TableHeader>
@@ -740,6 +745,16 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
           })
         )}
       </TableBody>
+      <TableFooter>
+        <TableRow>
+          <TableCell
+            colSpan={7}
+            className={totalPnl > 0 ? 'text-right profitCell' : totalPnl < 0 ? 'text-right lossCell' : 'text-right'}
+          >
+            Реализовано: {moneyFormat(totalPnl, 'USDT', 0, 2)}
+          </TableCell>
+        </TableRow>
+      </TableFooter>
     </Table>
   );
 };
