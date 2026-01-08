@@ -71,7 +71,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
     const fetchPositions = async () => {
       const allPositions: Position[] = [];
       const exchanges = [leftExchange, rightExchange].filter(
-        (ex) => ex && ['MEXC', 'OURBIT', 'KCEX', 'BYBIT', 'BINANCE'].includes(ex.toUpperCase()),
+        (ex) => ex && ['MEXC', 'OURBIT', 'KCEX', 'BYBIT', 'BINANCE', 'BITMART', 'OKX'].includes(ex.toUpperCase()),
       );
 
       // eslint-disable-next-line no-console
@@ -303,6 +303,170 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                 });
               }
             }
+          } else if (exchangeUpper === 'BITMART') {
+            if (!keys.apiKey || !keys.secretKey || !keys.passphrase) {
+              // eslint-disable-next-line no-console
+              console.warn(`No API keys or passphrase for ${exchangeUpper}, skipping`);
+              continue;
+            }
+
+            // eslint-disable-next-line no-console
+            console.log(`Fetching positions from ${exchangeUpper} for symbol:`, symbolWithSuffix);
+
+            const response = await tradingServiceRef.current!.getPositions({
+              exchange,
+              symbol: symbolWithSuffix,
+              apiKey: keys.apiKey,
+              secretKey: keys.secretKey,
+              passphrase: keys.passphrase,
+            });
+
+            // eslint-disable-next-line no-console
+            console.log(`${exchangeUpper} positions response:`, response);
+
+            // Bitmart возвращает данные в формате { code, message, data: [...] }
+            if (response.code === 1000 && Array.isArray(response.data)) {
+              for (const pos of response.data) {
+                // Извлекаем базовый тикер из symbol (убираем USDT)
+                const posSymbol = pos.symbol || '';
+                let baseTicker = posSymbol.replace('USDT', '');
+
+                // Если тикер не совпадает с выбранным, пропускаем
+                if (baseTicker !== ticker) {
+                  continue;
+                }
+
+                // Пропускаем пустые позиции (position_amount = "0" или 0)
+                const positionAmount = parseFloat(pos.position_amount || '0');
+                if (positionAmount === 0) {
+                  continue;
+                }
+
+                // Определяем side на основе position_side
+                // position_side может быть "both", "long", "short"
+                let side = '';
+                if (pos.position_side === 'long' || pos.position_side === 'Long') {
+                  side = 'Long';
+                } else if (pos.position_side === 'short' || pos.position_side === 'Short') {
+                  side = 'Short';
+                } else if (pos.position_side === 'both' || pos.position_side === 'Both') {
+                  // Если both, определяем по знаку position_amount
+                  side = positionAmount > 0 ? 'Long' : 'Short';
+                }
+
+                // Плечо
+                const leverage = pos.leverage ? parseFloat(pos.leverage.toString()) : undefined;
+
+                // Тип маржи: open_type может быть "isolated" или "cross"
+                const openType = pos.open_type || '';
+                let marginType = '';
+                if (openType === 'isolated' || openType === 'Isolated') {
+                  marginType = 'Isolated';
+                } else if (openType === 'cross' || openType === 'Cross') {
+                  marginType = 'Cross';
+                }
+
+                // Используем entry_price или open_avg_price
+                const entryPrice = parseFloat(pos.entry_price || pos.open_avg_price || '0');
+
+                allPositions.push({
+                  id: `${exchange}-${posSymbol}-${pos.position_side || 'both'}`,
+                  exchange,
+                  token: baseTicker,
+                  side,
+                  marginType,
+                  leverage,
+                  entryPrice,
+                  volume: Math.abs(positionAmount), // Абсолютное значение для объема
+                  pnl: parseFloat(pos.realized_value || '0'), // Реализованный PnL
+                  unrealizedPnl: parseFloat(pos.unrealized_pnl || '0'), // Нереализованный PnL
+                });
+              }
+            }
+          } else if (exchangeUpper === 'OKX') {
+            // eslint-disable-next-line no-console
+            console.log(`OKX keys check: apiKey:`, !!keys.apiKey, 'secretKey:', !!keys.secretKey, 'passphrase:', !!keys.passphrase);
+            if (!keys.apiKey || !keys.secretKey || !keys.passphrase) {
+              // eslint-disable-next-line no-console
+              console.warn(`No API keys or passphrase for ${exchangeUpper}, skipping. apiKey:`, !!keys.apiKey, 'secretKey:', !!keys.secretKey, 'passphrase:', !!keys.passphrase);
+              continue;
+            }
+
+            // eslint-disable-next-line no-console
+            console.log(`Fetching positions from ${exchangeUpper} for symbol:`, symbolWithSuffix);
+
+            const response = await tradingServiceRef.current!.getPositions({
+              exchange,
+              symbol: symbolWithSuffix,
+              apiKey: keys.apiKey,
+              secretKey: keys.secretKey,
+              passphrase: keys.passphrase,
+            });
+
+            // eslint-disable-next-line no-console
+            console.log(`${exchangeUpper} positions response:`, response);
+
+            // OKX возвращает данные в формате { code, msg, data: [...] }
+            if (response.code === '0' && Array.isArray(response.data)) {
+              for (const pos of response.data) {
+                // Извлекаем базовый тикер из instId (формат: BTC-USDT, BTC-USDT-SWAP)
+                const posSymbol = pos.instId || '';
+                // Разделяем по дефису и берем первую часть (BTC из BTC-USDT)
+                const parts = posSymbol.split('-');
+                const baseTicker = parts[0] || '';
+
+                // Если тикер не совпадает с выбранным, пропускаем
+                if (baseTicker !== ticker) {
+                  continue;
+                }
+
+                // Пропускаем пустые позиции (pos = "0" или 0)
+                const positionSize = parseFloat(pos.pos || '0');
+                if (positionSize === 0) {
+                  continue;
+                }
+
+                // Определяем side на основе pos (положительное = Long, отрицательное = Short)
+                let side = '';
+                if (positionSize > 0) {
+                  side = 'Long';
+                } else if (positionSize < 0) {
+                  side = 'Short';
+                }
+
+                // Плечо
+                const leverage = pos.lever ? parseFloat(pos.lever.toString()) : undefined;
+
+                // Тип маржи: mgnMode может быть "isolated" или "cross"
+                const mgnMode = pos.mgnMode || '';
+                let marginType = '';
+                if (mgnMode === 'isolated' || mgnMode === 'Isolated') {
+                  marginType = 'Isolated';
+                } else if (mgnMode === 'cross' || mgnMode === 'Cross') {
+                  marginType = 'Cross';
+                }
+
+                // Используем avgPx для цены входа
+                const entryPrice = parseFloat(pos.avgPx || '0');
+
+                // Объем позиции в базовой валюте (pos)
+                // Для расчета позиции в USDT используем notionalUsd или pos * avgPx
+                const positionValue = parseFloat(pos.notionalUsd || '0') || Math.abs(positionSize) * entryPrice;
+
+                allPositions.push({
+                  id: `${exchange}-${posSymbol}-${pos.posId || '0'}`,
+                  exchange,
+                  token: baseTicker,
+                  side,
+                  marginType,
+                  leverage,
+                  entryPrice,
+                  volume: Math.abs(positionSize), // Объем в базовой валюте
+                  pnl: parseFloat(pos.realizedPnl || pos.settledPnl || '0'), // Реализованный PnL
+                  unrealizedPnl: parseFloat(pos.upl || '0'), // Нереализованный PnL (upl = unrealized profit and loss)
+                });
+              }
+            }
           }
         } catch (error) {
           // eslint-disable-next-line no-console
@@ -374,6 +538,12 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
       case 'MEXC':
         return {
           authToken: localStorage.getItem('mexcAuthToken') || localStorage.getItem('mexcUid'),
+        };
+      case 'OKX':
+        return {
+          apiKey: localStorage.getItem('okxApiKey'),
+          secretKey: localStorage.getItem('okxApiSecret'),
+          passphrase: localStorage.getItem('okxApiPhrase'),
         };
       default:
         return {};

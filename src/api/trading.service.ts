@@ -6,6 +6,7 @@ import { BitgetTradingService, BitgetPlaceMarketOrderParams, BitgetPlaceOrderRes
 import { BitmartTradingService, BitmartPlaceMarketOrderParams, BitmartPlaceOrderResponse } from './bitmart-trading.service';
 import { GateTradingService } from './gate-trading.service';
 import { BinanceTradingService, BinancePlaceMarketOrderParams, BinancePlaceLimitOrderParams, BinancePlaceOrderResponse } from './binance-trading.service';
+import { OkxTradingService } from './okx-trading.service';
 import { getProxyUrl } from './utils/proxy';
 
 /**
@@ -48,6 +49,7 @@ export class TradingService {
   private readonly bitmartTradingService: BitmartTradingService;
   private readonly gateTradingService: GateTradingService;
   private readonly binanceTradingService: BinanceTradingService;
+  private readonly okxTradingService: OkxTradingService;
   private readonly backendUrl: string;
 
   constructor(backendUrl?: string) {
@@ -60,6 +62,7 @@ export class TradingService {
     this.bitmartTradingService = new BitmartTradingService(this.backendUrl);
     this.gateTradingService = new GateTradingService(this.backendUrl);
     this.binanceTradingService = new BinanceTradingService(this.backendUrl);
+    this.okxTradingService = new OkxTradingService(this.backendUrl);
   }
 
   /**
@@ -358,6 +361,7 @@ export class TradingService {
     authToken?: string;
     apiKey?: string;
     secretKey?: string;
+    passphrase?: string;
   }): Promise<any> {
     const { exchange, symbol } = params;
     const exchangeUpper = exchange.toUpperCase();
@@ -407,6 +411,33 @@ export class TradingService {
         return this.binanceTradingService.getPositions({
           apiKey: params.apiKey,
           secretKey: params.secretKey,
+          symbol,
+        });
+
+      case 'BITMART':
+        if (!params.apiKey || !params.secretKey) {
+          throw new Error('Для Bitmart требуются apiKey и secretKey');
+        }
+        // Для Bitmart также нужен memo (passphrase)
+        const memo = params.passphrase || '';
+        if (!memo) {
+          throw new Error('Для Bitmart требуется passphrase (memo)');
+        }
+        return this.bitmartTradingService.getPositions({
+          apiKey: params.apiKey,
+          secretKey: params.secretKey,
+          memo,
+          symbol,
+        });
+
+      case 'OKX':
+        if (!params.apiKey || !params.secretKey || !params.passphrase) {
+          throw new Error('Для OKX требуются apiKey, secretKey и passphrase');
+        }
+        return this.okxTradingService.getPositions({
+          apiKey: params.apiKey,
+          secretKey: params.secretKey,
+          passphrase: params.passphrase,
           symbol,
         });
 

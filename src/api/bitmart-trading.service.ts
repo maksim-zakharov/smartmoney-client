@@ -170,5 +170,51 @@ export class BitmartTradingService {
 
     return data;
   }
+
+  /**
+   * Получает позиции на Bitmart
+   */
+  async getPositions(params: { apiKey: string; secretKey: string; memo: string; symbol?: string }): Promise<any> {
+    const { apiKey, secretKey, memo, symbol } = params;
+
+    // Формируем URL
+    const url = 'https://api-cloud-v2.bitmart.com/contract/private/position-v2';
+
+    // Формируем query параметры
+    const queryParams: Record<string, string> = {};
+    if (symbol) {
+      queryParams.symbol = symbol;
+    }
+
+    // Для GET запроса body пустой
+    // Согласно документации Bitmart, для GET запросов body = ""
+    const timestamp = Date.now().toString();
+    const bodyStr = ''; // Пустое тело для GET запроса
+    const signature = this.generateBitmartSignature(secretKey, memo, timestamp, bodyStr);
+
+    // Формируем заголовки
+    const headers = {
+      'X-BM-KEY': apiKey,
+      'X-BM-SIGN': signature,
+      'X-BM-TIMESTAMP': timestamp,
+      'Content-Type': 'application/json',
+    };
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url,
+      headers,
+      params: queryParams,
+    });
+
+    // Bitmart возвращает ошибки через поле code
+    if (data.code !== undefined && data.code !== 1000) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.message || data.msg || 'Ошибка при получении позиций';
+      throw new Error(`Bitmart Error ${errorCode} - ${errorMsg}`);
+    }
+
+    return data;
+  }
 }
 
