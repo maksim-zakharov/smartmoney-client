@@ -829,7 +829,11 @@ export const CryptoArbs = () => {
 
   // Обогащаем выбранный арбитраж для отображения (даже если его нет в списке)
   const selectedEnriched = useMemo(() => {
-    if (!selectedArb) return null;
+    if (!selectedArb) {
+      console.log('selectedEnriched: selectedArb is null');
+      return null;
+    }
+    console.log('selectedEnriched: selectedArb', { ticker: selectedArb.ticker, left: selectedArb.left, right: selectedArb.right });
 
     // Сначала пытаемся найти в enrichedArbs
     const found = enrichedArbs.find(
@@ -866,6 +870,9 @@ export const CryptoArbs = () => {
 
     return {
       ...selectedArb,
+      // Убеждаемся, что left и right всегда присутствуют
+      left: selectedArb.left,
+      right: selectedArb.right,
       spread,
       funding,
       sellExchange,
@@ -1580,12 +1587,20 @@ export const CryptoArbs = () => {
               )}
             </div>
             <div className="flex flex-col min-h-0 h-full w-[200px] flex-shrink-0">
-              <div className="flex-1 min-h-0">
-                <OrderbookView exchange={selectedEnriched.left.exchange} ticker={selectedEnriched.ticker} />
-              </div>
-              <div className="flex-1 min-h-0 mt-1">
-                <OrderbookView exchange={selectedEnriched.right.exchange} ticker={selectedEnriched.ticker} />
-              </div>
+              {selectedEnriched && selectedEnriched.left && selectedEnriched.right && selectedEnriched.ticker ? (
+                <>
+                  <div className="flex-1 min-h-0">
+                    <OrderbookView exchange={selectedEnriched.left.exchange} ticker={selectedEnriched.ticker} />
+                  </div>
+                  <div className="flex-1 min-h-0 mt-1">
+                    <OrderbookView exchange={selectedEnriched.right.exchange} ticker={selectedEnriched.ticker} />
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-muted-foreground p-2">
+                  {!selectedEnriched ? 'Нет выбранного арбитража' : 'Недостаточно данных для стакана'}
+                </div>
+              )}
               {/* Торговая панель - видна только если есть флаг в localStorage */}
               {showTradingPanel && (
                 <div className="mt-1">

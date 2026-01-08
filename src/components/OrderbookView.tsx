@@ -59,16 +59,26 @@ export const OrderbookView = ({ exchange, ticker }: OrderbookViewProps) => {
   }, []);
 
   const symbol = useMemo(
-    () => getTickerWithSuffix(exchange, ticker),
+    () => {
+      if (!exchange || !ticker) {
+        console.warn('OrderbookView: missing exchange or ticker', { exchange, ticker });
+        return '';
+      }
+      return getTickerWithSuffix(exchange, ticker);
+    },
     [exchange, ticker],
   );
 
   // Инициализация OrderbookManager
   useEffect(() => {
+    console.log('OrderbookView useEffect:', { exchange, ticker, symbol, hasDataService: !!dataService });
     if (!dataService || !symbol) {
+      console.warn('OrderbookView: missing dataService or symbol', { dataService: !!dataService, symbol });
       setHasData(false);
       return;
     }
+
+    console.log('init orderbook', { exchange, symbol, hasDataService: !!dataService });
 
     // Создаем менеджер с canvas
     const manager = new OrderbookManager({

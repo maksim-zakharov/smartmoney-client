@@ -54,6 +54,8 @@ export class OurbitWsClient extends SubscriptionManager {
     console.log('Ourbit Futures Websocket соединение установлено');
     // Запускаем ping каждые 5 секунд (базовый класс использует 10 секунд)
     this.startPing();
+    // Базовый класс должен вызвать resubscribe() автоматически, но проверим
+    console.log('OurbitWsClient.onOpen: subscriptions count:', this.subscriptions.size);
   }
 
   protected onClose() {
@@ -222,16 +224,20 @@ export class OurbitWsClient extends SubscriptionManager {
   }
 
   subscribeOrderbook(symbol: string, depth: number) {
+    console.log('OurbitWsClient.subscribeOrderbook called', { symbol, depth });
     const subj = new Subject<MexcOrderbook>();
     const key = `depth_${symbol}`;
     this.subscribeSubjs.set(key, subj);
-    this.subscribe({
+    const subscribeRequest = {
       method: 'sub.depth',
       param: {
         symbol,
         limit: depth,
       },
-    });
+    };
+    console.log('OurbitWsClient: calling subscribe with', subscribeRequest);
+    this.subscribe(subscribeRequest);
+    console.log('OurbitWsClient: subscribe called, isConnected:', this.isConnected, 'ws readyState:', this.ws?.readyState);
 
     return subj;
   }

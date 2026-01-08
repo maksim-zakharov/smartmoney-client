@@ -39,11 +39,7 @@ interface PositionsWidgetProps {
   rightExchange: string;
 }
 
-export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
-  ticker,
-  leftExchange,
-  rightExchange,
-}) => {
+export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftExchange, rightExchange }) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [isTrading, setIsTrading] = useState(false);
   const tradingServiceRef = React.useRef<TradingService | null>(null);
@@ -116,23 +112,22 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
 
     // Проверяем, что метод getPositions существует
     if (typeof tradingServiceRef.current.getPositions !== 'function') {
-      // eslint-disable-next-line no-console
       console.error('getPositions is not a function on TradingService');
       return;
     }
 
     const fetchPositions = async () => {
       const allPositions: Position[] = [];
-      
+
       // Получаем все поддерживаемые биржи
       const supportedExchanges = ['MEXC', 'OURBIT', 'KCEX', 'BYBIT', 'BINANCE', 'BITMART', 'OKX'];
-      
+
       // Проверяем наличие ключей для каждой биржи
       const exchangesWithKeys: string[] = [];
       for (const exchange of supportedExchanges) {
         const keys = getExchangeApiKeys(exchange);
         const exchangeUpper = exchange.toUpperCase();
-        
+
         // Проверяем наличие необходимых ключей для каждой биржи
         if (['MEXC', 'OURBIT', 'KCEX'].includes(exchangeUpper)) {
           if (keys.authToken) {
@@ -153,7 +148,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
         }
       }
 
-      // eslint-disable-next-line no-console
       console.log('Fetching positions for exchanges with keys:', exchangesWithKeys);
 
       for (const exchange of exchangesWithKeys) {
@@ -161,17 +155,14 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
           const keys = getExchangeApiKeys(exchange);
           const exchangeUpper = exchange.toUpperCase();
 
-          // eslint-disable-next-line no-console
           console.log(`Processing ${exchangeUpper}, has authToken:`, !!keys.authToken);
 
           if (['MEXC', 'OURBIT', 'KCEX'].includes(exchangeUpper)) {
             if (!keys.authToken) {
-              // eslint-disable-next-line no-console
               console.warn(`No authToken for ${exchangeUpper}, skipping`);
               continue; // Пропускаем если нет ключей
             }
 
-            // eslint-disable-next-line no-console
             console.log(`Fetching positions from ${exchangeUpper}`);
 
             // Запрашиваем все позиции без фильтрации по символу
@@ -180,7 +171,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               authToken: keys.authToken,
             });
 
-            // eslint-disable-next-line no-console
             console.log(`${exchangeUpper} positions response:`, response);
 
             if (response.success && response.data && Array.isArray(response.data)) {
@@ -188,12 +178,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               for (const pos of response.data) {
                 // Извлекаем базовый тикер из symbol (убираем суффикс _USDT, USDT, -USDT-SWAP)
                 const posSymbol = pos.symbol || '';
-                let baseTicker = posSymbol
-                  .replace('_USDT', '')
-                  .replace('USDT', '')
-                  .replace('-USDT-SWAP', '')
-                  .replace('-SWAP-USDT', '');
-
+                const baseTicker = posSymbol.replace('_USDT', '').replace('USDT', '').replace('-USDT-SWAP', '').replace('-SWAP-USDT', '');
 
                 // Рассчитываем unrealized PnL на основе текущей цены и цены входа
                 // Пока используем closeProfitLoss, если он есть, иначе 0
@@ -238,12 +223,10 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             }
           } else if (exchangeUpper === 'BYBIT') {
             if (!keys.apiKey || !keys.secretKey) {
-              // eslint-disable-next-line no-console
               console.warn(`No API keys for ${exchangeUpper}, skipping`);
               continue;
             }
 
-            // eslint-disable-next-line no-console
             console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
@@ -252,7 +235,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               secretKey: keys.secretKey,
             });
 
-            // eslint-disable-next-line no-console
             console.log(`${exchangeUpper} positions response:`, response);
 
             // Bybit возвращает данные в формате { retCode, retMsg, result: { list: [...] } }
@@ -260,8 +242,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               for (const pos of response.result.list) {
                 // Извлекаем базовый тикер из symbol (убираем USDT)
                 const posSymbol = pos.symbol || '';
-                let baseTicker = posSymbol.replace('USDT', '');
-
+                const baseTicker = posSymbol.replace('USDT', '');
 
                 // Пропускаем пустые позиции (size = "0" или side = "")
                 if (!pos.size || parseFloat(pos.size) === 0 || !pos.side) {
@@ -305,12 +286,10 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             }
           } else if (exchangeUpper === 'BINANCE') {
             if (!keys.apiKey || !keys.secretKey) {
-              // eslint-disable-next-line no-console
               console.warn(`No API keys for ${exchangeUpper}, skipping`);
               continue;
             }
 
-            // eslint-disable-next-line no-console
             console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
@@ -319,7 +298,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               secretKey: keys.secretKey,
             });
 
-            // eslint-disable-next-line no-console
             console.log(`${exchangeUpper} positions response:`, response);
 
             // Binance возвращает массив позиций напрямую
@@ -327,8 +305,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               for (const pos of response) {
                 // Извлекаем базовый тикер из symbol (убираем USDT)
                 const posSymbol = pos.symbol || '';
-                let baseTicker = posSymbol.replace('USDT', '');
-
+                const baseTicker = posSymbol.replace('USDT', '');
 
                 // Пропускаем пустые позиции (positionAmt = "0" или 0)
                 const positionAmt = parseFloat(pos.positionAmt || '0');
@@ -369,12 +346,10 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             }
           } else if (exchangeUpper === 'BITMART') {
             if (!keys.apiKey || !keys.secretKey || !keys.passphrase) {
-              // eslint-disable-next-line no-console
               console.warn(`No API keys or passphrase for ${exchangeUpper}, skipping`);
               continue;
             }
 
-            // eslint-disable-next-line no-console
             console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
@@ -384,7 +359,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               passphrase: keys.passphrase,
             });
 
-            // eslint-disable-next-line no-console
             console.log(`${exchangeUpper} positions response:`, response);
 
             // Bitmart возвращает данные в формате { code, message, data: [...] }
@@ -392,8 +366,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               for (const pos of response.data) {
                 // Извлекаем базовый тикер из symbol (убираем USDT)
                 const posSymbol = pos.symbol || '';
-                let baseTicker = posSymbol.replace('USDT', '');
-
+                const baseTicker = posSymbol.replace('USDT', '');
 
                 // Пропускаем пустые позиции (position_amount = "0" или 0)
                 const positionAmount = parseFloat(pos.position_amount || '0');
@@ -443,15 +416,19 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               }
             }
           } else if (exchangeUpper === 'OKX') {
-            // eslint-disable-next-line no-console
             console.log(`OKX keys check: apiKey:`, !!keys.apiKey, 'secretKey:', !!keys.secretKey, 'passphrase:', !!keys.passphrase);
             if (!keys.apiKey || !keys.secretKey || !keys.passphrase) {
-              // eslint-disable-next-line no-console
-              console.warn(`No API keys or passphrase for ${exchangeUpper}, skipping. apiKey:`, !!keys.apiKey, 'secretKey:', !!keys.secretKey, 'passphrase:', !!keys.passphrase);
+              console.warn(
+                `No API keys or passphrase for ${exchangeUpper}, skipping. apiKey:`,
+                !!keys.apiKey,
+                'secretKey:',
+                !!keys.secretKey,
+                'passphrase:',
+                !!keys.passphrase,
+              );
               continue;
             }
 
-            // eslint-disable-next-line no-console
             console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
@@ -461,7 +438,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
               passphrase: keys.passphrase,
             });
 
-            // eslint-disable-next-line no-console
             console.log(`${exchangeUpper} positions response:`, response);
 
             // OKX возвращает данные в формате { code, msg, data: [...] }
@@ -472,7 +448,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                 // Разделяем по дефису и берем первую часть (BTC из BTC-USDT)
                 const parts = posSymbol.split('-');
                 const baseTicker = parts[0] || '';
-
 
                 // Пропускаем пустые позиции (pos = "0" или 0)
                 const positionSize = parseFloat(pos.pos || '0');
@@ -523,11 +498,9 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
             }
           }
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.error(`Ошибка при получении позиций с ${exchange}:`, error);
           // Показываем детали ошибки для отладки
           if (error instanceof Error) {
-            // eslint-disable-next-line no-console
             console.error(`Error message: ${error.message}`);
           }
           // Не показываем toast для ошибок, чтобы не спамить
@@ -543,7 +516,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
         // Если тикеры одинаковые, сравниваем по бирже
         return a.exchange.localeCompare(b.exchange);
       });
-      
+
       setPositions(sortedPositions);
     };
 
@@ -601,7 +574,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
       setPositions((prev) => prev.filter((p) => p.id !== position.id));
       toast.success(`Позиция ${position.token} на ${exchange} закрыта`);
     } catch (error: unknown) {
-      // eslint-disable-next-line no-console
       console.error('Ошибка при закрытии позиции:', error);
       const err = error as { message?: string };
       toast.error(`Ошибка при закрытии позиции: ${err?.message || 'Неизвестная ошибка'}`);
@@ -612,7 +584,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
 
   const handleCloseAll = async () => {
     for (const pos of positions) {
-      // eslint-disable-next-line no-await-in-loop
       await handleClosePosition(pos);
     }
   };
@@ -631,7 +602,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
   const totalPnl = totalUnrealizedPnl + totalRealizedPnl;
 
   return (
-    <Table wrapperClassName="pt-1 col-span-2">
+    <Table wrapperClassName="pt-1 col-span-2 h-[250px]">
       <TableHeader>
         <TableRow>
           <TableHead className="w-[200px] text-left" colSpan={7}>
@@ -677,13 +648,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                 <TableCell>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
-                      {exchangeIcon && (
-                        <img
-                          src={exchangeIcon}
-                          alt={position.exchange}
-                          className="h-3.5 w-3.5 rounded-full"
-                        />
-                      )}
+                      {exchangeIcon && <img src={exchangeIcon} alt={position.exchange} className="h-3.5 w-3.5 rounded-full" />}
                       <span>
                         {position.exchange}:{position.token}
                       </span>
@@ -710,24 +675,12 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
                 <TableCell className="text-right">{numberFormat2.format(margin)} USDT</TableCell>
                 <TableCell className="text-right">{numberFormat2.format(margin)} USDT</TableCell>
                 <TableCell
-                  className={cn(
-                    'text-right',
-                    position.unrealizedPnl > 0
-                      ? 'profitCell'
-                      : position.unrealizedPnl < 0
-                        ? 'lossCell'
-                        : '',
-                  )}
+                  className={cn('text-right', position.unrealizedPnl > 0 ? 'profitCell' : position.unrealizedPnl < 0 ? 'lossCell' : '')}
                 >
-                  {numberFormat4.format(position.unrealizedPnl)} USDT
+                  {numberFormat2.format(position.unrealizedPnl)} USDT
                 </TableCell>
-                <TableCell
-                  className={cn(
-                    'text-right',
-                    position.pnl > 0 ? 'profitCell' : position.pnl < 0 ? 'lossCell' : '',
-                  )}
-                >
-                  {numberFormat4.format(position.pnl)} USDT
+                <TableCell className={cn('text-right', position.pnl > 0 ? 'profitCell' : position.pnl < 0 ? 'lossCell' : '')}>
+                  {numberFormat2.format(position.pnl)} USDT
                 </TableCell>
                 <TableCell className="text-right">
                   <Button
@@ -747,10 +700,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
       </TableBody>
       <TableFooter>
         <TableRow>
-          <TableCell
-            colSpan={7}
-            className={totalPnl > 0 ? 'text-right profitCell' : totalPnl < 0 ? 'text-right lossCell' : 'text-right'}
-          >
+          <TableCell colSpan={7} className={totalPnl > 0 ? 'text-right profitCell' : totalPnl < 0 ? 'text-right lossCell' : 'text-right'}>
             Реализовано: {moneyFormat(totalPnl, 'USDT', 0, 2)}
           </TableCell>
         </TableRow>
@@ -758,4 +708,3 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({
     </Table>
   );
 };
-

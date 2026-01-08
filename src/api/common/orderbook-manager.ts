@@ -206,7 +206,9 @@ export class OrderbookManager {
   }
 
   private subscribe() {
+    console.log('OrderbookManager.subscribe() called', { exchange: this.exchange, symbol: this.symbol, hasDataService: !!this.dataService });
     if (!this.dataService || !this.symbol) {
+      console.warn('OrderbookManager.subscribe() skipped: missing dataService or symbol', { dataService: !!this.dataService, symbol: this.symbol });
       return;
     }
 
@@ -217,31 +219,38 @@ export class OrderbookManager {
         case 'MEXC':
           this.orderbookDepth = 200;
           this.wsSubscription = this.dataService.mexcSubscribeOrderbook(this.symbol, this.orderbookDepth);
+          console.log('OrderbookManager: MEXC subscription created', { symbol: this.symbol, subscription: !!this.wsSubscription });
           break;
         case 'BYBIT':
           this.orderbookDepth = 200;
           this.wsSubscription = this.dataService.bybitSubscribeOrderbook(this.symbol, this.orderbookDepth);
+          console.log('OrderbookManager: BYBIT subscription created', { symbol: this.symbol, subscription: !!this.wsSubscription });
           break;
         case 'BITGET':
           this.orderbookDepth = 15;
           this.wsSubscription = this.dataService.bitgetSubscribeOrderbook(this.symbol, this.orderbookDepth as 1 | 5 | 15);
+          console.log('OrderbookManager: BITGET subscription created', { symbol: this.symbol, subscription: !!this.wsSubscription });
           break;
         case 'GATE':
         case 'GATEIO':
           this.orderbookDepth = 400;
           this.wsSubscription = this.dataService.gateSubscribeOrderbook(this.symbol, this.orderbookDepth as 50 | 400);
+          console.log('OrderbookManager: GATE subscription created', { symbol: this.symbol, subscription: !!this.wsSubscription });
           break;
         case 'BINGX':
           this.orderbookDepth = 100;
           this.wsSubscription = this.dataService.bingxSubscribeOrderbook(this.symbol, this.orderbookDepth as 5 | 10 | 20 | 50 | 100);
+          console.log('OrderbookManager: BINGX subscription created', { symbol: this.symbol, subscription: !!this.wsSubscription });
           break;
         case 'OKX':
           this.orderbookDepth = 200;
           this.wsSubscription = this.dataService.okxSubscribeOrderbook(this.symbol, this.orderbookDepth);
+          console.log('OrderbookManager: OKX subscription created', { symbol: this.symbol, subscription: !!this.wsSubscription });
           break;
         case 'OURBIT':
           this.orderbookDepth = 200;
           this.wsSubscription = this.dataService.ourbitSubscribeOrderbook(this.symbol, this.orderbookDepth);
+          console.log('OrderbookManager: OURBIT subscription created', { symbol: this.symbol, subscription: !!this.wsSubscription });
           break;
         case 'KUCOIN':
           this.orderbookDepth = 20;

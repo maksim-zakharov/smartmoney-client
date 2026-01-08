@@ -86,6 +86,7 @@ export class SubscriptionManager {
     };
 
     this.ws.onopen = () => {
+      console.log(`SubscriptionManager.ws.onopen: websocket connected, subscriptions count:`, this.subscriptions.size);
       this.isConnected = true;
       this.reconnectAttempts = 0;
       // Повторная подписка на все события
@@ -132,9 +133,15 @@ export class SubscriptionManager {
 
   // Повторная подписка на все события
   private resubscribe() {
+    console.log(`SubscriptionManager.resubscribe: resubscribing to ${this.subscriptions.size} subscriptions`);
     this.subscriptions.forEach((subscription) => {
-      const request = JSON.parse(subscription);
-      this.subscribe(request, true); // force resubscribe
+      try {
+        const request = JSON.parse(subscription);
+        console.log(`SubscriptionManager.resubscribe: resubscribing to`, request);
+        this.subscribe(request, true); // force resubscribe
+      } catch (error) {
+        console.error(`SubscriptionManager.resubscribe: error parsing subscription`, subscription, error);
+      }
     });
   }
 
@@ -144,14 +151,21 @@ export class SubscriptionManager {
     // Check if already subscribed to avoid duplicate subscriptions
     // But allow resubscribe when force=true (e.g., after reconnection)
     if (!force && this.subscriptions.has(requestKey)) {
+      console.log(`SubscriptionManager: already subscribed to ${requestKey}, skipping`);
       return; // Already subscribed, skip
     }
 
-    if (this.isConnected) {
+    console.log(`SubscriptionManager.subscribe:`, { request, isConnected: this.isConnected, wsReadyState: this.ws?.readyState });
+    
+    if (this.isConnected && this.ws) {
+      console.log(`SubscriptionManager: sending subscription request:`, requestKey);
       this.ws.send(requestKey);
+    } else {
+      console.warn(`SubscriptionManager: websocket not connected, subscription will be sent after connection. isConnected:`, this.isConnected, 'ws:', !!this.ws);
     }
 
     // Add to subscriptions set (Set prevents duplicates automatically)
+    // This ensures subscription will be sent after reconnection via resubscribe()
     this.subscriptions.add(requestKey);
 
     this.eventEmitter.emit('subscribe', request);
