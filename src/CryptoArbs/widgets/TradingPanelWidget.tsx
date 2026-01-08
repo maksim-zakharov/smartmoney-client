@@ -185,7 +185,6 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({ isTradin
       toast.success(`Ордера размещены! Buy: ${result.buy?.orderId || 'N/A'}, Sell: ${result.sell?.orderId || 'N/A'}`);
     } catch (error: unknown) {
       // eslint-disable-next-line no-console
-      console.error('Ошибка при размещении ордеров:', error);
       const err = error as { message?: string };
       toast.error(`Ошибка: ${err?.message || 'Неизвестная ошибка'}`);
     } finally {

@@ -21,7 +21,7 @@ export async function fetchSecurityDetails(symbol, token) {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Ошибка получения данных:', error);
+    // Ошибка получения данных
   }
 }
 

@@ -153,7 +153,6 @@ export const OrderbookTestPage = () => {
           }
         }
       } catch (error) {
-        console.error('Ошибка при получении списка фьючерсов:', error);
         setTickers([]);
       } finally {
         setLoadingTickers(false);

@@ -674,10 +674,8 @@ export const CryptoArbs = () => {
   // Обогащаем выбранный арбитраж для отображения (даже если его нет в списке)
   const selectedEnriched = useMemo(() => {
     if (!selectedArb) {
-      console.log('selectedEnriched: selectedArb is null');
       return null;
     }
-    console.log('selectedEnriched: selectedArb', { ticker: selectedArb.ticker, left: selectedArb.left, right: selectedArb.right });
 
     // Сначала пытаемся найти в enrichedArbs
     const found = enrichedArbs.find(
@@ -698,16 +696,6 @@ export const CryptoArbs = () => {
     const sellExchange = selectedArb.right.last > selectedArb.left.last ? selectedArb.right : selectedArb.left;
     const buyExchange = selectedArb.right.last < selectedArb.left.last ? selectedArb.right : selectedArb.left;
 
-    // Отладка: проверяем, что sellExchange и buyExchange разные
-    if (sellExchange.exchange === buyExchange.exchange) {
-      console.warn('sellExchange и buyExchange одинаковые:', {
-        ticker: selectedArb.ticker,
-        left: selectedArb.left,
-        right: selectedArb.right,
-        sellExchange: sellExchange.exchange,
-        buyExchange: buyExchange.exchange,
-      });
-    }
 
     const sellFundingData = fundingMap[`${selectedArb.ticker}_${sellExchange.exchange}`];
     const buyFundingData = fundingMap[`${selectedArb.ticker}_${buyExchange.exchange}`];

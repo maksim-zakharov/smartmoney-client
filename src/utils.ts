@@ -39,7 +39,7 @@ export async function getDividents(ticker, token) {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Ошибка получения данных:', error);
+    // Ошибка получения данных
   }
 }
 export async function fetchRisk(token) {
@@ -62,7 +62,7 @@ export async function fetchRisk(token) {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Ошибка получения данных:', error);
+    // Ошибка получения данных
   }
 }
 
@@ -86,7 +86,7 @@ export async function fetchRiskRates(symbol, token, riskCategoryId?: string) {
     const data = await response.json();
     return data.list[0];
   } catch (error) {
-    console.error('Ошибка получения данных:', error);
+    // Ошибка получения данных
   }
 }
 
@@ -119,7 +119,7 @@ export async function fetchCandlesFromAlor(symbol, tf, fromDate?, toDate?, limit
     const data = await response.json();
     return data.history;
   } catch (error) {
-    console.error('Ошибка получения данных:', error);
+    // Ошибка получения данных
   }
 }
 

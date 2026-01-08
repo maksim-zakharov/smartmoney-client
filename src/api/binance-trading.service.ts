@@ -84,8 +84,6 @@ export class BinanceTradingService {
       return this.serverTimeOffset;
     } catch (error) {
       // Если не удалось получить время сервера, возвращаем 0 (используем локальное время)
-      // eslint-disable-next-line no-console
-      console.warn('Не удалось получить время сервера Binance, используем локальное время:', error);
       return 0;
     }
   }

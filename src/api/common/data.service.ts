@@ -1446,8 +1446,6 @@ export class DataService {
       retryWhen((errors) =>
         errors.pipe(
           mergeMap((error, attempt) => {
-            // Можно добавить логирование ошибок
-            console.warn(`Attempt ${attempt + 1} failed:`, error.message);
 
             // Если превышено максимальное количество попыток, пробрасываем ошибку
             // if (attempt >= 10) {

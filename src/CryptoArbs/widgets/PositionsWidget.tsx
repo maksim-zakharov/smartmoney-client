@@ -112,7 +112,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
 
     // Проверяем, что метод getPositions существует
     if (typeof tradingServiceRef.current.getPositions !== 'function') {
-      console.error('getPositions is not a function on TradingService');
       return;
     }
 
@@ -148,30 +147,21 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
         }
       }
 
-      console.log('Fetching positions for exchanges with keys:', exchangesWithKeys);
-
       for (const exchange of exchangesWithKeys) {
         try {
           const keys = getExchangeApiKeys(exchange);
           const exchangeUpper = exchange.toUpperCase();
 
-          console.log(`Processing ${exchangeUpper}, has authToken:`, !!keys.authToken);
-
           if (['MEXC', 'OURBIT', 'KCEX'].includes(exchangeUpper)) {
             if (!keys.authToken) {
-              console.warn(`No authToken for ${exchangeUpper}, skipping`);
               continue; // Пропускаем если нет ключей
             }
-
-            console.log(`Fetching positions from ${exchangeUpper}`);
 
             // Запрашиваем все позиции без фильтрации по символу
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
               authToken: keys.authToken,
             });
-
-            console.log(`${exchangeUpper} positions response:`, response);
 
             if (response.success && response.data && Array.isArray(response.data)) {
               // Парсим позиции из ответа
@@ -223,19 +213,14 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
             }
           } else if (exchangeUpper === 'BYBIT') {
             if (!keys.apiKey || !keys.secretKey) {
-              console.warn(`No API keys for ${exchangeUpper}, skipping`);
               continue;
             }
-
-            console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
               apiKey: keys.apiKey,
               secretKey: keys.secretKey,
             });
-
-            console.log(`${exchangeUpper} positions response:`, response);
 
             // Bybit возвращает данные в формате { retCode, retMsg, result: { list: [...] } }
             if (response.retCode === 0 && response.result && Array.isArray(response.result.list)) {
@@ -286,19 +271,14 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
             }
           } else if (exchangeUpper === 'BINANCE') {
             if (!keys.apiKey || !keys.secretKey) {
-              console.warn(`No API keys for ${exchangeUpper}, skipping`);
               continue;
             }
-
-            console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
               apiKey: keys.apiKey,
               secretKey: keys.secretKey,
             });
-
-            console.log(`${exchangeUpper} positions response:`, response);
 
             // Binance возвращает массив позиций напрямую
             if (Array.isArray(response)) {
@@ -346,11 +326,8 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
             }
           } else if (exchangeUpper === 'BITMART') {
             if (!keys.apiKey || !keys.secretKey || !keys.passphrase) {
-              console.warn(`No API keys or passphrase for ${exchangeUpper}, skipping`);
               continue;
             }
-
-            console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
@@ -358,8 +335,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
               secretKey: keys.secretKey,
               passphrase: keys.passphrase,
             });
-
-            console.log(`${exchangeUpper} positions response:`, response);
 
             // Bitmart возвращает данные в формате { code, message, data: [...] }
             if (response.code === 1000 && Array.isArray(response.data)) {
@@ -416,20 +391,9 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
               }
             }
           } else if (exchangeUpper === 'OKX') {
-            console.log(`OKX keys check: apiKey:`, !!keys.apiKey, 'secretKey:', !!keys.secretKey, 'passphrase:', !!keys.passphrase);
             if (!keys.apiKey || !keys.secretKey || !keys.passphrase) {
-              console.warn(
-                `No API keys or passphrase for ${exchangeUpper}, skipping. apiKey:`,
-                !!keys.apiKey,
-                'secretKey:',
-                !!keys.secretKey,
-                'passphrase:',
-                !!keys.passphrase,
-              );
               continue;
             }
-
-            console.log(`Fetching positions from ${exchangeUpper}`);
 
             const response = await tradingServiceRef.current!.getPositions({
               exchange,
@@ -437,8 +401,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
               secretKey: keys.secretKey,
               passphrase: keys.passphrase,
             });
-
-            console.log(`${exchangeUpper} positions response:`, response);
 
             // OKX возвращает данные в формате { code, msg, data: [...] }
             if (response.code === '0' && Array.isArray(response.data)) {
@@ -498,11 +460,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
             }
           }
         } catch (error) {
-          console.error(`Ошибка при получении позиций с ${exchange}:`, error);
-          // Показываем детали ошибки для отладки
-          if (error instanceof Error) {
-            console.error(`Error message: ${error.message}`);
-          }
           // Не показываем toast для ошибок, чтобы не спамить
         }
       }
@@ -574,7 +531,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
       setPositions((prev) => prev.filter((p) => p.id !== position.id));
       toast.success(`Позиция ${position.token} на ${exchange} закрыта`);
     } catch (error: unknown) {
-      console.error('Ошибка при закрытии позиции:', error);
       const err = error as { message?: string };
       toast.error(`Ошибка при закрытии позиции: ${err?.message || 'Неизвестная ошибка'}`);
     } finally {

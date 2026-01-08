@@ -58,8 +58,6 @@ export class BybitTradingService {
       });
 
       if (data.retCode !== 0) {
-        // eslint-disable-next-line no-console
-        console.warn('Не удалось получить время сервера Bybit:', data.retMsg);
         return 0;
       }
 
@@ -75,8 +73,6 @@ export class BybitTradingService {
       return this.serverTimeOffset;
     } catch (error) {
       // Если не удалось получить время сервера, возвращаем 0 (используем локальное время)
-      // eslint-disable-next-line no-console
-      console.warn('Не удалось получить время сервера Bybit, используем локальное время:', error);
       return 0;
     }
   }

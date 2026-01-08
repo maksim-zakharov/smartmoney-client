@@ -97,7 +97,7 @@ export const TWChart = ({ ticker, volumeProfileN = 0, height = 400, data, lineSe
           const trades = data.map((t: any) => ({ time: t.T / 1000, price: Number(t.p), qty: Number(t.q) }));
           allTrades = allTrades.concat(trades);
         } catch (error) {
-          console.error(`Error fetching trades from ${currentFrom} to ${currentTo}:`, error);
+          // Error fetching trades
           // Опционально: break или continue
         }
         currentFrom = currentTo;
@@ -210,7 +210,7 @@ export const TWChart = ({ ticker, volumeProfileN = 0, height = 400, data, lineSe
           });
       })
       .catch((error) => {
-        console.error('Error fetching trades:', error);
+        // Error fetching trades
       });
   }, [volumeProfileN, dataService, ticker, datafeed]);
 
