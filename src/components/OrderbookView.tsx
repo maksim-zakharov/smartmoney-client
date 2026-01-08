@@ -388,7 +388,7 @@ export const OrderbookView = ({ exchange, ticker }: OrderbookViewProps) => {
 
   if (!hasData) {
     return (
-      <Card className="h-full flex flex-col pb-0 border-muted-foreground/20 overflow-hidden gap-0">
+      <Card className="h-full flex flex-col pb-0 border-muted-foreground/20 overflow-hidden gap-0 rounded-md">
         <CardHeader className="py-0.5 px-2">
           <CardTitle className="text-xs font-semibold">{exchange}</CardTitle>
         </CardHeader>
@@ -400,7 +400,7 @@ export const OrderbookView = ({ exchange, ticker }: OrderbookViewProps) => {
   }
 
   return (
-    <Card className="h-full flex flex-col pb-0 border-muted-foreground/20 overflow-hidden gap-0">
+    <Card className="h-full flex flex-col pb-0 border-muted-foreground/20 overflow-hidden gap-0 rounded-md">
       <CardHeader className="py-0.5 px-2 border-b border-muted-foreground/20">
         <div className="flex items-center justify-between gap-1">
           <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
