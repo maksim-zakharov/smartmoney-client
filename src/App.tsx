@@ -55,6 +55,23 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
+  
+  // Проверка флага fullAccess
+  const hasFullAccess = localStorage.getItem('fullAccess') === 'true';
+  
+  // Редирект на /arbs если нет fullAccess
+  useEffect(() => {
+    if (!hasFullAccess) {
+      const allowedPath = '/arbs';
+      const allowedParams = 'pair=LISA|BINGX|OURBIT&type=spread&sort=spread';
+      
+      // Если пользователь не на разрешенной странице, редиректим
+      if (location.pathname !== allowedPath || location.search !== `?${allowedParams}`) {
+        navigate(`${allowedPath}?${allowedParams}`, { replace: true });
+      }
+    }
+  }, [hasFullAccess, location, navigate]);
+  
   const api = useAppSelector((state) => state.alorSlice.api);
   const tiToken = useAppSelector((state) => state.alorSlice.tToken);
   const { accessToken } = useAppSelector((state) => state.alorSlice.cTraderAuth || ({} as AppsTokenResponse));
@@ -505,26 +522,29 @@ export default function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <SidebarProvider>
-        <Sidebar>
-          <SidebarContent>
-            {/* We create a SidebarGroup for each parent. */}
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.key}>
-                  <SidebarMenuButton asChild isActive={item.key === location.pathname}>
-                    <Link to={item.key}>{item.label}</Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarContent>
-        </Sidebar>
+        {hasFullAccess && (
+          <Sidebar>
+            <SidebarContent>
+              {/* We create a SidebarGroup for each parent. */}
+              <SidebarMenu>
+                {menuItems.map((item) => (
+                  <SidebarMenuItem key={item.key}>
+                    <SidebarMenuButton asChild isActive={item.key === location.pathname}>
+                      <Link to={item.key}>{item.label}</Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarContent>
+          </Sidebar>
+        )}
         <SidebarInset>
-          <header
-            className="flex h-11 shrink-0 items-center gap-2 border-b px-4 justify-between"
-            style={{ borderColor: 'rgba(166, 189, 213, 0.2)' }}
-          >
-            <SidebarTrigger className="-ml-1" />
+          {hasFullAccess && (
+            <header
+              className="flex h-11 shrink-0 items-center gap-2 border-b px-4 justify-between"
+              style={{ borderColor: 'rgba(166, 189, 213, 0.2)' }}
+            >
+              <SidebarTrigger className="-ml-1" />
             <div className="flex gap-2 items-center">
               {cTraderAccount?.ctidTraderAccountId && (
                 <>
@@ -925,11 +945,16 @@ export default function App() {
               </Dialog>
             </div>
           </header>
+          )}
           <div className="flex flex-1 flex-col gap-1 p-1">
             <Routes>
-              {menuItems.map((item) => (
-                <Route path={item.key} element={item.element} />
-              ))}
+              {hasFullAccess ? (
+                menuItems.map((item) => (
+                  <Route key={item.key} path={item.key} element={item.element} />
+                ))
+              ) : (
+                <Route path="/arbs" element={<CryptoArbs />} />
+              )}
             </Routes>
             <AlertDialog />
           </div>

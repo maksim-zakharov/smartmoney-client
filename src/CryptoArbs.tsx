@@ -1,26 +1,26 @@
-import { useGetPumpTickersQuery } from './api/pump-api.ts';
-import { cn } from './lib/utils.ts';
+import { useGetPumpTickersQuery } from './api/pump-api';
+import { cn } from './lib/utils';
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { exchangeImgMap } from './utils.ts';
+import { exchangeImgMap } from './utils';
 import { getTickerWithSuffix, getExchangeUrl } from './api/utils/tickers';
 import dayjs from 'dayjs';
-import { Card, CardHeader, CardTitle } from './components/ui/card.tsx';
-import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage.tsx';
-import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
-import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
+import { Card, CardHeader, CardTitle } from './components/ui/card';
+import { StatArbPage } from './ArbitrageMOEXPage/strategies/StatArbPage';
+import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip';
 import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, Settings, EyeOff, Star, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog.tsx';
-import { Button } from './components/ui/button.tsx';
-import { Input } from './components/ui/input.tsx';
-import { Label } from './components/ui/label.tsx';
-import { Checkbox } from './components/ui/checkbox.tsx';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
+import { Button } from './components/ui/button';
+import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { Checkbox } from './components/ui/checkbox';
 import { OrderbookView } from './components/OrderbookView';
 import { TradingService } from './api/trading.service';
-import { TradingPanelWidget } from './Widgets/TradingPanelWidget';
-import { SelectedArbWidget } from './Widgets/SelectedArbWidget';
-import { PositionsWidget } from './Widgets/PositionsWidget';
+import { TradingPanelWidget } from './widgets/TradingPanelWidget';
+import { SelectedArbWidget } from './widgets/SelectedArbWidget';
+import { PositionsWidget } from './widgets/PositionsWidget';
 
 interface ArbPair {
   ticker: string;
@@ -342,7 +342,19 @@ export const CryptoArbs = () => {
       } else {
         updated.add(key);
       }
-      localStorage.setItem('crypto-arbs-favorite-pairs', JSON.stringify(Array.from(updated)));
+      const arrayFromSet = Array.from(updated);
+      localStorage.setItem('crypto-arbs-favorite-pairs', JSON.stringify(arrayFromSet));
+      return updated;
+    });
+  };
+
+  // Функция для удаления из избранного (только удаление)
+  const removeFavorite = (key: string) => {
+    setFavoritePairs((prev) => {
+      const updated = new Set(prev);
+      updated.delete(key);
+      const arrayFromSet = Array.from(updated);
+      localStorage.setItem('crypto-arbs-favorite-pairs', JSON.stringify(arrayFromSet));
       return updated;
     });
   };
@@ -774,33 +786,46 @@ export const CryptoArbs = () => {
   }, [selectedFairArb]);
 
   // Получаем избранные пары для отображения в табах
+  // Не зависят от того, какие арбитражи сейчас приходят с сервера:
+  // используем только сохраненный ключ (ticker|left|right или ticker|exchange)
   const favoriteArbsList = useMemo(() => {
-    const favorites: Array<{ key: string; type: 'spread' | 'fair'; arb?: typeof enrichedArbs[0]; fair?: FairRatio }> = [];
+    const favorites: Array<{ key: string; type: 'spread' | 'fair'; arb?: ArbPair; fair?: FairRatio }> = [];
 
     Array.from(favoritePairs).forEach((key) => {
-      // Проверяем формат ключа: если 3 части через | - это spread, если 2 - fair
       const parts = key.split('|');
+
       if (parts.length === 3) {
         // Spread арбитраж: ticker|leftExchange|rightExchange
         const [ticker, leftExchange, rightExchange] = parts;
-        const found = enrichedArbs.find(
-          (a) => a.ticker === ticker && a.left.exchange === leftExchange && a.right.exchange === rightExchange,
-        );
-        if (found) {
-          favorites.push({ key, type: 'spread', arb: found });
-        }
+        const arb: ArbPair = {
+          ticker,
+          left: {
+            exchange: leftExchange,
+            last: 0,
+          },
+          right: {
+            exchange: rightExchange,
+            last: 0,
+          },
+          ratio: 1,
+        };
+        favorites.push({ key, type: 'spread', arb });
       } else if (parts.length === 2) {
         // Fair арбитраж: ticker|exchange
         const [ticker, exchange] = parts;
-        const found = fairRatios.find((r) => r.ticker === ticker && r.exchange === exchange);
-        if (found) {
-          favorites.push({ key, type: 'fair', fair: found });
-        }
+        const fair: FairRatio = {
+          ticker,
+          exchange,
+          last: 0,
+          fair: 0,
+          ratio: 1,
+        };
+        favorites.push({ key, type: 'fair', fair });
       }
     });
 
     return favorites;
-  }, [favoritePairs, enrichedArbs, fairRatios]);
+  }, [favoritePairs]);
 
   // Обогащаем выбранный арбитраж для отображения (даже если его нет в списке)
   const selectedEnriched = useMemo(() => {
@@ -853,8 +878,11 @@ export const CryptoArbs = () => {
     };
   }, [selectedArb, enrichedArbs, fundingMap]);
 
+  // Проверка флага fullAccess
+  const hasFullAccess = localStorage.getItem('fullAccess') === 'true';
+
   return (
-    <div className="flex gap-1 h-[calc(100vh-52px)]">
+    <div className={cn('flex gap-1', hasFullAccess ? 'h-[calc(100vh-52px)]' : 'h-[calc(100vh-8px)]')}>
       <div className="w-[320px] flex-shrink-0 flex flex-col overflow-hidden">
         <div className="mb-2 flex flex-col gap-1">
           <div className="flex items-center gap-2">
@@ -1477,11 +1505,7 @@ export const CryptoArbs = () => {
                         ) : (
                           <>
                             {fav.fair && exchangeImgMap[fav.fair.exchange] && (
-                              <img
-                                src={exchangeImgMap[fav.fair.exchange]}
-                                alt={fav.fair.exchange}
-                                className="h-3.5 w-3.5 rounded-full"
-                              />
+                              <img src={exchangeImgMap[fav.fair.exchange]} alt={fav.fair.exchange} className="h-3.5 w-3.5 rounded-full" />
                             )}
                             <span>{fav.fair?.ticker}</span>
                             <span>{fav.fair?.exchange}</span>
@@ -1492,7 +1516,7 @@ export const CryptoArbs = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             const wasSelected = isSelected;
-                            toggleFavorite(fav.key);
+                            removeFavorite(fav.key);
                             // Если удаляли выбранный арбитраж, выбираем первый из оставшихся
                             if (wasSelected && favoriteArbsList.length > 1) {
                               const remaining = favoriteArbsList.filter((f) => f.key !== fav.key);
@@ -1508,7 +1532,21 @@ export const CryptoArbs = () => {
                                 } else if (first.type === 'fair' && first.fair) {
                                   handleFairArbSelect(first.fair);
                                 }
+                              } else {
+                                // Если больше нет избранных, очищаем выбор
+                                setSelectedArb(null);
+                                setSelectedFairArb(null);
+                                searchParams.delete('pair');
+                                searchParams.delete('type');
+                                setSearchParams(searchParams);
                               }
+                            } else if (wasSelected) {
+                              // Если удаляли последний избранный, очищаем выбор
+                              setSelectedArb(null);
+                              setSelectedFairArb(null);
+                              searchParams.delete('pair');
+                              searchParams.delete('type');
+                              setSearchParams(searchParams);
                             }
                           }}
                         />
@@ -1618,11 +1656,7 @@ export const CryptoArbs = () => {
                         ) : (
                           <>
                             {fav.fair && exchangeImgMap[fav.fair.exchange] && (
-                              <img
-                                src={exchangeImgMap[fav.fair.exchange]}
-                                alt={fav.fair.exchange}
-                                className="h-3.5 w-3.5 rounded-full"
-                              />
+                              <img src={exchangeImgMap[fav.fair.exchange]} alt={fav.fair.exchange} className="h-3.5 w-3.5 rounded-full" />
                             )}
                             <span>{fav.fair?.ticker}</span>
                             <span>{fav.fair?.exchange}</span>
@@ -1633,7 +1667,7 @@ export const CryptoArbs = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             const wasSelected = isSelected;
-                            toggleFavorite(fav.key);
+                            removeFavorite(fav.key);
                             // Если удаляли выбранный арбитраж, выбираем первый из оставшихся
                             if (wasSelected && favoriteArbsList.length > 1) {
                               const remaining = favoriteArbsList.filter((f) => f.key !== fav.key);
@@ -1649,7 +1683,21 @@ export const CryptoArbs = () => {
                                 } else if (first.type === 'fair' && first.fair) {
                                   handleFairArbSelect(first.fair);
                                 }
+                              } else {
+                                // Если больше нет избранных, очищаем выбор
+                                setSelectedArb(null);
+                                setSelectedFairArb(null);
+                                searchParams.delete('pair');
+                                searchParams.delete('type');
+                                setSearchParams(searchParams);
                               }
+                            } else if (wasSelected) {
+                              // Если удаляли последний избранный, очищаем выбор
+                              setSelectedArb(null);
+                              setSelectedFairArb(null);
+                              searchParams.delete('pair');
+                              searchParams.delete('type');
+                              setSearchParams(searchParams);
                             }
                           }}
                         />

@@ -207,15 +207,15 @@ export const TradingPanelWidget: React.FC<TradingPanelWidgetProps> = ({ isTradin
           <TableCell>
             <div className="space-y-2">
               <div>
-                <Label htmlFor="trading-volume" className="text-xs">
-                  Объем (USD)
+                <Label htmlFor="trading-volume" className="text-xs text-muted-foreground mb-1 block">
+                  Кол-во (USDT)
                 </Label>
                 <Input
                   id="trading-volume"
                   type="number"
                   value={tradingVolume}
                   onChange={handleChange}
-                  className="h-7 text-xs"
+                  className="h-8"
                   placeholder="100"
                 />
               </div>
