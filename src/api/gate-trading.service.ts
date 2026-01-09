@@ -244,6 +244,38 @@ export class GateTradingService {
 
     return data as GatePlaceOrderResponse;
   }
+
+  /**
+   * Получает открытые позиции на Gate (фьючерсы USDT)
+   * GET /api/v4/futures/usdt/positions
+   */
+  async getPositions(params: { apiKey: string; secretKey: string; contract?: string }): Promise<any> {
+    const { apiKey, secretKey, contract } = params;
+
+    const requestPath = '/api/v4/futures/usdt/positions';
+    const requestParams: Record<string, string> = {};
+    if (contract) {
+      requestParams.contract = contract;
+    }
+
+    // Формируем queryString для подписи
+    const queryString = Object.keys(requestParams)
+      .map((key) => `${key}=${requestParams[key]}`)
+      .join('&');
+
+    const url = `https://api.gateio.ws${requestPath}${queryString ? `?${queryString}` : ''}`;
+
+    const headers = this.generateGateHeaders(apiKey, secretKey, 'GET', requestPath, {}, queryString);
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url,
+      headers,
+      params: requestParams,
+    });
+
+    return data;
+  }
 }
 
 

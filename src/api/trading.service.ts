@@ -441,6 +441,17 @@ export class TradingService {
           symbol,
         });
 
+      case 'GATE':
+      case 'GATEIO':
+        if (!params.apiKey || !params.secretKey) {
+          throw new Error('Для Gate требуются apiKey и secretKey');
+        }
+        return this.gateTradingService.getPositions({
+          apiKey: params.apiKey,
+          secretKey: params.secretKey,
+          contract: symbol,
+        });
+
       default:
         throw new Error(`Биржа ${exchange} не поддерживается для получения позиций`);
     }

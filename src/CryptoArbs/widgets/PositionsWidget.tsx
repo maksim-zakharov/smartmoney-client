@@ -119,7 +119,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
       const allPositions: Position[] = [];
 
       // Получаем все поддерживаемые биржи
-      const supportedExchanges = ['MEXC', 'OURBIT', 'KCEX', 'BYBIT', 'BINANCE', 'BITMART', 'OKX'];
+      const supportedExchanges = ['MEXC', 'OURBIT', 'KCEX', 'BYBIT', 'BINANCE', 'BITMART', 'OKX', 'GATE', 'GATEIO'];
 
       // Проверяем наличие ключей для каждой биржи
       const exchangesWithKeys: string[] = [];
@@ -142,6 +142,10 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
           }
         } else if (exchangeUpper === 'OKX') {
           if (keys.apiKey && keys.secretKey && keys.passphrase) {
+            exchangesWithKeys.push(exchange);
+          }
+        } else if (exchangeUpper === 'GATE' || exchangeUpper === 'GATEIO') {
+          if (keys.apiKey && keys.secretKey) {
             exchangesWithKeys.push(exchange);
           }
         }
@@ -455,6 +459,76 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
                   volume: Math.abs(positionSize), // Объем в базовой валюте
                   pnl: parseFloat(pos.realizedPnl || pos.settledPnl || '0'), // Реализованный PnL
                   unrealizedPnl: parseFloat(pos.upl || '0'), // Нереализованный PnL (upl = unrealized profit and loss)
+                });
+              }
+            }
+          } else if (exchangeUpper === 'GATE' || exchangeUpper === 'GATEIO') {
+            if (!keys.apiKey || !keys.secretKey) {
+              continue;
+            }
+
+            const response = await tradingServiceRef.current!.getPositions({
+              exchange,
+              apiKey: keys.apiKey,
+              secretKey: keys.secretKey,
+            });
+
+            // Gate возвращает массив позиций напрямую
+            if (Array.isArray(response)) {
+              for (const pos of response) {
+                // Извлекаем базовый тикер из contract (формат: BTC_USDT)
+                const posSymbol = pos.contract || '';
+                // Разделяем по подчеркиванию и берем первую часть (BTC из BTC_USDT)
+                const parts = posSymbol.split('_');
+                const baseTicker = parts[0] || '';
+
+                // Пропускаем пустые позиции (size = "0" или 0)
+                const positionSize = parseFloat(pos.size || '0');
+                if (positionSize === 0) {
+                  continue;
+                }
+
+                // Определяем side на основе size (положительное = Long, отрицательное = Short)
+                let side = '';
+                if (positionSize > 0) {
+                  side = 'Long';
+                } else if (positionSize < 0) {
+                  side = 'Short';
+                }
+
+                // Плечо
+                const leverage = pos.leverage ? parseFloat(pos.leverage.toString()) : undefined;
+
+                // Тип маржи: mode может быть "single" (cross) или "dual" (isolated)
+                const mode = pos.mode || '';
+                let marginType = '';
+                if (mode === 'dual' || mode === 'Dual') {
+                  marginType = 'Isolated';
+                } else if (mode === 'single' || mode === 'Single') {
+                  marginType = 'Cross';
+                }
+
+                // Используем entry_price для цены входа
+                const entryPrice = parseFloat(pos.entry_price || '0');
+
+                // Объем позиции в базовой валюте (size)
+                // Для расчета позиции в USDT используем value или size * entry_price
+                const positionValue = parseFloat(pos.value || '0') || Math.abs(positionSize) * entryPrice;
+
+                // Нереализованный PnL
+                const unrealizedPnl = parseFloat(pos.unrealised_pnl || '0');
+
+                allPositions.push({
+                  id: `${exchange}-${posSymbol}-${pos.id || '0'}`,
+                  exchange,
+                  token: baseTicker,
+                  side,
+                  marginType,
+                  leverage,
+                  entryPrice,
+                  volume: Math.abs(positionSize), // Объем в базовой валюте
+                  pnl: 0, // Gate не возвращает реализованный PnL в этом endpoint
+                  unrealizedPnl, // Нереализованный PnL
                 });
               }
             }
