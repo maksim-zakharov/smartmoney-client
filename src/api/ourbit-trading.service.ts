@@ -1,5 +1,10 @@
 import { generateHeaders as generateMexcHeaders } from './utils/headers';
-import { PlaceLimitOrderParams, PlaceOrderResponse } from './mexc-trading.service';
+import {
+  PlaceLimitOrderParams,
+  PlaceOrderResponse,
+  AccountAsset,
+  AccountAssetsResponse,
+} from './mexc-trading.service';
 
 /**
  * Сервис для торговли на Ourbit
@@ -264,6 +269,18 @@ export class OurbitTradingService {
       url: '/position/open_positions',
       authToken,
       params: requestParams,
+    });
+  }
+
+  /**
+   * Получает баланс аккаунта на Ourbit
+   */
+  async getAccountAssets(params: { authToken: string }): Promise<AccountAssetsResponse> {
+    const { authToken } = params;
+
+    return this.signedGetRequest({
+      url: '/account/assets',
+      authToken,
     });
   }
 }

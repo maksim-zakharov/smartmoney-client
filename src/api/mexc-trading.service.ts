@@ -36,6 +36,52 @@ export interface PlaceOrderResponse {
 }
 
 /**
+ * Интерфейс актива аккаунта
+ */
+export interface AccountAsset {
+  /** Валюта */
+  currency: string;
+  /** Маржа позиции */
+  positionMargin: number;
+  /** Доступный баланс */
+  availableBalance: number;
+  /** Баланс наличных (выводимый) */
+  cashBalance: number;
+  /** Замороженный баланс */
+  frozenBalance: number;
+  /** Общий капитал */
+  equity: number;
+  /** Нереализованный PnL */
+  unrealized: number;
+  /** Бонус */
+  bonus: number;
+  /** Время истечения бонуса (мс) */
+  bonusExpireTime?: number;
+  /** Доступные средства для перевода */
+  availableCash: number;
+  /** Доступные средства для открытия позиций */
+  availableOpen: number;
+  /** Сумма долга */
+  debtAmount: number;
+  /** Внесенная эффективная маржа */
+  contributeMarginAmount: number;
+  /** ID валюты */
+  vcoinId: string;
+}
+
+/**
+ * Интерфейс ответа при получении баланса аккаунта
+ */
+export interface AccountAssetsResponse {
+  /** Успешность операции */
+  success: boolean;
+  /** Код ответа */
+  code: number;
+  /** Данные баланса */
+  data: AccountAsset[];
+}
+
+/**
  * Сервис для торговли на MEXC
  */
 export class MexcTradingService {
@@ -196,6 +242,18 @@ export class MexcTradingService {
       url: '/position/open_positions',
       authToken,
       params: requestParams,
+    });
+  }
+
+  /**
+   * Получает баланс аккаунта на MEXC
+   */
+  async getAccountAssets(params: { authToken: string }): Promise<AccountAssetsResponse> {
+    const { authToken } = params;
+
+    return this.signedGetRequest({
+      url: '/account/assets',
+      authToken,
     });
   }
 

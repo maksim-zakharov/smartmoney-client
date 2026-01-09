@@ -1,4 +1,9 @@
-import { MexcTradingService, PlaceLimitOrderParams, PlaceOrderResponse } from './mexc-trading.service';
+import {
+  MexcTradingService,
+  PlaceLimitOrderParams,
+  PlaceOrderResponse,
+  AccountAssetsResponse,
+} from './mexc-trading.service';
 import { OurbitTradingService } from './ourbit-trading.service';
 import { KcexTradingService } from './kcex-trading.service';
 import { BybitTradingService, BybitPlaceMarketOrderParams, BybitPlaceOrderResponse } from './bybit-trading.service';
@@ -454,6 +459,49 @@ export class TradingService {
 
       default:
         throw new Error(`Биржа ${exchange} не поддерживается для получения позиций`);
+    }
+  }
+
+  /**
+   * Получает баланс аккаунта
+   */
+  async getAccountAssets(params: {
+    exchange: string;
+    authToken?: string;
+    apiKey?: string;
+    secretKey?: string;
+    passphrase?: string;
+  }): Promise<AccountAssetsResponse> {
+    const { exchange } = params;
+    const exchangeUpper = exchange.toUpperCase();
+
+    switch (exchangeUpper) {
+      case 'MEXC':
+        if (!params.authToken) {
+          throw new Error('Для MEXC требуется authToken (WEB authentication key)');
+        }
+        return this.mexcTradingService.getAccountAssets({
+          authToken: params.authToken,
+        });
+
+      case 'OURBIT':
+        if (!params.authToken) {
+          throw new Error('Для Ourbit требуется authToken (WEB authentication key)');
+        }
+        return this.ourbitTradingService.getAccountAssets({
+          authToken: params.authToken,
+        });
+
+      case 'KCEX':
+        if (!params.authToken) {
+          throw new Error('Для KCEX требуется authToken (WEB authentication key)');
+        }
+        return this.kcexTradingService.getAccountAssets({
+          authToken: params.authToken,
+        });
+
+      default:
+        throw new Error(`Биржа ${exchange} не поддерживается для получения баланса`);
     }
   }
 }
