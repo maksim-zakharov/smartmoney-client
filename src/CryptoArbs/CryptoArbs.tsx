@@ -89,6 +89,7 @@ export const CryptoArbs = () => {
   const [selectedFairArb, setSelectedFairArb] = useState<FairRatio | null>(null);
   const tradingServiceRef = useRef<TradingService | null>(null);
   const [isTrading, setIsTrading] = useState(false);
+  const [positions, setPositions] = useState<import('./widgets/PositionsWidget').Position[]>([]);
   const [showTradingPanel, setShowTradingPanel] = useState(() => {
     return localStorage.getItem('enableOrderbookTrading') === 'true';
   });
@@ -180,7 +181,7 @@ export const CryptoArbs = () => {
   useEffect(() => {
     if (allExchanges.length > 0 && !showAll) {
       const updated = enabledExchanges.filter((ex) => allExchanges.includes(ex));
-      // Если после удаления не осталось выбранных бирж, включаем режим "Все"
+        // Если после удаления не осталось выбранных бирж, включаем режим "Все"
       if (updated.length === 0) {
         dispatch(setShowAll(true));
       } else if (updated.length !== enabledExchanges.length) {
@@ -727,6 +728,52 @@ export const CryptoArbs = () => {
     };
   }, [selectedArb, enrichedArbs, fundingMap]);
 
+  // Формируем арбитражную позицию из позиций на обеих биржах
+  const arbitragePosition = useMemo(() => {
+    if (!selectedEnriched || !positions.length) {
+      return null;
+    }
+
+    const ticker = selectedEnriched.ticker;
+    const leftExchange = selectedEnriched.left.exchange;
+    const rightExchange = selectedEnriched.right.exchange;
+
+    // Ищем позиции по тикеру на левой бирже
+    const leftPosition = positions.find(
+      (p) => p.token.toUpperCase() === ticker.toUpperCase() && p.exchange.toUpperCase() === leftExchange.toUpperCase(),
+    );
+
+    // Ищем позиции по тикеру на правой бирже
+    const rightPosition = positions.find(
+      (p) => p.token.toUpperCase() === ticker.toUpperCase() && p.exchange.toUpperCase() === rightExchange.toUpperCase(),
+    );
+
+    // Если есть позиции на обеих биржах, формируем арбитражную позицию
+    if (leftPosition && rightPosition) {
+      // Цена умножается на объем для левой и правой позиции
+      const leftValue = leftPosition.entryPrice * leftPosition.volume;
+      const rightValue = rightPosition.entryPrice * rightPosition.volume;
+
+      // Левая делится на правую, получается средняя цена арбитража
+      // Если rightValue = 0, используем простое деление цен
+      const arbitragePrice = rightValue !== 0 ? leftValue / rightValue : (rightPosition.entryPrice !== 0 ? leftPosition.entryPrice / rightPosition.entryPrice : 0);
+
+      // side - side левого тикера
+      const side = leftPosition.side || '';
+
+      // PnL складывается
+      const totalPnl = (leftPosition.unrealizedPnl || 0) + (rightPosition.unrealizedPnl || 0);
+
+      return {
+        side,
+        price: arbitragePrice,
+        pnl: totalPnl,
+      };
+    }
+
+    return null;
+  }, [selectedEnriched, positions]);
+
   // Проверка флага fullAccess
   const hasFullAccess = localStorage.getItem('fullAccess') === 'true';
 
@@ -835,6 +882,7 @@ export const CryptoArbs = () => {
                   onlyChart
                   height="100%"
                   multi={1}
+                  position={arbitragePosition}
                 />
               </div>
               {showTradingPanel && (
@@ -842,6 +890,7 @@ export const CryptoArbs = () => {
                   ticker={selectedEnriched.ticker}
                   leftExchange={selectedArb.left.exchange}
                   rightExchange={selectedArb.right.exchange}
+                  onPositionsChange={setPositions}
                 />
               )}
             </div>

@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Button } from '../../components/ui/button';
 import { X } from 'lucide-react';
 import { exchangeImgMap } from '../../utils';
+import { useAppSelector } from '../../store';
+import { DataService } from '../../api/common/data.service';
+import { Subscription } from 'rxjs';
+import { getTickerWithSuffix } from '../../api/utils/tickers';
 
 export interface ArbPair {
   ticker: string;
@@ -34,6 +38,201 @@ export interface FavoriteTabsProps {
   onRemoveFavorite: (key: string) => void;
   onClearSelection: () => void;
 }
+
+// Функция для получения метода подписки на свечи для биржи
+const getCandlesSubscribeMethod = (dataService: DataService, exchange: string) => {
+  const exchangeUpper = exchange.toUpperCase();
+  switch (exchangeUpper) {
+    case 'MEXC':
+      return (symbol: string, resolution: string) => dataService.mexcSubscribeCandles(symbol, resolution as any);
+    case 'BYBIT':
+      return (symbol: string, resolution: string) => dataService.bybitSubscribeCandles(symbol, resolution as any);
+    case 'BITGET':
+      return (symbol: string, resolution: string) => dataService.bitgetSubscribeCandles(symbol, resolution as any);
+    case 'GATE':
+    case 'GATEIO':
+      return (symbol: string, resolution: string) => dataService.gateSubscribeCandles(symbol, resolution as any);
+    case 'BINGX':
+      return (symbol: string, resolution: string) => dataService.bingxSubscribeCandles(symbol, resolution as any);
+    case 'OKX':
+      return (symbol: string, resolution: string) => dataService.okxSubscribeCandles(symbol, resolution as any);
+    case 'OURBIT':
+      return (symbol: string, resolution: string) => dataService.ourbitSubscribeCandles(symbol, resolution as any);
+    case 'KUCOIN':
+      return (symbol: string, resolution: string) => dataService.kucoinSubscribeCandles(symbol, resolution as any);
+    case 'BINANCE':
+      return (symbol: string, resolution: string) => dataService.binanceSubscribeCandles(symbol, resolution as any);
+    case 'BITMART':
+      return (symbol: string, resolution: string) => dataService.bitmartSubscribeCandles(symbol, resolution as any);
+    case 'HTX':
+      return (symbol: string, resolution: string) => dataService.htxSubscribeCandles(symbol, resolution as any);
+    case 'PHEMEX':
+      return (symbol: string, resolution: string) => dataService.phemexSubscribeCandles(symbol, resolution as any);
+    case 'BITUNIX':
+      return (symbol: string, resolution: string) => dataService.bitunixSubscribeCandles(symbol, resolution as any);
+    case 'TOOBIT':
+      return (symbol: string, resolution: string) => dataService.toobitSubscribeCandles(symbol, resolution as any);
+    case 'XT':
+      return (symbol: string, resolution: string) => dataService.xtSubscribeCandles(symbol, resolution as any);
+    case 'HYPERLIQUID':
+      return (symbol: string, resolution: string) => dataService.hyperliquidSubscribeCandles(symbol, resolution as any);
+    case 'ASTER':
+      return (symbol: string, resolution: string) => dataService.asterSubscribeCandles(symbol, resolution as any);
+    case 'HOTCOIN':
+      return (symbol: string, resolution: string) => dataService.hotcoinSubscribeCandles(symbol, resolution as any);
+    case 'KCEX':
+      return (symbol: string, resolution: string) => dataService.kcexSubscribeCandles(symbol, resolution as any);
+    case 'COINEX':
+      return (symbol: string, resolution: string) => dataService.coinexSubscribeCandles(symbol, resolution as any);
+    default:
+      return null;
+  }
+};
+
+// Функция для получения метода отписки от свечей для биржи
+const getCandlesUnsubscribeMethod = (dataService: DataService, exchange: string) => {
+  const exchangeUpper = exchange.toUpperCase();
+  switch (exchangeUpper) {
+    case 'MEXC':
+      return (symbol: string, resolution: string) => dataService.mexcUnsubscribeCandles(symbol, resolution as any);
+    case 'BYBIT':
+      return (symbol: string, resolution: string) => dataService.bybitUnsubscribeCandles(symbol, resolution as any);
+    case 'BITGET':
+      return (symbol: string, resolution: string) => dataService.bitgetUnsubscribeCandles(symbol, resolution as any);
+    case 'GATE':
+    case 'GATEIO':
+      return (symbol: string, resolution: string) => dataService.gateUnsubscribeCandles(symbol, resolution as any);
+    case 'BINGX':
+      return (symbol: string, resolution: string) => dataService.bingxUnsubscribeCandles(symbol, resolution as any);
+    case 'OKX':
+      return (symbol: string, resolution: string) => dataService.okxUnsubscribeCandles(symbol, resolution as any);
+    case 'OURBIT':
+      return (symbol: string, resolution: string) => dataService.ourbitUnsubscribeCandles(symbol, resolution as any);
+    case 'KUCOIN':
+      return (symbol: string, resolution: string) => dataService.kucoinUnsubscribeCandles(symbol, resolution as any);
+    case 'BINANCE':
+      return (symbol: string, resolution: string) => dataService.binanceUnsubscribeCandles(symbol, resolution as any);
+    case 'BITMART':
+      return (symbol: string, resolution: string) => dataService.bitmartUnsubscribeCandles(symbol, resolution as any);
+    case 'HTX':
+      return (symbol: string, resolution: string) => dataService.htxUnsubscribeCandles(symbol, resolution as any);
+    case 'PHEMEX':
+      return (symbol: string, resolution: string) => dataService.phemexUnsubscribeCandles(symbol, resolution as any);
+    case 'BITUNIX':
+      return (symbol: string, resolution: string) => dataService.bitunixUnsubscribeCandles(symbol, resolution as any);
+    case 'TOOBIT':
+      return (symbol: string, resolution: string) => dataService.toobitUnsubscribeCandles(symbol, resolution as any);
+    case 'XT':
+      return (symbol: string, resolution: string) => dataService.xtUnsubscribeCandles(symbol, resolution as any);
+    case 'HYPERLIQUID':
+      return (symbol: string, resolution: string) => dataService.hyperliquidUnsubscribeCandles(symbol, resolution as any);
+    case 'ASTER':
+      return (symbol: string, resolution: string) => dataService.asterUnsubscribeCandles(symbol, resolution as any);
+    case 'HOTCOIN':
+      return (symbol: string, resolution: string) => dataService.hotcoinUnsubscribeCandles(symbol, resolution as any);
+    case 'KCEX':
+      return (symbol: string, resolution: string) => dataService.kcexUnsubscribeCandles(symbol, resolution as any);
+    case 'COINEX':
+      return (symbol: string, resolution: string) => dataService.coinexUnsubscribeCandles(symbol, resolution as any);
+    default:
+      return null;
+  }
+};
+
+// Компонент для отображения спреда в реальном времени через вебсокеты
+const RealTimeSpread: React.FC<{
+  ticker: string;
+  leftExchange: string;
+  rightExchange: string;
+}> = ({ ticker, leftExchange, rightExchange }) => {
+  const dataService = useAppSelector((state) => state.alorSlice.dataService) as DataService | null;
+  const [spread, setSpread] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!dataService || !ticker) {
+      setSpread(null);
+      return;
+    }
+
+    const subscriptions: Subscription[] = [];
+    let leftPrice: number | null = null;
+    let rightPrice: number | null = null;
+
+    const updateSpread = () => {
+      if (leftPrice !== null && rightPrice !== null && rightPrice !== 0) {
+        // Формируем цену арбитража: левая цена (close) делится на правую цену (close)
+        const ratio = leftPrice / rightPrice;
+        const calculatedSpread = (ratio - 1) * 100;
+        setSpread(calculatedSpread);
+      } else {
+        setSpread(null);
+      }
+    };
+
+    // Получаем методы подписки на свечи для обеих бирж
+    const leftSubscribeMethod = getCandlesSubscribeMethod(dataService, leftExchange);
+    const rightSubscribeMethod = getCandlesSubscribeMethod(dataService, rightExchange);
+    const leftUnsubscribeMethod = getCandlesUnsubscribeMethod(dataService, leftExchange);
+    const rightUnsubscribeMethod = getCandlesUnsubscribeMethod(dataService, rightExchange);
+
+    if (!leftSubscribeMethod || !rightSubscribeMethod) {
+      setSpread(null);
+      return;
+    }
+
+    // Подписываемся на свечи для левой биржи (используем разрешение '1' - 1 минута)
+    const leftSymbol = getTickerWithSuffix(leftExchange, ticker);
+    const leftSub = leftSubscribeMethod(leftSymbol, '1').subscribe({
+      next: (candle: any) => {
+        // Получаем цену close из свечи
+        if (candle && candle.close !== undefined) {
+          leftPrice = Number(candle.close);
+          updateSpread();
+        }
+      },
+    });
+    subscriptions.push(leftSub);
+
+    // Подписываемся на свечи для правой биржи (используем разрешение '1' - 1 минута)
+    const rightSymbol = getTickerWithSuffix(rightExchange, ticker);
+    const rightSub = rightSubscribeMethod(rightSymbol, '1').subscribe({
+      next: (candle: any) => {
+        // Получаем цену close из свечи
+        if (candle && candle.close !== undefined) {
+          rightPrice = Number(candle.close);
+          updateSpread();
+        }
+      },
+    });
+    subscriptions.push(rightSub);
+
+    return () => {
+      subscriptions.forEach((sub) => sub.unsubscribe());
+      // Отписываемся от свечей
+      try {
+        if (leftUnsubscribeMethod) {
+          leftUnsubscribeMethod(leftSymbol, '1');
+        }
+        if (rightUnsubscribeMethod) {
+          rightUnsubscribeMethod(rightSymbol, '1');
+        }
+      } catch (e) {
+        // Игнорируем ошибки отписки
+      }
+    };
+  }, [dataService, ticker, leftExchange, rightExchange]);
+
+  if (spread === null) {
+    return null;
+  }
+
+  return (
+    <span className={spread >= 0 ? 'text-green-500' : 'text-red-500'}>
+      {spread >= 0 ? '+' : ''}
+      {spread.toFixed(2)}%
+    </span>
+  );
+};
 
 export const FavoriteTabs: React.FC<FavoriteTabsProps> = ({
   favoriteArbsList,
@@ -97,6 +296,11 @@ export const FavoriteTabs: React.FC<FavoriteTabsProps> = ({
                   />
                 )}
                 <span>{fav.arb.right.exchange}</span>
+                <RealTimeSpread
+                  ticker={fav.arb.ticker}
+                  leftExchange={fav.arb.left.exchange}
+                  rightExchange={fav.arb.right.exchange}
+                />
               </>
             ) : (
               <>

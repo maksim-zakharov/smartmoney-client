@@ -144,13 +144,13 @@ export class KcexTradingService {
    * Основано на SDK: https://github.com/maksim-zakharov/mexc-futures-sdk/blob/main/src/client.ts
    */
   async placeLimitOrder(params: PlaceLimitOrderParams): Promise<PlaceOrderResponse> {
-    const { authToken, symbol, side, price, quantity, leverage = 10 } = params;
+    const { authToken, symbol, side, price, quantity, leverage = 10, openType = 1 } = params;
 
     // Формируем данные для запроса (идентично MEXC)
     const orderData: any = {
       symbol,
       side: side === 'BUY' ? 1 : 3, // 1 = Buy, 3 = Sell
-      openType: 1, // Isolated margin
+      openType, // Используем переданный openType или по умолчанию 1 (Isolated margin)
       type: '1', // Limit order (строка)
       vol: quantity,
       positionMode: 2, // One-way mode
@@ -202,8 +202,9 @@ export class KcexTradingService {
     symbol: string;
     side: 'BUY' | 'SELL';
     usdAmount: number;
+    openType?: number;
   }): Promise<PlaceOrderResponse> {
-    const { authToken, symbol, side, usdAmount } = params;
+    const { authToken, symbol, side, usdAmount, openType = 1 } = params;
 
     // Получаем последнюю цену для расчета vol
     const lastPrice = await this.getLastPrice(symbol);
@@ -215,7 +216,7 @@ export class KcexTradingService {
     const orderData: any = {
       symbol,
       side: side === 'BUY' ? 1 : 3, // 1 = Buy, 3 = Sell
-      openType: 1, // Isolated margin
+      openType, // Используем переданный openType или по умолчанию 1 (Isolated margin)
       type: '5', // Market order (строка) - тип 5 для рыночных ордеров
       vol, // Количество в базовой валюте
       positionMode: 2, // One-way mode

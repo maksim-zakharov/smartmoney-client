@@ -37,9 +37,11 @@ interface PositionsWidgetProps {
   leftExchange: string;
   /** Правая биржа */
   rightExchange: string;
+  /** Callback для передачи позиций наружу */
+  onPositionsChange?: (positions: Position[]) => void;
 }
 
-export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftExchange, rightExchange }) => {
+export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftExchange, rightExchange, onPositionsChange }) => {
   const [positions, setPositions] = useState<Position[]>([]);
   const [isTrading, setIsTrading] = useState(false);
   const tradingServiceRef = React.useRef<TradingService | null>(null);
@@ -151,14 +153,16 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
         }
       }
 
-      for (const exchange of exchangesWithKeys) {
+      // Создаем массив промисов для параллельного выполнения запросов
+      const positionPromises = exchangesWithKeys.map(async (exchange) => {
         try {
           const keys = getExchangeApiKeys(exchange);
           const exchangeUpper = exchange.toUpperCase();
+          const exchangePositions: Position[] = [];
 
           if (['MEXC', 'OURBIT', 'KCEX'].includes(exchangeUpper)) {
             if (!keys.authToken) {
-              continue; // Пропускаем если нет ключей
+              return []; // Пропускаем если нет ключей
             }
 
             // Запрашиваем все позиции без фильтрации по символу
@@ -201,7 +205,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
                   marginType = 'Cross';
                 }
 
-                allPositions.push({
+                exchangePositions.push({
                   id: `${exchange}-${pos.positionId}`,
                   exchange,
                   token: baseTicker,
@@ -217,7 +221,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
             }
           } else if (exchangeUpper === 'BYBIT') {
             if (!keys.apiKey || !keys.secretKey) {
-              continue;
+              return [];
             }
 
             const response = await tradingServiceRef.current!.getPositions({
@@ -259,7 +263,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
                   marginType = 'Isolated';
                 }
 
-                allPositions.push({
+                exchangePositions.push({
                   id: `${exchange}-${posSymbol}-${pos.positionIdx || 0}`,
                   exchange,
                   token: baseTicker,
@@ -275,7 +279,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
             }
           } else if (exchangeUpper === 'BINANCE') {
             if (!keys.apiKey || !keys.secretKey) {
-              continue;
+              return [];
             }
 
             const response = await tradingServiceRef.current!.getPositions({
@@ -314,7 +318,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
                 const leverage = undefined;
                 const marginType = pos.isolatedMargin && parseFloat(pos.isolatedMargin) > 0 ? 'Isolated' : 'Cross';
 
-                allPositions.push({
+                exchangePositions.push({
                   id: `${exchange}-${posSymbol}-${pos.positionSide || 'BOTH'}`,
                   exchange,
                   token: baseTicker,
@@ -330,7 +334,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
             }
           } else if (exchangeUpper === 'BITMART') {
             if (!keys.apiKey || !keys.secretKey || !keys.passphrase) {
-              continue;
+              return [];
             }
 
             const response = await tradingServiceRef.current!.getPositions({
@@ -380,7 +384,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
                 // Используем entry_price или open_avg_price
                 const entryPrice = parseFloat(pos.entry_price || pos.open_avg_price || '0');
 
-                allPositions.push({
+                exchangePositions.push({
                   id: `${exchange}-${posSymbol}-${pos.position_side || 'both'}`,
                   exchange,
                   token: baseTicker,
@@ -396,7 +400,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
             }
           } else if (exchangeUpper === 'OKX') {
             if (!keys.apiKey || !keys.secretKey || !keys.passphrase) {
-              continue;
+              return [];
             }
 
             const response = await tradingServiceRef.current!.getPositions({
@@ -448,7 +452,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
                 // Для расчета позиции в USDT используем notionalUsd или pos * avgPx
                 const positionValue = parseFloat(pos.notionalUsd || '0') || Math.abs(positionSize) * entryPrice;
 
-                allPositions.push({
+                exchangePositions.push({
                   id: `${exchange}-${posSymbol}-${pos.posId || '0'}`,
                   exchange,
                   token: baseTicker,
@@ -464,7 +468,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
             }
           } else if (exchangeUpper === 'GATE' || exchangeUpper === 'GATEIO') {
             if (!keys.apiKey || !keys.secretKey) {
-              continue;
+              return [];
             }
 
             const response = await tradingServiceRef.current!.getPositions({
@@ -518,7 +522,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
                 // Нереализованный PnL
                 const unrealizedPnl = parseFloat(pos.unrealised_pnl || '0');
 
-                allPositions.push({
+                exchangePositions.push({
                   id: `${exchange}-${posSymbol}-${pos.id || '0'}`,
                   exchange,
                   token: baseTicker,
@@ -533,8 +537,21 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
               }
             }
           }
+
+          return exchangePositions;
         } catch (error) {
           // Не показываем toast для ошибок, чтобы не спамить
+          return [];
+        }
+      });
+
+      // Выполняем все запросы параллельно
+      const results = await Promise.allSettled(positionPromises);
+
+      // Собираем все позиции из результатов
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          allPositions.push(...result.value);
         }
       }
 
@@ -549,6 +566,10 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
       });
 
       setPositions(sortedPositions);
+      // Передаем позиции наружу через callback
+      if (onPositionsChange) {
+        onPositionsChange(sortedPositions);
+      }
     };
 
     // Выполняем сразу при монтировании
@@ -588,18 +609,28 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
         }
       }
 
-      // TODO: Определить сторону закрытия на основе позиции
-      const closeSide = 'SELL'; // Заглушка, будет определяться из данных позиции
+      // Определяем сторону закрытия на основе позиции
+      // Если позиция Long, то для закрытия нужен SELL
+      // Если позиция Short, то для закрытия нужен BUY
+      const closeSide = position.side === 'Long' ? 'SELL' : 'BUY';
+
+      // Определяем openType из позиции (1 = Isolated, 2 = Cross)
+      const openType = position.marginType === 'Isolated' ? 1 : 2;
+
+      // Рассчитываем сумму в долларах для закрытия позиции
+      // volume - это объем в базовой валюте, умножаем на цену входа для получения суммы в долларах
+      const usdAmount = position.volume * position.entryPrice;
 
       await tradingServiceRef.current.placeMarketOrder({
         exchange,
         symbol: symbolWithSuffix,
         side: closeSide,
-        usdAmount: position.volume,
+        usdAmount,
         apiKey: keys.apiKey,
         secretKey: keys.secretKey,
         passphrase: keys.passphrase,
         authToken: keys.authToken,
+        openType: exchangeUpper === 'MEXC' || exchangeUpper === 'OURBIT' || exchangeUpper === 'KCEX' ? openType : undefined,
       });
 
       setPositions((prev) => prev.filter((p) => p.id !== position.id));

@@ -12,10 +12,17 @@ export const StatArbPage = ({
   seriesType = 'Candlestick',
   delimeter = 'div', // : 'div' | 'minus'
   multi = 100,
+  position,
 }: any) => {
   return (
     <div className="relative" style={{ height }}>
-      <TWChart ticker={`${tickerStock}/${_tickerFuture}`} height={height} multiple={multi} small={onlyChart} />
+      <TWChart
+        ticker={`${tickerStock}/${_tickerFuture}`}
+        height={height}
+        multiple={multi}
+        small={onlyChart}
+        position={position}
+      />
     </div>
   );
 };

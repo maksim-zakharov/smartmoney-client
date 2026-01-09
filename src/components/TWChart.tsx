@@ -23,7 +23,17 @@ import {
 import { alertsService, deleteAlert, openAlertDialog } from '../api/alerts.slice';
 import { HistoryObject, Trade } from 'alor-api';
 
-export const TWChart = ({ ticker, volumeProfileN = 0, height = 400, data, lineSerieses, multiple = 100, small, onPlusClick }: any) => {
+export const TWChart = ({
+  ticker,
+  volumeProfileN = 0,
+  height = 400,
+  data,
+  lineSerieses,
+  multiple = 100,
+  small,
+  onPlusClick,
+  position,
+}: any) => {
   const dispatch = useAppDispatch();
 
   const chartWidgetRef = useRef<IChartingLibraryWidget>(null);
@@ -63,6 +73,7 @@ export const TWChart = ({ ticker, volumeProfileN = 0, height = 400, data, lineSe
 
   // Добавлено: массив для хранения shapes профиля
   const profileShapes = useRef<IChartingLibraryWidget['chart']['createMultipointShape'][]>([]); // Типизировать как any[] если ошибки
+  const positionShapes = useRef<any[]>([]); // Храним ссылки на линии позиций
 
   const datafeed = useMemo(
     () =>
@@ -385,6 +396,50 @@ export const TWChart = ({ ticker, volumeProfileN = 0, height = 400, data, lineSe
       }
     });
   }, [datafeed, height, volumeProfileN, updateVolumeProfile, lineSerieses, ticker]);
+
+  // Функция для обновления позиции на графике
+  const updatePositionOnChart = useCallback(() => {
+    const chart = chartWidgetRef.current?.chart();
+    if (!chart || !position) return;
+
+    // Удаляем предыдущую линию позиции
+    positionShapes.current.forEach((shape) => {
+      try {
+        chart.removeEntity(shape);
+      } catch (e) {
+        // Игнорируем ошибки при удалении
+      }
+    });
+    positionShapes.current = [];
+
+    // Создаем линию арбитражной позиции
+    const positionLine = chart
+      .createPositionLine()
+      .setPrice(position.price)
+      .setText(`${position.side || ''} @ ${position.price.toFixed(4)} | PnL: ${position.pnl.toFixed(2)}`)
+      .setQuantity('')
+      .setLineStyle(0)
+      .setLineLength(100)
+      .setLineColor(position.side === 'Long' ? '#00FF00' : '#FF0000'); // Зеленый для Long, красный для Short
+
+    positionShapes.current.push(positionLine);
+  }, [position]);
+
+  // useEffect для обновления позиции при изменении пропса position
+  useEffect(() => {
+    if (!chartWidgetRef.current || !position) return;
+
+    const chart = chartWidgetRef.current.chart();
+    if (!chart) {
+      // Если график еще не готов, ждем его готовности
+      chartWidgetRef.current.onChartReady(() => {
+        updatePositionOnChart();
+      });
+      return;
+    }
+
+    updatePositionOnChart();
+  }, [position, updatePositionOnChart]);
 
   const subscribeToChartEvents = (widget: IChartingLibraryWidget): void => {
     // subscribeToChartEvent(widget, 'onPlusClick', (params: PlusClickParams) => this.selectPrice(params.price));

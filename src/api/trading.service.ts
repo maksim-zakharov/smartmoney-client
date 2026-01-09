@@ -40,6 +40,8 @@ export interface TradingPlaceLimitOrderParams {
   usdAmount?: number;
   /** Passphrase (для Bitget) */
   passphrase?: string;
+  /** Тип маржи: 1 = Isolated, 2 = Cross (для MEXC/Ourbit/KCEX) */
+  openType?: number;
 }
 
 /**
@@ -89,6 +91,7 @@ export class TradingService {
           price: params.price,
           quantity: params.quantity,
           leverage: params.leverage,
+          openType: params.openType,
         });
 
       case 'OURBIT':
@@ -102,6 +105,7 @@ export class TradingService {
           price: params.price,
           quantity: params.quantity,
           leverage: params.leverage,
+          openType: params.openType,
         });
 
       case 'KCEX':
@@ -115,6 +119,7 @@ export class TradingService {
           price: params.price,
           quantity: params.quantity,
           leverage: params.leverage,
+          openType: params.openType,
         });
 
       case 'BYBIT':
@@ -204,6 +209,7 @@ export class TradingService {
     apiKey?: string;
     secretKey?: string;
     passphrase?: string;
+    openType?: number;
   }): Promise<any> {
     const { exchange, usdAmount } = params;
     const exchangeUpper = exchange.toUpperCase();
@@ -218,6 +224,7 @@ export class TradingService {
           symbol: params.symbol,
           side: params.side,
           usdAmount,
+          openType: params.openType,
         });
 
       case 'OURBIT':
@@ -229,6 +236,7 @@ export class TradingService {
           symbol: params.symbol,
           side: params.side,
           usdAmount,
+          openType: params.openType,
         });
 
       case 'KCEX':
@@ -240,6 +248,7 @@ export class TradingService {
           symbol: params.symbol,
           side: params.side,
           usdAmount,
+          openType: params.openType,
         });
 
       case 'BYBIT':
