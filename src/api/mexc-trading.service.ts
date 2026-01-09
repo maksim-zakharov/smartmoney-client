@@ -119,7 +119,7 @@ export class MexcTradingService {
     const orderData: any = {
       symbol,
       side: side === 'BUY' ? 1 : 3, // 1 = Buy, 3 = Sell
-      openType: 1, // Isolated margin
+      openType: 2, // Cross margin
       type: '1', // Limit order (строка)
       vol: quantity,
       positionMode: 2, // One-way mode
@@ -183,7 +183,7 @@ export class MexcTradingService {
     const orderData: any = {
       symbol,
       side: side === 'BUY' ? 1 : 3, // 1 = Buy, 3 = Sell
-      openType: 1, // Isolated margin
+      openType: 2, // Cross margin
       type: '5', // Market order (строка) - тип 5 для рыночных ордеров
       vol, // Количество в базовой валюте
       positionMode: 2, // One-way mode
