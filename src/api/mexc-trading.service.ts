@@ -46,59 +46,15 @@ export class MexcTradingService {
   }
 
   /**
-   * Отправляет запрос через прокси бекенда
-   */
-  private async proxyRequest(config: {
-    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-    url: string;
-    headers?: Record<string, string>;
-    data?: any;
-    params?: Record<string, any>;
-  }): Promise<any> {
-    const response = await fetch(`${this.backendUrl}/proxy`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(config),
-    });
-
-    const responseData = await response.json().catch(() => ({
-      message: 'Ошибка при обработке ответа от сервера',
-    }));
-
-    if (!response.ok) {
-      // Если бекенд вернул ошибку от целевого сервера (MEXC/Ourbit/KCEX)
-      // responseData может содержать данные ошибки от биржи
-      if (responseData.success === false || responseData.code !== undefined) {
-        // Это ошибка от биржи, пробрасываем её дальше
-        throw responseData;
-      }
-      
-      // Иначе это ошибка прокси
-      throw new Error(responseData.message || 'Ошибка при проксировании запроса');
-    }
-
-    return responseData;
-  }
-
-  /**
    * Получает последнюю цену для символа
    */
   private async getLastPrice(symbol: string): Promise<number> {
-    const url = `https://futures.mexc.com/api/v1/contract/ticker`;
-
-    const data = await this.proxyRequest({
-      method: 'GET',
-      url,
+    const data = await this.publicGetRequest({
+      url: '/contract/ticker',
       params: {
         symbol,
       },
     });
-
-    if (data.code !== 0) {
-      throw new Error(data.msg || 'Ошибка при получении цены');
-    }
 
     const ticker = data.data;
     if (!ticker || !ticker.lastPrice) {
@@ -230,8 +186,30 @@ export class MexcTradingService {
   async getPositions(params: { authToken: string; symbol?: string }): Promise<any> {
     const { authToken, symbol } = params;
 
-    // Формируем URL
-    const url = 'https://futures.mexc.com/api/v1/private/position/open_positions';
+    // Параметры передаем через params, а не в URL
+    const requestParams: Record<string, string> = {};
+    if (symbol) {
+      requestParams.symbol = symbol;
+    }
+
+    return this.signedGetRequest({
+      url: '/position/open_positions',
+      authToken,
+      params: requestParams,
+    });
+  }
+
+  /**
+   * Выполняет подписанный GET запрос к MEXC API
+   */
+  private async signedGetRequest(params: {
+    url: string;
+    authToken: string;
+    params?: Record<string, string>;
+  }): Promise<any> {
+    const { url, authToken, params: requestParams } = params;
+
+    const baseUrl = 'https://futures.mexc.com/api/v1/private';
 
     // Для GET запроса подпись генерируется с пустым телом
     const headers = generateMexcHeaders(
@@ -244,25 +222,82 @@ export class MexcTradingService {
       {}, // Пустое тело для GET запроса
     );
 
-    // Параметры передаем через params, а не в URL
-    const requestParams: Record<string, string> = {};
-    if (symbol) {
-      requestParams.symbol = symbol;
-    }
-
     const data = await this.proxyRequest({
       method: 'GET',
-      url,
+      url: `${baseUrl}${url}`,
       headers,
-      params: requestParams,
+      params: requestParams || {},
     });
 
     if (!data.success) {
       const errorCode = data.code || 'Unknown';
-      const errorMsg = data.message || data.msg || 'Ошибка при получении позиций';
+      const errorMsg = data.message || data.msg || 'Ошибка при выполнении запроса';
       throw new Error(`MEXC Error ${errorCode} - ${errorMsg}`);
     }
 
     return data;
+  }
+
+  /**
+   * Выполняет публичный GET запрос к MEXC API (без подписи)
+   */
+  private async publicGetRequest(params: {
+    url: string;
+    params?: Record<string, string>;
+  }): Promise<any> {
+    const { url, params: requestParams } = params;
+
+    const baseUrl = 'https://futures.mexc.com/api/v1';
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url: `${baseUrl}${url}`,
+      params: requestParams || {},
+    });
+
+    if (data.code !== 0) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.msg || 'Ошибка при выполнении запроса';
+      throw new Error(`MEXC Error ${errorCode} - ${errorMsg}`);
+    }
+
+    return data;
+  }
+
+  /**
+   * Отправляет запрос через прокси бекенда
+   */
+  private async proxyRequest(config: {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+    url: string;
+    headers?: Record<string, string>;
+    data?: any;
+    params?: Record<string, any>;
+  }): Promise<any> {
+    const response = await fetch(`${this.backendUrl}/proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(config),
+    });
+
+    const responseData = await response.json().catch(() => ({
+      message: 'Ошибка при обработке ответа от сервера',
+    }));
+
+    if (!response.ok) {
+      // Если бекенд вернул ошибку от целевого сервера (MEXC/Ourbit/KCEX)
+      // responseData может содержать данные ошибки от биржи
+      if (responseData.success === false || responseData.code !== undefined) {
+        // Это ошибка от биржи, пробрасываем её дальше
+        throw responseData;
+      }
+      
+      // Иначе это ошибка прокси
+      throw new Error(responseData.message || 'Ошибка при проксировании запроса');
+    }
+
+    return responseData;
   }
 }

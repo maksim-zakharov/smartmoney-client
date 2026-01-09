@@ -50,22 +50,81 @@ export class KcexTradingService {
   }
 
   /**
+   * Выполняет подписанный GET запрос к KCEX API
+   */
+  private async signedGetRequest(params: {
+    url: string;
+    authToken: string;
+    params?: Record<string, string>;
+  }): Promise<any> {
+    const { url, authToken, params: requestParams } = params;
+
+    const baseUrl = 'https://www.kcex.com/fapi/v1/private';
+
+    // Для GET запроса подпись генерируется с пустым телом
+    const headers = generateMexcHeaders(
+      {
+        authToken,
+        origin: 'https://www.kcex.com',
+        referer: 'https://www.kcex.com/',
+        signaturePrefix: 'kcex',
+      },
+      true,
+      {}, // Пустое тело для GET запроса
+    );
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url: `${baseUrl}${url}`,
+      headers,
+      params: requestParams || {},
+    });
+
+    if (!data.success) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.message || data.msg || 'Ошибка при выполнении запроса';
+      throw new Error(`KCEX Error ${errorCode} - ${errorMsg}`);
+    }
+
+    return data;
+  }
+
+  /**
+   * Выполняет публичный GET запрос к KCEX API (без подписи)
+   */
+  private async publicGetRequest(params: {
+    url: string;
+    params?: Record<string, string>;
+  }): Promise<any> {
+    const { url, params: requestParams } = params;
+
+    const baseUrl = 'https://www.kcex.com/fapi/v1';
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url: `${baseUrl}${url}`,
+      params: requestParams || {},
+    });
+
+    if (data.code !== 0) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.msg || 'Ошибка при выполнении запроса';
+      throw new Error(`KCEX Error ${errorCode} - ${errorMsg}`);
+    }
+
+    return data;
+  }
+
+  /**
    * Получает последнюю цену для символа
    */
   private async getLastPrice(symbol: string): Promise<number> {
-    const url = `https://www.kcex.com/fapi/v1/contract/ticker`;
-    
-    const data = await this.proxyRequest({
-      method: 'GET',
-      url,
+    const data = await this.publicGetRequest({
+      url: '/contract/ticker',
       params: {
         symbol,
       },
     });
-
-    if (data.code !== 0) {
-      throw new Error(data.msg || 'Ошибка при получении цены');
-    }
 
     const ticker = data.data;
     if (!ticker || !ticker.lastPrice) {
@@ -199,41 +258,17 @@ export class KcexTradingService {
   async getPositions(params: { authToken: string; symbol?: string }): Promise<any> {
     const { authToken, symbol } = params;
 
-    // Формируем URL
-    const url = 'https://www.kcex.com/fapi/v1/private/position/open_positions';
-
-    // Для GET запроса подпись генерируется с пустым телом
-    const headers = generateMexcHeaders(
-      {
-        authToken,
-        origin: 'https://www.kcex.com',
-        referer: 'https://www.kcex.com/',
-        signaturePrefix: 'kcex',
-      },
-      true,
-      {}, // Пустое тело для GET запроса
-    );
-
     // Параметры передаем через params, а не в URL
     const requestParams: Record<string, string> = {};
     if (symbol) {
       requestParams.symbol = symbol;
     }
 
-    const data = await this.proxyRequest({
-      method: 'GET',
-      url,
-      headers,
+    return this.signedGetRequest({
+      url: '/position/open_positions',
+      authToken,
       params: requestParams,
     });
-
-    if (!data.success) {
-      const errorCode = data.code || 'Unknown';
-      const errorMsg = data.message || data.msg || 'Ошибка при получении позиций';
-      throw new Error(`KCEX Error ${errorCode} - ${errorMsg}`);
-    }
-
-    return data;
   }
 }
 

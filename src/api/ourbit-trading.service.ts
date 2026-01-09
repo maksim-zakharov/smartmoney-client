@@ -50,22 +50,81 @@ export class OurbitTradingService {
   }
 
   /**
+   * Выполняет подписанный GET запрос к Ourbit API
+   */
+  private async signedGetRequest(params: {
+    url: string;
+    authToken: string;
+    params?: Record<string, string>;
+  }): Promise<any> {
+    const { url, authToken, params: requestParams } = params;
+
+    const baseUrl = 'https://futures.ourbit.com/api/v1/private';
+
+    // Для GET запроса подпись генерируется с пустым телом
+    const headers = generateMexcHeaders(
+      {
+        authToken,
+        origin: 'https://futures.ourbit.com',
+        referer: 'https://futures.ourbit.com/',
+        signaturePrefix: 'ourbit',
+      },
+      true,
+      {}, // Пустое тело для GET запроса
+    );
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url: `${baseUrl}${url}`,
+      headers,
+      params: requestParams || {},
+    });
+
+    if (!data.success) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.message || data.msg || 'Ошибка при выполнении запроса';
+      throw new Error(`Ourbit Error ${errorCode} - ${errorMsg}`);
+    }
+
+    return data;
+  }
+
+  /**
+   * Выполняет публичный GET запрос к Ourbit API (без подписи)
+   */
+  private async publicGetRequest(params: {
+    url: string;
+    params?: Record<string, string>;
+  }): Promise<any> {
+    const { url, params: requestParams } = params;
+
+    const baseUrl = 'https://futures.ourbit.com/api/v1';
+
+    const data = await this.proxyRequest({
+      method: 'GET',
+      url: `${baseUrl}${url}`,
+      params: requestParams || {},
+    });
+
+    if (data.code !== 0) {
+      const errorCode = data.code || 'Unknown';
+      const errorMsg = data.msg || 'Ошибка при выполнении запроса';
+      throw new Error(`Ourbit Error ${errorCode} - ${errorMsg}`);
+    }
+
+    return data;
+  }
+
+  /**
    * Получает последнюю цену для символа
    */
   private async getLastPrice(symbol: string): Promise<number> {
-    const url = `https://futures.ourbit.com/api/v1/contract/ticker`;
-    
-    const data = await this.proxyRequest({
-      method: 'GET',
-      url,
+    const data = await this.publicGetRequest({
+      url: '/contract/ticker',
       params: {
         symbol,
       },
     });
-
-    if (data.code !== 0) {
-      throw new Error(data.msg || 'Ошибка при получении цены');
-    }
 
     const ticker = data.data;
     if (!ticker || !ticker.lastPrice) {
@@ -195,41 +254,17 @@ export class OurbitTradingService {
   async getPositions(params: { authToken: string; symbol?: string }): Promise<any> {
     const { authToken, symbol } = params;
 
-    // Формируем URL
-    const url = 'https://futures.ourbit.com/api/v1/private/position/open_positions';
-
-    // Для GET запроса подпись генерируется с пустым телом
-    const headers = generateMexcHeaders(
-      {
-        authToken,
-        origin: 'https://futures.ourbit.com',
-        referer: 'https://futures.ourbit.com/',
-        signaturePrefix: 'ourbit',
-      },
-      true,
-      {}, // Пустое тело для GET запроса
-    );
-
     // Параметры передаем через params, а не в URL
     const requestParams: Record<string, string> = {};
     if (symbol) {
       requestParams.symbol = symbol;
     }
 
-    const data = await this.proxyRequest({
-      method: 'GET',
-      url,
-      headers,
+    return this.signedGetRequest({
+      url: '/position/open_positions',
+      authToken,
       params: requestParams,
     });
-
-    if (!data.success) {
-      const errorCode = data.code || 'Unknown';
-      const errorMsg = data.message || data.msg || 'Ошибка при получении позиций';
-      throw new Error(`Ourbit Error ${errorCode} - ${errorMsg}`);
-    }
-
-    return data;
   }
 }
 
