@@ -144,7 +144,7 @@ export class KcexTradingService {
    * Основано на SDK: https://github.com/maksim-zakharov/mexc-futures-sdk/blob/main/src/client.ts
    */
   async placeLimitOrder(params: PlaceLimitOrderParams): Promise<PlaceOrderResponse> {
-    const { authToken, symbol, side, price, quantity, leverage = 10, openType = 1 } = params;
+    const { authToken, symbol, side, price, quantity, leverage = 10, openType = 1, reduceOnly = false } = params;
 
     // Формируем данные для запроса (идентично MEXC)
     const orderData: any = {
@@ -158,6 +158,7 @@ export class KcexTradingService {
       leverage: leverage.toString(),
       price: price.toString(),
       priceProtect: '0',
+      reduceOnly, // Флаг для закрытия позиции (true = только уменьшение, false = может открыть новую)
     };
 
     // Генерируем заголовки с подписью (с origin, referer и префиксом для KCEX)
@@ -203,8 +204,9 @@ export class KcexTradingService {
     side: 'BUY' | 'SELL';
     usdAmount: number;
     openType?: number;
+    reduceOnly?: boolean;
   }): Promise<PlaceOrderResponse> {
-    const { authToken, symbol, side, usdAmount, openType = 1 } = params;
+    const { authToken, symbol, side, usdAmount, openType = 1, reduceOnly = false } = params;
 
     // Получаем последнюю цену для расчета vol
     const lastPrice = await this.getLastPrice(symbol);
@@ -223,6 +225,7 @@ export class KcexTradingService {
       marketCeiling: false,
       leverage: 10, // Плечо для рыночных ордеров
       priceProtect: '0',
+      reduceOnly, // Флаг для закрытия позиции (true = только уменьшение, false = может открыть новую)
     };
 
     // Генерируем заголовки с подписью (с origin, referer и префиксом для KCEX)

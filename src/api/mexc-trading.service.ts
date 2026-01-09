@@ -18,6 +18,8 @@ export interface PlaceLimitOrderParams {
   leverage?: number;
   /** Тип маржи: 1 = Isolated, 2 = Cross (по умолчанию 2) */
   openType?: number;
+  /** Флаг для закрытия позиции (true = только уменьшение, false = может открыть новую) */
+  reduceOnly?: boolean;
 }
 
 /**
@@ -117,7 +119,7 @@ export class MexcTradingService {
    * Основано на SDK: https://github.com/maksim-zakharov/mexc-futures-sdk/blob/main/src/client.ts
    */
   async placeLimitOrder(params: PlaceLimitOrderParams): Promise<PlaceOrderResponse> {
-    const { authToken, symbol, side, price, quantity, leverage = 10, openType = 2 } = params;
+    const { authToken, symbol, side, price, quantity, leverage = 10, openType = 2, reduceOnly = false } = params;
 
     // Формируем данные для запроса согласно SDK
     const orderData: any = {
@@ -131,6 +133,7 @@ export class MexcTradingService {
       leverage: leverage.toString(),
       price: price.toString(),
       priceProtect: '0',
+      reduceOnly, // Флаг для закрытия позиции (true = только уменьшение, false = может открыть новую)
     };
 
     // Генерируем заголовки с подписью (как в SDK)
@@ -175,8 +178,9 @@ export class MexcTradingService {
     side: 'BUY' | 'SELL';
     usdAmount: number;
     openType?: number;
+    reduceOnly?: boolean;
   }): Promise<PlaceOrderResponse> {
-    const { authToken, symbol, side, usdAmount, openType = 2 } = params;
+    const { authToken, symbol, side, usdAmount, openType = 2, reduceOnly = false } = params;
 
     // Получаем последнюю цену для расчета vol
     const lastPrice = await this.getLastPrice(symbol);
@@ -195,6 +199,7 @@ export class MexcTradingService {
       marketCeiling: false,
       leverage: 10, // Плечо для рыночных ордеров
       priceProtect: '0',
+      reduceOnly, // Флаг для закрытия позиции (true = только уменьшение, false = может открыть новую)
     };
 
     // Генерируем заголовки с подписью (как в SDK)

@@ -631,6 +631,7 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
         passphrase: keys.passphrase,
         authToken: keys.authToken,
         openType: exchangeUpper === 'MEXC' || exchangeUpper === 'OURBIT' || exchangeUpper === 'KCEX' ? openType : undefined,
+        reduceOnly: exchangeUpper === 'MEXC' || exchangeUpper === 'OURBIT' || exchangeUpper === 'KCEX' ? true : undefined, // Для MEXC, Ourbit и KCEX используем reduceOnly для полного закрытия позиции
       });
 
       setPositions((prev) => prev.filter((p) => p.id !== position.id));

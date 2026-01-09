@@ -143,7 +143,7 @@ export class OurbitTradingService {
    * Размещает лимитный ордер на Ourbit через /create endpoint
    */
   async placeLimitOrder(params: PlaceLimitOrderParams): Promise<PlaceOrderResponse> {
-    const { authToken, symbol, side, price, quantity, leverage = 10, openType = 2 } = params;
+    const { authToken, symbol, side, price, quantity, leverage = 10, openType = 2, reduceOnly = false } = params;
 
     // Формируем данные для запроса
     const orderData: any = {
@@ -156,6 +156,7 @@ export class OurbitTradingService {
       marketCeiling: false,
       price: price.toString(),
       priceProtect: '0',
+      reduceOnly, // Флаг для закрытия позиции (true = только уменьшение, false = может открыть новую)
     };
 
     // Генерируем заголовки с подписью (с origin, referer и префиксом для Ourbit)
@@ -200,8 +201,9 @@ export class OurbitTradingService {
     side: 'BUY' | 'SELL';
     usdAmount: number;
     openType?: number;
+    reduceOnly?: boolean;
   }): Promise<PlaceOrderResponse> {
-    const { authToken, symbol, side, usdAmount, openType = 2 } = params;
+    const { authToken, symbol, side, usdAmount, openType = 2, reduceOnly = false } = params;
 
     // Получаем последнюю цену для расчета vol
     const lastPrice = await this.getLastPrice(symbol);
@@ -219,6 +221,7 @@ export class OurbitTradingService {
       leverage: 10, // Плечо для рыночных ордеров
       marketCeiling: false,
       priceProtect: '0',
+      reduceOnly, // Флаг для закрытия позиции (true = только уменьшение, false = может открыть новую)
     };
 
     // Генерируем заголовки с подписью (с origin, referer и префиксом для Ourbit)
