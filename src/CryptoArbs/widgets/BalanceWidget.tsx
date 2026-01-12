@@ -334,14 +334,14 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
         exchange: 'BITGET',
         totalBalance: bitgetBalance.data?.code === '00000' && Array.isArray(bitgetBalance.data?.data)
           ? (() => {
-              // Bitget возвращает { code: "00000", data: [{ coin: 'USDT', equity: '100', available: '50' }] }
-              const usdtAccount = bitgetBalance.data.data.find((acc: any) => acc.coin === 'USDT');
-              return usdtAccount ? parseFloat(usdtAccount.equity || '0') : 0;
+              // Bitget v2 возвращает { code: "00000", data: [{ marginCoin: 'USDT', accountEquity: '10582.90', usdtEquity: '10582.90', available: '10575.26' }] }
+              const usdtAccount = bitgetBalance.data.data.find((acc: any) => acc.marginCoin === 'USDT');
+              return usdtAccount ? parseFloat(usdtAccount.accountEquity || usdtAccount.usdtEquity || '0') : 0;
             })()
           : null,
         availableMargin: bitgetBalance.data?.code === '00000' && Array.isArray(bitgetBalance.data?.data)
           ? (() => {
-              const usdtAccount = bitgetBalance.data.data.find((acc: any) => acc.coin === 'USDT');
+              const usdtAccount = bitgetBalance.data.data.find((acc: any) => acc.marginCoin === 'USDT');
               return usdtAccount ? parseFloat(usdtAccount.available || '0') : 0;
             })()
           : null,

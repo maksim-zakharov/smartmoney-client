@@ -236,7 +236,7 @@ export const tradingApi = createApi({
     getBitgetBalance: builder.query<any, { apiKey: string; secretKey: string; passphrase: string }>({
       query: ({ apiKey, secretKey, passphrase }) => {
         const method = 'GET';
-        const requestPath = '/api/mix/v1/account/accounts';
+        const requestPath = '/api/v2/mix/account/accounts';
         const productType = 'USDT-FUTURES';
         const queryString = `productType=${productType}`;
         const body = '';
@@ -249,6 +249,7 @@ export const tradingApi = createApi({
           'ACCESS-TIMESTAMP': timestamp,
           'ACCESS-PASSPHRASE': passphrase,
           'Content-Type': 'application/json',
+          'locale': 'en-US',
         };
 
         return {
