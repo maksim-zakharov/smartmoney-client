@@ -236,17 +236,31 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
     if (bybitKeys.apiKey && bybitKeys.secretKey) {
       allBalances.push({
         exchange: 'BYBIT',
-        totalBalance: bybitBalance.data?.retCode === 0 && bybitBalance.data?.result?.list
+        totalBalance: bybitBalance.data?.retCode === 0 && bybitBalance.data?.result?.list?.[0]?.coin
           ? (() => {
-              // Bybit возвращает { retCode: 0, result: { list: [{ coin: 'USDT', equity: '100', walletBalance: '100', availableBalance: '50' }] } }
-              const account = bybitBalance.data.result.list.find((acc: any) => acc.coin === 'USDT');
-              return account ? parseFloat(account.equity || account.walletBalance || '0') : 0;
+              // Bybit возвращает { retCode: 0, result: { list: [{ accountType: 'UNIFIED', coin: [{ coin: 'USDT', equity: '288.63', walletBalance: '288.63' }] }] } }
+              const account = bybitBalance.data.result.list[0];
+              if (account && Array.isArray(account.coin)) {
+                const usdtCoin = account.coin.find((c: any) => c.coin === 'USDT');
+                return usdtCoin ? parseFloat(usdtCoin.equity || usdtCoin.walletBalance || '0') : 0;
+              }
+              return 0;
             })()
           : null,
-        availableMargin: bybitBalance.data?.retCode === 0 && bybitBalance.data?.result?.list
+        availableMargin: bybitBalance.data?.retCode === 0 && bybitBalance.data?.result?.list?.[0]?.coin
           ? (() => {
-              const account = bybitBalance.data.result.list.find((acc: any) => acc.coin === 'USDT');
-              return account ? parseFloat(account.availableBalance || '0') : 0;
+              const account = bybitBalance.data.result.list[0];
+              if (account && Array.isArray(account.coin)) {
+                const usdtCoin = account.coin.find((c: any) => c.coin === 'USDT');
+                // Используем walletBalance - locked для доступного баланса, или availableToWithdraw если есть
+                if (usdtCoin) {
+                  const walletBalance = parseFloat(usdtCoin.walletBalance || '0');
+                  const locked = parseFloat(usdtCoin.locked || '0');
+                  const available = walletBalance - locked;
+                  return available > 0 ? available : parseFloat(usdtCoin.availableToWithdraw || '0');
+                }
+              }
+              return 0;
             })()
           : null,
         isLoading: bybitBalance.isLoading,
@@ -280,17 +294,33 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
     if (okxKeys.apiKey && okxKeys.secretKey && okxKeys.passphrase) {
       allBalances.push({
         exchange: 'OKX',
-        totalBalance: okxBalance.data?.code === '0' && Array.isArray(okxBalance.data?.data)
+        totalBalance: okxBalance.data?.code === '0' && Array.isArray(okxBalance.data?.data) && okxBalance.data.data.length > 0
           ? (() => {
-              // OKX возвращает { code: "0", data: [{ ccy: 'USDT', eq: '100', availEq: '50' }] }
-              const usdtDetail = okxBalance.data.data.find((detail: any) => detail.ccy === 'USDT');
-              return usdtDetail ? parseFloat(usdtDetail.eq || '0') : 0;
+              // OKX возвращает { code: "0", data: [{ details: [{ ccy: 'USDT', eq: '200.10', availEq: '200.10' }], totalEq: '199.84' }] }
+              const account = okxBalance.data.data[0];
+              if (account && Array.isArray(account.details)) {
+                const usdtDetail = account.details.find((detail: any) => detail.ccy === 'USDT');
+                // Используем eq из details или totalEq из account
+                if (usdtDetail) {
+                  return parseFloat(usdtDetail.eq || account.totalEq || '0');
+                }
+                // Если USDT не найден в details, используем totalEq
+                return parseFloat(account.totalEq || '0');
+              }
+              return 0;
             })()
           : null,
-        availableMargin: okxBalance.data?.code === '0' && Array.isArray(okxBalance.data?.data)
+        availableMargin: okxBalance.data?.code === '0' && Array.isArray(okxBalance.data?.data) && okxBalance.data.data.length > 0
           ? (() => {
-              const usdtDetail = okxBalance.data.data.find((detail: any) => detail.ccy === 'USDT');
-              return usdtDetail ? parseFloat(usdtDetail.availEq || '0') : 0;
+              const account = okxBalance.data.data[0];
+              if (account && Array.isArray(account.details)) {
+                const usdtDetail = account.details.find((detail: any) => detail.ccy === 'USDT');
+                // Используем availEq или availBal из details
+                if (usdtDetail) {
+                  return parseFloat(usdtDetail.availEq || usdtDetail.availBal || '0');
+                }
+              }
+              return 0;
             })()
           : null,
         isLoading: okxBalance.isLoading,

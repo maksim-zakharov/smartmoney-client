@@ -146,8 +146,14 @@ export const tradingApi = createApi({
       query: ({ apiKey, secretKey }) => {
         const timestamp = Date.now();
         const recvWindow = 10000;
-        const body = {};
-        const signature = generateBybitSignature(apiKey, secretKey, timestamp, recvWindow, body);
+        const requestParams: any = {
+          accountType: 'UNIFIED',
+        };
+
+        // Для GET запроса подпись генерируется из query string
+        const queryString = new URLSearchParams(requestParams).toString();
+        const signStr = `${timestamp}${apiKey}${recvWindow}${queryString}`;
+        const signature = CryptoJS.HmacSHA256(signStr, secretKey).toString(CryptoJS.enc.Hex);
 
         const headers = {
           'X-BAPI-SIGN': signature,
@@ -162,11 +168,8 @@ export const tradingApi = createApi({
           method: 'POST',
           body: {
             method: 'GET',
-            url: 'https://api.bybit.com/v5/account/wallet-balance',
+            url: `https://api.bybit.com/v5/account/wallet-balance?${queryString}`,
             headers,
-            params: {
-              accountType: 'UNIFIED',
-            },
           },
         };
       },
