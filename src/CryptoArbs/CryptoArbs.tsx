@@ -7,7 +7,7 @@ import { getTickerWithSuffix, getExchangeUrl } from '../api/utils/tickers';
 import dayjs from 'dayjs';
 import { Card, CardHeader, CardTitle } from '../components/ui/card';
 import { StatArbPage } from '../ArbitrageMOEXPage/strategies/StatArbPage';
-import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/ui/tooltip';
 import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, Copy, ExternalLink, EyeOff, Star } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ import { TradingService } from '../api/trading.service';
 import { TradingPanelWidget } from './widgets/TradingPanelWidget';
 import { SelectedArbWidget } from './widgets/SelectedArbWidget';
 import { PositionsWidget } from './widgets/PositionsWidget';
+import { BalanceWidget } from './widgets/BalanceWidget';
 import { ArbCard } from './components/ArbCard';
 import { FairArbCard } from './components/FairArbCard';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -93,6 +94,7 @@ export const CryptoArbs = () => {
   const [showTradingPanel, setShowTradingPanel] = useState(() => {
     return localStorage.getItem('enableOrderbookTrading') === 'true';
   });
+  const [positionsTab, setPositionsTab] = useState<'positions' | 'balance'>('positions');
   const { data: tickersMap = {} } = useGetPumpTickersQuery(
     {},
     {
@@ -886,12 +888,25 @@ export const CryptoArbs = () => {
                 />
               </div>
               {showTradingPanel && (
-                <PositionsWidget
-                  ticker={selectedEnriched.ticker}
-                  leftExchange={selectedArb.left.exchange}
-                  rightExchange={selectedArb.right.exchange}
-                  onPositionsChange={setPositions}
-                />
+                <div className="flex flex-col">
+                  <Tabs value={positionsTab} onValueChange={(value) => setPositionsTab(value as 'positions' | 'balance')} className="flex-1 flex flex-col">
+                    <TabsList className="mb-1">
+                      <TabsTrigger value="positions">Позиции</TabsTrigger>
+                      <TabsTrigger value="balance">Баланс</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="positions" className="flex-1 flex flex-col">
+                      <PositionsWidget
+                        ticker={selectedEnriched.ticker}
+                        leftExchange={selectedArb.left.exchange}
+                        rightExchange={selectedArb.right.exchange}
+                        onPositionsChange={setPositions}
+                      />
+                    </TabsContent>
+                    <TabsContent value="balance" className="flex-1 flex flex-col">
+                      <BalanceWidget />
+                    </TabsContent>
+                  </Tabs>
+                </div>
               )}
             </div>
             <div className="flex flex-col min-h-0 h-full w-[200px] flex-shrink-0">

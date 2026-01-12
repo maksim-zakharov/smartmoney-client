@@ -71,7 +71,6 @@ export const PositionsWidget: React.FC<PositionsWidgetProps> = ({ ticker, leftEx
           secretKey: localStorage.getItem('bitmartSecretKey'),
           passphrase: localStorage.getItem('bitmartMemo'),
         };
-      case 'GATE':
       case 'GATEIO':
         return {
           apiKey: localStorage.getItem('gateApiKey'),

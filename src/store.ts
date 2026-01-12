@@ -18,6 +18,7 @@ import { bitgetApi } from './api/bitget.api';
 import { bitstampApi } from './api/bitstamp.api';
 import { okxApi } from './api/okx.api';
 import { pumpApi } from './api/pump-api';
+import { tradingApi } from './api/trading.api';
 import cryptoArbsSettingsReducer from './CryptoArbs/cryptoArbsSettings.slice';
 
 export const reducers = {
@@ -39,6 +40,7 @@ export const reducers = {
   [bitgetApi.reducerPath]: bitgetApi.reducer,
   [bitstampApi.reducerPath]: bitstampApi.reducer,
   [okxApi.reducerPath]: okxApi.reducer,
+  [tradingApi.reducerPath]: tradingApi.reducer,
   cryptoArbsSettings: cryptoArbsSettingsReducer,
 };
 
@@ -65,6 +67,7 @@ export const store = configureStore({
       .concat(bitgetApi.middleware)
       .concat(bitstampApi.middleware)
       .concat(okxApi.middleware)
+      .concat(tradingApi.middleware)
       .concat(pumpApi.middleware)
       .concat(api.middleware) as any,
 });
