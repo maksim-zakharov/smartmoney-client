@@ -507,10 +507,16 @@ export default function App() {
     localStorage.setItem('ourbitAuthToken', e.target.value);
   };
 
-  const [asterSeedPhrase, setasterSeedPhrase] = useState<string | null>(localStorage.getItem('asterSeedPhrase'));
-  const handleEditasterSeedPhrase = (e) => {
-    setasterSeedPhrase(e.target.value);
-    localStorage.setItem('asterSeedPhrase', e.target.value);
+  const [asterApiKey, setasterApiKey] = useState<string | null>(localStorage.getItem('asterApiKey'));
+  const handleEditasterApiKey = (e) => {
+    setasterApiKey(e.target.value);
+    localStorage.setItem('asterApiKey', e.target.value);
+  };
+
+  const [asterSecretKey, setasterSecretKey] = useState<string | null>(localStorage.getItem('asterSecretKey'));
+  const handleEditasterSecretKey = (e) => {
+    setasterSecretKey(e.target.value);
+    localStorage.setItem('asterSecretKey', e.target.value);
   };
 
   const [hyperliquidSeedPhrase, sethyperliquidSeedPhrase] = useState<string | null>(localStorage.getItem('hyperliquidSeedPhrase'));
@@ -876,10 +882,14 @@ export default function App() {
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent>
-                                <div className="grid grid-cols-1 gap-3 w-full">
+                                <div className="grid grid-cols-2 gap-3 w-full">
                                   <div className="flex gap-2 flex-col">
-                                    <Label htmlFor="asterSeedPhrase">Seed Phrase</Label>
-                                    <Input id="asterSeedPhrase" value={asterSeedPhrase || ''} onChange={handleEditasterSeedPhrase} type="password" />
+                                    <Label htmlFor="asterApiKey">Api Key</Label>
+                                    <Input id="asterApiKey" value={asterApiKey || ''} onChange={handleEditasterApiKey} />
+                                  </div>
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="asterSecretKey">Secret Key</Label>
+                                    <Input id="asterSecretKey" value={asterSecretKey || ''} onChange={handleEditasterSecretKey} type="password" />
                                   </div>
                                 </div>
                               </AccordionContent>

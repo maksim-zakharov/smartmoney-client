@@ -88,7 +88,8 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
         };
       case 'ASTER':
         return {
-          seedPhrase: localStorage.getItem('asterSeedPhrase'),
+          apiKey: localStorage.getItem('asterApiKey'),
+          secretKey: localStorage.getItem('asterSecretKey'),
         };
       case 'HYPERLIQUID':
         return {
@@ -177,9 +178,9 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
     },
   );
   const asterBalance = useGetAsterBalanceQuery(
-    { seedPhrase: asterKeys.seedPhrase || '' },
+    { apiKey: asterKeys.apiKey || '', secretKey: asterKeys.secretKey || '' },
     {
-      skip: !asterKeys.seedPhrase,
+      skip: !asterKeys.apiKey || !asterKeys.secretKey,
       pollingInterval: 5000,
     },
   );
@@ -434,58 +435,22 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
     }
 
     // Aster DEX
-    if (asterKeys.seedPhrase) {
+    if (asterKeys.apiKey && asterKeys.secretKey) {
       allBalances.push({
         exchange: 'Aster',
-        totalBalance: asterBalance.data
+        totalBalance: Array.isArray(asterBalance.data)
           ? (() => {
-              // Парсинг ответа от Aster DEX API
-              // Формат ответа будет зависеть от реального API, пока используем универсальный парсинг
-              if (typeof asterBalance.data === 'object' && asterBalance.data !== null) {
-                // Если есть поле total или balance
-                if ('total' in asterBalance.data) {
-                  return parseFloat(asterBalance.data.total || '0');
-                }
-                if ('balance' in asterBalance.data) {
-                  return parseFloat(asterBalance.data.balance || '0');
-                }
-                // Если есть массив assets, ищем USDT
-                if (Array.isArray(asterBalance.data.assets)) {
-                  const usdtAsset = asterBalance.data.assets.find((asset: any) => asset.currency === 'USDT' || asset.symbol === 'USDT');
-                  return usdtAsset ? parseFloat(usdtAsset.balance || usdtAsset.amount || '0') : 0;
-                }
-                // Если есть поле usdt или USDT
-                if ('usdt' in asterBalance.data) {
-                  return parseFloat(asterBalance.data.usdt || '0');
-                }
-                if ('USDT' in asterBalance.data) {
-                  return parseFloat(asterBalance.data.USDT || '0');
-                }
-              }
-              return 0;
+              // Aster возвращает массив балансов: [{ asset: 'USDC', balance: '188.00', crossWalletBalance: '188.00', ... }, ...]
+              const usdcAsset = asterBalance.data.find((asset: any) => asset.asset === 'USDC');
+              // Используем crossWalletBalance или balance для общего баланса
+              return usdcAsset ? parseFloat(usdcAsset.crossWalletBalance || usdcAsset.balance || '0') : 0;
             })()
           : null,
-        availableMargin: asterBalance.data
+        availableMargin: Array.isArray(asterBalance.data)
           ? (() => {
-              if (typeof asterBalance.data === 'object' && asterBalance.data !== null) {
-                // Если есть поле available
-                if ('available' in asterBalance.data) {
-                  return parseFloat(asterBalance.data.available || '0');
-                }
-                // Если есть массив assets, ищем USDT
-                if (Array.isArray(asterBalance.data.assets)) {
-                  const usdtAsset = asterBalance.data.assets.find((asset: any) => asset.currency === 'USDT' || asset.symbol === 'USDT');
-                  return usdtAsset ? parseFloat(usdtAsset.available || usdtAsset.availableBalance || '0') : 0;
-                }
-                // Если есть поле availableUsdt или availableUSDT
-                if ('availableUsdt' in asterBalance.data) {
-                  return parseFloat(asterBalance.data.availableUsdt || '0');
-                }
-                if ('availableUSDT' in asterBalance.data) {
-                  return parseFloat(asterBalance.data.availableUSDT || '0');
-                }
-              }
-              return 0;
+              const usdcAsset = asterBalance.data.find((asset: any) => asset.asset === 'USDC');
+              // availableBalance - доступный баланс
+              return usdcAsset ? parseFloat(usdcAsset.availableBalance || '0') : 0;
             })()
           : null,
         isLoading: asterBalance.isLoading,
@@ -497,17 +462,18 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
     if (hyperliquidKeys.seedPhrase) {
       allBalances.push({
         exchange: 'Hyperliquid',
-        totalBalance: hyperliquidBalance.data && Array.isArray(hyperliquidBalance.data.balances)
+        totalBalance: hyperliquidBalance.data && hyperliquidBalance.data.marginSummary
           ? (() => {
-              // Hyperliquid возвращает { balances: [{ asset: 'USDT', walletBalance: '10000.0', availableBalance: '9800.0', ... }] }
-              const usdtBalance = hyperliquidBalance.data.balances.find((bal: any) => bal.asset === 'USDT');
-              return usdtBalance ? parseFloat(usdtBalance.walletBalance || '0') : 0;
+              // Hyperliquid clearinghouseState возвращает:
+              // { marginSummary: { accountValue: "13109.48", totalMarginUsed: "4.96", ... }, withdrawable: "13104.51" }
+              // accountValue - общий баланс аккаунта
+              return parseFloat(hyperliquidBalance.data.marginSummary.accountValue || '0');
             })()
           : null,
-        availableMargin: hyperliquidBalance.data && Array.isArray(hyperliquidBalance.data.balances)
+        availableMargin: hyperliquidBalance.data && hyperliquidBalance.data.withdrawable !== undefined
           ? (() => {
-              const usdtBalance = hyperliquidBalance.data.balances.find((bal: any) => bal.asset === 'USDT');
-              return usdtBalance ? parseFloat(usdtBalance.availableBalance || '0') : 0;
+              // withdrawable - доступный для вывода баланс (accountValue - marginUsed)
+              return parseFloat(hyperliquidBalance.data.withdrawable || '0');
             })()
           : null,
         isLoading: hyperliquidBalance.isLoading,

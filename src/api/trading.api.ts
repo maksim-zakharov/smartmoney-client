@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery, BaseQueryFn } from '@reduxjs/toolkit/query/react';
 import { generateHeaders } from './utils/headers';
 import CryptoJS from 'crypto-js';
+import { ethers } from 'ethers';
 
 const tradingBaseQuery: BaseQueryFn = async (args, api, extraOptions) => {
   const result = await fetchBaseQuery({
@@ -70,12 +71,27 @@ function generateBitmartSignature(secretKey: string, memo: string, timestamp: st
 
 /**
  * Генерирует подпись для Aster DEX
- * Использует HMAC SHA256 с secretKey (seed phrase) и totalParams (query + body)
+ * Использует HMAC SHA256 с secretKey и totalParams (query + body)
+ * Формат: HMAC SHA256(queryString + body, secretKey)
  */
-function generateAsterSignature(secretKey: string, timestamp: number, recvWindow: number, queryString: string, body: string): string {
+function generateAsterSignature(secretKey: string, queryString: string, body: string): string {
+  // totalParams = queryString + body (без signature)
   const totalParams = queryString + body;
-  const signStr = `${timestamp}${recvWindow}${totalParams}`;
-  return CryptoJS.HmacSHA256(signStr, secretKey).toString(CryptoJS.enc.Hex);
+  return CryptoJS.HmacSHA256(totalParams, secretKey).toString(CryptoJS.enc.Hex);
+}
+
+/**
+ * Генерирует Ethereum адрес из seed phrase (mnemonic)
+ */
+function generateWalletAddressFromSeedPhrase(seedPhrase: string): string {
+  try {
+    const wallet = ethers.Wallet.fromPhrase(seedPhrase);
+    return wallet.address;
+  } catch (error) {
+    // Если seed phrase невалидный, возвращаем пустую строку
+    console.error('Error generating wallet address from seed phrase:', error);
+    return '';
+  }
 }
 
 export const tradingApi = createApi({
@@ -316,19 +332,34 @@ export const tradingApi = createApi({
         };
       },
     }),
-    getAsterBalance: builder.query<any, { seedPhrase: string }>({
-      query: ({ seedPhrase }) => {
+    getAsterBalance: builder.query<any, { apiKey: string; secretKey: string }>({
+      query: ({ apiKey, secretKey }) => {
         const method = 'GET';
         const requestPath = '/fapi/v2/balance';
         const timestamp = Date.now();
         const recvWindow = 5000;
-        const queryString = `timestamp=${timestamp}&recvWindow=${recvWindow}`;
+        
+        // Формируем параметры и сортируем по алфавиту (как в Binance)
+        const params: Record<string, string> = {
+          timestamp: timestamp.toString(),
+          recvWindow: recvWindow.toString(),
+        };
+        
+        // Сортируем параметры по ключам и формируем query string
+        const sortedKeys = Object.keys(params).sort();
+        const queryString = sortedKeys
+          .map((key) => `${key}=${params[key]}`)
+          .join('&');
         const body = '';
-        const signature = generateAsterSignature(seedPhrase, timestamp, recvWindow, queryString, body);
+        
+        // Генерируем подпись из queryString + body
+        const signature = generateAsterSignature(secretKey, queryString, body);
+        
+        // Добавляем signature последним параметром
         const finalQueryString = `${queryString}&signature=${signature}`;
 
         const headers = {
-          'X-MBX-APIKEY': seedPhrase, // Используем seed phrase как API key (или нужно генерировать из seed)
+          'X-MBX-APIKEY': apiKey,
           'Content-Type': 'application/json',
         };
 
@@ -345,9 +376,19 @@ export const tradingApi = createApi({
     }),
     getHyperliquidBalance: builder.query<any, { seedPhrase: string }>({
       query: ({ seedPhrase }) => {
-        // Для Hyperliquid через HyperETH API нужен адрес кошелька
-        // Seed phrase используется для генерации адреса, но это должно быть на бэкенде
-        // Пока передаем seed phrase, бэкенд должен сгенерировать адрес и использовать его
+        // Hyperliquid Info API: clearinghouseState
+        // POST https://api.hyperliquid.xyz/info
+        // Body: { type: "clearinghouseState", user: "0x..." }
+        // Генерируем адрес кошелька из seed phrase на фронте
+        const walletAddress = generateWalletAddressFromSeedPhrase(seedPhrase);
+        
+        if (!walletAddress) {
+          throw new Error('Invalid seed phrase');
+        }
+
+        // Адрес должен быть в нижнем регистре для Hyperliquid
+        const userAddress = walletAddress.toLowerCase();
+
         const headers = {
           'Content-Type': 'application/json',
         };
@@ -356,11 +397,12 @@ export const tradingApi = createApi({
           url: '/proxy',
           method: 'POST',
           body: {
-            method: 'GET',
-            url: 'https://api.hypereth.io/v2/hyperliquid/getBalance',
+            method: 'POST',
+            url: 'https://api.hyperliquid.xyz/info',
             headers,
             body: {
-              seedPhrase,
+              type: 'clearinghouseState',
+              user: userAddress,
             },
           },
         };
