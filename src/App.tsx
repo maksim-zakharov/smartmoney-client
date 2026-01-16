@@ -507,6 +507,18 @@ export default function App() {
     localStorage.setItem('ourbitAuthToken', e.target.value);
   };
 
+  const [asterSeedPhrase, setasterSeedPhrase] = useState<string | null>(localStorage.getItem('asterSeedPhrase'));
+  const handleEditasterSeedPhrase = (e) => {
+    setasterSeedPhrase(e.target.value);
+    localStorage.setItem('asterSeedPhrase', e.target.value);
+  };
+
+  const [hyperliquidSeedPhrase, sethyperliquidSeedPhrase] = useState<string | null>(localStorage.getItem('hyperliquidSeedPhrase'));
+  const handleEdithyperliquidSeedPhrase = (e) => {
+    sethyperliquidSeedPhrase(e.target.value);
+    localStorage.setItem('hyperliquidSeedPhrase', e.target.value);
+  };
+
   const [proxyUrl, setProxyUrl] = useState<string | null>(localStorage.getItem('proxyUrl') || 'http://5.35.13.149');
   const handleEditProxyUrl = (e) => {
     setProxyUrl(e.target.value);
@@ -851,6 +863,42 @@ export default function App() {
                                   <div className="flex gap-2 flex-col">
                                     <Label htmlFor="ourbitAuthToken">Auth Token</Label>
                                     <Input id="ourbitAuthToken" value={ourbitAuthToken} onChange={handleEditourbitAuthToken} />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="aster">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.ASTER && <img src={exchangeImgMap.ASTER} alt="Aster" className="h-4 w-4 rounded-full" />}
+                                  <span>Aster</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-1 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="asterSeedPhrase">Seed Phrase</Label>
+                                    <Input id="asterSeedPhrase" value={asterSeedPhrase || ''} onChange={handleEditasterSeedPhrase} type="password" />
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="hyperliquid">
+                              <AccordionTrigger className="text-base">
+                                <div className="flex items-center gap-2">
+                                  {exchangeImgMap.HYPERLIQUID && (
+                                    <img src={exchangeImgMap.HYPERLIQUID} alt="Hyperliquid" className="h-4 w-4 rounded-full" />
+                                  )}
+                                  <span>Hyperliquid</span>
+                                </div>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-1 gap-3 w-full">
+                                  <div className="flex gap-2 flex-col">
+                                    <Label htmlFor="hyperliquidSeedPhrase">Seed Phrase</Label>
+                                    <Input id="hyperliquidSeedPhrase" value={hyperliquidSeedPhrase || ''} onChange={handleEdithyperliquidSeedPhrase} type="password" />
                                   </div>
                                 </div>
                               </AccordionContent>

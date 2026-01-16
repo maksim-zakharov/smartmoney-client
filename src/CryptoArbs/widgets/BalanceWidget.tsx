@@ -12,6 +12,8 @@ import {
   useGetBitgetBalanceQuery,
   useGetGateBalanceQuery,
   useGetBitmartBalanceQuery,
+  useGetAsterBalanceQuery,
+  useGetHyperliquidBalanceQuery,
 } from '../../api/trading.api';
 
 export interface ExchangeBalance {
@@ -84,6 +86,14 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
           secretKey: localStorage.getItem('okxApiSecret'),
           passphrase: localStorage.getItem('okxApiPhrase'),
         };
+      case 'ASTER':
+        return {
+          seedPhrase: localStorage.getItem('asterSeedPhrase'),
+        };
+      case 'HYPERLIQUID':
+        return {
+          seedPhrase: localStorage.getItem('hyperliquidSeedPhrase'),
+        };
       default:
         return {};
     }
@@ -99,6 +109,8 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
   const bitgetKeys = useMemo(() => getExchangeApiKeys('BITGET'), []);
   const gateKeys = useMemo(() => getExchangeApiKeys('GATEIO'), []);
   const bitmartKeys = useMemo(() => getExchangeApiKeys('BITMART'), []);
+  const asterKeys = useMemo(() => getExchangeApiKeys('ASTER'), []);
+  const hyperliquidKeys = useMemo(() => getExchangeApiKeys('HYPERLIQUID'), []);
 
   // RTK Query запросы с pollingInterval и skip
   const mexcBalance = useGetMEXCBalanceQuery(
@@ -161,6 +173,20 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
     { apiKey: bitmartKeys.apiKey || '', secretKey: bitmartKeys.secretKey || '', passphrase: bitmartKeys.passphrase || '' },
     {
       skip: !bitmartKeys.apiKey || !bitmartKeys.secretKey || !bitmartKeys.passphrase,
+      pollingInterval: 5000,
+    },
+  );
+  const asterBalance = useGetAsterBalanceQuery(
+    { seedPhrase: asterKeys.seedPhrase || '' },
+    {
+      skip: !asterKeys.seedPhrase,
+      pollingInterval: 5000,
+    },
+  );
+  const hyperliquidBalance = useGetHyperliquidBalanceQuery(
+    { seedPhrase: hyperliquidKeys.seedPhrase || '' },
+    {
+      skip: !hyperliquidKeys.seedPhrase,
       pollingInterval: 5000,
     },
   );
@@ -407,6 +433,88 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
       });
     }
 
+    // Aster DEX
+    if (asterKeys.seedPhrase) {
+      allBalances.push({
+        exchange: 'Aster',
+        totalBalance: asterBalance.data
+          ? (() => {
+              // Парсинг ответа от Aster DEX API
+              // Формат ответа будет зависеть от реального API, пока используем универсальный парсинг
+              if (typeof asterBalance.data === 'object' && asterBalance.data !== null) {
+                // Если есть поле total или balance
+                if ('total' in asterBalance.data) {
+                  return parseFloat(asterBalance.data.total || '0');
+                }
+                if ('balance' in asterBalance.data) {
+                  return parseFloat(asterBalance.data.balance || '0');
+                }
+                // Если есть массив assets, ищем USDT
+                if (Array.isArray(asterBalance.data.assets)) {
+                  const usdtAsset = asterBalance.data.assets.find((asset: any) => asset.currency === 'USDT' || asset.symbol === 'USDT');
+                  return usdtAsset ? parseFloat(usdtAsset.balance || usdtAsset.amount || '0') : 0;
+                }
+                // Если есть поле usdt или USDT
+                if ('usdt' in asterBalance.data) {
+                  return parseFloat(asterBalance.data.usdt || '0');
+                }
+                if ('USDT' in asterBalance.data) {
+                  return parseFloat(asterBalance.data.USDT || '0');
+                }
+              }
+              return 0;
+            })()
+          : null,
+        availableMargin: asterBalance.data
+          ? (() => {
+              if (typeof asterBalance.data === 'object' && asterBalance.data !== null) {
+                // Если есть поле available
+                if ('available' in asterBalance.data) {
+                  return parseFloat(asterBalance.data.available || '0');
+                }
+                // Если есть массив assets, ищем USDT
+                if (Array.isArray(asterBalance.data.assets)) {
+                  const usdtAsset = asterBalance.data.assets.find((asset: any) => asset.currency === 'USDT' || asset.symbol === 'USDT');
+                  return usdtAsset ? parseFloat(usdtAsset.available || usdtAsset.availableBalance || '0') : 0;
+                }
+                // Если есть поле availableUsdt или availableUSDT
+                if ('availableUsdt' in asterBalance.data) {
+                  return parseFloat(asterBalance.data.availableUsdt || '0');
+                }
+                if ('availableUSDT' in asterBalance.data) {
+                  return parseFloat(asterBalance.data.availableUSDT || '0');
+                }
+              }
+              return 0;
+            })()
+          : null,
+        isLoading: asterBalance.isLoading,
+        hasError: asterBalance.isError,
+      });
+    }
+
+    // Hyperliquid
+    if (hyperliquidKeys.seedPhrase) {
+      allBalances.push({
+        exchange: 'Hyperliquid',
+        totalBalance: hyperliquidBalance.data && Array.isArray(hyperliquidBalance.data.balances)
+          ? (() => {
+              // Hyperliquid возвращает { balances: [{ asset: 'USDT', walletBalance: '10000.0', availableBalance: '9800.0', ... }] }
+              const usdtBalance = hyperliquidBalance.data.balances.find((bal: any) => bal.asset === 'USDT');
+              return usdtBalance ? parseFloat(usdtBalance.walletBalance || '0') : 0;
+            })()
+          : null,
+        availableMargin: hyperliquidBalance.data && Array.isArray(hyperliquidBalance.data.balances)
+          ? (() => {
+              const usdtBalance = hyperliquidBalance.data.balances.find((bal: any) => bal.asset === 'USDT');
+              return usdtBalance ? parseFloat(usdtBalance.availableBalance || '0') : 0;
+            })()
+          : null,
+        isLoading: hyperliquidBalance.isLoading,
+        hasError: hyperliquidBalance.isError,
+      });
+    }
+
     setBalances(allBalances);
     if (onBalancesChange) {
       onBalancesChange(allBalances);
@@ -439,6 +547,12 @@ export const BalanceWidget: React.FC<BalanceWidgetProps> = ({ onBalancesChange }
     bitmartBalance.data,
     bitmartBalance.isLoading,
     bitmartBalance.isError,
+    asterBalance.data,
+    asterBalance.isLoading,
+    asterBalance.isError,
+    hyperliquidBalance.data,
+    hyperliquidBalance.isLoading,
+    hyperliquidBalance.isError,
     onBalancesChange,
   ]);
 

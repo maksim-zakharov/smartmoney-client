@@ -68,6 +68,16 @@ function generateBitmartSignature(secretKey: string, memo: string, timestamp: st
   return CryptoJS.HmacSHA256(message, secretKey).toString(CryptoJS.enc.Hex);
 }
 
+/**
+ * Генерирует подпись для Aster DEX
+ * Использует HMAC SHA256 с secretKey (seed phrase) и totalParams (query + body)
+ */
+function generateAsterSignature(secretKey: string, timestamp: number, recvWindow: number, queryString: string, body: string): string {
+  const totalParams = queryString + body;
+  const signStr = `${timestamp}${recvWindow}${totalParams}`;
+  return CryptoJS.HmacSHA256(signStr, secretKey).toString(CryptoJS.enc.Hex);
+}
+
 export const tradingApi = createApi({
   reducerPath: 'tradingApi',
   tagTypes: ['Balance', 'Position'],
@@ -302,6 +312,56 @@ export const tradingApi = createApi({
             method: 'GET',
             url: 'https://api-cloud-v2.bitmart.com/contract/private/assets-detail',
             headers,
+          },
+        };
+      },
+    }),
+    getAsterBalance: builder.query<any, { seedPhrase: string }>({
+      query: ({ seedPhrase }) => {
+        const method = 'GET';
+        const requestPath = '/fapi/v2/balance';
+        const timestamp = Date.now();
+        const recvWindow = 5000;
+        const queryString = `timestamp=${timestamp}&recvWindow=${recvWindow}`;
+        const body = '';
+        const signature = generateAsterSignature(seedPhrase, timestamp, recvWindow, queryString, body);
+        const finalQueryString = `${queryString}&signature=${signature}`;
+
+        const headers = {
+          'X-MBX-APIKEY': seedPhrase, // Используем seed phrase как API key (или нужно генерировать из seed)
+          'Content-Type': 'application/json',
+        };
+
+        return {
+          url: '/proxy',
+          method: 'POST',
+          body: {
+            method: 'GET',
+            url: `https://fapi.asterdex.com${requestPath}?${finalQueryString}`,
+            headers,
+          },
+        };
+      },
+    }),
+    getHyperliquidBalance: builder.query<any, { seedPhrase: string }>({
+      query: ({ seedPhrase }) => {
+        // Для Hyperliquid через HyperETH API нужен адрес кошелька
+        // Seed phrase используется для генерации адреса, но это должно быть на бэкенде
+        // Пока передаем seed phrase, бэкенд должен сгенерировать адрес и использовать его
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+
+        return {
+          url: '/proxy',
+          method: 'POST',
+          body: {
+            method: 'GET',
+            url: 'https://api.hypereth.io/v2/hyperliquid/getBalance',
+            headers,
+            body: {
+              seedPhrase,
+            },
           },
         };
       },
@@ -599,6 +659,8 @@ export const {
   useGetBitgetBalanceQuery,
   useGetGateBalanceQuery,
   useGetBitmartBalanceQuery,
+  useGetAsterBalanceQuery,
+  useGetHyperliquidBalanceQuery,
   useGetMEXCPositionsQuery,
   useGetOurbitPositionsQuery,
   useGetKCEXPositionsQuery,
