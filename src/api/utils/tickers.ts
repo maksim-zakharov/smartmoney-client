@@ -115,9 +115,8 @@ export const getExchangeUrl = (exchange: string, ticker: string): string => {
       return `https://www.hotcoin.com/en_US/contract/exchange/trade/?tradeName=${hotcoinTicker}`;
     }
     case 'KCEX':
-      return `https://www.kcex.com/futures/${ticker}_USDT`;
+      return `https://www.kcex.com/ru-RU/futures/exchange/${ticker}_USDT`;
     default:
       return '#';
   }
 };
-
